@@ -1,19 +1,7 @@
 <ui-page frame="shell" eyebrow="Administración" [title]="session.name() ?? 'Admin'">
-  <div uiNav class="flex h-full flex-col gap-1">
-    <a routerLink="/inicio" routerLinkActive="is-current" [routerLinkActiveOptions]="{ exact: true }" class="nav-link">Inicio</a>
-    @if (session.role() === 'SuperAdmin') {
-      <a routerLink="/consultorios" routerLinkActive="is-current" class="nav-link">Consultorios</a>
-    } @else {
-      <a routerLink="/organizacion" routerLinkActive="is-current" class="nav-link">Organización</a>
-      <a routerLink="/empleados" routerLinkActive="is-current" class="nav-link">Empleados</a>
-      <a routerLink="/pacientes" routerLinkActive="is-current" class="nav-link">Pacientes</a>
-      <a routerLink="/agendas" routerLinkActive="is-current" class="nav-link">Agendas</a>
-      <a routerLink="/historias" routerLinkActive="is-current" class="nav-link">Historias médicas</a>
-      <a routerLink="/aranceles" routerLinkActive="is-current" class="nav-link">Aranceles</a>
-      <a routerLink="/comprobantes" routerLinkActive="is-current" class="nav-link">Comprobantes</a>
-      <a routerLink="/auditoria" routerLinkActive="is-current" class="nav-link">Auditoría</a>
-    }
-    <ui-button class="mt-auto w-full pt-4" variant="ghost" (click)="logout()">Salir</ui-button>
+  <div uiNav class="flex h-full min-h-0 flex-col">
+    <ui-nav class="min-h-0 flex-1 overflow-y-auto" label="Administración" [nodes]="menu()" />
+    <ui-button class="mt-4 w-full shrink-0" variant="ghost" (click)="logout()">Salir</ui-button>
   </div>
   <router-outlet />
 </ui-page>

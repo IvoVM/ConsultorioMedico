@@ -1,10 +1,6 @@
-<div class="mb-8 flex gap-2 overflow-x-auto border-b border-rule pb-4">
-  @for (item of sections; track item.id) {
-    <ui-button type="button" [variant]="section() === item.id ? 'primary' : 'ghost'" (click)="section.set(item.id)">{{ item.label }}</ui-button>
-  }
-</div>
+<h2 class="mb-6 font-serif text-2xl tracking-tight">{{ sectionLabel() }}</h2>
 @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
-@if (section() === 'locations') {
+@if (section() === 'sedes') {
   <form class="mb-6 grid gap-4 md:grid-cols-3" (ngSubmit)="createLocation()">
     <ui-field label="Nombre"><input name="locationName" [(ngModel)]="locationName" required /></ui-field>
     <ui-field label="Dirección"><input name="address" [(ngModel)]="address" required /></ui-field>
@@ -15,7 +11,7 @@
     <tbody>@for (location of locations(); track location.id) { <tr><td>{{ location.name }}</td><td>{{ location.address }}</td></tr> }</tbody>
   </ui-table>
 }
-@if (section() === 'services') {
+@if (section() === 'servicios') {
   <form class="mb-6 grid gap-4 md:grid-cols-3" (ngSubmit)="createService()">
     <ui-field label="Sede">
       <select name="locationId" [(ngModel)]="locationId" required>
@@ -30,7 +26,7 @@
     <tbody>@for (service of services(); track service.id) { <tr><td>{{ service.name }}</td><td>{{ locationNameOf(service.locationId) }}</td></tr> }</tbody>
   </ui-table>
 }
-@if (section() === 'specialties') {
+@if (section() === 'especialidades') {
   <form class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end" (ngSubmit)="createSpecialty()">
     <ui-field class="sm:w-80" label="Nombre"><input name="specialtyName" [(ngModel)]="specialtyName" required /></ui-field>
     <div class="flex items-end"><ui-button type="submit">Agregar</ui-button></div>
@@ -40,7 +36,7 @@
     <tbody>@for (item of specialties(); track item.id) { <tr><td>{{ item.name }}</td></tr> }</tbody>
   </ui-table>
 }
-@if (section() === 'appointmentTypes') {
+@if (section() === 'tipos-de-turno') {
   <form class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4" (ngSubmit)="createAppointmentType()">
     <ui-field label="Nombre"><input name="typeName" [(ngModel)]="typeName" required /></ui-field>
     <ui-field label="Minutos"><input name="duration" type="number" [(ngModel)]="duration" required /></ui-field>

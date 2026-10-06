@@ -14,7 +14,13 @@ export const routes: Routes = [
       {
         path: 'organizacion',
         canActivate: [roleGuard('TenantAdmin')],
-        loadComponent: () => import('./modules/organization/organization').then((m) => m.OrganizationPage),
+        children: [
+          { path: '', pathMatch: 'full', redirectTo: 'sedes' },
+          {
+            path: ':section',
+            loadComponent: () => import('./modules/organization/organization').then((m) => m.OrganizationPage),
+          },
+        ],
       },
       { path: 'empleados', canActivate: [roleGuard('TenantAdmin')], loadComponent: () => import('./modules/employees/employees').then((m) => m.EmployeesPage) },
       { path: 'pacientes', canActivate: [roleGuard('TenantAdmin')], loadComponent: () => import('./modules/patients/patients').then((m) => m.PatientsPage) },

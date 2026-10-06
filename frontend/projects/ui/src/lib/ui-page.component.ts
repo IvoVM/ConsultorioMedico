@@ -17,6 +17,6 @@ export class UiPage {
 
   onSidebarClick(event: Event) {
     const target = event.target as HTMLElement | null;
-    if (target?.closest('a, button')) this.menuOpen.set(false);
+    if (target?.closest('a')) this.menuOpen.set(false);
   }
 }

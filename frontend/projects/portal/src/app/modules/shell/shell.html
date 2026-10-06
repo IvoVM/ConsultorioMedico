@@ -1,25 +1,10 @@
 <ui-page frame="shell" eyebrow="Portal" [title]="session.name() ?? 'Paciente'">
-  <div uiNav class="flex h-full flex-col gap-1">
+  <div uiNav class="flex h-full min-h-0 flex-col">
+    <ui-nav class="min-h-0 flex-1 overflow-y-auto" label="Portal" [nodes]="menu()" />
     @if (session.token()) {
-      <a routerLink="/panel" routerLinkActive="is-current" [routerLinkActiveOptions]="{ exact: true }" class="nav-link">Inicio</a>
-    }
-    <a routerLink="/reservar" routerLinkActive="is-current" class="nav-link">Reservar</a>
-    @if (session.role() === 'Patient') {
-      <a routerLink="/mis-turnos" routerLinkActive="is-current" class="nav-link">Mis turnos</a>
-      <a routerLink="/historia" routerLinkActive="is-current" class="nav-link">Historia</a>
-      <a routerLink="/recetas" routerLinkActive="is-current" class="nav-link">Recetas</a>
-    }
-    @if (session.role() === 'Secretary' || session.role() === 'TenantAdmin') {
-      <a routerLink="/secretaria" routerLinkActive="is-current" class="nav-link">Secretaría</a>
-    }
-    @if (session.role() === 'Doctor') {
-      <a routerLink="/medico" routerLinkActive="is-current" class="nav-link">Consultorio</a>
-      <a routerLink="/historia" routerLinkActive="is-current" class="nav-link">Historia</a>
-    }
-    @if (session.token()) {
-      <ui-button class="mt-auto w-full pt-4" variant="ghost" (click)="logout()">Salir</ui-button>
+      <ui-button class="mt-4 w-full shrink-0" variant="ghost" (click)="logout()">Salir</ui-button>
     } @else {
-      <a routerLink="/ingreso" class="nav-link mt-auto">Ingresar</a>
+      <a routerLink="/ingreso" class="nav-link mt-4 shrink-0">Ingresar</a>
     }
   </div>
   <router-outlet />

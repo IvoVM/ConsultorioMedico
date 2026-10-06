@@ -4,5 +4,7 @@ export { UiCalendar } from './ui-calendar.component';
 export { UiEmpty } from './ui-empty.component';
 export { UiField } from './ui-field.component';
 export { UiModal } from './ui-modal.component';
+export { UiNav } from './ui-nav.component';
+export type { NavLink, NavNode } from './ui-nav.component';
 export { UiPage } from './ui-page.component';
 export { UiTable } from './ui-table.component';

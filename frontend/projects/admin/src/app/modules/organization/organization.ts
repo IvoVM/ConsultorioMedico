@@ -1,9 +1,11 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AppointmentTypeDto, LocationDto, MedicalServiceDto, OrganizationService, SpecialtyDto, errorMessage } from 'sdk';
 import { UiButton, UiField, UiTable } from 'ui';
 import { Observable, firstValueFrom } from 'rxjs';
-import { OrganizationSection } from './models/section';
+import { isOrganizationSection, organizationSections } from './models/section';
 
 @Component({
   imports: [FormsModule, UiButton, UiField, UiTable],
@@ -11,13 +13,14 @@ import { OrganizationSection } from './models/section';
 })
 export class OrganizationPage {
   private readonly organization = inject(OrganizationService);
-  readonly sections: { id: OrganizationSection; label: string }[] = [
-    { id: 'locations', label: 'Sedes' },
-    { id: 'services', label: 'Servicios' },
-    { id: 'specialties', label: 'Especialidades' },
-    { id: 'appointmentTypes', label: 'Tipos de turno' },
-  ];
-  readonly section = signal<OrganizationSection>('locations');
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly params = toSignal(this.route.paramMap);
+  readonly section = computed(() => {
+    const value = this.params()?.get('section') ?? null;
+    return isOrganizationSection(value) ? value : 'sedes';
+  });
+  readonly sectionLabel = computed(() => organizationSections.find((item) => item.id === this.section())?.label ?? 'Sedes');
   readonly locations = signal<LocationDto[]>([]);
   readonly services = signal<MedicalServiceDto[]>([]);
   readonly specialties = signal<SpecialtyDto[]>([]);
@@ -33,6 +36,10 @@ export class OrganizationPage {
   specialtyId = '';
 
   constructor() {
+    effect(() => {
+      const value = this.params()?.get('section');
+      if (value && !isOrganizationSection(value)) void this.router.navigate(['/organizacion/sedes'], { replaceUrl: true });
+    });
     void this.load();
   }
 
