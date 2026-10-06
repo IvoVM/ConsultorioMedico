@@ -18,6 +18,7 @@
   display: block;
   color: var(--color-ink);
   text-decoration: none;
+  transition: clip-path 0.78s cubic-bezier(0.77, 0, 0.18, 1);
 }
 
 .photo,
@@ -32,7 +33,7 @@
   background-size: cover;
   filter: blur(6px) saturate(0.94);
   transform: scale(1.05);
-  transition: filter 0.45s ease, transform 0.6s ease;
+  transition: filter 0.78s ease, transform 0.78s ease, inset 0.78s ease;
 }
 
 .patient .photo {
@@ -93,6 +94,7 @@
 .copy {
   position: absolute;
   z-index: 1;
+  transition: opacity 0.28s ease;
 }
 
 .patient {
@@ -127,11 +129,6 @@
   color: var(--color-clinic-deep);
 }
 
-.role {
-  margin-bottom: 0.75rem;
-  color: rgb(255 255 255 / 0.72);
-}
-
 h1 {
   font-family: var(--font-serif);
   font-weight: 500;
@@ -145,9 +142,13 @@ h1 {
 }
 
 .staff h1 {
-  max-width: 16ch;
-  font-size: clamp(1.85rem, 4vw, 2.4rem);
-  line-height: 1.05;
+  max-width: 9ch;
+  font-size: clamp(2.8rem, 8vw, 4.2rem);
+  line-height: 0.92;
+}
+
+.staff .lead {
+  color: rgb(255 255 255 / 0.84);
 }
 
 .lead {
@@ -177,7 +178,7 @@ h1 {
     top: 0;
     right: 0;
     left: auto;
-    width: min(22rem, 34vw);
+    width: min(26rem, 38vw);
     max-width: none;
     padding: 4rem 3.5rem 0 0;
   }
@@ -199,13 +200,56 @@ h1 {
   }
 
   .staff h1 {
-    font-size: clamp(2.1rem, 2.6vw, 3rem);
+    font-size: clamp(3.4rem, 5vw, 5.5rem);
+  }
+}
+
+.gate.is-patient .patient,
+.gate.is-staff .staff {
+  z-index: 2;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+}
+
+.gate.is-patient .staff {
+  clip-path: polygon(0 0, 100% 0, 100% 0, 0 0);
+}
+
+.gate.is-staff .patient {
+  clip-path: polygon(0 100%, 100% 100%, 100% 100%, 0 100%);
+}
+
+.gate.is-patient .patient .photo,
+.gate.is-staff .staff .photo {
+  inset: -3rem;
+  filter: blur(2px) saturate(1);
+  transform: scale(1.14);
+}
+
+.gate.is-patient .staff .copy,
+.gate.is-staff .patient .copy {
+  opacity: 0;
+}
+
+.gate.is-patient .panel,
+.gate.is-staff .panel {
+  pointer-events: none;
+}
+
+@media (min-width: 768px) {
+  .gate.is-patient .staff {
+    clip-path: polygon(100% 0, 100% 0, 100% 100%, 100% 100%);
+  }
+
+  .gate.is-staff .patient {
+    clip-path: polygon(0 0, 0 0, 0 100%, 0 100%);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .panel,
   .photo,
-  .veil {
+  .veil,
+  .copy {
     transition: none;
   }
 }

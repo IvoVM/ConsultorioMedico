@@ -12,21 +12,17 @@ import {
   clinicaSession,
   errorMessage,
 } from 'sdk';
-import { UiButton, UiEmpty, UiField, UiIcon, UiSkeleton, UiSpinner } from 'ui';
+import { UiButton, UiEmpty, UiField, UiSpinner } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { clearPending, readPending, savePending } from './pending-booking';
 
-interface DayCell {
+interface DayOption {
   iso: string;
-  day: number;
-  inMonth: boolean;
-  past: boolean;
-  today: boolean;
-  label: string;
+  slots: SlotDto[];
 }
 
 @Component({
-  imports: [FormsModule, RouterLink, UiButton, UiField, UiEmpty, UiSkeleton, UiIcon, UiSpinner],
+  imports: [FormsModule, RouterLink, UiButton, UiField, UiEmpty, UiSpinner],
   templateUrl: './book-appointment.html',
   styleUrl: './book-appointment.css',
 })
@@ -36,24 +32,24 @@ export class BookAppointmentPage {
   private readonly schedule = inject(ScheduleService);
   private readonly appointmentsApi = inject(AppointmentsService);
   private readonly router = inject(Router);
+  private readonly cache = new Map<string, DayOption[]>();
   readonly session = clinicaSession;
-  readonly weekdays = ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom'];
   readonly specialties = signal<SpecialtyDto[]>([]);
   readonly professionals = signal<ProfessionalDto[]>([]);
+  readonly days = signal<DayOption[]>([]);
   readonly slots = signal<SlotDto[]>([]);
   readonly held = signal<SlotDto | null>(null);
   readonly error = signal('');
   readonly loading = signal(true);
-  readonly searching = signal(false);
   readonly joining = signal(false);
   readonly booking = signal('');
-  readonly searched = signal(false);
   readonly locationId = signal('');
   readonly specialtyId = signal('');
   readonly professionalId = signal('');
-  readonly date = signal(isoDate(new Date()));
-  readonly month = signal(startOfMonth(new Date()));
+  readonly date = signal('');
   notes = '';
+
+  readonly nearestIso = computed(() => this.days()[0]?.iso ?? '');
 
   readonly visibleProfessionals = computed(() => {
     const specialtyId = this.specialtyId();
@@ -61,19 +57,6 @@ export class BookAppointmentPage {
     if (!specialtyId) return list;
     return list.filter((pro) => pro.specialtyId === specialtyId);
   });
-
-  readonly monthLabel = computed(() => {
-    const label = new Intl.DateTimeFormat('es-AR', { month: 'long', year: 'numeric' }).format(this.month());
-    return label.charAt(0).toUpperCase() + label.slice(1);
-  });
-
-  readonly canGoPrev = computed(() => {
-    const month = this.month();
-    const today = new Date();
-    return month.getFullYear() > today.getFullYear() || (month.getFullYear() === today.getFullYear() && month.getMonth() > today.getMonth());
-  });
-
-  readonly cells = computed(() => buildCells(this.month()));
 
   readonly groups = computed(() => {
     const map = new Map<string, { id: string; name: string; type: string; slots: SlotDto[] }>();
@@ -99,6 +82,18 @@ export class BookAppointmentPage {
     return new Intl.DateTimeFormat('es-AR', { hour: '2-digit', minute: '2-digit' }).format(date);
   }
 
+  dayTitle(iso: string) {
+    return formatDay(iso, { weekday: 'long', day: 'numeric', month: 'long' });
+  }
+
+  weekday(iso: string) {
+    return formatDay(iso, { weekday: 'short' }).replace('.', '');
+  }
+
+  dayNumber(iso: string) {
+    return formatDay(iso, { day: 'numeric' });
+  }
+
   async prepare() {
     if (await this.finishPending()) return;
     try {
@@ -110,14 +105,12 @@ export class BookAppointmentPage {
       this.specialties.set(specialties);
       this.professionals.set(professionals);
       this.locationId.set(locations.find((location) => location.isActive)?.id ?? locations[0]?.id ?? '');
-      this.specialtyId.set(specialties[0]?.id ?? '');
       const pending = readPending();
       if (pending && !clinicaSession.token()) this.applyPending(pending, professionals);
-      await this.search();
+      await this.loadDays(this.date() || undefined);
       this.restoreHeld();
     } catch (error) {
       this.error.set(errorMessage(error));
-    } finally {
       this.loading.set(false);
     }
   }
@@ -126,52 +119,62 @@ export class BookAppointmentPage {
     this.forgetHeld();
     this.specialtyId.set(id);
     const selected = this.professionals().find((pro) => pro.id === this.professionalId());
-    if (selected && selected.specialtyId !== id) this.professionalId.set('');
-    void this.search();
+    if (selected && id && selected.specialtyId !== id) this.professionalId.set('');
+    void this.loadDays();
   }
 
   pickProfessional(id: string) {
     this.forgetHeld();
     this.professionalId.set(id);
-    void this.search();
+    const specialtyId = this.professionals().find((pro) => pro.id === id)?.specialtyId;
+    if (specialtyId) this.specialtyId.set(specialtyId);
+    void this.loadDays();
   }
 
   pickDay(iso: string) {
     this.forgetHeld();
-    this.date.set(iso);
-    const [year, month] = iso.split('-').map(Number);
-    this.month.set(new Date(year, month - 1, 1));
-    void this.search();
+    const day = this.days().find((item) => item.iso === iso);
+    if (!day) return;
+    this.date.set(day.iso);
+    this.slots.set(day.slots);
   }
 
-  shiftMonth(delta: number) {
-    const next = new Date(this.month());
-    next.setMonth(next.getMonth() + delta);
-    if (delta < 0 && !this.canGoPrev()) return;
-    this.month.set(startOfMonth(next));
+  chooseForMe() {
+    this.forgetHeld();
+    this.professionalId.set('');
+    this.specialtyId.set('');
+    void this.loadDays();
   }
 
-  async search() {
+  async loadDays(prefer?: string) {
     const locationId = this.locationId();
-    const specialtyId = this.specialtyId();
-    if (!locationId || !specialtyId) return;
-    this.searching.set(true);
+    if (!locationId) {
+      this.loading.set(false);
+      return;
+    }
+    const key = `${this.specialtyId()}|${this.professionalId()}`;
+    const cached = this.cache.get(key);
+    if (cached) {
+      this.applyDays(cached, prefer);
+      this.loading.set(false);
+      return;
+    }
+    this.loading.set(true);
+    this.error.set('');
     try {
-      this.slots.set(
-        await firstValueFrom(
-          this.schedule.availability({
-            locationId,
-            specialtyId,
-            professionalId: this.professionalId() || undefined,
-            date: this.date(),
-          }),
-        ),
-      );
-      this.searched.set(true);
+      const specialtyIds = this.specialtyIds();
+      let days = await this.collectDays(specialtyIds);
+      if (prefer && !days.some((day) => day.iso === prefer)) {
+        const extra = await this.slotsForDate(prefer, specialtyIds);
+        if (extra.slots.length) days = [...days, { iso: prefer, slots: extra.slots }].sort((left, right) => left.iso.localeCompare(right.iso));
+      }
+      this.cache.set(key, days);
+      this.applyDays(days, prefer);
+      if (!days.length && !this.error()) this.error.set('');
     } catch (error) {
       this.error.set(errorMessage(error));
     } finally {
-      this.searching.set(false);
+      this.loading.set(false);
     }
   }
 
@@ -201,7 +204,7 @@ export class BookAppointmentPage {
           patientId: null,
           professionalId: this.professionalId() || null,
           locationId: this.locationId(),
-          specialtyId: this.specialtyId(),
+          specialtyId: this.specialtyId() || this.specialties()[0]?.id || '',
           notes: this.notes,
         }),
       );
@@ -211,6 +214,67 @@ export class BookAppointmentPage {
     } finally {
       this.joining.set(false);
     }
+  }
+
+  private specialtyIds() {
+    const selected = this.professionals().find((pro) => pro.id === this.professionalId());
+    if (selected?.specialtyId) return [selected.specialtyId];
+    if (this.specialtyId()) return [this.specialtyId()];
+    return this.specialties().map((item) => item.id);
+  }
+
+  private async collectDays(specialtyIds: string[]) {
+    const found: DayOption[] = [];
+    const wanted = 6;
+    const horizon = 21;
+    let failures = 0;
+    let attempts = 0;
+    for (let start = 0; start < horizon && found.length < wanted; start += 7) {
+      const dates = Array.from({ length: Math.min(7, horizon - start) }, (_, index) => isoDate(addDays(new Date(), start + index)));
+      const batches = await Promise.all(dates.map((iso) => this.slotsForDate(iso, specialtyIds)));
+      dates.forEach((iso, index) => {
+        const batch = batches[index];
+        attempts += batch.attempts;
+        failures += batch.failures;
+        if (batch.slots.length && found.length < wanted) found.push({ iso, slots: batch.slots });
+      });
+    }
+    if (!found.length && attempts > 0 && failures === attempts) {
+      this.error.set('No se pudo leer la agenda.');
+    }
+    return found;
+  }
+
+  private async slotsForDate(iso: string, specialtyIds: string[]) {
+    const locationId = this.locationId();
+    const professionalId = this.professionalId() || undefined;
+    let failures = 0;
+    const lists = await Promise.all(
+      specialtyIds.map(async (specialtyId) => {
+        try {
+          return await firstValueFrom(
+            this.schedule.availability({
+              locationId,
+              specialtyId,
+              professionalId,
+              date: iso,
+            }),
+          );
+        } catch {
+          failures += 1;
+          return [] as SlotDto[];
+        }
+      }),
+    );
+    const slots = lists.flat().sort((left, right) => left.start.localeCompare(right.start));
+    return { slots, attempts: specialtyIds.length, failures };
+  }
+
+  private applyDays(days: DayOption[], prefer?: string) {
+    this.days.set(days);
+    const picked = days.find((day) => day.iso === prefer) ?? days[0];
+    this.date.set(picked?.iso ?? '');
+    this.slots.set(picked?.slots ?? []);
   }
 
   private async finishPending() {
@@ -239,7 +303,7 @@ export class BookAppointmentPage {
 
   private forgetHeld() {
     this.held.set(null);
-    this.error.set('');
+    if (this.error() === 'Quedaste en la lista de espera.') this.error.set('');
     clearPending();
   }
 
@@ -250,14 +314,10 @@ export class BookAppointmentPage {
     if (match) this.held.set(match);
   }
 
-  private applyPending(pending: ReturnType<typeof readPending>, professionals: ProfessionalDto[]) {
-    if (!pending) return;
+  private applyPending(pending: NonNullable<ReturnType<typeof readPending>>, professionals: ProfessionalDto[]) {
     this.locationId.set(pending.locationId);
     this.professionalId.set(pending.professionalId);
-    const day = pending.start.slice(0, 10);
-    this.date.set(day);
-    const [year, month] = day.split('-').map(Number);
-    this.month.set(new Date(year, (month ?? 1) - 1, 1));
+    this.date.set(pending.start.slice(0, 10));
     const specialtyId = professionals.find((pro) => pro.id === pending.professionalId)?.specialtyId;
     if (specialtyId) this.specialtyId.set(specialtyId);
   }
@@ -292,30 +352,18 @@ function isoDate(date: Date) {
   return `${date.getFullYear()}-${month}-${day}`;
 }
 
-function startOfMonth(date: Date) {
-  return new Date(date.getFullYear(), date.getMonth(), 1);
+function addDays(date: Date, amount: number) {
+  const next = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  next.setDate(next.getDate() + amount);
+  return next;
 }
 
-function buildCells(month: Date): DayCell[] {
-  const first = new Date(month.getFullYear(), month.getMonth(), 1);
-  const startPad = (first.getDay() + 6) % 7;
-  const start = new Date(first);
-  start.setDate(1 - startPad);
-  const today = isoDate(new Date());
-  const formatter = new Intl.DateTimeFormat('es-AR', { day: 'numeric', month: 'long' });
-  const cells: DayCell[] = [];
-  for (let index = 0; index < 42; index += 1) {
-    const date = new Date(start);
-    date.setDate(start.getDate() + index);
-    const iso = isoDate(date);
-    cells.push({
-      iso,
-      day: date.getDate(),
-      inMonth: date.getMonth() === month.getMonth(),
-      past: iso < today,
-      today: iso === today,
-      label: formatter.format(date),
-    });
-  }
-  return cells;
+function parseIso(iso: string) {
+  const [year, month, day] = iso.split('-').map(Number);
+  return new Date(year, (month ?? 1) - 1, day ?? 1);
+}
+
+function formatDay(iso: string, options: Intl.DateTimeFormatOptions) {
+  const label = new Intl.DateTimeFormat('es-AR', options).format(parseIso(iso));
+  return label.charAt(0).toUpperCase() + label.slice(1);
 }

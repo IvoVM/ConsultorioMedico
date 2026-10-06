@@ -1,14 +1,31 @@
 @if (loading()) {
-  <ui-skeleton [count]="4" label="Cargando la agenda" />
+  <section class="load-screen" role="status" aria-live="polite" aria-busy="true">
+    <ui-spinner [size]="36" />
+    <h1 class="font-serif text-4xl leading-tight font-medium tracking-tight">Buscando el turno más próximo</h1>
+  </section>
 } @else {
-  <h1 class="max-w-[16ch] font-serif text-4xl leading-tight font-medium tracking-tight sm:text-5xl">Elegí el día</h1>
-  <p class="mt-3 max-w-[46ch] text-lg text-ink/75">Los horarios son de los especialistas que atienden ese día.</p>
+  <div class="flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-end">
+    <div>
+      <h1 class="max-w-[16ch] font-serif text-4xl leading-tight font-medium tracking-tight sm:text-5xl">Reservar un turno</h1>
+      <p class="mt-3 max-w-[42ch] text-lg text-ink/75">
+        @if (days().length) {
+          La fecha y los horarios más próximos ya están elegidos. Podés cambiar de especialista o de día.
+        } @else {
+          Elegí un especialista. Cuando haya turnos, queda armado el día más próximo.
+        }
+      </p>
+    </div>
+    <ui-button type="button" variant="outlined" (click)="chooseForMe()">Elegir por mí</ui-button>
+  </div>
+
+  @if (error()) { <p class="mt-6 text-sm text-pulse" role="alert">{{ error() }}</p> }
 
   <div class="book-grid mt-8">
     <div>
       @if (specialties().length > 1) {
         <ui-field label="Especialidad">
           <select [value]="specialtyId()" (change)="pickSpecialty($any($event.target).value)">
+            <option value="">Todas</option>
             @for (item of specialties(); track item.id) {
               <option [value]="item.id">{{ item.name }}</option>
             }
@@ -18,7 +35,7 @@
       <div class="mt-4" role="group" aria-label="Especialistas">
         <button type="button" class="pro" [attr.aria-pressed]="professionalId() === ''" (click)="pickProfessional('')">
           <span class="font-serif text-xl leading-tight">Cualquiera</span>
-          <span class="text-sm text-ink/70">{{ specialtyName(specialtyId()) }}</span>
+          <span class="text-sm text-ink/70">El que tenga el turno más próximo</span>
         </button>
         @for (pro of visibleProfessionals(); track pro.id) {
           <button type="button" class="pro" [attr.aria-pressed]="professionalId() === pro.id" (click)="pickProfessional(pro.id)">
@@ -32,76 +49,60 @@
       </div>
     </div>
 
-    <div class="cal-wrap">
-      <div class="mb-4 flex items-center justify-between gap-3">
-        <button type="button" class="cal-nav" (click)="shiftMonth(-1)" [disabled]="!canGoPrev()" aria-label="Mes anterior">
-          <ui-icon name="chevron_left" [size]="22" />
-        </button>
-        <p class="font-serif text-3xl leading-none">{{ monthLabel() }}</p>
-        <button type="button" class="cal-nav" (click)="shiftMonth(1)" aria-label="Mes siguiente">
-          <ui-icon name="chevron_right" [size]="22" />
-        </button>
-      </div>
-      <div class="cal" role="grid" [attr.aria-label]="monthLabel()">
-        @for (name of weekdays; track name) {
-          <span class="cal-label">{{ name }}</span>
-        }
-        @for (cell of cells(); track cell.iso) {
-          <button
-            type="button"
-            [disabled]="!cell.inMonth || cell.past"
-            [attr.aria-pressed]="date() === cell.iso"
-            [attr.aria-label]="cell.inMonth ? cell.label : null"
-            [class.is-today]="cell.today && cell.inMonth"
-            (click)="pickDay(cell.iso)"
-          >
-            @if (cell.inMonth) { {{ cell.day }} }
-          </button>
-        }
-      </div>
-    </div>
-  </div>
-
-  @if (error()) { <p class="mt-6 text-sm text-pulse" role="alert">{{ error() }}</p> }
-
-  <section class="mt-10" aria-live="polite">
-    @if (held(); as slot) {
-      <p class="font-serif text-5xl leading-none">{{ timeLabel(slot.start) }}</p>
-      <p class="mt-3 text-lg">{{ slot.professional }}</p>
-      <p class="mt-2 max-w-[42ch] text-ink/75">Este turno se guarda cuando la cuenta es tuya.</p>
-      <div class="mt-6 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-        <a routerLink="/registro" class="action-link">Crear cuenta</a>
-        <a routerLink="/ingreso/cuenta" class="text-link">Ya tengo cuenta</a>
-        <ui-button variant="outlined" (click)="release()">Elegir otro horario</ui-button>
-      </div>
-    } @else if (searching()) {
-      <ui-skeleton [count]="2" label="Buscando horarios" />
-    } @else if (groups().length === 0 && searched()) {
-      <div class="max-w-xl space-y-4">
-        <ui-empty message="Ese día no tiene turnos libres." />
-        @if (session.role() === 'Patient') {
-          <ui-field label="Nota para la lista de espera"><input name="notes" [(ngModel)]="notes" /></ui-field>
-          <ui-button [loading]="joining()" (click)="joinWaitlist()">Anotarme en lista de espera</ui-button>
-        }
-      </div>
-    } @else {
-      @for (group of groups(); track group.id) {
-        <article class="border-b border-rule py-5">
-          <h2 class="font-serif text-2xl leading-tight">{{ group.name }}</h2>
-          <p class="mt-1 text-sm text-ink/70">{{ group.type }}</p>
-          <div class="times mt-4">
-            @for (slot of group.slots; track slot.start + slot.professionalId) {
-              <button type="button" [disabled]="!!booking()" (click)="book(slot)">
-                @if (booking() === slot.start + slot.professionalId) {
-                  <ui-spinner [size]="16" />
-                } @else {
-                  {{ timeLabel(slot.start) }}
+    <div>
+      @if (held(); as slot) {
+        <p class="font-serif text-5xl leading-none">{{ timeLabel(slot.start) }}</p>
+        <p class="mt-3 text-lg">{{ slot.professional }}</p>
+        <p class="mt-1 text-ink/75">{{ dayTitle(slot.start.slice(0, 10)) }}</p>
+        <p class="mt-2 max-w-[42ch] text-ink/75">Este turno se guarda cuando la cuenta es tuya.</p>
+        <div class="mt-6 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+          <a routerLink="/registro" class="action-link">Crear cuenta</a>
+          <a routerLink="/ingreso/cuenta" class="text-link">Ya tengo cuenta</a>
+          <ui-button variant="outlined" (click)="release()">Elegir otro horario</ui-button>
+        </div>
+      } @else if (days().length === 0) {
+        <div class="max-w-xl space-y-4">
+          <ui-empty message="No hay turnos libres en las próximas semanas." />
+          @if (session.role() === 'Patient') {
+            <ui-field label="Nota para la lista de espera"><input name="notes" [(ngModel)]="notes" /></ui-field>
+            <ui-button [loading]="joining()" (click)="joinWaitlist()">Anotarme en lista de espera</ui-button>
+          }
+        </div>
+      } @else {
+        <p class="font-serif text-4xl leading-none sm:text-5xl">{{ dayTitle(date()) }}</p>
+        <p class="mt-3 text-ink/75">El primer horario es el más próximo.</p>
+        <section class="mt-6" aria-live="polite">
+          @for (group of groups(); track group.id; let groupFirst = $first) {
+            <article class="border-b border-rule py-5">
+              <h2 class="font-serif text-2xl leading-tight">{{ group.name }}</h2>
+              <p class="mt-1 text-sm text-ink/70">{{ group.type }}</p>
+              <div class="times mt-4">
+                @for (slot of group.slots; track slot.start + slot.professionalId; let first = $first) {
+                  <button type="button" [class.is-next]="groupFirst && first && date() === nearestIso()" [disabled]="!!booking()" (click)="book(slot)">
+                    @if (booking() === slot.start + slot.professionalId) {
+                      <ui-spinner [size]="16" />
+                    } @else {
+                      {{ timeLabel(slot.start) }}
+                    }
+                  </button>
                 }
+              </div>
+            </article>
+          }
+        </section>
+
+        @if (days().length > 1) {
+          <h2 class="mt-10 font-serif text-2xl">Otro día</h2>
+          <div class="day-row mt-4" role="group" aria-label="Otros días">
+            @for (day of days(); track day.iso) {
+              <button type="button" [attr.aria-pressed]="date() === day.iso" (click)="pickDay(day.iso)">
+                <span>{{ weekday(day.iso) }}</span>
+                <strong>{{ dayNumber(day.iso) }}</strong>
               </button>
             }
           </div>
-        </article>
+        }
       }
-    }
-  </section>
+    </div>
+  </div>
 }
