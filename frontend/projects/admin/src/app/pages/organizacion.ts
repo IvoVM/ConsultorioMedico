@@ -6,67 +6,7 @@ import { Observable, firstValueFrom } from 'rxjs';
 
 @Component({
   imports: [FormsModule, UiButton, UiField, UiTable],
-  template: `
-    <div class="mb-8 flex gap-2 overflow-x-auto border-b border-rule pb-4">
-      @for (item of secciones; track item) {
-        <ui-button type="button" [variant]="seccion() === item ? 'primary' : 'ghost'" (click)="seccion.set(item)">{{ item }}</ui-button>
-      }
-    </div>
-    @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
-    @if (seccion() === 'Sedes') {
-      <form class="mb-6 grid gap-4 md:grid-cols-3" (ngSubmit)="crearSede()">
-        <ui-field label="Nombre"><input name="sedeNombre" [(ngModel)]="sedeNombre" required /></ui-field>
-        <ui-field label="Dirección"><input name="direccion" [(ngModel)]="direccion" required /></ui-field>
-        <div class="flex items-end"><ui-button type="submit">Agregar sede</ui-button></div>
-      </form>
-      <ui-table>
-        <thead><tr><th>Nombre</th><th>Dirección</th></tr></thead>
-        <tbody>@for (sede of sedes(); track sede.id) { <tr><td>{{ sede.nombre }}</td><td>{{ sede.direccion }}</td></tr> }</tbody>
-      </ui-table>
-    }
-    @if (seccion() === 'Servicios') {
-      <form class="mb-6 grid gap-4 md:grid-cols-3" (ngSubmit)="crearServicio()">
-        <ui-field label="Sede">
-          <select name="sedeId" [(ngModel)]="sedeId" required>
-            @for (sede of sedes(); track sede.id) { <option [value]="sede.id">{{ sede.nombre }}</option> }
-          </select>
-        </ui-field>
-        <ui-field label="Servicio"><input name="servicioNombre" [(ngModel)]="servicioNombre" required /></ui-field>
-        <div class="flex items-end"><ui-button type="submit">Agregar servicio</ui-button></div>
-      </form>
-      <ui-table>
-        <thead><tr><th>Servicio</th><th>Sede</th></tr></thead>
-        <tbody>@for (servicio of servicios(); track servicio.id) { <tr><td>{{ servicio.nombre }}</td><td>{{ nombreSede(servicio.sedeId) }}</td></tr> }</tbody>
-      </ui-table>
-    }
-    @if (seccion() === 'Especialidades') {
-      <form class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end" (ngSubmit)="crearEspecialidad()">
-        <ui-field class="sm:w-80" label="Nombre"><input name="especialidad" [(ngModel)]="especialidad" required /></ui-field>
-        <div class="flex items-end"><ui-button type="submit">Agregar</ui-button></div>
-      </form>
-      <ui-table>
-        <thead><tr><th>Especialidad</th></tr></thead>
-        <tbody>@for (item of especialidades(); track item.id) { <tr><td>{{ item.nombre }}</td></tr> }</tbody>
-      </ui-table>
-    }
-    @if (seccion() === 'Tipos de turno') {
-      <form class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4" (ngSubmit)="crearTipo()">
-        <ui-field label="Nombre"><input name="tipoNombre" [(ngModel)]="tipoNombre" required /></ui-field>
-        <ui-field label="Minutos"><input name="duracion" type="number" [(ngModel)]="duracion" required /></ui-field>
-        <ui-field label="Especialidad">
-          <select name="especialidadId" [(ngModel)]="especialidadId">
-            <option value="">Todas</option>
-            @for (item of especialidades(); track item.id) { <option [value]="item.id">{{ item.nombre }}</option> }
-          </select>
-        </ui-field>
-        <div class="flex items-end"><ui-button type="submit">Agregar</ui-button></div>
-      </form>
-      <ui-table>
-        <thead><tr><th>Tipo</th><th>Duración</th></tr></thead>
-        <tbody>@for (tipo of tipos(); track tipo.id) { <tr><td>{{ tipo.nombre }}</td><td>{{ tipo.duracionMinutos }} min</td></tr> }</tbody>
-      </ui-table>
-    }
-  `,
+  templateUrl: './organizacion.html',
 })
 export class OrganizacionPage {
   private readonly api = inject(ClinicaClient);

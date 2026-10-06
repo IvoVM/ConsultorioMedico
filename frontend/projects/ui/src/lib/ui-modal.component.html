@@ -1,0 +1,13 @@
+@if (open()) {
+  <div class="backdrop-fade fixed inset-0 z-40 flex items-end justify-center bg-ink/45 p-4 sm:items-center" (click)="closed.emit()">
+    <div
+      class="dialog-pop w-full max-w-lg border border-rule bg-white p-5 sm:p-6"
+      role="dialog"
+      [attr.aria-label]="title()"
+      (click)="$event.stopPropagation()"
+    >
+      <h2 class="mb-5 font-serif text-2xl tracking-tight">{{ title() }}</h2>
+      <ng-content />
+    </div>
+  </div>
+}

@@ -6,41 +6,7 @@ import { firstValueFrom } from 'rxjs';
 
 @Component({
   imports: [FormsModule, UiButton, UiField, UiTable, UiBadge, UiEmpty],
-  template: `
-    <form class="mb-8 grid gap-4 border-b border-rule pb-8 sm:grid-cols-2 xl:grid-cols-4" (ngSubmit)="crear()">
-      <ui-field label="Slug"><input name="slug" [(ngModel)]="slug" required /></ui-field>
-      <ui-field label="Nombre"><input name="nombre" [(ngModel)]="nombre" required /></ui-field>
-      <ui-field label="Tipo">
-        <select name="tipo" [(ngModel)]="tipo"><option>Consultorio</option><option>Hospital</option></select>
-      </ui-field>
-      <div class="flex items-end"><ui-button type="submit">Aprovisionar</ui-button></div>
-    </form>
-    @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
-    @if (tenants().length === 0) {
-      <ui-empty message="Todavía no hay consultorios." />
-    } @else {
-      <ui-table>
-        <thead><tr><th>Nombre</th><th>Slug</th><th>Tipo</th><th>Estado</th><th></th></tr></thead>
-        <tbody>
-          @for (tenant of tenants(); track tenant.id) {
-            <tr>
-              <td>{{ tenant.nombre }}</td>
-              <td>{{ tenant.slug }}</td>
-              <td>{{ tenant.tipo }}</td>
-              <td><ui-badge [tone]="tenant.estado === 'Activo' ? 'ok' : 'warn'">{{ tenant.estado }}</ui-badge></td>
-              <td>
-                <div class="flex flex-wrap gap-2">
-                  <ui-button variant="ghost" (click)="estado(tenant, 'Activo')">Activar</ui-button>
-                  <ui-button variant="ghost" (click)="estado(tenant, 'Suspendido')">Suspender</ui-button>
-                  <ui-button variant="danger" (click)="estado(tenant, 'Baja')">Baja</ui-button>
-                </div>
-              </td>
-            </tr>
-          }
-        </tbody>
-      </ui-table>
-    }
-  `,
+  templateUrl: './tenants.html',
 })
 export class TenantsPage {
   private readonly api = inject(ClinicaClient);

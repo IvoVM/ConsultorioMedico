@@ -5,17 +5,7 @@ import { firstValueFrom } from 'rxjs';
 
 @Component({
   imports: [UiTable],
-  template: `
-    @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
-    <ui-table>
-      <thead><tr><th>Fecha</th><th>Acción</th><th>Entidad</th><th>Detalle</th></tr></thead>
-      <tbody>
-        @for (item of entradas(); track item.id) {
-          <tr><td>{{ item.fecha }}</td><td>{{ item.accion }}</td><td>{{ item.entidad }}</td><td>{{ item.detalle }}</td></tr>
-        }
-      </tbody>
-    </ui-table>
-  `,
+  templateUrl: './auditoria.html',
 })
 export class AuditoriaPage {
   private readonly api = inject(ClinicaClient);

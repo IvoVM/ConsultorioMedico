@@ -1,0 +1,45 @@
+<div class="app-frame" [attr.data-frame]="frame()" [class.menu-open]="menuOpen()">
+  @if (menuOpen()) {
+    <button class="menu-backdrop backdrop-fade" type="button" aria-label="Cerrar menú" (click)="menuOpen.set(false)"></button>
+  }
+  <aside id="app-sidebar" class="app-sidebar" [class.is-open]="menuOpen()" (click)="onSidebarClick($event)">
+    <div class="flex items-center gap-3 px-5 pt-6">
+      <img src="logo.svg" alt="" class="logo-mark h-11 w-11" />
+      <div>
+        <p class="font-serif text-2xl leading-none">Clínica</p>
+        <p class="mt-1 text-sm text-white/60">{{ eyebrow() }}</p>
+      </div>
+    </div>
+    <div class="mt-8 flex min-h-0 flex-1 flex-col px-3 pb-5">
+      <ng-content select="[uiNav]" />
+    </div>
+  </aside>
+  <div class="brand-slot">
+    <ng-content select="[uiBrand]" />
+  </div>
+  <div class="frame-main">
+    <header class="shell-bar">
+      <button
+        class="menu-button"
+        type="button"
+        aria-label="Abrir menú"
+        aria-controls="app-sidebar"
+        [attr.aria-expanded]="menuOpen()"
+        (click)="menuOpen.set(true)"
+      >
+        <span class="menu-glyph" [class.is-open]="menuOpen()"></span>
+      </button>
+      <h1 class="text-balance font-serif text-2xl leading-tight tracking-tight">{{ title() }}</h1>
+    </header>
+    <header class="entry-bar">
+      <div>
+        <p class="font-serif text-2xl leading-none text-clinic-deep">Clínica</p>
+        <h1 class="mt-2 font-serif text-2xl tracking-tight">{{ title() }}</h1>
+        <p class="mt-1 text-sm text-ink/60">{{ eyebrow() }}</p>
+      </div>
+    </header>
+    <main class="page-stage">
+      <ng-content />
+    </main>
+  </div>
+</div>
