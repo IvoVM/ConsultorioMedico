@@ -1,0 +1,65 @@
+<div class="mb-8 grid max-w-xl gap-4">
+  <ui-field label="Profesional">
+    <select name="professionalId" [(ngModel)]="professionalId" (ngModelChange)="loadSchedule()">
+      @for (pro of professionals(); track pro.id) { <option [value]="pro.id">{{ pro.lastName }}, {{ pro.firstName }}</option> }
+    </select>
+  </ui-field>
+</div>
+@if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
+<h2 class="font-serif text-2xl tracking-tight">Semana</h2>
+<form class="mb-6 mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-6" (ngSubmit)="addBlock()">
+  <ui-field label="Día">
+    <select name="day" [(ngModel)]="day">
+      @for (item of days; track item) { <option [value]="item">{{ dayLabels[item] }}</option> }
+    </select>
+  </ui-field>
+  <ui-field label="Desde"><input name="from" type="time" [(ngModel)]="from" required /></ui-field>
+  <ui-field label="Hasta"><input name="to" type="time" [(ngModel)]="to" required /></ui-field>
+  <ui-field label="Sede">
+    <select name="locationId" [(ngModel)]="locationId">
+      @for (location of locations(); track location.id) { <option [value]="location.id">{{ location.name }}</option> }
+    </select>
+  </ui-field>
+  <ui-field label="Tipo">
+    <select name="appointmentTypeId" [(ngModel)]="appointmentTypeId">
+      @for (type of appointmentTypes(); track type.id) { <option [value]="type.id">{{ type.name }}</option> }
+    </select>
+  </ui-field>
+  <div class="flex items-end"><ui-button type="submit">Sumar bloque</ui-button></div>
+</form>
+<ui-table>
+  <thead><tr><th>Día</th><th>Horario</th><th>Sede</th><th></th></tr></thead>
+  <tbody>
+    @for (block of blocks(); track block.id; let i = $index) {
+      <tr>
+        <td>{{ dayLabels[block.day] }}</td>
+        <td>{{ block.startTime }} - {{ block.endTime }}</td>
+        <td>{{ locationName(block.locationId) }}</td>
+        <td><ui-button variant="ghost" (click)="removeBlock(i)">Quitar</ui-button></td>
+      </tr>
+    }
+  </tbody>
+</ui-table>
+<div class="my-6"><ui-button (click)="save()">Publicar agenda</ui-button></div>
+<h2 class="font-serif text-2xl tracking-tight">Bloqueos</h2>
+<form class="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4" (ngSubmit)="createBlockout()">
+  <ui-field label="Inicio del bloqueo"><input name="blockoutStart" type="datetime-local" [(ngModel)]="blockoutStart" required /></ui-field>
+  <ui-field label="Fin"><input name="blockoutEnd" type="datetime-local" [(ngModel)]="blockoutEnd" required /></ui-field>
+  <ui-field label="Motivo"><input name="reason" [(ngModel)]="reason" required /></ui-field>
+  <div class="flex items-end"><ui-button type="submit">Bloquear</ui-button></div>
+</form>
+<div class="mt-6">
+  <ui-table>
+    <thead><tr><th>Desde</th><th>Hasta</th><th>Motivo</th><th></th></tr></thead>
+    <tbody>
+      @for (blockout of blockouts(); track blockout.id) {
+        <tr>
+          <td>{{ blockout.start }}</td>
+          <td>{{ blockout.end }}</td>
+          <td>{{ blockout.reason }}</td>
+          <td><ui-button variant="danger" (click)="deleteBlockout(blockout)">Quitar</ui-button></td>
+        </tr>
+      }
+    </tbody>
+  </ui-table>
+</div>

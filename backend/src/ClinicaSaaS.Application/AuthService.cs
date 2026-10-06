@@ -3,18 +3,18 @@ using FluentValidation;
 
 namespace ClinicaSaaS.Application;
 
-public class PlatformAuthService(IPlatformUserStore plataforma, ITokenService tokens)
+public class PlatformAuthService(IPlatformUserStore platformUsers, ITokenService tokens)
 {
     public async Task<TokenDto> LoginAsync(LoginCommand command, CancellationToken ct)
     {
-        var user = await plataforma.FindByEmailAsync(command.Email.Trim(), ct)
-            ?? throw new ReglaNegocioException("Credenciales inválidas.");
-        if (!await plataforma.CheckPasswordAsync(user.Id, command.Password, ct))
-            throw new ReglaNegocioException("Credenciales inválidas.");
+        var user = await platformUsers.FindByEmailAsync(command.Email.Trim(), ct)
+            ?? throw new BusinessRuleException("Credenciales inválidas.");
+        if (!await platformUsers.CheckPasswordAsync(user.Id, command.Password, ct))
+            throw new BusinessRuleException("Credenciales inválidas.");
         return new TokenDto(
-            tokens.CreatePlatformToken(user.Id, user.Email, user.Nombre),
+            tokens.CreatePlatformToken(user.Id, user.Email, user.Name),
             user.Email,
-            user.Nombre,
+            user.Name,
             "SuperAdmin",
             null,
             false);
@@ -22,62 +22,62 @@ public class PlatformAuthService(IPlatformUserStore plataforma, ITokenService to
 }
 
 public class AuthService(
-    ITenantUserStore usuarios,
-    IPacienteStore pacientes,
+    ITenantUserStore users,
+    IPatientStore patients,
     ITokenService tokens,
-    ITenantActual tenant,
-    IValidator<RegistroPacienteCommand> registroValidator,
-    IAuditoriaStore auditoria)
+    ICurrentTenant tenant,
+    IValidator<RegisterPatientCommand> registrationValidator,
+    IAuditStore audit)
 {
     public async Task<TokenDto> LoginTenantAsync(LoginCommand command, CancellationToken ct)
     {
-        var user = await usuarios.FindByEmailAsync(command.Email.Trim(), ct)
-            ?? throw new ReglaNegocioException("Credenciales inválidas.");
-        if (!await usuarios.CheckPasswordAsync(user.Id, command.Password, ct))
-            throw new ReglaNegocioException("Credenciales inválidas.");
-        var nombre = $"{user.Nombre} {user.Apellido}".Trim();
+        var user = await users.FindByEmailAsync(command.Email.Trim(), ct)
+            ?? throw new BusinessRuleException("Credenciales inválidas.");
+        if (!await users.CheckPasswordAsync(user.Id, command.Password, ct))
+            throw new BusinessRuleException("Credenciales inválidas.");
+        var name = $"{user.FirstName} {user.LastName}".Trim();
         return new TokenDto(
-            tokens.CreateTenantToken(user.Id, user.Email, nombre, tenant.Slug, user.Rol, user.DebeCambiarClave),
+            tokens.CreateTenantToken(user.Id, user.Email, name, tenant.Slug, user.Role, user.MustChangePassword),
             user.Email,
-            nombre,
-            user.Rol.ToString(),
+            name,
+            user.Role.ToString(),
             tenant.Slug,
-            user.DebeCambiarClave);
+            user.MustChangePassword);
     }
 
-    public async Task<TokenDto> RegistrarPacienteAsync(RegistroPacienteCommand command, CancellationToken ct)
+    public async Task<TokenDto> RegisterPatientAsync(RegisterPatientCommand command, CancellationToken ct)
     {
-        var result = await registroValidator.ValidateAsync(command, ct);
+        var result = await registrationValidator.ValidateAsync(command, ct);
         if (!result.IsValid)
             throw new ValidationException(result.Errors);
-        if (await usuarios.FindByEmailAsync(command.Email.Trim(), ct) is not null)
-            throw new ConflictoException("Ese email ya está registrado.");
+        if (await users.FindByEmailAsync(command.Email.Trim(), ct) is not null)
+            throw new ConflictException("Ese email ya está registrado.");
 
-        var user = await usuarios.CreateAsync(
+        var user = await users.CreateAsync(
             command.Email.Trim(),
             command.Password,
-            command.Nombre.Trim(),
-            command.Apellido.Trim(),
-            RolTenant.Paciente,
+            command.FirstName.Trim(),
+            command.LastName.Trim(),
+            TenantRole.Patient,
             null,
             null,
             false,
             ct);
-        await pacientes.AgregarAsync(new Paciente
+        await patients.AddAsync(new Patient
         {
             Id = Guid.NewGuid(),
-            UsuarioId = user.Id,
-            Documento = command.Documento.Trim(),
-            FechaNacimiento = command.FechaNacimiento,
-            Telefono = command.Telefono.Trim()
+            UserId = user.Id,
+            DocumentNumber = command.DocumentNumber.Trim(),
+            BirthDate = command.BirthDate,
+            Phone = command.Phone.Trim()
         }, ct);
-        await auditoria.RegistrarAsync(user.Id, "registro", "Paciente", user.Id.ToString(), command.Email, ct);
-        var nombre = $"{user.Nombre} {user.Apellido}".Trim();
+        await audit.RecordAsync(user.Id, "registro", "Paciente", user.Id.ToString(), command.Email, ct);
+        var name = $"{user.FirstName} {user.LastName}".Trim();
         return new TokenDto(
-            tokens.CreateTenantToken(user.Id, user.Email, nombre, tenant.Slug, user.Rol, false),
+            tokens.CreateTenantToken(user.Id, user.Email, name, tenant.Slug, user.Role, false),
             user.Email,
-            nombre,
-            user.Rol.ToString(),
+            name,
+            user.Role.ToString(),
             tenant.Slug,
             false);
     }

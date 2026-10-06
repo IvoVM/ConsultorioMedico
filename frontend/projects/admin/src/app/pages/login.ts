@@ -1,7 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { ClinicaClient, clinicaSession, mensajeError } from 'sdk';
+import { ClinicaClient, clinicaSession, errorMessage } from 'sdk';
 import { UiButton, UiField, UiPage } from 'ui';
 import { firstValueFrom } from 'rxjs';
 
@@ -12,26 +12,25 @@ import { firstValueFrom } from 'rxjs';
 export class LoginPage {
   private readonly api = inject(ClinicaClient);
   private readonly router = inject(Router);
-  readonly modo = signal<'plataforma' | 'consultorio'>('plataforma');
+  readonly mode = signal<'platform' | 'tenant'>('platform');
   slug = '';
   email = '';
   password = '';
   readonly error = signal('');
 
-  async entrar() {
+  async submit() {
     this.error.set('');
     try {
-      if (this.modo() === 'consultorio') clinicaSession.setTenant(this.slug.trim().toLowerCase());
+      if (this.mode() === 'tenant') clinicaSession.setTenant(this.slug.trim().toLowerCase());
       else clinicaSession.setTenant(null);
+      const credentials = { email: this.email, password: this.password };
       const token = await firstValueFrom(
-        this.modo() === 'plataforma'
-          ? this.api.loginPlataforma({ email: this.email, password: this.password })
-          : this.api.loginTenant({ email: this.email, password: this.password }),
+        this.mode() === 'platform' ? this.api.platformLogin(credentials) : this.api.tenantLogin(credentials),
       );
-      clinicaSession.set(token.token, token.tenantSlug ?? null, token.rol, token.nombre);
+      clinicaSession.set(token.token, token.tenantSlug ?? null, token.role, token.name);
       await this.router.navigateByUrl('/inicio');
     } catch (error) {
-      this.error.set(mensajeError(error));
+      this.error.set(errorMessage(error));
     }
   }
 }

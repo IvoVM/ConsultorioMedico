@@ -8,7 +8,7 @@ describe('UiButton', () => {
     }).compileComponents();
   });
 
-  it('se crea', () => {
+  it('creates', () => {
     const fixture = TestBed.createComponent(UiButton);
     expect(fixture.componentInstance).toBeTruthy();
   });

@@ -1,7 +1,6 @@
 using ClinicaSaaS.Application;
 using ClinicaSaaS.Domain;
 using ClinicaSaaS.Infrastructure.Identity;
-using ClinicaSaaS.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,25 +8,25 @@ namespace ClinicaSaaS.Infrastructure.Persistence;
 
 public class CatalogStore(CatalogDbContext db) : ICatalogStore
 {
-    public Task<bool> ExisteSlugAsync(string slug, CancellationToken ct) =>
+    public Task<bool> SlugExistsAsync(string slug, CancellationToken ct) =>
         db.Tenants.AnyAsync(t => t.Slug == slug, ct);
 
-    public async Task AgregarAsync(Tenant tenant, CancellationToken ct)
+    public async Task AddAsync(Tenant tenant, CancellationToken ct)
     {
         db.Tenants.Add(tenant);
         await db.SaveChangesAsync(ct);
     }
 
-    public async Task<IReadOnlyList<Tenant>> ListarAsync(CancellationToken ct) =>
-        await db.Tenants.OrderBy(t => t.Nombre).ToListAsync(ct);
+    public async Task<IReadOnlyList<Tenant>> ListAsync(CancellationToken ct) =>
+        await db.Tenants.OrderBy(t => t.Name).ToListAsync(ct);
 
-    public Task<Tenant?> ObtenerPorIdAsync(Guid id, CancellationToken ct) =>
+    public Task<Tenant?> GetByIdAsync(Guid id, CancellationToken ct) =>
         db.Tenants.FirstOrDefaultAsync(t => t.Id == id, ct);
 
-    public Task<Tenant?> ObtenerPorSlugAsync(string slug, CancellationToken ct) =>
+    public Task<Tenant?> GetBySlugAsync(string slug, CancellationToken ct) =>
         db.Tenants.FirstOrDefaultAsync(t => t.Slug == slug, ct);
 
-    public Task GuardarAsync(CancellationToken ct) => db.SaveChangesAsync(ct);
+    public Task SaveAsync(CancellationToken ct) => db.SaveChangesAsync(ct);
 }
 
 public class PlatformUserStore(UserManager<PlatformUser> users) : IPlatformUserStore
@@ -35,7 +34,7 @@ public class PlatformUserStore(UserManager<PlatformUser> users) : IPlatformUserS
     public async Task<PlatformLogin?> FindByEmailAsync(string email, CancellationToken ct)
     {
         var user = await users.FindByEmailAsync(email);
-        return user is null ? null : new PlatformLogin(user.Id, user.Email ?? email, user.Nombre);
+        return user is null ? null : new PlatformLogin(user.Id, user.Email ?? email, user.Name);
     }
 
     public async Task<bool> CheckPasswordAsync(Guid userId, string password, CancellationToken ct)
@@ -47,13 +46,13 @@ public class PlatformUserStore(UserManager<PlatformUser> users) : IPlatformUserS
 
 public class TenantUserStore(UserManager<TenantUser> users) : ITenantUserStore
 {
-    public async Task<UsuarioTenant?> FindByEmailAsync(string email, CancellationToken ct)
+    public async Task<TenantAccount?> FindByEmailAsync(string email, CancellationToken ct)
     {
         var user = await users.FindByEmailAsync(email);
         return user is null ? null : Map(user);
     }
 
-    public async Task<UsuarioTenant?> FindByIdAsync(Guid id, CancellationToken ct)
+    public async Task<TenantAccount?> FindByIdAsync(Guid id, CancellationToken ct)
     {
         var user = await users.FindByIdAsync(id.ToString());
         return user is null ? null : Map(user);
@@ -65,7 +64,7 @@ public class TenantUserStore(UserManager<TenantUser> users) : ITenantUserStore
         return user is not null && await users.CheckPasswordAsync(user, password);
     }
 
-    public async Task<UsuarioTenant> CreateAsync(string email, string password, string nombre, string apellido, RolTenant rol, string? matricula, Guid? especialidadId, bool debeCambiarClave, CancellationToken ct)
+    public async Task<TenantAccount> CreateAsync(string email, string password, string firstName, string lastName, TenantRole role, string? licenseNumber, Guid? specialtyId, bool mustChangePassword, CancellationToken ct)
     {
         var user = new TenantUser
         {
@@ -73,317 +72,335 @@ public class TenantUserStore(UserManager<TenantUser> users) : ITenantUserStore
             UserName = email,
             Email = email,
             EmailConfirmed = true,
-            Nombre = nombre,
-            Apellido = apellido,
-            Rol = rol,
-            Matricula = matricula,
-            EspecialidadId = especialidadId,
-            DebeCambiarClave = debeCambiarClave
+            FirstName = firstName,
+            LastName = lastName,
+            Role = role,
+            LicenseNumber = licenseNumber,
+            SpecialtyId = specialtyId,
+            MustChangePassword = mustChangePassword
         };
         var result = await users.CreateAsync(user, password);
         if (!result.Succeeded)
-            throw new ReglaNegocioException(string.Join(' ', result.Errors.Select(e => e.Description)));
+            throw new BusinessRuleException(string.Join(' ', result.Errors.Select(e => e.Description)));
         return Map(user);
     }
 
-    public async Task<IReadOnlyList<UsuarioTenant>> ListarPorRolAsync(RolTenant rol, Guid? especialidadId, CancellationToken ct)
+    public async Task<IReadOnlyList<TenantAccount>> ListByRoleAsync(TenantRole role, Guid? specialtyId, CancellationToken ct)
     {
-        var query = users.Users.Where(u => u.Rol == rol);
-        if (especialidadId is Guid id)
-            query = query.Where(u => u.EspecialidadId == id);
-        var lista = await query.OrderBy(u => u.Apellido).ToListAsync(ct);
-        return lista.Select(Map).ToList();
+        var query = users.Users.Where(u => u.Role == role);
+        if (specialtyId is Guid id)
+            query = query.Where(u => u.SpecialtyId == id);
+        var list = await query.OrderBy(u => u.LastName).ToListAsync(ct);
+        return list.Select(Map).ToList();
     }
 
-    public async Task ActualizarNombreAsync(Guid id, string nombre, string apellido, CancellationToken ct)
+    public async Task UpdateNameAsync(Guid id, string firstName, string lastName, CancellationToken ct)
     {
-        var user = await users.FindByIdAsync(id.ToString()) ?? throw new NoEncontradoException("Usuario no encontrado.");
-        user.Nombre = nombre;
-        user.Apellido = apellido;
+        var user = await users.FindByIdAsync(id.ToString()) ?? throw new NotFoundException("Usuario no encontrado.");
+        user.FirstName = firstName;
+        user.LastName = lastName;
         var result = await users.UpdateAsync(user);
         if (!result.Succeeded)
-            throw new ReglaNegocioException(string.Join(' ', result.Errors.Select(e => e.Description)));
+            throw new BusinessRuleException(string.Join(' ', result.Errors.Select(e => e.Description)));
     }
 
-    private static UsuarioTenant Map(TenantUser user) =>
-        new(user.Id, user.Email ?? "", user.Nombre, user.Apellido, user.Rol, user.Matricula, user.EspecialidadId, user.DebeCambiarClave);
+    private static TenantAccount Map(TenantUser user) =>
+        new(user.Id, user.Email ?? "", user.FirstName, user.LastName, user.Role, user.LicenseNumber, user.SpecialtyId, user.MustChangePassword);
 }
 
-public class ClinicaStores(TenantDbContext db) :
-    IOrganizacionStore,
-    IAgendaStore,
-    ITurnoStore,
-    IPacienteStore,
-    IHistoriaMedicaStore,
-    IListaEsperaStore,
-    IClinicaStore,
-    IFacturacionStore,
-    IAuditoriaStore
+public class OrganizationStore(TenantDbContext db) : IOrganizationStore
 {
-    public async Task<IReadOnlyList<Sede>> SedesAsync(CancellationToken ct) =>
-        await db.Sedes.OrderBy(s => s.Nombre).ToListAsync(ct);
+    public async Task<IReadOnlyList<Location>> LocationsAsync(CancellationToken ct) =>
+        await db.Locations.OrderBy(l => l.Name).ToListAsync(ct);
 
-    public async Task<Sede> AgregarSedeAsync(Sede sede, CancellationToken ct)
+    public async Task<Location> AddLocationAsync(Location location, CancellationToken ct)
     {
-        db.Sedes.Add(sede);
+        db.Locations.Add(location);
         await db.SaveChangesAsync(ct);
-        return sede;
+        return location;
     }
 
-    public Task<Sede?> ObtenerSedeAsync(Guid id, CancellationToken ct) => db.Sedes.FirstOrDefaultAsync(s => s.Id == id, ct);
+    public Task<Location?> GetLocationAsync(Guid id, CancellationToken ct) => db.Locations.FirstOrDefaultAsync(l => l.Id == id, ct);
 
-    public async Task<IReadOnlyList<Servicio>> ServiciosAsync(CancellationToken ct) =>
-        await db.Servicios.OrderBy(s => s.Nombre).ToListAsync(ct);
+    public async Task<IReadOnlyList<MedicalService>> MedicalServicesAsync(CancellationToken ct) =>
+        await db.MedicalServices.OrderBy(s => s.Name).ToListAsync(ct);
 
-    public async Task<Servicio> AgregarServicioAsync(Servicio servicio, CancellationToken ct)
+    public async Task<MedicalService> AddMedicalServiceAsync(MedicalService service, CancellationToken ct)
     {
-        db.Servicios.Add(servicio);
+        db.MedicalServices.Add(service);
         await db.SaveChangesAsync(ct);
-        return servicio;
+        return service;
     }
 
-    public Task<Servicio?> ObtenerServicioAsync(Guid id, CancellationToken ct) => db.Servicios.FirstOrDefaultAsync(s => s.Id == id, ct);
+    public Task<MedicalService?> GetMedicalServiceAsync(Guid id, CancellationToken ct) => db.MedicalServices.FirstOrDefaultAsync(s => s.Id == id, ct);
 
-    public async Task<IReadOnlyList<Especialidad>> EspecialidadesAsync(CancellationToken ct) =>
-        await db.Especialidades.OrderBy(e => e.Nombre).ToListAsync(ct);
+    public async Task<IReadOnlyList<Specialty>> SpecialtiesAsync(CancellationToken ct) =>
+        await db.Specialties.OrderBy(s => s.Name).ToListAsync(ct);
 
-    public Task<Especialidad?> ObtenerEspecialidadPorNombreAsync(string nombre, CancellationToken ct) =>
-        db.Especialidades.FirstOrDefaultAsync(e => e.Nombre.ToLower() == nombre.ToLower(), ct);
+    public Task<Specialty?> GetSpecialtyByNameAsync(string name, CancellationToken ct) =>
+        db.Specialties.FirstOrDefaultAsync(s => s.Name.ToLower() == name.ToLower(), ct);
 
-    public async Task<Especialidad> AgregarEspecialidadAsync(Especialidad especialidad, CancellationToken ct)
+    public async Task<Specialty> AddSpecialtyAsync(Specialty specialty, CancellationToken ct)
     {
-        db.Especialidades.Add(especialidad);
+        db.Specialties.Add(specialty);
         await db.SaveChangesAsync(ct);
-        return especialidad;
+        return specialty;
     }
 
-    public Task<Especialidad?> ObtenerEspecialidadAsync(Guid id, CancellationToken ct) =>
-        db.Especialidades.FirstOrDefaultAsync(e => e.Id == id, ct);
+    public Task<Specialty?> GetSpecialtyAsync(Guid id, CancellationToken ct) =>
+        db.Specialties.FirstOrDefaultAsync(s => s.Id == id, ct);
 
-    public async Task<IReadOnlyList<TipoTurno>> TiposTurnoAsync(CancellationToken ct) =>
-        await db.TiposTurno.OrderBy(t => t.Nombre).ToListAsync(ct);
+    public async Task<IReadOnlyList<AppointmentType>> AppointmentTypesAsync(CancellationToken ct) =>
+        await db.AppointmentTypes.OrderBy(t => t.Name).ToListAsync(ct);
 
-    public Task<TipoTurno?> ObtenerTipoTurnoAsync(Guid id, CancellationToken ct) =>
-        db.TiposTurno.FirstOrDefaultAsync(t => t.Id == id, ct);
+    public Task<AppointmentType?> GetAppointmentTypeAsync(Guid id, CancellationToken ct) =>
+        db.AppointmentTypes.FirstOrDefaultAsync(t => t.Id == id, ct);
 
-    public async Task<TipoTurno> AgregarTipoTurnoAsync(TipoTurno tipo, CancellationToken ct)
+    public async Task<AppointmentType> AddAppointmentTypeAsync(AppointmentType type, CancellationToken ct)
     {
-        db.TiposTurno.Add(tipo);
+        db.AppointmentTypes.Add(type);
         await db.SaveChangesAsync(ct);
-        return tipo;
+        return type;
     }
 
-    public Task GuardarAsync(CancellationToken ct) => db.SaveChangesAsync(ct);
+    public Task SaveAsync(CancellationToken ct) => db.SaveChangesAsync(ct);
+}
 
-    public async Task<IReadOnlyList<AgendaSemanal>> ListarAsync(Guid profesionalId, CancellationToken ct) =>
-        await db.Agendas.Where(a => a.ProfesionalId == profesionalId).OrderBy(a => a.Dia).ThenBy(a => a.HoraDesde).ToListAsync(ct);
+public class ScheduleStore(TenantDbContext db) : IScheduleStore
+{
+    public async Task<IReadOnlyList<ScheduleBlock>> BlocksAsync(Guid professionalId, CancellationToken ct) =>
+        await db.ScheduleBlocks.Where(b => b.ProfessionalId == professionalId).OrderBy(b => b.Day).ThenBy(b => b.StartTime).ToListAsync(ct);
 
-    public async Task ReemplazarAsync(Guid profesionalId, IReadOnlyList<AgendaSemanal> bloques, CancellationToken ct)
+    public async Task ReplaceBlocksAsync(Guid professionalId, IReadOnlyList<ScheduleBlock> blocks, CancellationToken ct)
     {
-        var actuales = await db.Agendas.Where(a => a.ProfesionalId == profesionalId).ToListAsync(ct);
-        db.Agendas.RemoveRange(actuales);
-        db.Agendas.AddRange(bloques);
-        await db.SaveChangesAsync(ct);
-    }
-
-    public async Task<IReadOnlyList<BloqueoAgenda>> BloqueosAsync(Guid profesionalId, CancellationToken ct) =>
-        await db.Bloqueos.Where(b => b.ProfesionalId == profesionalId).OrderBy(b => b.Inicio).ToListAsync(ct);
-
-    public async Task<BloqueoAgenda> AgregarBloqueoAsync(BloqueoAgenda bloqueo, CancellationToken ct)
-    {
-        db.Bloqueos.Add(bloqueo);
-        await db.SaveChangesAsync(ct);
-        return bloqueo;
-    }
-
-    public async Task EliminarBloqueoAsync(Guid id, CancellationToken ct)
-    {
-        var bloqueo = await db.Bloqueos.FirstOrDefaultAsync(b => b.Id == id, ct)
-            ?? throw new NoEncontradoException("Bloqueo no encontrado.");
-        db.Bloqueos.Remove(bloqueo);
+        var current = await db.ScheduleBlocks.Where(b => b.ProfessionalId == professionalId).ToListAsync(ct);
+        db.ScheduleBlocks.RemoveRange(current);
+        db.ScheduleBlocks.AddRange(blocks);
         await db.SaveChangesAsync(ct);
     }
 
-    public Task<IReadOnlyList<Turno>> TurnosDelDiaAsync(Guid profesionalId, DateOnly fecha, TimeZoneInfo zona, CancellationToken ct) =>
-        DelDiaInternoAsync(fecha, profesionalId, zona, ct);
+    public async Task<IReadOnlyList<ScheduleBlockout>> BlockoutsAsync(Guid professionalId, CancellationToken ct) =>
+        await db.ScheduleBlockouts.Where(b => b.ProfessionalId == professionalId).OrderBy(b => b.Start).ToListAsync(ct);
 
-    public Task<Turno?> ObtenerAsync(Guid id, CancellationToken ct) => db.Turnos.FirstOrDefaultAsync(t => t.Id == id, ct);
+    public async Task<ScheduleBlockout> AddBlockoutAsync(ScheduleBlockout blockout, CancellationToken ct)
+    {
+        db.ScheduleBlockouts.Add(blockout);
+        await db.SaveChangesAsync(ct);
+        return blockout;
+    }
 
-    public Task<IReadOnlyList<Turno>> DelDiaAsync(DateOnly fecha, Guid? profesionalId, TimeZoneInfo zona, CancellationToken ct) =>
-        DelDiaInternoAsync(fecha, profesionalId, zona, ct);
+    public async Task DeleteBlockoutAsync(Guid id, CancellationToken ct)
+    {
+        var blockout = await db.ScheduleBlockouts.FirstOrDefaultAsync(b => b.Id == id, ct)
+            ?? throw new NotFoundException("Bloqueo no encontrado.");
+        db.ScheduleBlockouts.Remove(blockout);
+        await db.SaveChangesAsync(ct);
+    }
 
-    public async Task<IReadOnlyList<Turno>> DePacienteAsync(Guid pacienteId, CancellationToken ct) =>
-        await db.Turnos.Where(t => t.PacienteId == pacienteId).ToListAsync(ct);
+    public Task<IReadOnlyList<Appointment>> AppointmentsForDayAsync(Guid professionalId, DateOnly date, TimeZoneInfo zone, CancellationToken ct) =>
+        AppointmentQueries.ForDayAsync(db, date, professionalId, zone, ct);
+}
 
-    public async Task<Turno> ReservarAsync(Turno turno, CancellationToken ct)
+public class AppointmentStore(TenantDbContext db) : IAppointmentStore
+{
+    public Task<Appointment?> GetAsync(Guid id, CancellationToken ct) => db.Appointments.FirstOrDefaultAsync(a => a.Id == id, ct);
+
+    public Task<IReadOnlyList<Appointment>> ForDayAsync(DateOnly date, Guid? professionalId, TimeZoneInfo zone, CancellationToken ct) =>
+        AppointmentQueries.ForDayAsync(db, date, professionalId, zone, ct);
+
+    public async Task<IReadOnlyList<Appointment>> ForPatientAsync(Guid patientId, CancellationToken ct) =>
+        await db.Appointments.Where(a => a.PatientId == patientId).ToListAsync(ct);
+
+    public async Task<Appointment> BookAsync(Appointment appointment, CancellationToken ct)
     {
         await using var tx = await db.Database.BeginTransactionAsync(ct);
-        var existentes = await db.Turnos
-            .Where(t => t.ProfesionalId == turno.ProfesionalId && t.Inicio < turno.Fin && t.Fin > turno.Inicio)
+        var existing = await db.Appointments
+            .Where(a => a.ProfessionalId == appointment.ProfessionalId && a.Start < appointment.End && a.End > appointment.Start)
             .ToListAsync(ct);
-        var nuevo = new Intervalo(turno.Inicio, turno.Fin);
-        if (AgendaRules.HaySolape(existentes.Select(t => (new Intervalo(t.Inicio, t.Fin), t.Estado)), nuevo))
-            throw new ConflictoException("El horario ya no está disponible.");
-        db.Turnos.Add(turno);
+        var candidate = new TimeRange(appointment.Start, appointment.End);
+        if (SchedulingRules.HasOverlap(existing.Select(a => (new TimeRange(a.Start, a.End), a.Status)), candidate))
+            throw new ConflictException("El horario ya no está disponible.");
+        db.Appointments.Add(appointment);
         await db.SaveChangesAsync(ct);
         await tx.CommitAsync(ct);
-        return turno;
+        return appointment;
     }
 
-    async Task ITurnoStore.GuardarAsync(CancellationToken ct) => await db.SaveChangesAsync(ct);
+    public Task SaveAsync(CancellationToken ct) => db.SaveChangesAsync(ct);
+}
 
-    public Task<Paciente?> PorUsuarioAsync(Guid usuarioId, CancellationToken ct) =>
-        db.Pacientes.FirstOrDefaultAsync(p => p.UsuarioId == usuarioId, ct);
+public class PatientStore(TenantDbContext db) : IPatientStore
+{
+    public Task<Patient?> GetByUserAsync(Guid userId, CancellationToken ct) =>
+        db.Patients.FirstOrDefaultAsync(p => p.UserId == userId, ct);
 
-    Task<Paciente?> IPacienteStore.ObtenerAsync(Guid id, CancellationToken ct) => db.Pacientes.FirstOrDefaultAsync(p => p.Id == id, ct);
+    public Task<Patient?> GetAsync(Guid id, CancellationToken ct) => db.Patients.FirstOrDefaultAsync(p => p.Id == id, ct);
 
-    public async Task<Paciente> AgregarAsync(Paciente paciente, CancellationToken ct)
+    public async Task<Patient> AddAsync(Patient patient, CancellationToken ct)
     {
-        db.Pacientes.Add(paciente);
+        db.Patients.Add(patient);
         await db.SaveChangesAsync(ct);
-        return paciente;
+        return patient;
     }
+}
 
-    public async Task<IReadOnlyList<Paciente>> PacientesAsync(CancellationToken ct) =>
-        await db.Pacientes.ToListAsync(ct);
+public class MedicalRecordStore(TenantDbContext db) : IMedicalRecordStore
+{
+    public async Task<IReadOnlyList<Patient>> PatientsAsync(CancellationToken ct) =>
+        await db.Patients.ToListAsync(ct);
 
-    async Task<IReadOnlyList<HistoriaMedica>> IHistoriaMedicaStore.ListarAsync(CancellationToken ct) =>
-        await db.HistoriasMedicas.ToListAsync(ct);
+    public async Task<IReadOnlyList<MedicalRecord>> ListAsync(CancellationToken ct) =>
+        await db.MedicalRecords.ToListAsync(ct);
 
-    public Task<HistoriaMedica?> PorPacienteAsync(Guid pacienteId, CancellationToken ct) =>
-        db.HistoriasMedicas.FirstOrDefaultAsync(h => h.PacienteId == pacienteId, ct);
+    public Task<MedicalRecord?> GetByPatientAsync(Guid patientId, CancellationToken ct) =>
+        db.MedicalRecords.FirstOrDefaultAsync(r => r.PatientId == patientId, ct);
 
-    public void Agregar(HistoriaMedica historia) => db.HistoriasMedicas.Add(historia);
+    public void Add(MedicalRecord record) => db.MedicalRecords.Add(record);
 
-    async Task IHistoriaMedicaStore.GuardarAsync(CancellationToken ct) => await db.SaveChangesAsync(ct);
+    public Task SaveAsync(CancellationToken ct) => db.SaveChangesAsync(ct);
+}
 
-    public async Task<ListaEspera> AgregarAsync(ListaEspera entrada, CancellationToken ct)
+public class WaitlistStore(TenantDbContext db) : IWaitlistStore
+{
+    public async Task<WaitlistEntry> AddAsync(WaitlistEntry entry, CancellationToken ct)
     {
-        db.ListaEspera.Add(entrada);
+        db.WaitlistEntries.Add(entry);
         await db.SaveChangesAsync(ct);
-        return entrada;
+        return entry;
     }
 
-    public async Task<IReadOnlyList<ListaEspera>> PendientesAsync(CancellationToken ct) =>
-        await db.ListaEspera.Where(l => l.Estado == EstadoListaEspera.Pendiente || l.Estado == EstadoListaEspera.Ofrecido)
-            .OrderBy(l => l.CreadoEn).ToListAsync(ct);
+    public async Task<IReadOnlyList<WaitlistEntry>> PendingAsync(CancellationToken ct) =>
+        await db.WaitlistEntries.Where(w => w.Status == WaitlistStatus.Pending || w.Status == WaitlistStatus.Offered)
+            .OrderBy(w => w.CreatedAt).ToListAsync(ct);
 
-    Task<ListaEspera?> IListaEsperaStore.ObtenerAsync(Guid id, CancellationToken ct) => db.ListaEspera.FirstOrDefaultAsync(l => l.Id == id, ct);
+    public Task<WaitlistEntry?> GetAsync(Guid id, CancellationToken ct) => db.WaitlistEntries.FirstOrDefaultAsync(w => w.Id == id, ct);
 
-    async Task IListaEsperaStore.GuardarAsync(CancellationToken ct) => await db.SaveChangesAsync(ct);
+    public Task SaveAsync(CancellationToken ct) => db.SaveChangesAsync(ct);
+}
 
-    public async Task<IReadOnlyList<Diagnostico>> DiagnosticosAsync(CancellationToken ct) =>
-        await db.Diagnosticos.OrderBy(d => d.Codigo).ToListAsync(ct);
+public class ClinicalStore(TenantDbContext db) : IClinicalStore
+{
+    public async Task<IReadOnlyList<Diagnosis>> DiagnosesAsync(CancellationToken ct) =>
+        await db.Diagnoses.OrderBy(d => d.Code).ToListAsync(ct);
 
-    public Task<Encuentro?> EncuentroPorTurnoAsync(Guid turnoId, CancellationToken ct) =>
-        db.Encuentros.FirstOrDefaultAsync(e => e.TurnoId == turnoId, ct);
+    public Task<Encounter?> GetEncounterByAppointmentAsync(Guid appointmentId, CancellationToken ct) =>
+        db.Encounters.FirstOrDefaultAsync(e => e.AppointmentId == appointmentId, ct);
 
-    public Task<Encuentro?> ObtenerEncuentroAsync(Guid id, CancellationToken ct) =>
-        db.Encuentros.FirstOrDefaultAsync(e => e.Id == id, ct);
+    public Task<Encounter?> GetEncounterAsync(Guid id, CancellationToken ct) =>
+        db.Encounters.FirstOrDefaultAsync(e => e.Id == id, ct);
 
-    public async Task<Encuentro> AgregarEncuentroAsync(Encuentro encuentro, CancellationToken ct)
+    public async Task<Encounter> AddEncounterAsync(Encounter encounter, CancellationToken ct)
     {
-        db.Encuentros.Add(encuentro);
+        db.Encounters.Add(encounter);
         await db.SaveChangesAsync(ct);
-        return encuentro;
+        return encounter;
     }
 
-    public async Task ReemplazarDiagnosticosAsync(Guid encuentroId, IReadOnlyList<Guid> diagnosticoIds, CancellationToken ct)
+    public async Task ReplaceDiagnosesAsync(Guid encounterId, IReadOnlyList<Guid> diagnosisIds, CancellationToken ct)
     {
-        var actuales = await db.EncuentroDiagnosticos.Where(x => x.EncuentroId == encuentroId).ToListAsync(ct);
-        db.EncuentroDiagnosticos.RemoveRange(actuales);
-        foreach (var diagnosticoId in diagnosticoIds.Distinct())
-            db.EncuentroDiagnosticos.Add(new EncuentroDiagnostico { EncuentroId = encuentroId, DiagnosticoId = diagnosticoId });
+        var current = await db.EncounterDiagnoses.Where(x => x.EncounterId == encounterId).ToListAsync(ct);
+        db.EncounterDiagnoses.RemoveRange(current);
+        foreach (var diagnosisId in diagnosisIds.Distinct())
+            db.EncounterDiagnoses.Add(new EncounterDiagnosis { EncounterId = encounterId, DiagnosisId = diagnosisId });
     }
 
-    public async Task<IReadOnlyList<Encuentro>> EncuentrosDePacienteAsync(Guid pacienteId, CancellationToken ct) =>
-        await db.Encuentros.Where(e => e.PacienteId == pacienteId).ToListAsync(ct);
+    public async Task<IReadOnlyList<Encounter>> EncountersForPatientAsync(Guid patientId, CancellationToken ct) =>
+        await db.Encounters.Where(e => e.PatientId == patientId).ToListAsync(ct);
 
-    public async Task<IReadOnlyList<Diagnostico>> DiagnosticosDeEncuentroAsync(Guid encuentroId, CancellationToken ct) =>
-        await db.EncuentroDiagnosticos.Where(x => x.EncuentroId == encuentroId).Select(x => x.Diagnostico!).ToListAsync(ct);
+    public async Task<IReadOnlyList<Diagnosis>> DiagnosesForEncounterAsync(Guid encounterId, CancellationToken ct) =>
+        await db.EncounterDiagnoses.Where(x => x.EncounterId == encounterId).Select(x => x.Diagnosis!).ToListAsync(ct);
 
-    public async Task<Receta> AgregarRecetaAsync(Receta receta, CancellationToken ct)
+    public async Task<Prescription> AddPrescriptionAsync(Prescription prescription, CancellationToken ct)
     {
-        foreach (var item in receta.Items)
-            item.RecetaId = receta.Id;
-        db.Recetas.Add(receta);
+        foreach (var item in prescription.Items)
+            item.PrescriptionId = prescription.Id;
+        db.Prescriptions.Add(prescription);
         await db.SaveChangesAsync(ct);
-        return receta;
+        return prescription;
     }
 
-    public async Task<Receta?> ObtenerRecetaAsync(Guid id, CancellationToken ct) =>
-        await db.Recetas.Include(r => r.Items).FirstOrDefaultAsync(r => r.Id == id, ct);
+    public async Task<Prescription?> GetPrescriptionAsync(Guid id, CancellationToken ct) =>
+        await db.Prescriptions.Include(p => p.Items).FirstOrDefaultAsync(p => p.Id == id, ct);
 
-    public async Task<IReadOnlyList<Receta>> RecetasDePacienteAsync(Guid pacienteId, CancellationToken ct) =>
-        await db.Recetas.Include(r => r.Items).Where(r => r.PacienteId == pacienteId).ToListAsync(ct);
+    public async Task<IReadOnlyList<Prescription>> PrescriptionsForPatientAsync(Guid patientId, CancellationToken ct) =>
+        await db.Prescriptions.Include(p => p.Items).Where(p => p.PatientId == patientId).ToListAsync(ct);
 
-    public async Task<IReadOnlyList<RecetaItem>> ItemsRecetaAsync(Guid recetaId, CancellationToken ct) =>
-        await db.RecetaItems.Where(i => i.RecetaId == recetaId).ToListAsync(ct);
+    public async Task<IReadOnlyList<PrescriptionItem>> PrescriptionItemsAsync(Guid prescriptionId, CancellationToken ct) =>
+        await db.PrescriptionItems.Where(i => i.PrescriptionId == prescriptionId).ToListAsync(ct);
 
-    async Task IClinicaStore.GuardarAsync(CancellationToken ct) => await db.SaveChangesAsync(ct);
+    public Task SaveAsync(CancellationToken ct) => db.SaveChangesAsync(ct);
+}
 
-    public async Task<IReadOnlyList<Arancel>> ArancelesAsync(CancellationToken ct) =>
-        await db.Aranceles.OrderByDescending(a => a.VigenteDesde).ToListAsync(ct);
+public class BillingStore(TenantDbContext db) : IBillingStore
+{
+    public async Task<IReadOnlyList<Fee>> FeesAsync(CancellationToken ct) =>
+        await db.Fees.OrderByDescending(f => f.EffectiveFrom).ToListAsync(ct);
 
-    public async Task<Arancel?> ArancelVigenteAsync(Guid tipoTurnoId, DateOnly fecha, CancellationToken ct) =>
-        await db.Aranceles.Where(a => a.TipoTurnoId == tipoTurnoId && a.VigenteDesde <= fecha)
-            .OrderByDescending(a => a.VigenteDesde).FirstOrDefaultAsync(ct);
+    public async Task<Fee?> CurrentFeeAsync(Guid appointmentTypeId, DateOnly date, CancellationToken ct) =>
+        await db.Fees.Where(f => f.AppointmentTypeId == appointmentTypeId && f.EffectiveFrom <= date)
+            .OrderByDescending(f => f.EffectiveFrom).FirstOrDefaultAsync(ct);
 
-    public async Task<Arancel> AgregarArancelAsync(Arancel arancel, CancellationToken ct)
+    public async Task<Fee> AddFeeAsync(Fee fee, CancellationToken ct)
     {
-        db.Aranceles.Add(arancel);
+        db.Fees.Add(fee);
         await db.SaveChangesAsync(ct);
-        return arancel;
+        return fee;
     }
 
-    public Task<Comprobante?> ComprobantePorTurnoAsync(Guid turnoId, CancellationToken ct) =>
-        db.Comprobantes.Include(c => c.Items).FirstOrDefaultAsync(c => c.TurnoId == turnoId, ct);
+    public Task<Invoice?> GetInvoiceByAppointmentAsync(Guid appointmentId, CancellationToken ct) =>
+        db.Invoices.Include(i => i.Items).FirstOrDefaultAsync(i => i.AppointmentId == appointmentId, ct);
 
-    public async Task<Comprobante> AgregarComprobanteAsync(Comprobante comprobante, CancellationToken ct)
+    public async Task<Invoice> AddInvoiceAsync(Invoice invoice, CancellationToken ct)
     {
-        foreach (var item in comprobante.Items)
-            item.ComprobanteId = comprobante.Id;
-        db.Comprobantes.Add(comprobante);
+        foreach (var item in invoice.Items)
+            item.InvoiceId = invoice.Id;
+        db.Invoices.Add(invoice);
         await db.SaveChangesAsync(ct);
-        return comprobante;
+        return invoice;
     }
 
-    public Task<Comprobante?> ObtenerComprobanteAsync(Guid id, CancellationToken ct) =>
-        db.Comprobantes.Include(c => c.Items).FirstOrDefaultAsync(c => c.Id == id, ct);
+    public Task<Invoice?> GetInvoiceAsync(Guid id, CancellationToken ct) =>
+        db.Invoices.Include(i => i.Items).FirstOrDefaultAsync(i => i.Id == id, ct);
 
-    public async Task<IReadOnlyList<Comprobante>> ComprobantesAsync(CancellationToken ct) =>
-        await db.Comprobantes.Include(c => c.Items).OrderByDescending(c => c.CreadoEn).ToListAsync(ct);
+    public async Task<IReadOnlyList<Invoice>> InvoicesAsync(CancellationToken ct) =>
+        await db.Invoices.Include(i => i.Items).OrderByDescending(i => i.CreatedAt).ToListAsync(ct);
 
-    public async Task<IReadOnlyList<ComprobanteItem>> ItemsAsync(Guid comprobanteId, CancellationToken ct) =>
-        await db.ComprobanteItems.Where(i => i.ComprobanteId == comprobanteId).ToListAsync(ct);
+    public async Task<IReadOnlyList<InvoiceItem>> InvoiceItemsAsync(Guid invoiceId, CancellationToken ct) =>
+        await db.InvoiceItems.Where(i => i.InvoiceId == invoiceId).ToListAsync(ct);
 
-    async Task IFacturacionStore.GuardarAsync(CancellationToken ct) => await db.SaveChangesAsync(ct);
+    public Task SaveAsync(CancellationToken ct) => db.SaveChangesAsync(ct);
+}
 
-    public async Task RegistrarAsync(Guid? usuarioId, string accion, string entidad, string? entidadId, string? detalle, CancellationToken ct)
+public class AuditStore(TenantDbContext db) : IAuditStore
+{
+    public async Task RecordAsync(Guid? userId, string action, string entity, string? entityId, string? detail, CancellationToken ct)
     {
-        db.Auditoria.Add(new AuditoriaEntrada
+        db.AuditEntries.Add(new AuditEntry
         {
             Id = Guid.NewGuid(),
-            UsuarioId = usuarioId,
-            Accion = accion,
-            Entidad = entidad,
-            EntidadId = entidadId,
-            Detalle = detalle,
-            Fecha = DateTimeOffset.UtcNow
+            UserId = userId,
+            Action = action,
+            Entity = entity,
+            EntityId = entityId,
+            Detail = detail,
+            Timestamp = DateTimeOffset.UtcNow
         });
         await db.SaveChangesAsync(ct);
     }
 
-    public async Task<IReadOnlyList<AuditoriaEntrada>> ListarAsync(CancellationToken ct) =>
-        await db.Auditoria.OrderByDescending(a => a.Fecha).Take(200).ToListAsync(ct);
+    public async Task<IReadOnlyList<AuditEntry>> ListAsync(CancellationToken ct) =>
+        await db.AuditEntries.OrderByDescending(a => a.Timestamp).Take(200).ToListAsync(ct);
+}
 
-    private async Task<IReadOnlyList<Turno>> DelDiaInternoAsync(DateOnly fecha, Guid? profesionalId, TimeZoneInfo zona, CancellationToken ct)
+file static class AppointmentQueries
+{
+    public static async Task<IReadOnlyList<Appointment>> ForDayAsync(TenantDbContext db, DateOnly date, Guid? professionalId, TimeZoneInfo zone, CancellationToken ct)
     {
-        var inicio = AgendaRules.Combinar(fecha, TimeOnly.MinValue, zona);
-        var fin = inicio.AddDays(1);
-        var query = db.Turnos.Where(t => t.Inicio >= inicio && t.Inicio < fin);
-        if (profesionalId is Guid id)
-            query = query.Where(t => t.ProfesionalId == id);
+        var start = SchedulingRules.Combine(date, TimeOnly.MinValue, zone);
+        var end = start.AddDays(1);
+        var query = db.Appointments.Where(a => a.Start >= start && a.Start < end);
+        if (professionalId is Guid id)
+            query = query.Where(a => a.ProfessionalId == id);
         return await query.ToListAsync(ct);
     }
 }

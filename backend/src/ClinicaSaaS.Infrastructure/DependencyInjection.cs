@@ -25,22 +25,22 @@ public class DataProtectionSecretProtector(IDataProtectionProvider provider) : I
 
 public class JwtTokenService(IConfiguration configuration) : ITokenService
 {
-    public string CreatePlatformToken(Guid userId, string email, string nombre) =>
-        Create(userId, email, nombre, "SuperAdmin", null, false);
+    public string CreatePlatformToken(Guid userId, string email, string name) =>
+        Create(userId, email, name, "SuperAdmin", null, false);
 
-    public string CreateTenantToken(Guid userId, string email, string nombre, string slug, RolTenant rol, bool debeCambiarClave) =>
-        Create(userId, email, nombre, rol.ToString(), slug, debeCambiarClave);
+    public string CreateTenantToken(Guid userId, string email, string name, string slug, TenantRole role, bool mustChangePassword) =>
+        Create(userId, email, name, role.ToString(), slug, mustChangePassword);
 
-    private string Create(Guid userId, string email, string nombre, string rol, string? slug, bool debeCambiarClave)
+    private string Create(Guid userId, string email, string name, string role, string? slug, bool mustChangePassword)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"]!));
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, userId.ToString()),
             new(ClaimTypes.Email, email),
-            new(ClaimTypes.Name, nombre),
-            new(ClaimTypes.Role, rol),
-            new("debe_cambiar_clave", debeCambiarClave ? "true" : "false")
+            new(ClaimTypes.Name, name),
+            new(ClaimTypes.Role, role),
+            new("must_change_password", mustChangePassword ? "true" : "false")
         };
         if (slug is not null)
             claims.Add(new Claim("tenant_slug", slug));
@@ -56,15 +56,15 @@ public class JwtTokenService(IConfiguration configuration) : ITokenService
     }
 }
 
-public class ConfiguredTimeZone(IConfiguration configuration) : IZonaHoraria
+public class ConfiguredTimeZone(IConfiguration configuration) : ITimeZoneProvider
 {
-    public TimeZoneInfo Zona { get; } = TimeZoneInfo.FindSystemTimeZoneById(
-        configuration["ZonaHoraria"] ?? "America/Argentina/Buenos_Aires");
+    public TimeZoneInfo Zone { get; } = TimeZoneInfo.FindSystemTimeZoneById(
+        configuration["TimeZone"] ?? "America/Argentina/Buenos_Aires");
 }
 
 public class TenantProvisioner(IConfiguration configuration) : ITenantProvisioner
 {
-    public static readonly (string Codigo, string Nombre)[] DiagnosticosSemilla =
+    public static readonly (string Code, string Name)[] SeedDiagnoses =
     [
         ("J06.9", "Infección respiratoria aguda"),
         ("I10", "Hipertensión esencial"),
@@ -78,11 +78,11 @@ public class TenantProvisioner(IConfiguration configuration) : ITenantProvisione
 
     public async Task<string> ProvisionAsync(string slug, CancellationToken ct)
     {
-        if (!SlugRules.EsValido(slug))
-            throw new ReglaNegocioException("Slug inválido.");
-        var database = SlugRules.NombreBase(slug);
+        if (!SlugRules.IsValid(slug))
+            throw new BusinessRuleException("Slug inválido.");
+        var database = SlugRules.DatabaseName(slug);
         if (!System.Text.RegularExpressions.Regex.IsMatch(database, "^tenant_[a-z0-9_]+$"))
-            throw new ReglaNegocioException("Nombre de base inválido.");
+            throw new BusinessRuleException("Nombre de base inválido.");
 
         var admin = configuration.GetConnectionString("Admin")
             ?? throw new InvalidOperationException("Falta la connection string Admin.");
@@ -103,13 +103,13 @@ public class TenantProvisioner(IConfiguration configuration) : ITenantProvisione
         var options = new DbContextOptionsBuilder<TenantDbContext>().UseNpgsql(tenantConnection).Options;
         await using var db = new TenantDbContext(options);
         await db.Database.MigrateAsync(ct);
-        if (!await db.Diagnosticos.AnyAsync(ct))
+        if (!await db.Diagnoses.AnyAsync(ct))
         {
-            db.Diagnosticos.AddRange(DiagnosticosSemilla.Select(d => new Diagnostico
+            db.Diagnoses.AddRange(SeedDiagnoses.Select(d => new Diagnosis
             {
                 Id = Guid.NewGuid(),
-                Codigo = d.Codigo,
-                Nombre = d.Nombre
+                Code = d.Code,
+                Name = d.Name
             }));
         }
 
@@ -124,9 +124,9 @@ public class TenantProvisioner(IConfiguration configuration) : ITenantProvisione
                 Email = email,
                 NormalizedEmail = email.ToUpperInvariant(),
                 EmailConfirmed = true,
-                Nombre = "Admin",
-                Apellido = "Inicial",
-                Rol = RolTenant.AdminTenant,
+                FirstName = "Admin",
+                LastName = "Inicial",
+                Role = TenantRole.TenantAdmin,
                 SecurityStamp = Guid.NewGuid().ToString(),
                 ConcurrencyStamp = Guid.NewGuid().ToString()
             };
@@ -147,7 +147,7 @@ public class TenantMigrator(CatalogDbContext catalog, ISecretProtector protector
         var tenants = await catalog.Tenants.AsNoTracking().ToListAsync(ct);
         foreach (var tenant in tenants)
         {
-            var connection = protector.Unprotect(tenant.ConnectionStringProtegida);
+            var connection = protector.Unprotect(tenant.ProtectedConnectionString);
             var options = new DbContextOptionsBuilder<TenantDbContext>().UseNpgsql(connection).Options;
             await using var db = new TenantDbContext(options);
             await db.Database.MigrateAsync(ct);
@@ -168,7 +168,7 @@ public class SuperAdminSeeder(UserManager<PlatformUser> users, IConfiguration co
             UserName = email,
             Email = email,
             EmailConfirmed = true,
-            Nombre = configuration["Seed:SuperAdminNombre"] ?? "Administrador"
+            Name = configuration["Seed:SuperAdminName"] ?? "Administrador"
         };
         var result = await users.CreateAsync(user, configuration["Seed:SuperAdminPassword"] ?? "Admin123!");
         if (!result.Succeeded)
@@ -184,7 +184,7 @@ public static class DependencyInjection
             options.UseNpgsql(configuration.GetConnectionString("Catalog")));
 
         services.AddScoped<CurrentTenant>();
-        services.AddScoped<ITenantActual>(sp => sp.GetRequiredService<CurrentTenant>());
+        services.AddScoped<ICurrentTenant>(sp => sp.GetRequiredService<CurrentTenant>());
 
         services.AddDbContext<TenantDbContext>((sp, options) =>
         {
@@ -213,19 +213,18 @@ public static class DependencyInjection
         services.AddScoped<ICatalogStore, CatalogStore>();
         services.AddScoped<IPlatformUserStore, PlatformUserStore>();
         services.AddScoped<ITenantUserStore, TenantUserStore>();
-        services.AddScoped<ClinicaStores>();
-        services.AddScoped<IOrganizacionStore>(sp => sp.GetRequiredService<ClinicaStores>());
-        services.AddScoped<IAgendaStore>(sp => sp.GetRequiredService<ClinicaStores>());
-        services.AddScoped<ITurnoStore>(sp => sp.GetRequiredService<ClinicaStores>());
-        services.AddScoped<IPacienteStore>(sp => sp.GetRequiredService<ClinicaStores>());
-        services.AddScoped<IHistoriaMedicaStore>(sp => sp.GetRequiredService<ClinicaStores>());
-        services.AddScoped<IListaEsperaStore>(sp => sp.GetRequiredService<ClinicaStores>());
-        services.AddScoped<IClinicaStore>(sp => sp.GetRequiredService<ClinicaStores>());
-        services.AddScoped<IFacturacionStore>(sp => sp.GetRequiredService<ClinicaStores>());
-        services.AddScoped<IAuditoriaStore>(sp => sp.GetRequiredService<ClinicaStores>());
+        services.AddScoped<IOrganizationStore, OrganizationStore>();
+        services.AddScoped<IScheduleStore, ScheduleStore>();
+        services.AddScoped<IAppointmentStore, AppointmentStore>();
+        services.AddScoped<IPatientStore, PatientStore>();
+        services.AddScoped<IMedicalRecordStore, MedicalRecordStore>();
+        services.AddScoped<IWaitlistStore, WaitlistStore>();
+        services.AddScoped<IClinicalStore, ClinicalStore>();
+        services.AddScoped<IBillingStore, BillingStore>();
+        services.AddScoped<IAuditStore, AuditStore>();
         services.AddSingleton<ISecretProtector, DataProtectionSecretProtector>();
         services.AddSingleton<ITokenService, JwtTokenService>();
-        services.AddSingleton<IZonaHoraria, ConfiguredTimeZone>();
+        services.AddSingleton<ITimeZoneProvider, ConfiguredTimeZone>();
         services.AddScoped<ITenantProvisioner, TenantProvisioner>();
         services.AddScoped<ITenantMigrator, TenantMigrator>();
         services.AddScoped<SuperAdminSeeder>();

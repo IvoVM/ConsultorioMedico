@@ -4,48 +4,49 @@ using FluentValidation;
 namespace ClinicaSaaS.Application;
 
 public class TenantsService(
-    IValidator<AltaTenantCommand> altaValidator,
-    ICatalogStore catalogo,
+    IValidator<CreateTenantCommand> createValidator,
+    ICatalogStore catalog,
     ITenantProvisioner provisioner,
     ISecretProtector protector,
     TimeProvider clock)
 {
-    public async Task<TenantDto> CrearAsync(AltaTenantCommand command, CancellationToken ct)
+    public async Task<TenantDto> CreateAsync(CreateTenantCommand command, CancellationToken ct)
     {
-        var cmd = command with { Slug = command.Slug.Trim().ToLowerInvariant(), Nombre = command.Nombre.Trim() };
-        var validation = await altaValidator.ValidateAsync(cmd, ct);
+        var cmd = command with { Slug = command.Slug.Trim().ToLowerInvariant(), Name = command.Name.Trim() };
+        var validation = await createValidator.ValidateAsync(cmd, ct);
         if (!validation.IsValid)
             throw new ValidationException(validation.Errors);
-        if (await catalogo.ExisteSlugAsync(cmd.Slug, ct))
-            throw new ConflictoException("Ya existe un consultorio con ese slug.");
+        if (await catalog.SlugExistsAsync(cmd.Slug, ct))
+            throw new ConflictException("Ya existe un consultorio con ese slug.");
 
         var connection = await provisioner.ProvisionAsync(cmd.Slug, ct);
         var tenant = new Tenant
         {
             Id = Guid.NewGuid(),
             Slug = cmd.Slug,
-            Nombre = cmd.Nombre,
-            Tipo = cmd.Tipo,
-            Estado = EstadoTenant.Activo,
-            ConnectionStringProtegida = protector.Protect(connection),
-            CreadoEn = clock.GetUtcNow()
+            Name = cmd.Name,
+            Type = cmd.Type,
+            Status = TenantStatus.Active,
+            ProtectedConnectionString = protector.Protect(connection),
+            CreatedAt = clock.GetUtcNow()
         };
-        await catalogo.AgregarAsync(tenant, ct);
-        return new TenantDto(tenant.Id, tenant.Slug, tenant.Nombre, tenant.Tipo, tenant.Estado, tenant.CreadoEn);
+        await catalog.AddAsync(tenant, ct);
+        return Map(tenant);
     }
 
-    public async Task<IReadOnlyList<TenantDto>> ListarAsync(CancellationToken ct) =>
-        (await catalogo.ListarAsync(ct))
-            .Select(t => new TenantDto(t.Id, t.Slug, t.Nombre, t.Tipo, t.Estado, t.CreadoEn))
-            .ToList();
+    public async Task<IReadOnlyList<TenantDto>> ListAsync(CancellationToken ct) =>
+        (await catalog.ListAsync(ct)).Select(Map).ToList();
 
-    public async Task<TenantDto> CambiarEstadoAsync(Guid id, CambiarEstadoTenantCommand command, CancellationToken ct)
+    public async Task<TenantDto> ChangeStatusAsync(Guid id, ChangeTenantStatusCommand command, CancellationToken ct)
     {
-        var tenant = await catalogo.ObtenerPorIdAsync(id, ct) ?? throw new NoEncontradoException("Consultorio no encontrado.");
-        if (!Enum.IsDefined(command.Estado))
-            throw new ReglaNegocioException("Estado inválido.");
-        tenant.Estado = command.Estado;
-        await catalogo.GuardarAsync(ct);
-        return new TenantDto(tenant.Id, tenant.Slug, tenant.Nombre, tenant.Tipo, tenant.Estado, tenant.CreadoEn);
+        var tenant = await catalog.GetByIdAsync(id, ct) ?? throw new NotFoundException("Consultorio no encontrado.");
+        if (!Enum.IsDefined(command.Status))
+            throw new BusinessRuleException("Estado inválido.");
+        tenant.Status = command.Status;
+        await catalog.SaveAsync(ct);
+        return Map(tenant);
     }
+
+    private static TenantDto Map(Tenant tenant) =>
+        new(tenant.Id, tenant.Slug, tenant.Name, tenant.Type, tenant.Status, tenant.CreatedAt);
 }

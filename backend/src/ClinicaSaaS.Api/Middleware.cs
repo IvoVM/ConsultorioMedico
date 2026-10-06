@@ -15,9 +15,9 @@ public class ApiExceptionMiddleware(RequestDelegate next)
         {
             await next(context);
         }
-        catch (Exception ex) when (MapaErrores.Traducir(ex) is { } error)
+        catch (Exception ex) when (ErrorMap.Translate(ex) is { } error)
         {
-            await Write(context, error.Status, error.Mensaje);
+            await Write(context, error.Status, error.Message);
         }
     }
 
@@ -35,7 +35,7 @@ public class TenantMiddleware(RequestDelegate next)
     {
         var path = context.Request.Path.Value ?? "";
         if (!path.StartsWith("/api/", StringComparison.OrdinalIgnoreCase)
-            || path.StartsWith("/api/platform", StringComparison.OrdinalIgnoreCase)
+            || path.StartsWith("/api/plataforma", StringComparison.OrdinalIgnoreCase)
             || path.StartsWith("/api/salud", StringComparison.OrdinalIgnoreCase))
         {
             await next(context);
@@ -67,7 +67,7 @@ public class TenantMiddleware(RequestDelegate next)
             return;
         }
 
-        if (tenant.Estado != EstadoTenant.Activo)
+        if (tenant.Status != TenantStatus.Active)
         {
             context.Response.StatusCode = StatusCodes.Status403Forbidden;
             await context.Response.WriteAsJsonAsync(new { error = "El consultorio no está activo." });
@@ -82,7 +82,7 @@ public class TenantMiddleware(RequestDelegate next)
             return;
         }
 
-        current.Resolve(tenant.Slug, protector.Unprotect(tenant.ConnectionStringProtegida), tenant.Estado);
+        current.Resolve(tenant.Slug, protector.Unprotect(tenant.ProtectedConnectionString), tenant.Status);
         await next(context);
     }
 }

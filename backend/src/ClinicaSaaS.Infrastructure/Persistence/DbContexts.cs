@@ -14,7 +14,7 @@ public class CatalogDbContext(DbContextOptions<CatalogDbContext> options)
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
-        FechaUtc.Aplicar(configurationBuilder);
+        UtcDates.Apply(configurationBuilder);
     }
 
     protected override void OnModelCreating(ModelBuilder builder)
@@ -24,10 +24,10 @@ public class CatalogDbContext(DbContextOptions<CatalogDbContext> options)
         {
             e.HasIndex(t => t.Slug).IsUnique();
             e.Property(t => t.Slug).HasMaxLength(40);
-            e.Property(t => t.Nombre).HasMaxLength(120);
-            e.Property(t => t.Tipo).HasConversion<string>().HasMaxLength(20);
-            e.Property(t => t.Estado).HasConversion<string>().HasMaxLength(20);
-            e.Property(t => t.ConnectionStringProtegida).HasMaxLength(2000);
+            e.Property(t => t.Name).HasMaxLength(120);
+            e.Property(t => t.Type).HasConversion<string>().HasMaxLength(20);
+            e.Property(t => t.Status).HasConversion<string>().HasMaxLength(20);
+            e.Property(t => t.ProtectedConnectionString).HasMaxLength(2000);
         });
     }
 }
@@ -35,29 +35,29 @@ public class CatalogDbContext(DbContextOptions<CatalogDbContext> options)
 public class TenantDbContext(DbContextOptions<TenantDbContext> options)
     : IdentityDbContext<TenantUser, IdentityRole<Guid>, Guid>(options)
 {
-    public DbSet<Sede> Sedes => Set<Sede>();
-    public DbSet<Servicio> Servicios => Set<Servicio>();
-    public DbSet<Especialidad> Especialidades => Set<Especialidad>();
-    public DbSet<TipoTurno> TiposTurno => Set<TipoTurno>();
-    public DbSet<AgendaSemanal> Agendas => Set<AgendaSemanal>();
-    public DbSet<BloqueoAgenda> Bloqueos => Set<BloqueoAgenda>();
-    public DbSet<Paciente> Pacientes => Set<Paciente>();
-    public DbSet<HistoriaMedica> HistoriasMedicas => Set<HistoriaMedica>();
-    public DbSet<Turno> Turnos => Set<Turno>();
-    public DbSet<ListaEspera> ListaEspera => Set<ListaEspera>();
-    public DbSet<Diagnostico> Diagnosticos => Set<Diagnostico>();
-    public DbSet<Encuentro> Encuentros => Set<Encuentro>();
-    public DbSet<EncuentroDiagnostico> EncuentroDiagnosticos => Set<EncuentroDiagnostico>();
-    public DbSet<Receta> Recetas => Set<Receta>();
-    public DbSet<RecetaItem> RecetaItems => Set<RecetaItem>();
-    public DbSet<Arancel> Aranceles => Set<Arancel>();
-    public DbSet<Comprobante> Comprobantes => Set<Comprobante>();
-    public DbSet<ComprobanteItem> ComprobanteItems => Set<ComprobanteItem>();
-    public DbSet<AuditoriaEntrada> Auditoria => Set<AuditoriaEntrada>();
+    public DbSet<Location> Locations => Set<Location>();
+    public DbSet<MedicalService> MedicalServices => Set<MedicalService>();
+    public DbSet<Specialty> Specialties => Set<Specialty>();
+    public DbSet<AppointmentType> AppointmentTypes => Set<AppointmentType>();
+    public DbSet<ScheduleBlock> ScheduleBlocks => Set<ScheduleBlock>();
+    public DbSet<ScheduleBlockout> ScheduleBlockouts => Set<ScheduleBlockout>();
+    public DbSet<Patient> Patients => Set<Patient>();
+    public DbSet<MedicalRecord> MedicalRecords => Set<MedicalRecord>();
+    public DbSet<Appointment> Appointments => Set<Appointment>();
+    public DbSet<WaitlistEntry> WaitlistEntries => Set<WaitlistEntry>();
+    public DbSet<Diagnosis> Diagnoses => Set<Diagnosis>();
+    public DbSet<Encounter> Encounters => Set<Encounter>();
+    public DbSet<EncounterDiagnosis> EncounterDiagnoses => Set<EncounterDiagnosis>();
+    public DbSet<Prescription> Prescriptions => Set<Prescription>();
+    public DbSet<PrescriptionItem> PrescriptionItems => Set<PrescriptionItem>();
+    public DbSet<Fee> Fees => Set<Fee>();
+    public DbSet<Invoice> Invoices => Set<Invoice>();
+    public DbSet<InvoiceItem> InvoiceItems => Set<InvoiceItem>();
+    public DbSet<AuditEntry> AuditEntries => Set<AuditEntry>();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
-        FechaUtc.Aplicar(configurationBuilder);
+        UtcDates.Apply(configurationBuilder);
     }
 
     protected override void OnModelCreating(ModelBuilder builder)
@@ -65,121 +65,121 @@ public class TenantDbContext(DbContextOptions<TenantDbContext> options)
         base.OnModelCreating(builder);
         builder.Entity<TenantUser>(e =>
         {
-            e.Property(u => u.Nombre).HasMaxLength(80);
-            e.Property(u => u.Apellido).HasMaxLength(80);
-            e.Property(u => u.Matricula).HasMaxLength(40);
-            e.Property(u => u.Rol).HasConversion<string>().HasMaxLength(20);
+            e.Property(u => u.FirstName).HasMaxLength(80);
+            e.Property(u => u.LastName).HasMaxLength(80);
+            e.Property(u => u.LicenseNumber).HasMaxLength(40);
+            e.Property(u => u.Role).HasConversion<string>().HasMaxLength(20);
         });
-        builder.Entity<Sede>(e =>
+        builder.Entity<Location>(e =>
         {
-            e.Property(s => s.Nombre).HasMaxLength(120);
-            e.Property(s => s.Direccion).HasMaxLength(200);
+            e.Property(l => l.Name).HasMaxLength(120);
+            e.Property(l => l.Address).HasMaxLength(200);
         });
-        builder.Entity<Servicio>(e => e.Property(s => s.Nombre).HasMaxLength(120));
-        builder.Entity<Especialidad>(e =>
+        builder.Entity<MedicalService>(e => e.Property(s => s.Name).HasMaxLength(120));
+        builder.Entity<Specialty>(e =>
         {
-            e.Property(s => s.Nombre).HasMaxLength(120);
-            e.HasIndex(s => s.Nombre).IsUnique();
+            e.Property(s => s.Name).HasMaxLength(120);
+            e.HasIndex(s => s.Name).IsUnique();
         });
-        builder.Entity<TipoTurno>(e => e.Property(s => s.Nombre).HasMaxLength(120));
-        builder.Entity<AgendaSemanal>(e =>
+        builder.Entity<AppointmentType>(e => e.Property(t => t.Name).HasMaxLength(120));
+        builder.Entity<ScheduleBlock>(e =>
         {
-            e.Property(a => a.Dia).HasConversion<string>().HasMaxLength(12);
-            e.HasIndex(a => a.ProfesionalId);
+            e.Property(b => b.Day).HasConversion<string>().HasMaxLength(12);
+            e.HasIndex(b => b.ProfessionalId);
         });
-        builder.Entity<Paciente>(e =>
+        builder.Entity<Patient>(e =>
         {
-            e.Property(p => p.Documento).HasMaxLength(20);
-            e.Property(p => p.Telefono).HasMaxLength(30);
-            e.HasIndex(p => p.UsuarioId).IsUnique();
+            e.Property(p => p.DocumentNumber).HasMaxLength(20);
+            e.Property(p => p.Phone).HasMaxLength(30);
+            e.HasIndex(p => p.UserId).IsUnique();
         });
-        builder.Entity<HistoriaMedica>(e =>
+        builder.Entity<MedicalRecord>(e =>
         {
-            e.Property(h => h.GrupoSanguineo).HasMaxLength(3);
-            e.Property(h => h.Alergias).HasMaxLength(1000);
-            e.Property(h => h.AntecedentesPersonales).HasMaxLength(2000);
-            e.Property(h => h.AntecedentesFamiliares).HasMaxLength(2000);
-            e.Property(h => h.MedicacionHabitual).HasMaxLength(1000);
-            e.Property(h => h.Habitos).HasMaxLength(1000);
-            e.Property(h => h.ObraSocial).HasMaxLength(120);
-            e.Property(h => h.NumeroAfiliado).HasMaxLength(40);
-            e.Property(h => h.ContactoEmergencia).HasMaxLength(120);
-            e.Property(h => h.TelefonoEmergencia).HasMaxLength(30);
-            e.Property(h => h.Observaciones).HasMaxLength(2000);
-            e.HasIndex(h => h.PacienteId).IsUnique();
-            e.HasOne<Paciente>().WithOne().HasForeignKey<HistoriaMedica>(h => h.PacienteId);
+            e.Property(r => r.BloodType).HasMaxLength(3);
+            e.Property(r => r.Allergies).HasMaxLength(1000);
+            e.Property(r => r.PersonalHistory).HasMaxLength(2000);
+            e.Property(r => r.FamilyHistory).HasMaxLength(2000);
+            e.Property(r => r.CurrentMedication).HasMaxLength(1000);
+            e.Property(r => r.Habits).HasMaxLength(1000);
+            e.Property(r => r.HealthInsurance).HasMaxLength(120);
+            e.Property(r => r.MemberNumber).HasMaxLength(40);
+            e.Property(r => r.EmergencyContact).HasMaxLength(120);
+            e.Property(r => r.EmergencyPhone).HasMaxLength(30);
+            e.Property(r => r.Notes).HasMaxLength(2000);
+            e.HasIndex(r => r.PatientId).IsUnique();
+            e.HasOne<Patient>().WithOne().HasForeignKey<MedicalRecord>(r => r.PatientId);
         });
-        builder.Entity<Turno>(e =>
+        builder.Entity<Appointment>(e =>
         {
-            e.Property(t => t.Estado).HasConversion<string>().HasMaxLength(20);
-            e.Property(t => t.MotivoConsulta).HasMaxLength(500);
-            e.HasIndex(t => new { t.ProfesionalId, t.Inicio });
+            e.Property(a => a.Status).HasConversion<string>().HasMaxLength(20);
+            e.Property(a => a.VisitReason).HasMaxLength(500);
+            e.HasIndex(a => new { a.ProfessionalId, a.Start });
         });
-        builder.Entity<ListaEspera>(e => e.Property(l => l.Estado).HasConversion<string>().HasMaxLength(20));
-        builder.Entity<Diagnostico>(e =>
+        builder.Entity<WaitlistEntry>(e => e.Property(w => w.Status).HasConversion<string>().HasMaxLength(20));
+        builder.Entity<Diagnosis>(e =>
         {
-            e.Property(d => d.Codigo).HasMaxLength(10);
-            e.Property(d => d.Nombre).HasMaxLength(160);
-            e.HasIndex(d => d.Codigo).IsUnique();
+            e.Property(d => d.Code).HasMaxLength(10);
+            e.Property(d => d.Name).HasMaxLength(160);
+            e.HasIndex(d => d.Code).IsUnique();
         });
-        builder.Entity<Encuentro>(e =>
+        builder.Entity<Encounter>(e =>
         {
-            e.Property(x => x.Nota).HasMaxLength(4000);
-            e.Property(x => x.TensionArterial).HasMaxLength(20);
-            e.Property(x => x.Temperatura).HasPrecision(4, 1);
-            e.Property(x => x.PesoKg).HasPrecision(5, 2);
-            e.HasIndex(x => x.TurnoId).IsUnique();
+            e.Property(x => x.Note).HasMaxLength(4000);
+            e.Property(x => x.BloodPressure).HasMaxLength(20);
+            e.Property(x => x.Temperature).HasPrecision(4, 1);
+            e.Property(x => x.WeightKg).HasPrecision(5, 2);
+            e.HasIndex(x => x.AppointmentId).IsUnique();
         });
-        builder.Entity<EncuentroDiagnostico>(e =>
+        builder.Entity<EncounterDiagnosis>(e =>
         {
-            e.HasKey(x => new { x.EncuentroId, x.DiagnosticoId });
-            e.HasOne(x => x.Encuentro).WithMany(x => x.Diagnosticos).HasForeignKey(x => x.EncuentroId);
-            e.HasOne(x => x.Diagnostico).WithMany().HasForeignKey(x => x.DiagnosticoId);
+            e.HasKey(x => new { x.EncounterId, x.DiagnosisId });
+            e.HasOne(x => x.Encounter).WithMany(x => x.Diagnoses).HasForeignKey(x => x.EncounterId);
+            e.HasOne(x => x.Diagnosis).WithMany().HasForeignKey(x => x.DiagnosisId);
         });
-        builder.Entity<Receta>(e => e.Property(r => r.Indicaciones).HasMaxLength(1000));
-        builder.Entity<RecetaItem>(e =>
+        builder.Entity<Prescription>(e => e.Property(p => p.Instructions).HasMaxLength(1000));
+        builder.Entity<PrescriptionItem>(e =>
         {
-            e.Property(i => i.Medicamento).HasMaxLength(120);
-            e.Property(i => i.Dosis).HasMaxLength(60);
-            e.Property(i => i.Frecuencia).HasMaxLength(60);
-            e.Property(i => i.Duracion).HasMaxLength(60);
-            e.HasOne(i => i.Receta).WithMany(r => r.Items).HasForeignKey(i => i.RecetaId);
+            e.Property(i => i.Medication).HasMaxLength(120);
+            e.Property(i => i.Dose).HasMaxLength(60);
+            e.Property(i => i.Frequency).HasMaxLength(60);
+            e.Property(i => i.Duration).HasMaxLength(60);
+            e.HasOne(i => i.Prescription).WithMany(p => p.Items).HasForeignKey(i => i.PrescriptionId);
         });
-        builder.Entity<Arancel>(e => e.Property(a => a.Monto).HasPrecision(12, 2));
-        builder.Entity<Comprobante>(e =>
+        builder.Entity<Fee>(e => e.Property(f => f.Amount).HasPrecision(12, 2));
+        builder.Entity<Invoice>(e =>
         {
-            e.Property(c => c.Total).HasPrecision(12, 2);
-            e.Property(c => c.Estado).HasConversion<string>().HasMaxLength(20);
-            e.Property(c => c.MetodoPago).HasConversion<string>().HasMaxLength(20);
-            e.HasIndex(c => c.TurnoId).IsUnique();
+            e.Property(i => i.Total).HasPrecision(12, 2);
+            e.Property(i => i.Status).HasConversion<string>().HasMaxLength(20);
+            e.Property(i => i.PaymentMethod).HasConversion<string>().HasMaxLength(20);
+            e.HasIndex(i => i.AppointmentId).IsUnique();
         });
-        builder.Entity<ComprobanteItem>(e =>
+        builder.Entity<InvoiceItem>(e =>
         {
-            e.Property(i => i.Descripcion).HasMaxLength(160);
-            e.Property(i => i.Importe).HasPrecision(12, 2);
-            e.HasOne(i => i.Comprobante).WithMany(c => c.Items).HasForeignKey(i => i.ComprobanteId);
+            e.Property(i => i.Description).HasMaxLength(160);
+            e.Property(i => i.Amount).HasPrecision(12, 2);
+            e.HasOne(i => i.Invoice).WithMany(i => i.Items).HasForeignKey(i => i.InvoiceId);
         });
-        builder.Entity<AuditoriaEntrada>(e =>
+        builder.Entity<AuditEntry>(e =>
         {
-            e.Property(a => a.Accion).HasMaxLength(40);
-            e.Property(a => a.Entidad).HasMaxLength(40);
-            e.Property(a => a.Detalle).HasMaxLength(500);
-            e.HasIndex(a => a.Fecha);
+            e.Property(a => a.Action).HasMaxLength(40);
+            e.Property(a => a.Entity).HasMaxLength(40);
+            e.Property(a => a.Detail).HasMaxLength(500);
+            e.HasIndex(a => a.Timestamp);
         });
     }
 }
 
-file static class FechaUtc
+file static class UtcDates
 {
-    public static void Aplicar(ModelConfigurationBuilder configurationBuilder)
+    public static void Apply(ModelConfigurationBuilder configurationBuilder)
     {
-        configurationBuilder.Properties<DateTimeOffset>().HaveConversion<FechaUtcConverter>();
-        configurationBuilder.Properties<DateTimeOffset?>().HaveConversion<FechaUtcNullableConverter>();
+        configurationBuilder.Properties<DateTimeOffset>().HaveConversion<UtcDateConverter>();
+        configurationBuilder.Properties<DateTimeOffset?>().HaveConversion<NullableUtcDateConverter>();
     }
 
-    private sealed class FechaUtcConverter()
+    private sealed class UtcDateConverter()
         : ValueConverter<DateTimeOffset, DateTimeOffset>(v => v.ToUniversalTime(), v => v);
 
-    private sealed class FechaUtcNullableConverter()
+    private sealed class NullableUtcDateConverter()
         : ValueConverter<DateTimeOffset?, DateTimeOffset?>(v => v.HasValue ? v.Value.ToUniversalTime() : v, v => v);
 }

@@ -1,0 +1,19 @@
+<form class="mb-8 grid gap-4 border-b border-rule pb-8 sm:grid-cols-2 xl:grid-cols-4" (ngSubmit)="create()">
+  <ui-field label="Tipo de turno">
+    <select name="appointmentTypeId" [(ngModel)]="appointmentTypeId">
+      @for (type of appointmentTypes(); track type.id) { <option [value]="type.id">{{ type.name }}</option> }
+    </select>
+  </ui-field>
+  <ui-field label="Monto"><input name="amount" type="number" [(ngModel)]="amount" required /></ui-field>
+  <ui-field label="Vigente desde"><input name="effectiveFrom" type="date" [(ngModel)]="effectiveFrom" required /></ui-field>
+  <div class="flex items-end"><ui-button type="submit">Guardar arancel</ui-button></div>
+</form>
+@if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
+<ui-table>
+  <thead><tr><th>Tipo</th><th>Monto</th><th>Desde</th></tr></thead>
+  <tbody>
+    @for (fee of fees(); track fee.id) {
+      <tr><td>{{ fee.appointmentType }}</td><td>{{ fee.amount }}</td><td>{{ fee.effectiveFrom }}</td></tr>
+    }
+  </tbody>
+</ui-table>

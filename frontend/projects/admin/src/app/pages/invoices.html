@@ -1,0 +1,14 @@
+@if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
+<ui-table>
+  <thead><tr><th>Paciente</th><th>Total</th><th>Estado</th><th>Pago</th></tr></thead>
+  <tbody>
+    @for (item of invoices(); track item.id) {
+      <tr>
+        <td>{{ item.patient }}</td>
+        <td>{{ item.total }}</td>
+        <td><ui-badge [tone]="item.status === 'Paid' ? 'ok' : 'warn'">{{ statusLabels[item.status] }}</ui-badge></td>
+        <td>{{ item.paymentMethod ? methodLabels[item.paymentMethod] : '—' }}</td>
+      </tr>
+    }
+  </tbody>
+</ui-table>

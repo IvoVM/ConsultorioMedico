@@ -1,0 +1,9 @@
+@if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
+<ui-table>
+  <thead><tr><th>Fecha</th><th>Acción</th><th>Entidad</th><th>Detalle</th></tr></thead>
+  <tbody>
+    @for (item of entries(); track item.id) {
+      <tr><td>{{ item.timestamp }}</td><td>{{ item.action }}</td><td>{{ item.entity }}</td><td>{{ item.detail }}</td></tr>
+    }
+  </tbody>
+</ui-table>

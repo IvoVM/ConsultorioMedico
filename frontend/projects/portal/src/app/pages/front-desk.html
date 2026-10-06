@@ -1,0 +1,86 @@
+<ui-calendar [date]="date" (dateChange)="date = $event; load()">
+  <ui-button (click)="load()">Actualizar</ui-button>
+</ui-calendar>
+@if (error()) { <p class="mt-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
+<section class="mt-10">
+  <h2 class="font-serif text-2xl tracking-tight">Agenda del día</h2>
+  <div class="mt-4">
+    <ui-table>
+      <thead><tr><th>Hora</th><th>Paciente</th><th>Profesional</th><th>Estado</th><th></th></tr></thead>
+      <tbody>
+        @for (appointment of appointments(); track appointment.id) {
+          <tr>
+            <td class="whitespace-nowrap tabular-nums">{{ appointment.start }}</td>
+            <td>{{ appointment.patient }}</td>
+            <td>{{ appointment.professional }}</td>
+            <td><ui-badge>{{ statusLabels[appointment.status] }}</ui-badge></td>
+            <td>
+              <div class="flex flex-wrap gap-2">
+                @if (appointment.status === 'Booked') { <ui-button (click)="checkIn(appointment)">Admitir</ui-button> }
+                @if (appointment.status === 'Booked' || appointment.status === 'CheckedIn') {
+                  <ui-button variant="ghost" (click)="cancel(appointment)">Cancelar</ui-button>
+                }
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </ui-table>
+  </div>
+</section>
+<section class="mt-12">
+  <h2 class="font-serif text-2xl tracking-tight">Reprogramar</h2>
+  <form class="mt-4 grid gap-4 md:grid-cols-3" (ngSubmit)="reschedule()">
+    <ui-field label="Id del turno"><input name="appointmentId" [(ngModel)]="appointmentId" required /></ui-field>
+    <ui-field label="Nuevo inicio"><input name="newStart" type="datetime-local" [(ngModel)]="newStart" required /></ui-field>
+    <div class="flex items-end"><ui-button type="submit">Reprogramar</ui-button></div>
+  </form>
+</section>
+<section class="mt-12">
+  <h2 class="font-serif text-2xl tracking-tight">Lista de espera</h2>
+  <div class="mt-4">
+    <ui-table>
+      <thead><tr><th>Paciente</th><th>Notas</th><th></th></tr></thead>
+      <tbody>
+        @for (item of waitlist(); track item.id) {
+          <tr>
+            <td>{{ item.patient }}</td>
+            <td>{{ item.notes }}</td>
+            <td><ui-button variant="ghost" (click)="pickWaitlistEntry(item)">Usar</ui-button></td>
+          </tr>
+        }
+      </tbody>
+    </ui-table>
+  </div>
+  <form class="mt-4 grid gap-4 md:grid-cols-3" (ngSubmit)="assign()">
+    <ui-field label="Espera"><input [value]="waitlistEntryId" disabled /></ui-field>
+    <ui-field label="Tipo de turno"><input name="appointmentTypeId" [(ngModel)]="appointmentTypeId" required /></ui-field>
+    <div class="flex items-end"><ui-button type="submit">Asignar hueco</ui-button></div>
+  </form>
+</section>
+<section class="mt-12">
+  <h2 class="font-serif text-2xl tracking-tight">Cobros</h2>
+  <div class="mt-4">
+    <ui-table>
+      <thead><tr><th>Paciente</th><th>Total</th><th>Estado</th><th></th></tr></thead>
+      <tbody>
+        @for (item of invoices(); track item.id) {
+          <tr>
+            <td>{{ item.patient }}</td>
+            <td class="tabular-nums">{{ item.total }}</td>
+            <td>{{ invoiceStatusLabels[item.status] }}</td>
+            <td>
+              @if (item.status === 'Pending') {
+                <div class="flex flex-wrap gap-2">
+                  <ui-button (click)="pay(item, 'Cash')">Efectivo</ui-button>
+                  <ui-button variant="ghost" (click)="pay(item, 'Transfer')">Transferencia</ui-button>
+                  <ui-button variant="ghost" (click)="pay(item, 'Card')">Tarjeta</ui-button>
+                </div>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </ui-table>
+  </div>
+</section>

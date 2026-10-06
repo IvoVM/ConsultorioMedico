@@ -1,8 +1,10 @@
-<form class="mb-8 grid gap-4 border-b border-rule pb-8 sm:grid-cols-2 xl:grid-cols-4" (ngSubmit)="crear()">
+<form class="mb-8 grid gap-4 border-b border-rule pb-8 sm:grid-cols-2 xl:grid-cols-4" (ngSubmit)="create()">
   <ui-field label="Slug"><input name="slug" [(ngModel)]="slug" required /></ui-field>
-  <ui-field label="Nombre"><input name="nombre" [(ngModel)]="nombre" required /></ui-field>
+  <ui-field label="Nombre"><input name="name" [(ngModel)]="name" required /></ui-field>
   <ui-field label="Tipo">
-    <select name="tipo" [(ngModel)]="tipo"><option>Consultorio</option><option>Hospital</option></select>
+    <select name="type" [(ngModel)]="type">
+      @for (t of types; track t) { <option [ngValue]="t">{{ typeLabels[t] }}</option> }
+    </select>
   </ui-field>
   <div class="flex items-end"><ui-button type="submit">Aprovisionar</ui-button></div>
 </form>
@@ -15,15 +17,15 @@
     <tbody>
       @for (tenant of tenants(); track tenant.id) {
         <tr>
-          <td>{{ tenant.nombre }}</td>
+          <td>{{ tenant.name }}</td>
           <td>{{ tenant.slug }}</td>
-          <td>{{ tenant.tipo }}</td>
-          <td><ui-badge [tone]="tenant.estado === 'Activo' ? 'ok' : 'warn'">{{ tenant.estado }}</ui-badge></td>
+          <td>{{ typeLabels[tenant.type] }}</td>
+          <td><ui-badge [tone]="tenant.status === 'Active' ? 'ok' : 'warn'">{{ statusLabels[tenant.status] }}</ui-badge></td>
           <td>
             <div class="flex flex-wrap gap-2">
-              <ui-button variant="ghost" (click)="estado(tenant, 'Activo')">Activar</ui-button>
-              <ui-button variant="ghost" (click)="estado(tenant, 'Suspendido')">Suspender</ui-button>
-              <ui-button variant="danger" (click)="estado(tenant, 'Baja')">Baja</ui-button>
+              <ui-button variant="ghost" (click)="changeStatus(tenant, 'Active')">Activar</ui-button>
+              <ui-button variant="ghost" (click)="changeStatus(tenant, 'Suspended')">Suspender</ui-button>
+              <ui-button variant="danger" (click)="changeStatus(tenant, 'Deactivated')">Baja</ui-button>
             </div>
           </td>
         </tr>

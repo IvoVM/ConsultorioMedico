@@ -1,7 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { ClinicaClient, clinicaSession, mensajeError, tenantDesdeHost } from 'sdk';
+import { ClinicaClient, clinicaSession, errorMessage, tenantFromHost } from 'sdk';
 import { UiButton, UiField, UiPage } from 'ui';
 import { firstValueFrom } from 'rxjs';
 
@@ -12,20 +12,20 @@ import { firstValueFrom } from 'rxjs';
 export class LoginPage {
   private readonly api = inject(ClinicaClient);
   private readonly router = inject(Router);
-  slug = tenantDesdeHost() ?? '';
+  slug = tenantFromHost() ?? '';
   email = '';
   password = '';
   readonly error = signal('');
 
-  async entrar() {
+  async submit() {
     this.error.set('');
     clinicaSession.setTenant(this.slug.trim().toLowerCase());
     try {
-      const token = await firstValueFrom(this.api.loginTenant({ email: this.email, password: this.password }));
-      clinicaSession.set(token.token, token.tenantSlug ?? this.slug, token.rol, token.nombre);
+      const token = await firstValueFrom(this.api.tenantLogin({ email: this.email, password: this.password }));
+      clinicaSession.set(token.token, token.tenantSlug ?? this.slug, token.role, token.name);
       await this.router.navigateByUrl('/panel');
     } catch (error) {
-      this.error.set(mensajeError(error));
+      this.error.set(errorMessage(error));
     }
   }
 }

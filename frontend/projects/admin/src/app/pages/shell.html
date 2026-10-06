@@ -1,8 +1,8 @@
-<ui-page frame="shell" eyebrow="Administración" [title]="session.nombre() ?? 'Admin'">
+<ui-page frame="shell" eyebrow="Administración" [title]="session.name() ?? 'Admin'">
   <div uiNav class="flex h-full flex-col gap-1">
     <a routerLink="/inicio" routerLinkActive="is-current" [routerLinkActiveOptions]="{ exact: true }" class="nav-link">Inicio</a>
-    @if (session.rol() === 'SuperAdmin') {
-      <a routerLink="/tenants" routerLinkActive="is-current" class="nav-link">Consultorios</a>
+    @if (session.role() === 'SuperAdmin') {
+      <a routerLink="/consultorios" routerLinkActive="is-current" class="nav-link">Consultorios</a>
     } @else {
       <a routerLink="/organizacion" routerLinkActive="is-current" class="nav-link">Organización</a>
       <a routerLink="/empleados" routerLinkActive="is-current" class="nav-link">Empleados</a>
@@ -12,7 +12,7 @@
       <a routerLink="/comprobantes" routerLinkActive="is-current" class="nav-link">Comprobantes</a>
       <a routerLink="/auditoria" routerLinkActive="is-current" class="nav-link">Auditoría</a>
     }
-    <ui-button class="mt-auto w-full pt-4" variant="ghost" (click)="salir()">Salir</ui-button>
+    <ui-button class="mt-auto w-full pt-4" variant="ghost" (click)="logout()">Salir</ui-button>
   </div>
   <router-outlet />
 </ui-page>

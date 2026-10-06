@@ -1,7 +1,7 @@
 <div class="flex flex-col gap-4 border-b border-rule pb-5 sm:flex-row sm:items-end sm:justify-between">
   <label class="block w-full text-sm sm:max-w-56">
     <span class="mb-1.5 block text-ink/75">Fecha</span>
-    <input type="date" [value]="fecha()" (change)="onChange($event)" />
+    <input type="date" [value]="date()" (change)="onChange($event)" />
   </label>
   <div class="flex flex-wrap gap-2">
     <ng-content />

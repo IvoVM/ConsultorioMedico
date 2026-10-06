@@ -4,25 +4,25 @@ import { CLINICA_API_URL } from './tokens';
 
 const TOKEN = 'clinica.token';
 const TENANT = 'clinica.tenant';
-const ROL = 'clinica.rol';
-const NOMBRE = 'clinica.nombre';
+const ROLE = 'clinica.role';
+const NAME = 'clinica.name';
 
-function leer(clave: string) {
-  return globalThis.localStorage?.getItem(clave) ?? null;
+function read(key: string) {
+  return globalThis.localStorage?.getItem(key) ?? null;
 }
 
 export const clinicaSession = {
-  token: signal<string | null>(leer(TOKEN)),
-  tenant: signal<string | null>(leer(TENANT)),
-  rol: signal<string | null>(leer(ROL)),
-  nombre: signal<string | null>(leer(NOMBRE)),
-  set(token: string, tenant: string | null, rol: string, nombre: string) {
+  token: signal<string | null>(read(TOKEN)),
+  tenant: signal<string | null>(read(TENANT)),
+  role: signal<string | null>(read(ROLE)),
+  name: signal<string | null>(read(NAME)),
+  set(token: string, tenant: string | null, role: string, name: string) {
     localStorage.setItem(TOKEN, token);
-    localStorage.setItem(ROL, rol);
-    localStorage.setItem(NOMBRE, nombre);
+    localStorage.setItem(ROLE, role);
+    localStorage.setItem(NAME, name);
     this.token.set(token);
-    this.rol.set(rol);
-    this.nombre.set(nombre);
+    this.role.set(role);
+    this.name.set(name);
     this.setTenant(tenant);
   },
   setTenant(tenant: string | null) {
@@ -31,11 +31,11 @@ export const clinicaSession = {
     this.tenant.set(tenant);
   },
   clear() {
-    for (const clave of [TOKEN, TENANT, ROL, NOMBRE]) localStorage.removeItem(clave);
+    for (const key of [TOKEN, TENANT, ROLE, NAME]) localStorage.removeItem(key);
     this.token.set(null);
     this.tenant.set(null);
-    this.rol.set(null);
-    this.nombre.set(null);
+    this.role.set(null);
+    this.name.set(null);
   },
 };
 
@@ -46,7 +46,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
 export const tenantInterceptor: HttpInterceptorFn = (req, next) => {
   const tenant = clinicaSession.tenant();
-  if (!tenant || req.url.includes('/api/platform')) return next(req);
+  if (!tenant || req.url.includes('/api/plataforma')) return next(req);
   return next(req.clone({ setHeaders: { 'X-Tenant-Slug': tenant } }));
 };
 
@@ -54,12 +54,12 @@ export function provideClinicaSdk(apiUrl: string) {
   return [{ provide: CLINICA_API_URL, useValue: apiUrl }, provideHttpClient(withInterceptors([authInterceptor, tenantInterceptor]))];
 }
 
-export function tenantDesdeHost() {
+export function tenantFromHost() {
   const host = globalThis.location?.hostname ?? '';
   return host.endsWith('.localhost') ? host.split('.')[0] : null;
 }
 
-export function mensajeError(error: unknown) {
+export function errorMessage(error: unknown) {
   const http = error as { error?: { error?: string } };
   return http.error?.error ?? 'No se pudo completar la operación.';
 }

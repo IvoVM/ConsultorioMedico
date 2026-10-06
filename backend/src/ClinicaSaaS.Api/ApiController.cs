@@ -6,39 +6,39 @@ namespace ClinicaSaaS.Api;
 
 public abstract class ApiController : ControllerBase
 {
-    protected Task<IActionResult> Ejecutar<T>(Func<Task<T>> accion) =>
-        Proteger(async () => Ok(await accion()));
+    protected Task<IActionResult> Run<T>(Func<Task<T>> action) =>
+        Guard(async () => Ok(await action()));
 
-    protected Task<IActionResult> Ejecutar(Func<Task> accion) =>
-        Proteger(async () =>
+    protected Task<IActionResult> Run(Func<Task> action) =>
+        Guard(async () =>
         {
-            await accion();
+            await action();
             return NoContent();
         });
 
-    private async Task<IActionResult> Proteger(Func<Task<IActionResult>> accion)
+    private async Task<IActionResult> Guard(Func<Task<IActionResult>> action)
     {
         try
         {
-            return await accion();
+            return await action();
         }
-        catch (Exception ex) when (MapaErrores.Traducir(ex) is { } error)
+        catch (Exception ex) when (ErrorMap.Translate(ex) is { } error)
         {
-            return StatusCode(error.Status, new { error = error.Mensaje });
+            return StatusCode(error.Status, new { error = error.Message });
         }
     }
 }
 
-internal static class MapaErrores
+internal static class ErrorMap
 {
-    public static ErrorHttp? Traducir(Exception ex) => ex switch
+    public static HttpError? Translate(Exception ex) => ex switch
     {
-        ValidationException validacion => new(StatusCodes.Status400BadRequest, string.Join(' ', validacion.Errors.Select(e => e.ErrorMessage))),
-        NoEncontradoException noEncontrado => new(StatusCodes.Status404NotFound, noEncontrado.Message),
-        ConflictoException conflicto => new(StatusCodes.Status409Conflict, conflicto.Message),
-        ReglaNegocioException regla => new(StatusCodes.Status400BadRequest, regla.Message),
+        ValidationException validation => new(StatusCodes.Status400BadRequest, string.Join(' ', validation.Errors.Select(e => e.ErrorMessage))),
+        NotFoundException notFound => new(StatusCodes.Status404NotFound, notFound.Message),
+        ConflictException conflict => new(StatusCodes.Status409Conflict, conflict.Message),
+        BusinessRuleException rule => new(StatusCodes.Status400BadRequest, rule.Message),
         _ => null
     };
 }
 
-internal readonly record struct ErrorHttp(int Status, string Mensaje);
+internal readonly record struct HttpError(int Status, string Message);

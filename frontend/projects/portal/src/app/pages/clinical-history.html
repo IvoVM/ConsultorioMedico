@@ -1,0 +1,42 @@
+@if (session.role() !== 'Patient') {
+  <form class="mb-8 flex flex-col gap-4 border-b border-rule pb-8 sm:flex-row sm:items-end" (ngSubmit)="load()">
+    <ui-field class="sm:w-80" label="Id del paciente"><input name="patientId" [(ngModel)]="patientId" required /></ui-field>
+    <ui-button type="submit">Ver historia</ui-button>
+  </form>
+}
+@if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
+@if (history(); as data) {
+  <header class="mb-2">
+    <h2 class="font-serif text-2xl tracking-tight">{{ data.patient.name }}</h2>
+    <p class="mt-1 text-sm text-ink/70">Documento {{ data.patient.documentNumber }}</p>
+    <p class="text-sm text-ink/70">{{ data.patient.phone }}</p>
+  </header>
+  @for (encounter of data.encounters; track encounter.id) {
+    <article class="border-t border-rule py-5">
+      <p class="text-sm text-ink/60">{{ encounter.createdAt }}</p>
+      <p class="mt-3 max-w-prose whitespace-pre-wrap leading-relaxed">{{ encounter.note }}</p>
+      <dl class="mt-4 grid grid-cols-2 gap-px bg-rule sm:grid-cols-4">
+        <div class="bg-white px-3 py-2">
+          <dt class="text-sm text-ink/60">Tensión</dt>
+          <dd class="mt-1 font-serif text-lg">{{ encounter.bloodPressure || '—' }}</dd>
+        </div>
+        <div class="bg-white px-3 py-2">
+          <dt class="text-sm text-ink/60">Frecuencia</dt>
+          <dd class="mt-1 font-serif text-lg">{{ encounter.heartRate || '—' }}</dd>
+        </div>
+        <div class="bg-white px-3 py-2">
+          <dt class="text-sm text-ink/60">Temperatura</dt>
+          <dd class="mt-1 font-serif text-lg">{{ encounter.temperature || '—' }}</dd>
+        </div>
+        <div class="bg-white px-3 py-2">
+          <dt class="text-sm text-ink/60">Peso</dt>
+          <dd class="mt-1 font-serif text-lg">{{ encounter.weightKg || '—' }}</dd>
+        </div>
+      </dl>
+      @if (encounter.diagnoses.length) {
+        <p class="mt-3 max-w-prose text-sm leading-relaxed">{{ diagnosesText(encounter.diagnoses) }}</p>
+      }
+    </article>
+  }
+  @if (data.encounters.length === 0) { <ui-empty message="Sin encuentros clínicos." /> }
+}

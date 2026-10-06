@@ -1,54 +1,54 @@
 namespace ClinicaSaaS.Domain;
 
-public enum TipoTenant
+public enum TenantType
 {
-    Consultorio,
+    Practice,
     Hospital
 }
 
-public enum EstadoTenant
+public enum TenantStatus
 {
-    Activo,
-    Suspendido,
-    Baja
+    Active,
+    Suspended,
+    Deactivated
 }
 
-public enum RolTenant
+public enum TenantRole
 {
-    AdminTenant,
-    Medico,
-    Secretario,
-    Paciente
+    TenantAdmin,
+    Doctor,
+    Secretary,
+    Patient
 }
 
-public enum EstadoTurno
+public enum AppointmentStatus
 {
-    Reservado,
-    Admitido,
-    EnCurso,
-    Completado,
-    Cancelado,
-    Ausente
+    Booked,
+    CheckedIn,
+    InProgress,
+    Completed,
+    Cancelled,
+    NoShow
 }
 
-public enum EstadoListaEspera
+public enum WaitlistStatus
 {
-    Pendiente,
-    Ofrecido,
-    Aceptado,
-    Cancelado
+    Pending,
+    Offered,
+    Accepted,
+    Cancelled
 }
 
-public enum MetodoPago
+public enum PaymentMethod
 {
-    Efectivo,
-    Transferencia,
-    Tarjeta
+    Cash,
+    Transfer,
+    Card
 }
 
-public enum EstadoComprobante
+public enum InvoiceStatus
 {
-    Pendiente,
-    Pagado,
-    Anulado
+    Pending,
+    Paid,
+    Voided
 }

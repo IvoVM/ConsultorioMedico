@@ -9,8 +9,8 @@ import { UiButton, UiPage } from 'ui';
 })
 export class ShellPage {
   readonly session = clinicaSession;
-  salir() {
+  logout() {
     clinicaSession.clear();
-    location.href = '/login';
+    location.href = '/ingreso';
   }
 }

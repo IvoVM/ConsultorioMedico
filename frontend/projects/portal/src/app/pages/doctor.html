@@ -1,0 +1,54 @@
+<ui-calendar [date]="date" (dateChange)="date = $event; load()">
+  <ui-button (click)="load()">Ver agenda</ui-button>
+</ui-calendar>
+@if (error()) { <p class="mt-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
+<div class="mt-6">
+  <ui-table>
+    <thead><tr><th>Hora</th><th>Paciente</th><th>Estado</th><th></th></tr></thead>
+    <tbody>
+      @for (appointment of appointments(); track appointment.id) {
+        <tr>
+          <td class="whitespace-nowrap tabular-nums">{{ appointment.start }}</td>
+          <td>{{ appointment.patient }}</td>
+          <td>{{ statusLabels[appointment.status] }}</td>
+          <td><ui-button variant="ghost" (click)="pick(appointment)">Atender</ui-button></td>
+        </tr>
+      }
+    </tbody>
+  </ui-table>
+</div>
+@if (appointmentId) {
+  <form class="mt-10 grid gap-5 border-t border-rule pt-8" (ngSubmit)="save()">
+    <div>
+      <h2 class="font-serif text-2xl tracking-tight">Encuentro</h2>
+      <p class="mt-1 text-sm text-ink/60">Turno {{ appointmentId }}</p>
+    </div>
+    <ui-field label="Nota clínica"><textarea name="note" rows="5" [(ngModel)]="note"></textarea></ui-field>
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <ui-field label="Tensión"><input name="bloodPressure" [(ngModel)]="bloodPressure" /></ui-field>
+      <ui-field label="FC"><input name="heartRate" type="number" [(ngModel)]="heartRate" /></ui-field>
+      <ui-field label="Temperatura"><input name="temperature" type="number" step="0.1" [(ngModel)]="temperature" /></ui-field>
+      <ui-field label="Peso"><input name="weightKg" type="number" step="0.1" [(ngModel)]="weightKg" /></ui-field>
+    </div>
+    <ui-field label="Diagnósticos">
+      <select name="diagnosisIds" multiple [(ngModel)]="diagnosisIds" class="min-h-28">
+        @for (item of diagnoses(); track item.id) { <option [value]="item.id">{{ item.code }} {{ item.name }}</option> }
+      </select>
+    </ui-field>
+    <div class="flex flex-wrap gap-2">
+      <ui-button type="submit">Guardar encuentro</ui-button>
+      <ui-button type="button" variant="ghost" (click)="close()">Cerrar y facturar</ui-button>
+    </div>
+  </form>
+  @if (encounterId) {
+    <form class="mt-10 grid gap-4 border-t border-rule pt-8 md:grid-cols-2" (ngSubmit)="prescribe()">
+      <h2 class="font-serif text-2xl tracking-tight md:col-span-2">Receta</h2>
+      <ui-field label="Medicamento"><input name="medication" [(ngModel)]="medication" required /></ui-field>
+      <ui-field label="Dosis"><input name="dose" [(ngModel)]="dose" required /></ui-field>
+      <ui-field label="Frecuencia"><input name="frequency" [(ngModel)]="frequency" required /></ui-field>
+      <ui-field label="Duración"><input name="duration" [(ngModel)]="duration" required /></ui-field>
+      <ui-field label="Indicaciones"><input name="instructions" [(ngModel)]="instructions" /></ui-field>
+      <div class="flex items-end"><ui-button type="submit">Emitir receta</ui-button></div>
+    </form>
+  }
+}

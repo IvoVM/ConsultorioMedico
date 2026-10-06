@@ -28,30 +28,30 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Catalog
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("ConnectionStringProtegida")
-                        .IsRequired()
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
-
-                    b.Property<DateTimeOffset>("CreadoEn")
+                    b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Estado")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<string>("Nombre")
+                    b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(120)
                         .HasColumnType("character varying(120)");
+
+                    b.Property<string>("ProtectedConnectionString")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
 
                     b.Property<string>("Slug")
                         .IsRequired()
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)");
 
-                    b.Property<string>("Tipo")
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Type")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
@@ -90,7 +90,7 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Catalog
                     b.Property<DateTimeOffset?>("LockoutEnd")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Nombre")
+                    b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
 

@@ -11,18 +11,18 @@ using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var zonaHoraria = TimeZoneInfo.FindSystemTimeZoneById(builder.Configuration["ZonaHoraria"] ?? "America/Argentina/Buenos_Aires");
+var timeZone = TimeZoneInfo.FindSystemTimeZoneById(builder.Configuration["TimeZone"] ?? "America/Argentina/Buenos_Aires");
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-    options.JsonSerializerOptions.Converters.Add(new FechaJsonConverter(zonaHoraria));
-    options.JsonSerializerOptions.Converters.Add(new FechaNullableJsonConverter(zonaHoraria));
+    options.JsonSerializerOptions.Converters.Add(new LocalDateTimeOffsetJsonConverter(timeZone));
+    options.JsonSerializerOptions.Converters.Add(new NullableLocalDateTimeOffsetJsonConverter(timeZone));
 });
 builder.Services.AddOpenApi();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
-builder.Services.AddScoped<IUsuarioActual, UsuarioActual>();
+builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 
 var jwtKey = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("Falta Jwt:Key.");
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>

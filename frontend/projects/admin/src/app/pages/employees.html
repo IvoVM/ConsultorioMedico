@@ -1,0 +1,27 @@
+<section class="mb-10 max-w-prose">
+  <p class="text-sm leading-relaxed text-ink/75">
+    CSV con encabezado: nombre,apellido,email,rol,matricula,especialidad. Roles: Medico, Secretario o AdminTenant.
+  </p>
+  <input class="mt-4" type="file" accept=".csv,text/csv" (change)="readFile($event)" />
+  <div class="mt-4"><ui-button [disabled]="!csv()" (click)="import()">Importar</ui-button></div>
+</section>
+@if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
+@if (created().length) {
+  <h2 class="mb-4 font-serif text-2xl tracking-tight">Claves temporales</h2>
+  <ui-table>
+    <thead><tr><th>Fila</th><th>Email</th><th>Rol</th><th>Clave</th></tr></thead>
+    <tbody>
+      @for (item of created(); track item.email) {
+        <tr><td>{{ item.row }}</td><td>{{ item.email }}</td><td>{{ roleLabels[item.role] }}</td><td>{{ item.temporaryPassword }}</td></tr>
+      }
+    </tbody>
+  </ui-table>
+}
+@if (rejected().length) {
+  <h2 class="mb-4 mt-10 font-serif text-2xl tracking-tight">Rechazados</h2>
+  <ui-table>
+    <thead><tr><th>Fila</th><th>Motivo</th></tr></thead>
+    <tbody>@for (item of rejected(); track item.row) { <tr><td>{{ item.row }}</td><td>{{ item.reason }}</td></tr> }</tbody>
+  </ui-table>
+}
+@if (!created().length && !rejected().length) { <ui-empty message="Todavía no importaste un archivo." /> }

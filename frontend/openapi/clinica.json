@@ -2,351 +2,359 @@
   "openapi": "3.0.3",
   "info": { "title": "ClinicaSaaS", "version": "1.0.0" },
   "paths": {
-    "/api/platform/auth/login": {
+    "/api/plataforma/acceso/ingreso": {
       "post": {
-        "operationId": "loginPlataforma",
+        "operationId": "platformLogin",
         "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LoginCommand" } } } },
         "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TokenDto" } } } } }
       }
     },
-    "/api/platform/tenants": {
+    "/api/plataforma/consultorios": {
       "get": {
-        "operationId": "listarTenants",
+        "operationId": "listTenants",
         "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/TenantDto" } } } } } }
       },
       "post": {
-        "operationId": "crearTenant",
-        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AltaTenantCommand" } } } },
+        "operationId": "createTenant",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateTenantCommand" } } } },
         "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TenantDto" } } } } }
       }
     },
-    "/api/platform/tenants/{id}/estado": {
+    "/api/plataforma/consultorios/{id}/estado": {
       "patch": {
-        "operationId": "cambiarEstadoTenant",
+        "operationId": "changeTenantStatus",
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
-        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CambiarEstadoTenantCommand" } } } },
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ChangeTenantStatusCommand" } } } },
         "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TenantDto" } } } } }
       }
     },
-    "/api/auth/login": {
+    "/api/acceso/ingreso": {
       "post": {
-        "operationId": "loginTenant",
+        "operationId": "tenantLogin",
         "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LoginCommand" } } } },
         "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TokenDto" } } } } }
       }
     },
-    "/api/auth/registro": {
+    "/api/acceso/registro": {
       "post": {
-        "operationId": "registrarPaciente",
-        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RegistroPacienteCommand" } } } },
+        "operationId": "registerPatient",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RegisterPatientCommand" } } } },
         "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TokenDto" } } } } }
       }
     },
     "/api/sedes": {
-      "get": { "operationId": "sedes", "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/SedeDto" } } } } } } },
+      "get": { "operationId": "locations", "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/LocationDto" } } } } } } },
       "post": {
-        "operationId": "crearSede",
-        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GuardarSedeCommand" } } } },
-        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SedeDto" } } } } }
+        "operationId": "createLocation",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SaveLocationCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LocationDto" } } } } }
       }
     },
     "/api/sedes/{id}": {
       "put": {
-        "operationId": "actualizarSede",
+        "operationId": "updateLocation",
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
-        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GuardarSedeCommand" } } } },
-        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SedeDto" } } } } }
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SaveLocationCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LocationDto" } } } } }
       }
     },
     "/api/servicios": {
-      "get": { "operationId": "servicios", "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/ServicioDto" } } } } } } },
+      "get": { "operationId": "medicalServices", "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/MedicalServiceDto" } } } } } } },
       "post": {
-        "operationId": "crearServicio",
-        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GuardarServicioCommand" } } } },
-        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ServicioDto" } } } } }
+        "operationId": "createMedicalService",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SaveMedicalServiceCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MedicalServiceDto" } } } } }
       }
     },
     "/api/especialidades": {
-      "get": { "operationId": "especialidades", "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/EspecialidadDto" } } } } } } },
+      "get": { "operationId": "specialties", "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/SpecialtyDto" } } } } } } },
       "post": {
-        "operationId": "crearEspecialidad",
-        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GuardarEspecialidadCommand" } } } },
-        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EspecialidadDto" } } } } }
+        "operationId": "createSpecialty",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SaveSpecialtyCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SpecialtyDto" } } } } }
       }
     },
     "/api/tipos-turno": {
-      "get": { "operationId": "tiposTurno", "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/TipoTurnoDto" } } } } } } },
+      "get": { "operationId": "appointmentTypes", "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/AppointmentTypeDto" } } } } } } },
       "post": {
-        "operationId": "crearTipoTurno",
-        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GuardarTipoTurnoCommand" } } } },
-        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TipoTurnoDto" } } } } }
+        "operationId": "createAppointmentType",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SaveAppointmentTypeCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AppointmentTypeDto" } } } } }
       }
     },
     "/api/profesionales": {
       "get": {
-        "operationId": "profesionales",
-        "parameters": [{ "name": "especialidadId", "in": "query", "schema": { "type": "string" } }],
-        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/ProfesionalDto" } } } } } }
+        "operationId": "professionals",
+        "parameters": [{ "name": "specialtyId", "in": "query", "schema": { "type": "string" } }],
+        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/ProfessionalDto" } } } } } }
       }
     },
     "/api/empleados/importar": {
       "post": {
-        "operationId": "importarEmpleados",
-        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ImportarEmpleadosCommand" } } } },
-        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ImportacionEmpleadosDto" } } } } }
+        "operationId": "importEmployees",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ImportEmployeesCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmployeeImportDto" } } } } }
       }
     },
     "/api/agendas": {
       "get": {
-        "operationId": "obtenerAgenda",
-        "parameters": [{ "name": "profesionalId", "in": "query", "required": true, "schema": { "type": "string" } }],
-        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/BloqueAgendaDto" } } } } } }
+        "operationId": "getSchedule",
+        "parameters": [{ "name": "professionalId", "in": "query", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/ScheduleBlockDto" } } } } } }
       },
       "put": {
-        "operationId": "guardarAgenda",
-        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GuardarAgendaCommand" } } } },
-        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/BloqueAgendaDto" } } } } } }
+        "operationId": "saveSchedule",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SaveScheduleCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/ScheduleBlockDto" } } } } } }
       }
     },
     "/api/bloqueos": {
       "get": {
-        "operationId": "bloqueos",
-        "parameters": [{ "name": "profesionalId", "in": "query", "required": true, "schema": { "type": "string" } }],
-        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/BloqueoDto" } } } } } }
+        "operationId": "blockouts",
+        "parameters": [{ "name": "professionalId", "in": "query", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/BlockoutDto" } } } } } }
       },
       "post": {
-        "operationId": "crearBloqueo",
-        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CrearBloqueoCommand" } } } },
-        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BloqueoDto" } } } } }
+        "operationId": "createBlockout",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateBlockoutCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BlockoutDto" } } } } }
       }
     },
     "/api/bloqueos/{id}": {
       "delete": {
-        "operationId": "eliminarBloqueo",
+        "operationId": "deleteBlockout",
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
-        "responses": { "204": { "description": "Eliminado" } }
+        "responses": { "204": { "description": "Deleted" } }
       }
     },
     "/api/disponibilidad": {
       "get": {
-        "operationId": "disponibilidad",
+        "operationId": "availability",
         "parameters": [
-          { "name": "sedeId", "in": "query", "required": true, "schema": { "type": "string" } },
-          { "name": "especialidadId", "in": "query", "required": true, "schema": { "type": "string" } },
-          { "name": "profesionalId", "in": "query", "schema": { "type": "string" } },
-          { "name": "fecha", "in": "query", "required": true, "schema": { "type": "string" } }
+          { "name": "locationId", "in": "query", "required": true, "schema": { "type": "string" } },
+          { "name": "specialtyId", "in": "query", "required": true, "schema": { "type": "string" } },
+          { "name": "professionalId", "in": "query", "schema": { "type": "string" } },
+          { "name": "date", "in": "query", "required": true, "schema": { "type": "string" } }
         ],
-        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/HuecoDto" } } } } } }
+        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/SlotDto" } } } } } }
       }
     },
     "/api/turnos": {
       "get": {
-        "operationId": "turnosDelDia",
+        "operationId": "appointmentsForDay",
         "parameters": [
-          { "name": "fecha", "in": "query", "required": true, "schema": { "type": "string" } },
-          { "name": "profesionalId", "in": "query", "schema": { "type": "string" } }
+          { "name": "date", "in": "query", "required": true, "schema": { "type": "string" } },
+          { "name": "professionalId", "in": "query", "schema": { "type": "string" } }
         ],
-        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/TurnoDto" } } } } } }
+        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/AppointmentDto" } } } } } }
       },
       "post": {
-        "operationId": "reservarTurno",
-        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ReservarTurnoCommand" } } } },
-        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TurnoDto" } } } } }
+        "operationId": "bookAppointment",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BookAppointmentCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AppointmentDto" } } } } }
       }
     },
     "/api/turnos/mios": {
       "get": {
-        "operationId": "misTurnos",
-        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/TurnoDto" } } } } } }
+        "operationId": "myAppointments",
+        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/AppointmentDto" } } } } } }
       }
     },
     "/api/turnos/{id}/cancelar": {
       "post": {
-        "operationId": "cancelarTurno",
+        "operationId": "cancelAppointment",
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
-        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TurnoDto" } } } } }
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AppointmentDto" } } } } }
       }
     },
     "/api/turnos/{id}/admitir": {
       "post": {
-        "operationId": "admitirTurno",
+        "operationId": "checkInAppointment",
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
-        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TurnoDto" } } } } }
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AppointmentDto" } } } } }
       }
     },
     "/api/turnos/{id}/reprogramar": {
       "post": {
-        "operationId": "reprogramarTurno",
+        "operationId": "rescheduleAppointment",
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
-        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ReprogramarTurnoCommand" } } } },
-        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TurnoDto" } } } } }
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RescheduleAppointmentCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AppointmentDto" } } } } }
       }
     },
     "/api/lista-espera": {
       "get": {
-        "operationId": "listaEspera",
-        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/ListaEsperaDto" } } } } } }
+        "operationId": "waitlist",
+        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/WaitlistEntryDto" } } } } } }
       },
       "post": {
-        "operationId": "anotarEspera",
-        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CrearListaEsperaCommand" } } } },
-        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ListaEsperaDto" } } } } }
+        "operationId": "joinWaitlist",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateWaitlistEntryCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WaitlistEntryDto" } } } } }
       }
     },
     "/api/lista-espera/{id}/asignar": {
       "post": {
-        "operationId": "asignarEspera",
+        "operationId": "assignWaitlistEntry",
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
-        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AsignarListaEsperaCommand" } } } },
-        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TurnoDto" } } } } }
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AssignWaitlistEntryCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AppointmentDto" } } } } }
       }
     },
     "/api/diagnosticos": {
       "get": {
-        "operationId": "diagnosticos",
-        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/DiagnosticoDto" } } } } } }
+        "operationId": "diagnoses",
+        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/DiagnosisDto" } } } } } }
       }
     },
     "/api/encuentros": {
       "post": {
-        "operationId": "guardarEncuentro",
-        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GuardarEncuentroCommand" } } } },
-        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EncuentroDto" } } } } }
+        "operationId": "saveEncounter",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SaveEncounterCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EncounterDto" } } } } }
       }
     },
     "/api/encuentros/{id}/cerrar": {
       "post": {
-        "operationId": "cerrarEncuentro",
+        "operationId": "closeEncounter",
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
-        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EncuentroDto" } } } } }
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EncounterDto" } } } } }
       }
     },
     "/api/recetas": {
       "post": {
-        "operationId": "crearReceta",
-        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CrearRecetaCommand" } } } },
-        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RecetaDto" } } } } }
+        "operationId": "createPrescription",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreatePrescriptionCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PrescriptionDto" } } } } }
       }
     },
     "/api/recetas/mias": {
       "get": {
-        "operationId": "misRecetas",
-        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/RecetaDto" } } } } } }
+        "operationId": "myPrescriptions",
+        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/PrescriptionDto" } } } } } }
       }
     },
     "/api/recetas/{id}": {
       "get": {
-        "operationId": "obtenerReceta",
+        "operationId": "getPrescription",
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
-        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RecetaDto" } } } } }
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PrescriptionDto" } } } } }
       }
     },
     "/api/historia": {
       "get": {
-        "operationId": "historia",
-        "parameters": [{ "name": "pacienteId", "in": "query", "schema": { "type": "string" } }],
-        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HistoriaDto" } } } } }
+        "operationId": "clinicalHistory",
+        "parameters": [{ "name": "patientId", "in": "query", "schema": { "type": "string" } }],
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ClinicalHistoryDto" } } } } }
       }
     },
     "/api/historias-medicas": {
       "get": {
-        "operationId": "historiasMedicas",
-        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/HistoriaMedicaDto" } } } } } }
+        "operationId": "medicalRecords",
+        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/MedicalRecordDto" } } } } } }
       }
     },
-    "/api/historias-medicas/{pacienteId}": {
+    "/api/historias-medicas/{patientId}": {
       "get": {
-        "operationId": "historiaMedica",
-        "parameters": [{ "name": "pacienteId", "in": "path", "required": true, "schema": { "type": "string" } }],
-        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HistoriaMedicaDto" } } } } }
+        "operationId": "medicalRecord",
+        "parameters": [{ "name": "patientId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MedicalRecordDto" } } } } }
       },
       "put": {
-        "operationId": "guardarHistoriaMedica",
-        "parameters": [{ "name": "pacienteId", "in": "path", "required": true, "schema": { "type": "string" } }],
-        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GuardarHistoriaMedicaCommand" } } } },
-        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HistoriaMedicaDto" } } } } }
+        "operationId": "saveMedicalRecord",
+        "parameters": [{ "name": "patientId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SaveMedicalRecordCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MedicalRecordDto" } } } } }
       }
     },
     "/api/aranceles": {
       "get": {
-        "operationId": "aranceles",
-        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/ArancelDto" } } } } } }
+        "operationId": "fees",
+        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/FeeDto" } } } } } }
       },
       "post": {
-        "operationId": "crearArancel",
-        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CrearArancelCommand" } } } },
-        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ArancelDto" } } } } }
+        "operationId": "createFee",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateFeeCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/FeeDto" } } } } }
       }
     },
     "/api/comprobantes": {
       "get": {
-        "operationId": "comprobantes",
-        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/ComprobanteDto" } } } } } }
+        "operationId": "invoices",
+        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/InvoiceDto" } } } } } }
       }
     },
     "/api/comprobantes/{id}/pagar": {
       "post": {
-        "operationId": "pagarComprobante",
+        "operationId": "payInvoice",
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
-        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PagarComprobanteCommand" } } } },
-        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ComprobanteDto" } } } } }
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PayInvoiceCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/InvoiceDto" } } } } }
       }
     },
     "/api/auditoria": {
       "get": {
-        "operationId": "auditoria",
-        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/AuditoriaDto" } } } } } }
+        "operationId": "auditLog",
+        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/AuditEntryDto" } } } } } }
       }
     }
   },
   "components": {
     "schemas": {
+      "TenantType": { "type": "string", "enum": ["Practice", "Hospital"] },
+      "TenantStatus": { "type": "string", "enum": ["Active", "Suspended", "Deactivated"] },
+      "TenantRole": { "type": "string", "enum": ["TenantAdmin", "Doctor", "Secretary", "Patient"] },
+      "AppointmentStatus": { "type": "string", "enum": ["Booked", "CheckedIn", "InProgress", "Completed", "Cancelled", "NoShow"] },
+      "WaitlistStatus": { "type": "string", "enum": ["Pending", "Offered", "Accepted", "Cancelled"] },
+      "PaymentMethod": { "type": "string", "enum": ["Cash", "Transfer", "Card"] },
+      "InvoiceStatus": { "type": "string", "enum": ["Pending", "Paid", "Voided"] },
+      "DayOfWeek": { "type": "string", "enum": ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] },
       "LoginCommand": { "type": "object", "required": ["email", "password"], "properties": { "email": { "type": "string" }, "password": { "type": "string" } } },
-      "TokenDto": { "type": "object", "required": ["token", "email", "nombre", "rol", "debeCambiarClave"], "properties": { "token": { "type": "string" }, "email": { "type": "string" }, "nombre": { "type": "string" }, "rol": { "type": "string" }, "tenantSlug": { "type": "string", "nullable": true }, "debeCambiarClave": { "type": "boolean" } } },
-      "AltaTenantCommand": { "type": "object", "required": ["slug", "nombre", "tipo"], "properties": { "slug": { "type": "string" }, "nombre": { "type": "string" }, "tipo": { "type": "string" } } },
-      "CambiarEstadoTenantCommand": { "type": "object", "required": ["estado"], "properties": { "estado": { "type": "string" } } },
-      "TenantDto": { "type": "object", "required": ["id", "slug", "nombre", "tipo", "estado", "creadoEn"], "properties": { "id": { "type": "string" }, "slug": { "type": "string" }, "nombre": { "type": "string" }, "tipo": { "type": "string" }, "estado": { "type": "string" }, "creadoEn": { "type": "string" } } },
-      "RegistroPacienteCommand": { "type": "object", "required": ["email", "password", "nombre", "apellido", "documento", "fechaNacimiento", "telefono"], "properties": { "email": { "type": "string" }, "password": { "type": "string" }, "nombre": { "type": "string" }, "apellido": { "type": "string" }, "documento": { "type": "string" }, "fechaNacimiento": { "type": "string" }, "telefono": { "type": "string" } } },
-      "SedeDto": { "type": "object", "required": ["id", "nombre", "direccion", "activa"], "properties": { "id": { "type": "string" }, "nombre": { "type": "string" }, "direccion": { "type": "string" }, "activa": { "type": "boolean" } } },
-      "GuardarSedeCommand": { "type": "object", "required": ["nombre", "direccion"], "properties": { "nombre": { "type": "string" }, "direccion": { "type": "string" } } },
-      "ServicioDto": { "type": "object", "required": ["id", "sedeId", "nombre"], "properties": { "id": { "type": "string" }, "sedeId": { "type": "string" }, "nombre": { "type": "string" } } },
-      "GuardarServicioCommand": { "type": "object", "required": ["sedeId", "nombre"], "properties": { "sedeId": { "type": "string" }, "nombre": { "type": "string" } } },
-      "EspecialidadDto": { "type": "object", "required": ["id", "nombre"], "properties": { "id": { "type": "string" }, "nombre": { "type": "string" } } },
-      "GuardarEspecialidadCommand": { "type": "object", "required": ["nombre"], "properties": { "nombre": { "type": "string" } } },
-      "TipoTurnoDto": { "type": "object", "required": ["id", "nombre", "duracionMinutos"], "properties": { "id": { "type": "string" }, "nombre": { "type": "string" }, "duracionMinutos": { "type": "integer" }, "especialidadId": { "type": "string", "nullable": true } } },
-      "GuardarTipoTurnoCommand": { "type": "object", "required": ["nombre", "duracionMinutos"], "properties": { "nombre": { "type": "string" }, "duracionMinutos": { "type": "integer" }, "especialidadId": { "type": "string", "nullable": true } } },
-      "ProfesionalDto": { "type": "object", "required": ["id", "nombre", "apellido", "email"], "properties": { "id": { "type": "string" }, "nombre": { "type": "string" }, "apellido": { "type": "string" }, "email": { "type": "string" }, "matricula": { "type": "string", "nullable": true }, "especialidadId": { "type": "string", "nullable": true } } },
-      "ImportarEmpleadosCommand": { "type": "object", "required": ["csv"], "properties": { "csv": { "type": "string" } } },
-      "EmpleadoCreadoDto": { "type": "object", "required": ["fila", "email", "claveTemporal", "rol"], "properties": { "fila": { "type": "integer" }, "email": { "type": "string" }, "claveTemporal": { "type": "string" }, "rol": { "type": "string" } } },
-      "FilaRechazadaDto": { "type": "object", "required": ["fila", "motivo"], "properties": { "fila": { "type": "integer" }, "motivo": { "type": "string" } } },
-      "ImportacionEmpleadosDto": { "type": "object", "required": ["creados", "rechazados"], "properties": { "creados": { "type": "array", "items": { "$ref": "#/components/schemas/EmpleadoCreadoDto" } }, "rechazados": { "type": "array", "items": { "$ref": "#/components/schemas/FilaRechazadaDto" } } } },
-      "BloqueAgendaDto": { "type": "object", "required": ["id", "dia", "horaDesde", "horaHasta", "sedeId", "tipoTurnoId"], "properties": { "id": { "type": "string" }, "dia": { "type": "string" }, "horaDesde": { "type": "string" }, "horaHasta": { "type": "string" }, "sedeId": { "type": "string" }, "tipoTurnoId": { "type": "string" } } },
-      "GuardarAgendaCommand": { "type": "object", "required": ["profesionalId", "bloques"], "properties": { "profesionalId": { "type": "string" }, "bloques": { "type": "array", "items": { "$ref": "#/components/schemas/BloqueAgendaDto" } } } },
-      "BloqueoDto": { "type": "object", "required": ["id", "profesionalId", "inicio", "fin", "motivo"], "properties": { "id": { "type": "string" }, "profesionalId": { "type": "string" }, "inicio": { "type": "string" }, "fin": { "type": "string" }, "motivo": { "type": "string" } } },
-      "CrearBloqueoCommand": { "type": "object", "required": ["profesionalId", "inicio", "fin", "motivo"], "properties": { "profesionalId": { "type": "string" }, "inicio": { "type": "string" }, "fin": { "type": "string" }, "motivo": { "type": "string" } } },
-      "HuecoDto": { "type": "object", "required": ["profesionalId", "profesional", "sedeId", "tipoTurnoId", "tipoTurno", "inicio", "fin"], "properties": { "profesionalId": { "type": "string" }, "profesional": { "type": "string" }, "sedeId": { "type": "string" }, "tipoTurnoId": { "type": "string" }, "tipoTurno": { "type": "string" }, "inicio": { "type": "string" }, "fin": { "type": "string" } } },
-      "ReservarTurnoCommand": { "type": "object", "required": ["profesionalId", "sedeId", "tipoTurnoId", "inicio"], "properties": { "pacienteId": { "type": "string", "nullable": true }, "profesionalId": { "type": "string" }, "sedeId": { "type": "string" }, "tipoTurnoId": { "type": "string" }, "inicio": { "type": "string" }, "motivoConsulta": { "type": "string", "nullable": true } } },
-      "TurnoDto": { "type": "object", "required": ["id", "pacienteId", "paciente", "profesionalId", "profesional", "sedeId", "sede", "tipoTurnoId", "tipoTurno", "inicio", "fin", "estado"], "properties": { "id": { "type": "string" }, "pacienteId": { "type": "string" }, "paciente": { "type": "string" }, "profesionalId": { "type": "string" }, "profesional": { "type": "string" }, "sedeId": { "type": "string" }, "sede": { "type": "string" }, "tipoTurnoId": { "type": "string" }, "tipoTurno": { "type": "string" }, "inicio": { "type": "string" }, "fin": { "type": "string" }, "estado": { "type": "string" }, "motivoConsulta": { "type": "string", "nullable": true } } },
-      "ReprogramarTurnoCommand": { "type": "object", "required": ["inicio"], "properties": { "inicio": { "type": "string" } } },
-      "ListaEsperaDto": { "type": "object", "required": ["id", "pacienteId", "paciente", "sedeId", "especialidadId", "estado", "creadoEn"], "properties": { "id": { "type": "string" }, "pacienteId": { "type": "string" }, "paciente": { "type": "string" }, "profesionalId": { "type": "string", "nullable": true }, "sedeId": { "type": "string" }, "especialidadId": { "type": "string" }, "estado": { "type": "string" }, "creadoEn": { "type": "string" }, "notas": { "type": "string", "nullable": true } } },
-      "CrearListaEsperaCommand": { "type": "object", "required": ["sedeId", "especialidadId"], "properties": { "pacienteId": { "type": "string", "nullable": true }, "profesionalId": { "type": "string", "nullable": true }, "sedeId": { "type": "string" }, "especialidadId": { "type": "string" }, "notas": { "type": "string", "nullable": true } } },
-      "AsignarListaEsperaCommand": { "type": "object", "required": ["inicio", "tipoTurnoId"], "properties": { "inicio": { "type": "string" }, "tipoTurnoId": { "type": "string" } } },
-      "DiagnosticoDto": { "type": "object", "required": ["id", "codigo", "nombre"], "properties": { "id": { "type": "string" }, "codigo": { "type": "string" }, "nombre": { "type": "string" } } },
-      "GuardarEncuentroCommand": { "type": "object", "required": ["turnoId", "diagnosticoIds"], "properties": { "turnoId": { "type": "string" }, "nota": { "type": "string", "nullable": true }, "tensionArterial": { "type": "string", "nullable": true }, "frecuenciaCardiaca": { "type": "integer", "nullable": true }, "temperatura": { "type": "number", "nullable": true }, "pesoKg": { "type": "number", "nullable": true }, "diagnosticoIds": { "type": "array", "items": { "type": "string" } } } },
-      "EncuentroDto": { "type": "object", "required": ["id", "turnoId", "pacienteId", "profesionalId", "cerrado", "creadoEn", "diagnosticos"], "properties": { "id": { "type": "string" }, "turnoId": { "type": "string" }, "pacienteId": { "type": "string" }, "profesionalId": { "type": "string" }, "nota": { "type": "string", "nullable": true }, "tensionArterial": { "type": "string", "nullable": true }, "frecuenciaCardiaca": { "type": "integer", "nullable": true }, "temperatura": { "type": "number", "nullable": true }, "pesoKg": { "type": "number", "nullable": true }, "cerrado": { "type": "boolean" }, "creadoEn": { "type": "string" }, "diagnosticos": { "type": "array", "items": { "$ref": "#/components/schemas/DiagnosticoDto" } } } },
-      "RecetaItemDto": { "type": "object", "required": ["medicamento", "dosis", "frecuencia", "duracion"], "properties": { "medicamento": { "type": "string" }, "dosis": { "type": "string" }, "frecuencia": { "type": "string" }, "duracion": { "type": "string" } } },
-      "CrearRecetaCommand": { "type": "object", "required": ["encuentroId", "items"], "properties": { "encuentroId": { "type": "string" }, "indicaciones": { "type": "string", "nullable": true }, "items": { "type": "array", "items": { "$ref": "#/components/schemas/RecetaItemDto" } } } },
-      "RecetaDto": { "type": "object", "required": ["id", "encuentroId", "pacienteId", "profesionalId", "profesional", "creadoEn", "items"], "properties": { "id": { "type": "string" }, "encuentroId": { "type": "string" }, "pacienteId": { "type": "string" }, "profesionalId": { "type": "string" }, "profesional": { "type": "string" }, "indicaciones": { "type": "string", "nullable": true }, "creadoEn": { "type": "string" }, "items": { "type": "array", "items": { "$ref": "#/components/schemas/RecetaItemDto" } } } },
-      "PacienteResumenDto": { "type": "object", "required": ["id", "nombre", "documento", "fechaNacimiento", "telefono"], "properties": { "id": { "type": "string" }, "nombre": { "type": "string" }, "documento": { "type": "string" }, "fechaNacimiento": { "type": "string" }, "telefono": { "type": "string" } } },
-      "HistoriaDto": { "type": "object", "required": ["paciente", "encuentros", "recetas"], "properties": { "paciente": { "$ref": "#/components/schemas/PacienteResumenDto" }, "encuentros": { "type": "array", "items": { "$ref": "#/components/schemas/EncuentroDto" } }, "recetas": { "type": "array", "items": { "$ref": "#/components/schemas/RecetaDto" } } } },
-      "HistoriaMedicaDto": { "type": "object", "required": ["pacienteId", "nombre", "apellido", "email", "documento", "fechaNacimiento", "telefono"], "properties": { "pacienteId": { "type": "string" }, "nombre": { "type": "string" }, "apellido": { "type": "string" }, "email": { "type": "string" }, "documento": { "type": "string" }, "fechaNacimiento": { "type": "string" }, "telefono": { "type": "string" }, "grupoSanguineo": { "type": "string", "nullable": true }, "alergias": { "type": "string", "nullable": true }, "antecedentesPersonales": { "type": "string", "nullable": true }, "antecedentesFamiliares": { "type": "string", "nullable": true }, "medicacionHabitual": { "type": "string", "nullable": true }, "habitos": { "type": "string", "nullable": true }, "obraSocial": { "type": "string", "nullable": true }, "numeroAfiliado": { "type": "string", "nullable": true }, "contactoEmergencia": { "type": "string", "nullable": true }, "telefonoEmergencia": { "type": "string", "nullable": true }, "observaciones": { "type": "string", "nullable": true }, "actualizadoEn": { "type": "string", "nullable": true } } },
-      "GuardarHistoriaMedicaCommand": { "type": "object", "required": ["nombre", "apellido", "documento", "fechaNacimiento", "telefono"], "properties": { "nombre": { "type": "string" }, "apellido": { "type": "string" }, "documento": { "type": "string" }, "fechaNacimiento": { "type": "string" }, "telefono": { "type": "string" }, "grupoSanguineo": { "type": "string", "nullable": true }, "alergias": { "type": "string", "nullable": true }, "antecedentesPersonales": { "type": "string", "nullable": true }, "antecedentesFamiliares": { "type": "string", "nullable": true }, "medicacionHabitual": { "type": "string", "nullable": true }, "habitos": { "type": "string", "nullable": true }, "obraSocial": { "type": "string", "nullable": true }, "numeroAfiliado": { "type": "string", "nullable": true }, "contactoEmergencia": { "type": "string", "nullable": true }, "telefonoEmergencia": { "type": "string", "nullable": true }, "observaciones": { "type": "string", "nullable": true } } },
-      "ArancelDto": { "type": "object", "required": ["id", "tipoTurnoId", "tipoTurno", "monto", "vigenteDesde"], "properties": { "id": { "type": "string" }, "tipoTurnoId": { "type": "string" }, "tipoTurno": { "type": "string" }, "monto": { "type": "number" }, "vigenteDesde": { "type": "string" } } },
-      "CrearArancelCommand": { "type": "object", "required": ["tipoTurnoId", "monto", "vigenteDesde"], "properties": { "tipoTurnoId": { "type": "string" }, "monto": { "type": "number" }, "vigenteDesde": { "type": "string" } } },
-      "ComprobanteItemDto": { "type": "object", "required": ["descripcion", "importe"], "properties": { "descripcion": { "type": "string" }, "importe": { "type": "number" } } },
-      "ComprobanteDto": { "type": "object", "required": ["id", "turnoId", "pacienteId", "paciente", "total", "estado", "creadoEn", "items"], "properties": { "id": { "type": "string" }, "turnoId": { "type": "string" }, "pacienteId": { "type": "string" }, "paciente": { "type": "string" }, "total": { "type": "number" }, "estado": { "type": "string" }, "metodoPago": { "type": "string", "nullable": true }, "creadoEn": { "type": "string" }, "pagadoEn": { "type": "string", "nullable": true }, "items": { "type": "array", "items": { "$ref": "#/components/schemas/ComprobanteItemDto" } } } },
-      "PagarComprobanteCommand": { "type": "object", "required": ["metodo"], "properties": { "metodo": { "type": "string" } } },
-      "AuditoriaDto": { "type": "object", "required": ["id", "accion", "entidad", "fecha"], "properties": { "id": { "type": "string" }, "usuarioId": { "type": "string", "nullable": true }, "accion": { "type": "string" }, "entidad": { "type": "string" }, "entidadId": { "type": "string", "nullable": true }, "detalle": { "type": "string", "nullable": true }, "fecha": { "type": "string" } } }
+      "TokenDto": { "type": "object", "required": ["token", "email", "name", "role", "mustChangePassword"], "properties": { "token": { "type": "string" }, "email": { "type": "string" }, "name": { "type": "string" }, "role": { "type": "string" }, "tenantSlug": { "type": "string", "nullable": true }, "mustChangePassword": { "type": "boolean" } } },
+      "CreateTenantCommand": { "type": "object", "required": ["slug", "name", "type"], "properties": { "slug": { "type": "string" }, "name": { "type": "string" }, "type": { "$ref": "#/components/schemas/TenantType" } } },
+      "ChangeTenantStatusCommand": { "type": "object", "required": ["status"], "properties": { "status": { "$ref": "#/components/schemas/TenantStatus" } } },
+      "TenantDto": { "type": "object", "required": ["id", "slug", "name", "type", "status", "createdAt"], "properties": { "id": { "type": "string" }, "slug": { "type": "string" }, "name": { "type": "string" }, "type": { "$ref": "#/components/schemas/TenantType" }, "status": { "$ref": "#/components/schemas/TenantStatus" }, "createdAt": { "type": "string" } } },
+      "RegisterPatientCommand": { "type": "object", "required": ["email", "password", "firstName", "lastName", "documentNumber", "birthDate", "phone"], "properties": { "email": { "type": "string" }, "password": { "type": "string" }, "firstName": { "type": "string" }, "lastName": { "type": "string" }, "documentNumber": { "type": "string" }, "birthDate": { "type": "string" }, "phone": { "type": "string" } } },
+      "LocationDto": { "type": "object", "required": ["id", "name", "address", "isActive"], "properties": { "id": { "type": "string" }, "name": { "type": "string" }, "address": { "type": "string" }, "isActive": { "type": "boolean" } } },
+      "SaveLocationCommand": { "type": "object", "required": ["name", "address"], "properties": { "name": { "type": "string" }, "address": { "type": "string" } } },
+      "MedicalServiceDto": { "type": "object", "required": ["id", "locationId", "name"], "properties": { "id": { "type": "string" }, "locationId": { "type": "string" }, "name": { "type": "string" } } },
+      "SaveMedicalServiceCommand": { "type": "object", "required": ["locationId", "name"], "properties": { "locationId": { "type": "string" }, "name": { "type": "string" } } },
+      "SpecialtyDto": { "type": "object", "required": ["id", "name"], "properties": { "id": { "type": "string" }, "name": { "type": "string" } } },
+      "SaveSpecialtyCommand": { "type": "object", "required": ["name"], "properties": { "name": { "type": "string" } } },
+      "AppointmentTypeDto": { "type": "object", "required": ["id", "name", "durationMinutes"], "properties": { "id": { "type": "string" }, "name": { "type": "string" }, "durationMinutes": { "type": "integer" }, "specialtyId": { "type": "string", "nullable": true } } },
+      "SaveAppointmentTypeCommand": { "type": "object", "required": ["name", "durationMinutes"], "properties": { "name": { "type": "string" }, "durationMinutes": { "type": "integer" }, "specialtyId": { "type": "string", "nullable": true } } },
+      "ProfessionalDto": { "type": "object", "required": ["id", "firstName", "lastName", "email"], "properties": { "id": { "type": "string" }, "firstName": { "type": "string" }, "lastName": { "type": "string" }, "email": { "type": "string" }, "licenseNumber": { "type": "string", "nullable": true }, "specialtyId": { "type": "string", "nullable": true } } },
+      "ImportEmployeesCommand": { "type": "object", "required": ["csv"], "properties": { "csv": { "type": "string" } } },
+      "CreatedEmployeeDto": { "type": "object", "required": ["row", "email", "temporaryPassword", "role"], "properties": { "row": { "type": "integer" }, "email": { "type": "string" }, "temporaryPassword": { "type": "string" }, "role": { "$ref": "#/components/schemas/TenantRole" } } },
+      "RejectedRowDto": { "type": "object", "required": ["row", "reason"], "properties": { "row": { "type": "integer" }, "reason": { "type": "string" } } },
+      "EmployeeImportDto": { "type": "object", "required": ["created", "rejected"], "properties": { "created": { "type": "array", "items": { "$ref": "#/components/schemas/CreatedEmployeeDto" } }, "rejected": { "type": "array", "items": { "$ref": "#/components/schemas/RejectedRowDto" } } } },
+      "ScheduleBlockDto": { "type": "object", "required": ["id", "day", "startTime", "endTime", "locationId", "appointmentTypeId"], "properties": { "id": { "type": "string" }, "day": { "$ref": "#/components/schemas/DayOfWeek" }, "startTime": { "type": "string" }, "endTime": { "type": "string" }, "locationId": { "type": "string" }, "appointmentTypeId": { "type": "string" } } },
+      "SaveScheduleCommand": { "type": "object", "required": ["professionalId", "blocks"], "properties": { "professionalId": { "type": "string" }, "blocks": { "type": "array", "items": { "$ref": "#/components/schemas/ScheduleBlockDto" } } } },
+      "BlockoutDto": { "type": "object", "required": ["id", "professionalId", "start", "end", "reason"], "properties": { "id": { "type": "string" }, "professionalId": { "type": "string" }, "start": { "type": "string" }, "end": { "type": "string" }, "reason": { "type": "string" } } },
+      "CreateBlockoutCommand": { "type": "object", "required": ["professionalId", "start", "end", "reason"], "properties": { "professionalId": { "type": "string" }, "start": { "type": "string" }, "end": { "type": "string" }, "reason": { "type": "string" } } },
+      "SlotDto": { "type": "object", "required": ["professionalId", "professional", "locationId", "appointmentTypeId", "appointmentType", "start", "end"], "properties": { "professionalId": { "type": "string" }, "professional": { "type": "string" }, "locationId": { "type": "string" }, "appointmentTypeId": { "type": "string" }, "appointmentType": { "type": "string" }, "start": { "type": "string" }, "end": { "type": "string" } } },
+      "BookAppointmentCommand": { "type": "object", "required": ["professionalId", "locationId", "appointmentTypeId", "start"], "properties": { "patientId": { "type": "string", "nullable": true }, "professionalId": { "type": "string" }, "locationId": { "type": "string" }, "appointmentTypeId": { "type": "string" }, "start": { "type": "string" }, "visitReason": { "type": "string", "nullable": true } } },
+      "AppointmentDto": { "type": "object", "required": ["id", "patientId", "patient", "professionalId", "professional", "locationId", "location", "appointmentTypeId", "appointmentType", "start", "end", "status"], "properties": { "id": { "type": "string" }, "patientId": { "type": "string" }, "patient": { "type": "string" }, "professionalId": { "type": "string" }, "professional": { "type": "string" }, "locationId": { "type": "string" }, "location": { "type": "string" }, "appointmentTypeId": { "type": "string" }, "appointmentType": { "type": "string" }, "start": { "type": "string" }, "end": { "type": "string" }, "status": { "$ref": "#/components/schemas/AppointmentStatus" }, "visitReason": { "type": "string", "nullable": true } } },
+      "RescheduleAppointmentCommand": { "type": "object", "required": ["start"], "properties": { "start": { "type": "string" } } },
+      "WaitlistEntryDto": { "type": "object", "required": ["id", "patientId", "patient", "locationId", "specialtyId", "status", "createdAt"], "properties": { "id": { "type": "string" }, "patientId": { "type": "string" }, "patient": { "type": "string" }, "professionalId": { "type": "string", "nullable": true }, "locationId": { "type": "string" }, "specialtyId": { "type": "string" }, "status": { "$ref": "#/components/schemas/WaitlistStatus" }, "createdAt": { "type": "string" }, "notes": { "type": "string", "nullable": true } } },
+      "CreateWaitlistEntryCommand": { "type": "object", "required": ["locationId", "specialtyId"], "properties": { "patientId": { "type": "string", "nullable": true }, "professionalId": { "type": "string", "nullable": true }, "locationId": { "type": "string" }, "specialtyId": { "type": "string" }, "notes": { "type": "string", "nullable": true } } },
+      "AssignWaitlistEntryCommand": { "type": "object", "required": ["start", "appointmentTypeId"], "properties": { "start": { "type": "string" }, "appointmentTypeId": { "type": "string" } } },
+      "DiagnosisDto": { "type": "object", "required": ["id", "code", "name"], "properties": { "id": { "type": "string" }, "code": { "type": "string" }, "name": { "type": "string" } } },
+      "SaveEncounterCommand": { "type": "object", "required": ["appointmentId", "diagnosisIds"], "properties": { "appointmentId": { "type": "string" }, "note": { "type": "string", "nullable": true }, "bloodPressure": { "type": "string", "nullable": true }, "heartRate": { "type": "integer", "nullable": true }, "temperature": { "type": "number", "nullable": true }, "weightKg": { "type": "number", "nullable": true }, "diagnosisIds": { "type": "array", "items": { "type": "string" } } } },
+      "EncounterDto": { "type": "object", "required": ["id", "appointmentId", "patientId", "professionalId", "isClosed", "createdAt", "diagnoses"], "properties": { "id": { "type": "string" }, "appointmentId": { "type": "string" }, "patientId": { "type": "string" }, "professionalId": { "type": "string" }, "note": { "type": "string", "nullable": true }, "bloodPressure": { "type": "string", "nullable": true }, "heartRate": { "type": "integer", "nullable": true }, "temperature": { "type": "number", "nullable": true }, "weightKg": { "type": "number", "nullable": true }, "isClosed": { "type": "boolean" }, "createdAt": { "type": "string" }, "diagnoses": { "type": "array", "items": { "$ref": "#/components/schemas/DiagnosisDto" } } } },
+      "PrescriptionItemDto": { "type": "object", "required": ["medication", "dose", "frequency", "duration"], "properties": { "medication": { "type": "string" }, "dose": { "type": "string" }, "frequency": { "type": "string" }, "duration": { "type": "string" } } },
+      "CreatePrescriptionCommand": { "type": "object", "required": ["encounterId", "items"], "properties": { "encounterId": { "type": "string" }, "instructions": { "type": "string", "nullable": true }, "items": { "type": "array", "items": { "$ref": "#/components/schemas/PrescriptionItemDto" } } } },
+      "PrescriptionDto": { "type": "object", "required": ["id", "encounterId", "patientId", "professionalId", "professional", "createdAt", "items"], "properties": { "id": { "type": "string" }, "encounterId": { "type": "string" }, "patientId": { "type": "string" }, "professionalId": { "type": "string" }, "professional": { "type": "string" }, "instructions": { "type": "string", "nullable": true }, "createdAt": { "type": "string" }, "items": { "type": "array", "items": { "$ref": "#/components/schemas/PrescriptionItemDto" } } } },
+      "PatientSummaryDto": { "type": "object", "required": ["id", "name", "documentNumber", "birthDate", "phone"], "properties": { "id": { "type": "string" }, "name": { "type": "string" }, "documentNumber": { "type": "string" }, "birthDate": { "type": "string" }, "phone": { "type": "string" } } },
+      "ClinicalHistoryDto": { "type": "object", "required": ["patient", "encounters", "prescriptions"], "properties": { "patient": { "$ref": "#/components/schemas/PatientSummaryDto" }, "encounters": { "type": "array", "items": { "$ref": "#/components/schemas/EncounterDto" } }, "prescriptions": { "type": "array", "items": { "$ref": "#/components/schemas/PrescriptionDto" } } } },
+      "MedicalRecordDto": { "type": "object", "required": ["patientId", "firstName", "lastName", "email", "documentNumber", "birthDate", "phone"], "properties": { "patientId": { "type": "string" }, "firstName": { "type": "string" }, "lastName": { "type": "string" }, "email": { "type": "string" }, "documentNumber": { "type": "string" }, "birthDate": { "type": "string" }, "phone": { "type": "string" }, "bloodType": { "type": "string", "nullable": true }, "allergies": { "type": "string", "nullable": true }, "personalHistory": { "type": "string", "nullable": true }, "familyHistory": { "type": "string", "nullable": true }, "currentMedication": { "type": "string", "nullable": true }, "habits": { "type": "string", "nullable": true }, "healthInsurance": { "type": "string", "nullable": true }, "memberNumber": { "type": "string", "nullable": true }, "emergencyContact": { "type": "string", "nullable": true }, "emergencyPhone": { "type": "string", "nullable": true }, "notes": { "type": "string", "nullable": true }, "updatedAt": { "type": "string", "nullable": true } } },
+      "SaveMedicalRecordCommand": { "type": "object", "required": ["firstName", "lastName", "documentNumber", "birthDate", "phone"], "properties": { "firstName": { "type": "string" }, "lastName": { "type": "string" }, "documentNumber": { "type": "string" }, "birthDate": { "type": "string" }, "phone": { "type": "string" }, "bloodType": { "type": "string", "nullable": true }, "allergies": { "type": "string", "nullable": true }, "personalHistory": { "type": "string", "nullable": true }, "familyHistory": { "type": "string", "nullable": true }, "currentMedication": { "type": "string", "nullable": true }, "habits": { "type": "string", "nullable": true }, "healthInsurance": { "type": "string", "nullable": true }, "memberNumber": { "type": "string", "nullable": true }, "emergencyContact": { "type": "string", "nullable": true }, "emergencyPhone": { "type": "string", "nullable": true }, "notes": { "type": "string", "nullable": true } } },
+      "FeeDto": { "type": "object", "required": ["id", "appointmentTypeId", "appointmentType", "amount", "effectiveFrom"], "properties": { "id": { "type": "string" }, "appointmentTypeId": { "type": "string" }, "appointmentType": { "type": "string" }, "amount": { "type": "number" }, "effectiveFrom": { "type": "string" } } },
+      "CreateFeeCommand": { "type": "object", "required": ["appointmentTypeId", "amount", "effectiveFrom"], "properties": { "appointmentTypeId": { "type": "string" }, "amount": { "type": "number" }, "effectiveFrom": { "type": "string" } } },
+      "InvoiceItemDto": { "type": "object", "required": ["description", "amount"], "properties": { "description": { "type": "string" }, "amount": { "type": "number" } } },
+      "InvoiceDto": { "type": "object", "required": ["id", "appointmentId", "patientId", "patient", "total", "status", "createdAt", "items"], "properties": { "id": { "type": "string" }, "appointmentId": { "type": "string" }, "patientId": { "type": "string" }, "patient": { "type": "string" }, "total": { "type": "number" }, "status": { "$ref": "#/components/schemas/InvoiceStatus" }, "paymentMethod": { "allOf": [{ "$ref": "#/components/schemas/PaymentMethod" }], "nullable": true }, "createdAt": { "type": "string" }, "paidAt": { "type": "string", "nullable": true }, "items": { "type": "array", "items": { "$ref": "#/components/schemas/InvoiceItemDto" } } } },
+      "PayInvoiceCommand": { "type": "object", "required": ["method"], "properties": { "method": { "$ref": "#/components/schemas/PaymentMethod" } } },
+      "AuditEntryDto": { "type": "object", "required": ["id", "action", "entity", "timestamp"], "properties": { "id": { "type": "string" }, "userId": { "type": "string", "nullable": true }, "action": { "type": "string" }, "entity": { "type": "string" }, "entityId": { "type": "string", "nullable": true }, "detail": { "type": "string", "nullable": true }, "timestamp": { "type": "string" } } }
     }
   }
 }

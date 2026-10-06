@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ClinicaClient, TenantDto, mensajeError } from 'sdk';
+import { ClinicaClient, TenantDto, TenantStatus, TenantType, errorMessage, tenantStatusLabels, tenantTypeLabels } from 'sdk';
 import { UiBadge, UiButton, UiEmpty, UiField, UiTable } from 'ui';
 import { firstValueFrom } from 'rxjs';
 
@@ -10,42 +10,45 @@ import { firstValueFrom } from 'rxjs';
 })
 export class TenantsPage {
   private readonly api = inject(ClinicaClient);
+  readonly typeLabels = tenantTypeLabels;
+  readonly statusLabels = tenantStatusLabels;
+  readonly types = Object.keys(tenantTypeLabels) as TenantType[];
   readonly tenants = signal<TenantDto[]>([]);
   readonly error = signal('');
   slug = '';
-  nombre = '';
-  tipo = 'Consultorio';
+  name = '';
+  type: TenantType = 'Practice';
 
   constructor() {
-    void this.cargar();
+    void this.load();
   }
 
-  async cargar() {
+  async load() {
     try {
-      this.tenants.set(await firstValueFrom(this.api.listarTenants()));
+      this.tenants.set(await firstValueFrom(this.api.listTenants()));
     } catch (error) {
-      this.error.set(mensajeError(error));
+      this.error.set(errorMessage(error));
     }
   }
 
-  async crear() {
+  async create() {
     this.error.set('');
     try {
-      await firstValueFrom(this.api.crearTenant({ slug: this.slug, nombre: this.nombre, tipo: this.tipo }));
+      await firstValueFrom(this.api.createTenant({ slug: this.slug, name: this.name, type: this.type }));
       this.slug = '';
-      this.nombre = '';
-      await this.cargar();
+      this.name = '';
+      await this.load();
     } catch (error) {
-      this.error.set(mensajeError(error));
+      this.error.set(errorMessage(error));
     }
   }
 
-  async estado(tenant: TenantDto, estado: string) {
+  async changeStatus(tenant: TenantDto, status: TenantStatus) {
     try {
-      await firstValueFrom(this.api.cambiarEstadoTenant(tenant.id, { estado }));
-      await this.cargar();
+      await firstValueFrom(this.api.changeTenantStatus(tenant.id, { status }));
+      await this.load();
     } catch (error) {
-      this.error.set(mensajeError(error));
+      this.error.set(errorMessage(error));
     }
   }
 }
