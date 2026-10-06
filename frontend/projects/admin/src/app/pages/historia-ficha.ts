@@ -29,12 +29,15 @@ export class HistoriaFichaPage {
   readonly error = signal('');
   readonly guardando = signal(false);
   readonly guardada = signal(false);
+  readonly version = signal(0);
 
   readonly cambios = computed(() => {
+    this.version();
     const ficha = this.ficha();
     return !!ficha && JSON.stringify(ficha) !== this.original();
   });
   readonly edad = computed(() => {
+    this.version();
     const fecha = this.ficha()?.fechaNacimiento;
     return fecha ? edad(fecha) : null;
   });
@@ -45,8 +48,8 @@ export class HistoriaFichaPage {
       .catch((error) => this.error.set(mensajeError(error)));
   }
 
-  actualizar<K extends keyof FichaMedica>(campo: K, valor: string) {
-    this.ficha.update((ficha) => (ficha ? { ...ficha, [campo]: valor } : ficha));
+  tocar() {
+    this.version.update((v) => v + 1);
     this.guardada.set(false);
   }
 
