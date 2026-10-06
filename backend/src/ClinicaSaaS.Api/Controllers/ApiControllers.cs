@@ -244,6 +244,21 @@ public class ClinicalController(ClinicalService clinical) : ApiController
 }
 
 [ApiController]
+[Authorize(Roles = $"{AppRoles.TenantAdmin},{AppRoles.Secretary}")]
+[Route("api/pacientes")]
+public class PatientsController(MedicalRecordsService records) : ApiController
+{
+    [HttpGet]
+    public Task<IActionResult> Search([FromQuery] string q, CancellationToken ct) =>
+        Run(() => records.SearchAsync(q, ct));
+
+    [Authorize(Roles = AppRoles.TenantAdmin)]
+    [HttpPost]
+    public Task<IActionResult> Create(CreatePatientCommand command, CancellationToken ct) =>
+        Run(() => records.CreateAsync(command, ct));
+}
+
+[ApiController]
 [Authorize(Roles = AppRoles.TenantAdmin)]
 [Route("api/historias-medicas")]
 public class MedicalRecordsController(MedicalRecordsService records) : ApiController

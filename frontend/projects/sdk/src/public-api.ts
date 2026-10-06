@@ -8,6 +8,7 @@ export * from './lib/modules/employees';
 export * from './lib/modules/schedule';
 export * from './lib/modules/appointments';
 export * from './lib/modules/clinical';
+export * from './lib/modules/patients';
 export * from './lib/modules/medical-records';
 export * from './lib/modules/billing';
 export * from './lib/modules/audit';

@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { AppointmentDto, AppointmentsService, BillingService, InvoiceDto, PaymentMethod, WaitlistEntryDto, errorMessage } from 'sdk';
+import { AppointmentDto, AppointmentsService, BillingService, InvoiceDto, PatientLookupDto, PatientsService, PaymentMethod, WaitlistEntryDto, errorMessage } from 'sdk';
 import { UiBadge, UiButton, UiCalendar, UiField, UiTable } from 'ui';
 import { Observable, firstValueFrom } from 'rxjs';
 import { appointmentStatusLabels } from '../appointments/models/appointment-status-labels';
@@ -13,12 +13,19 @@ import { invoiceStatusLabels } from './models/invoice-labels';
 export class FrontDeskPage {
   private readonly appointmentsApi = inject(AppointmentsService);
   private readonly billing = inject(BillingService);
+  private readonly patientsApi = inject(PatientsService);
+  private searchSeq = 0;
+  private searchTimer = 0;
   readonly statusLabels = appointmentStatusLabels;
   readonly invoiceStatusLabels = invoiceStatusLabels;
   readonly appointments = signal<AppointmentDto[]>([]);
   readonly waitlist = signal<WaitlistEntryDto[]>([]);
   readonly invoices = signal<InvoiceDto[]>([]);
   readonly error = signal('');
+  readonly searchError = signal('');
+  readonly searching = signal(false);
+  readonly matches = signal<PatientLookupDto[]>([]);
+  query = '';
   date = new Date().toISOString().slice(0, 10);
   appointmentId = '';
   newStart = '';
@@ -27,6 +34,46 @@ export class FrontDeskPage {
 
   constructor() {
     void this.load();
+  }
+
+  onQuery(value: string) {
+    this.query = value;
+    window.clearTimeout(this.searchTimer);
+    this.searchTimer = window.setTimeout(() => void this.searchPatients(), 250);
+  }
+
+  age(birthDate: string) {
+    const birth = new Date(`${birthDate}T00:00:00`);
+    if (Number.isNaN(birth.getTime())) return null;
+    const today = new Date();
+    let years = today.getFullYear() - birth.getFullYear();
+    const months = today.getMonth() - birth.getMonth();
+    if (months < 0 || (months === 0 && today.getDate() < birth.getDate())) years--;
+    return years;
+  }
+
+  private async searchPatients() {
+    const q = this.query.trim();
+    const seq = ++this.searchSeq;
+    if (q.length < 2) {
+      this.matches.set([]);
+      this.searchError.set('');
+      this.searching.set(false);
+      return;
+    }
+    this.searching.set(true);
+    this.searchError.set('');
+    try {
+      const matches = await firstValueFrom(this.patientsApi.searchPatients({ q }));
+      if (seq !== this.searchSeq) return;
+      this.matches.set(matches);
+    } catch (error) {
+      if (seq !== this.searchSeq) return;
+      this.matches.set([]);
+      this.searchError.set(errorMessage(error));
+    } finally {
+      if (seq === this.searchSeq) this.searching.set(false);
+    }
   }
 
   async load() {

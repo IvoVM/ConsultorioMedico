@@ -119,6 +119,30 @@ public record PrescriptionDto(
 public record ClinicalHistoryDto(PatientSummaryDto Patient, IReadOnlyList<EncounterDto> Encounters, IReadOnlyList<PrescriptionDto> Prescriptions);
 public record PatientSummaryDto(Guid Id, string Name, string DocumentNumber, DateOnly BirthDate, string Phone);
 
+public record CreatePatientCommand(
+    string Email,
+    string FirstName,
+    string LastName,
+    string DocumentNumber,
+    DateOnly BirthDate,
+    string Phone,
+    string? HealthInsurance,
+    string? MemberNumber,
+    string? EmergencyContact,
+    string? EmergencyPhone);
+public record CreatedPatientDto(MedicalRecordDto Patient, string TemporaryPassword);
+public record PatientLookupDto(
+    Guid PatientId,
+    string FirstName,
+    string LastName,
+    string DocumentNumber,
+    DateOnly BirthDate,
+    string Phone,
+    string? HealthInsurance,
+    string? MemberNumber,
+    string? EmergencyContact,
+    string? EmergencyPhone);
+
 public record MedicalRecordDto(
     Guid PatientId,
     string FirstName,

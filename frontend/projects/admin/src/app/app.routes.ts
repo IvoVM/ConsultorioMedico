@@ -17,6 +17,12 @@ export const routes: Routes = [
         loadComponent: () => import('./modules/organization/organization').then((m) => m.OrganizationPage),
       },
       { path: 'empleados', canActivate: [roleGuard('TenantAdmin')], loadComponent: () => import('./modules/employees/employees').then((m) => m.EmployeesPage) },
+      { path: 'pacientes', canActivate: [roleGuard('TenantAdmin')], loadComponent: () => import('./modules/patients/patients').then((m) => m.PatientsPage) },
+      {
+        path: 'pacientes/:patientId',
+        canActivate: [roleGuard('TenantAdmin')],
+        loadComponent: () => import('./modules/patients/patient-file').then((m) => m.PatientFilePage),
+      },
       { path: 'agendas', canActivate: [roleGuard('TenantAdmin')], loadComponent: () => import('./modules/schedules/schedules').then((m) => m.SchedulesPage) },
       {
         path: 'historias',

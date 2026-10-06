@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text;
 using ClinicaSaaS.Domain;
 using FluentValidation;
 
@@ -10,8 +12,116 @@ public class MedicalRecordsService(
     ICurrentUser currentUser,
     IAuditStore audit,
     IValidator<SaveMedicalRecordCommand> validator,
+    IValidator<CreatePatientCommand> createValidator,
     TimeProvider clock)
 {
+    public async Task<CreatedPatientDto> CreateAsync(CreatePatientCommand command, CancellationToken ct)
+    {
+        var result = await createValidator.ValidateAsync(command, ct);
+        if (!result.IsValid)
+            throw new ValidationException(result.Errors);
+
+        var email = command.Email.Trim();
+        var document = command.DocumentNumber.Trim();
+        if (await users.FindByEmailAsync(email, ct) is not null)
+            throw new ConflictException("Ese email ya está registrado.");
+        if ((await records.PatientsAsync(ct)).Any(p => string.Equals(p.DocumentNumber, document, StringComparison.OrdinalIgnoreCase)))
+            throw new ConflictException("Ya hay un paciente con ese documento.");
+
+        var password = TemporaryPassword.Generate();
+        var account = await users.CreateAsync(
+            email,
+            password,
+            command.FirstName.Trim(),
+            command.LastName.Trim(),
+            TenantRole.Patient,
+            null,
+            null,
+            true,
+            ct);
+        var patient = await patients.AddAsync(new Patient
+        {
+            Id = Guid.NewGuid(),
+            UserId = account.Id,
+            DocumentNumber = document,
+            BirthDate = command.BirthDate,
+            Phone = command.Phone.Trim()
+        }, ct);
+
+        var record = new MedicalRecord
+        {
+            Id = Guid.NewGuid(),
+            PatientId = patient.Id,
+            HealthInsurance = Clean(command.HealthInsurance),
+            MemberNumber = Clean(command.MemberNumber),
+            EmergencyContact = Clean(command.EmergencyContact),
+            EmergencyPhone = Clean(command.EmergencyPhone),
+            UpdatedAt = clock.GetUtcNow(),
+            UpdatedBy = currentUser.Id
+        };
+        records.Add(record);
+        await records.SaveAsync(ct);
+        await audit.RecordAsync(currentUser.Id, "alta", "Paciente", patient.Id.ToString(), email, ct);
+        return new CreatedPatientDto(await GetAsync(patient.Id, ct), password);
+    }
+
+    public async Task<IReadOnlyList<PatientLookupDto>> SearchAsync(string? query, CancellationToken ct)
+    {
+        var text = query?.Trim() ?? "";
+        if (text.Length < 2)
+            throw new BusinessRuleException("Escribí al menos 2 caracteres: documento, nombre o afiliado.");
+
+        var needle = Normalize(text);
+        var patientList = await records.PatientsAsync(ct);
+        var accounts = (await users.ListByRoleAsync(TenantRole.Patient, null, ct)).ToDictionary(u => u.Id);
+        var recordsByPatient = (await records.ListAsync(ct)).ToDictionary(r => r.PatientId);
+
+        return patientList
+            .Select(patient => (
+                patient,
+                account: accounts.GetValueOrDefault(patient.UserId),
+                record: recordsByPatient.GetValueOrDefault(patient.Id)))
+            .Where(item => Matches(item.patient, item.account, item.record, needle))
+            .OrderBy(item => item.account?.LastName)
+            .ThenBy(item => item.account?.FirstName)
+            .Take(12)
+            .Select(item => new PatientLookupDto(
+                item.patient.Id,
+                item.account?.FirstName ?? "",
+                item.account?.LastName ?? "",
+                item.patient.DocumentNumber,
+                item.patient.BirthDate,
+                item.patient.Phone,
+                item.record?.HealthInsurance,
+                item.record?.MemberNumber,
+                item.record?.EmergencyContact,
+                item.record?.EmergencyPhone))
+            .ToList();
+    }
+
+    private static bool Matches(Patient patient, TenantAccount? account, MedicalRecord? record, string needle)
+    {
+        var haystack = Normalize(string.Join(' ',
+            account?.FirstName,
+            account?.LastName,
+            patient.DocumentNumber,
+            patient.Phone,
+            record?.HealthInsurance,
+            record?.MemberNumber,
+            record?.EmergencyContact,
+            record?.EmergencyPhone));
+        return haystack.Contains(needle, StringComparison.Ordinal);
+    }
+
+    private static string Normalize(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return "";
+        var decomposed = value.Normalize(NormalizationForm.FormD);
+        var chars = decomposed.Where(c =>
+            CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark && char.IsLetterOrDigit(c));
+        return new string(chars.ToArray()).ToLowerInvariant();
+    }
+
     public async Task<IReadOnlyList<MedicalRecordDto>> ListAsync(CancellationToken ct)
     {
         var patientList = await records.PatientsAsync(ct);

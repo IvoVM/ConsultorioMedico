@@ -49,6 +49,11 @@ const modules = [
       path.startsWith('/api/historia/'),
   },
   {
+    id: 'patients',
+    service: 'PatientsService',
+    match: (path) => path.startsWith('/api/pacientes'),
+  },
+  {
     id: 'medical-records',
     service: 'MedicalRecordsService',
     match: (path) => path.startsWith('/api/historias-medicas'),

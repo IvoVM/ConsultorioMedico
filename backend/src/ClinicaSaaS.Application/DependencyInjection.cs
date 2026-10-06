@@ -13,6 +13,7 @@ public static class DependencyInjection
         services.AddScoped<IValidator<SaveEncounterCommand>, SaveEncounterValidator>();
         services.AddScoped<IValidator<CreatePrescriptionCommand>, CreatePrescriptionValidator>();
         services.AddScoped<IValidator<SaveMedicalRecordCommand>, SaveMedicalRecordValidator>();
+        services.AddScoped<IValidator<CreatePatientCommand>, CreatePatientValidator>();
         services.AddScoped<TenantsService>();
         services.AddScoped<PlatformAuthService>();
         services.AddScoped<AuthService>();

@@ -3,7 +3,7 @@
     @if (session.role() === 'SuperAdmin') {
       Desde Consultorios podés dar de alta un hospital o consultorio. Eso crea su base PostgreSQL.
     } @else {
-      Estás en {{ session.tenant() }}. Cargá la organización, los empleados y la agenda semanal.
+      Estás en {{ session.tenant() }}. Cargá la organización, los pacientes, los empleados y la agenda semanal.
     }
   </p>
 </section>

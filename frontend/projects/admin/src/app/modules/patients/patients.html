@@ -1,0 +1,124 @@
+<section class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+  <p class="max-w-prose leading-relaxed text-ink/75">
+    Secretaría ubica al paciente por documento, teléfono o afiliado. Desde acá también das de alta la ficha y corregís cualquier dato.
+  </p>
+  @if (!altaOpen()) {
+    <ui-button (click)="openAlta()">Dar de alta</ui-button>
+  }
+</section>
+
+@if (altaOpen()) {
+  <form class="mb-10 max-w-3xl border border-rule bg-white px-5" animate.enter="quick-in" (ngSubmit)="create()">
+    <fieldset class="record-section">
+      <legend>Alta</legend>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <ui-field label="Nombre"><input id="alta-nombre" name="firstName" required maxlength="80" autocomplete="off" [(ngModel)]="firstName" /></ui-field>
+        <ui-field label="Apellido"><input name="lastName" required maxlength="80" autocomplete="off" [(ngModel)]="lastName" /></ui-field>
+        <ui-field label="Documento"><input name="documentNumber" required maxlength="20" inputmode="numeric" autocomplete="off" [(ngModel)]="documentNumber" /></ui-field>
+        <ui-field label="Fecha de nacimiento"><input name="birthDate" type="date" required [max]="today" [(ngModel)]="birthDate" /></ui-field>
+        <ui-field label="Teléfono"><input name="phone" type="tel" required maxlength="30" autocomplete="off" [(ngModel)]="phone" /></ui-field>
+        <ui-field label="Email de ingreso"><input name="email" type="email" required maxlength="120" autocomplete="off" [(ngModel)]="email" /></ui-field>
+      </div>
+      <p class="mt-2 text-sm text-ink/55">El email es el usuario del portal. La clave temporal aparece una sola vez, después del alta.</p>
+    </fieldset>
+
+    <fieldset class="record-section">
+      <legend>Obra social o prepaga</legend>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <ui-field label="Cobertura"><input name="healthInsurance" maxlength="120" placeholder="Vacío si es particular" [(ngModel)]="healthInsurance" /></ui-field>
+        <ui-field label="N.º de afiliado"><input name="memberNumber" maxlength="40" [(ngModel)]="memberNumber" /></ui-field>
+      </div>
+    </fieldset>
+
+    <fieldset class="record-section">
+      <legend>Contacto de emergencia</legend>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <ui-field label="Nombre y vínculo"><input name="emergencyContact" maxlength="120" placeholder="Ej.: Laura Gómez, hermana" [(ngModel)]="emergencyContact" /></ui-field>
+        <ui-field label="Teléfono"><input name="emergencyPhone" type="tel" maxlength="30" [(ngModel)]="emergencyPhone" /></ui-field>
+      </div>
+      <div class="mt-5 flex flex-wrap gap-3">
+        <ui-button type="submit" [disabled]="saving()">{{ saving() ? 'Guardando…' : 'Dar de alta' }}</ui-button>
+        <ui-button variant="ghost" (click)="altaOpen.set(false)">Cancelar</ui-button>
+      </div>
+    </fieldset>
+  </form>
+}
+
+@if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
+
+<div class="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+  <ui-field class="sm:w-[28rem]" label="Buscar paciente">
+    <input
+      type="search"
+      name="search"
+      placeholder="Documento, nombre, teléfono o afiliado"
+      autocomplete="off"
+      [ngModel]="search()"
+      (ngModelChange)="search.set($event)"
+    />
+  </ui-field>
+  @if (!loading() && patients().length) {
+    <p class="text-sm tabular-nums text-ink/55">{{ visible().length }} de {{ patients().length }}</p>
+  }
+</div>
+
+@if (loading()) {
+  <div class="space-y-px border border-rule bg-rule" aria-label="Cargando pacientes">
+    @for (n of [1, 2, 3, 4]; track n) { <div class="skeleton-row bg-white"></div> }
+  </div>
+} @else if (visible().length) {
+  <ui-table>
+    <thead>
+      <tr>
+        <th>Paciente</th>
+        <th class="hidden md:table-cell">Teléfono</th>
+        <th>Cobertura</th>
+        <th class="hidden lg:table-cell">Emergencia</th>
+        <th><span class="sr-only">Abrir ficha</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (patient of visible(); track patient.patientId; let i = $index) {
+        <tr class="record-row" [style.--i]="i < 12 ? i : 12">
+          <td>
+            <p class="font-serif text-lg leading-tight">{{ patient.lastName }}, {{ patient.firstName }}</p>
+            <p class="mt-0.5 text-ink/60">
+              DNI {{ patient.documentNumber }}
+              @if (age(patient.birthDate) !== null) { <span class="text-ink/45">— {{ age(patient.birthDate) }} años</span> }
+            </p>
+            <p class="mt-0.5 text-ink/60 md:hidden">{{ patient.phone }}</p>
+          </td>
+          <td class="hidden md:table-cell">{{ patient.phone }}</td>
+          <td>
+            {{ patient.healthInsurance || 'Particular' }}
+            @if (patient.memberNumber) { <span class="block text-ink/55">{{ patient.memberNumber }}</span> }
+          </td>
+          <td class="hidden lg:table-cell">
+            @if (patient.emergencyContact || patient.emergencyPhone) {
+              <span>{{ patient.emergencyContact }}</span>
+              @if (patient.emergencyPhone) { <span class="block text-ink/55">{{ patient.emergencyPhone }}</span> }
+            } @else {
+              <span class="text-ink/45">Sin contacto</span>
+            }
+          </td>
+          <td class="w-px whitespace-nowrap">
+            <a
+              class="row-action is-go"
+              [routerLink]="['/pacientes', patient.patientId]"
+              [attr.aria-label]="'Abrir ficha de ' + patient.firstName + ' ' + patient.lastName"
+              title="Abrir ficha"
+            >
+              <svg class="arrow" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
+                <path d="M4 10h11m-4.5-4.5L15 10l-4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </a>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </ui-table>
+} @else if (patients().length) {
+  <ui-empty message="Ningún paciente coincide. Probá con el documento o el número de afiliado." />
+} @else if (!error()) {
+  <ui-empty message="Todavía no hay pacientes. Dar de alta crea la ficha con documento, cobertura y contacto de emergencia." />
+}

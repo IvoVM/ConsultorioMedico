@@ -53,6 +53,25 @@ public class CreatePrescriptionValidator : AbstractValidator<CreatePrescriptionC
     }
 }
 
+public class CreatePatientValidator : AbstractValidator<CreatePatientCommand>
+{
+    public CreatePatientValidator(TimeProvider clock)
+    {
+        RuleFor(x => x.Email).NotEmpty().EmailAddress();
+        RuleFor(x => x.FirstName).NotEmpty().MaximumLength(80);
+        RuleFor(x => x.LastName).NotEmpty().MaximumLength(80);
+        RuleFor(x => x.DocumentNumber).NotEmpty().MaximumLength(20);
+        RuleFor(x => x.Phone).NotEmpty().MaximumLength(30);
+        RuleFor(x => x.BirthDate)
+            .Must(d => d <= DateOnly.FromDateTime(clock.GetUtcNow().DateTime))
+            .WithMessage("La fecha de nacimiento no puede ser futura.");
+        RuleFor(x => x.HealthInsurance).MaximumLength(120);
+        RuleFor(x => x.MemberNumber).MaximumLength(40);
+        RuleFor(x => x.EmergencyContact).MaximumLength(120);
+        RuleFor(x => x.EmergencyPhone).MaximumLength(30);
+    }
+}
+
 public class SaveMedicalRecordValidator : AbstractValidator<SaveMedicalRecordCommand>
 {
     public static readonly string[] BloodTypes = ["A+", "A-", "B+", "B-", "AB+", "AB-", "0+", "0-"];
