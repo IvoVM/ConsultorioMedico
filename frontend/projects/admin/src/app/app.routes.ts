@@ -16,6 +16,13 @@ export const routes: Routes = [
         children: [
           { path: '', pathMatch: 'full', redirectTo: 'servicios' },
           {
+            path: 'especialidades',
+            children: [
+              { path: '', loadComponent: () => import('./modules/organization/specialties').then((m) => m.SpecialtiesPage) },
+              { path: ':specialtyId', loadComponent: () => import('./modules/organization/specialty-detail').then((m) => m.SpecialtyDetailPage) },
+            ],
+          },
+          {
             path: ':section',
             loadComponent: () => import('./modules/organization/organization').then((m) => m.OrganizationPage),
           },

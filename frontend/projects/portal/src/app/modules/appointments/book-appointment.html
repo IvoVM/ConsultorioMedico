@@ -24,12 +24,7 @@
     <div>
       @if (specialties().length > 1) {
         <ui-field label="Especialidad">
-          <select [value]="specialtyId()" (change)="pickSpecialty($any($event.target).value)">
-            <option value="">Todas</option>
-            @for (item of specialties(); track item.id) {
-              <option [value]="item.id">{{ item.name }}</option>
-            }
-          </select>
+          <ui-select [ngModel]="specialtyId()" (ngModelChange)="pickSpecialty($event)" [ngModelOptions]="{ standalone: true }" [options]="specialtyOptions()" />
         </ui-field>
       }
       <div class="mt-4" role="group" aria-label="Especialistas">

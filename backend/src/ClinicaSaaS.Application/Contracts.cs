@@ -37,6 +37,7 @@ public record SaveSpecialtyCommand(string Name);
 public record AppointmentTypeDto(Guid Id, string Name, int DurationMinutes, Guid? SpecialtyId);
 public record SaveAppointmentTypeCommand(string Name, int DurationMinutes, Guid? SpecialtyId);
 public record ProfessionalDto(Guid Id, string FirstName, string LastName, string Email, string? LicenseNumber, Guid? SpecialtyId);
+public record AssignSpecialtyCommand(Guid? SpecialtyId);
 
 public record ImportEmployeesCommand(string Csv);
 public record CreatedEmployeeDto(int Row, string Email, string TemporaryPassword, TenantRole Role);

@@ -1,0 +1,53 @@
+<div class="select">
+  <button
+    #trigger
+    type="button"
+    class="trigger"
+    role="combobox"
+    [class.is-empty]="empty()"
+    [disabled]="disabled()"
+    [attr.aria-expanded]="open()"
+    aria-haspopup="listbox"
+    [attr.aria-controls]="open() ? listId : null"
+    (click)="toggle()"
+    (keydown)="onTriggerKey($event)"
+  >
+    <span>{{ empty() ? placeholder() : label() }}</span>
+    <ui-icon name="expand_more" [size]="18" />
+  </button>
+  @if (open()) {
+    <ul
+      #list
+      class="menu"
+      role="listbox"
+      tabindex="-1"
+      [id]="listId"
+      [style.left.px]="box().left"
+      [style.width.px]="box().width"
+      [style.max-height.px]="box().maxHeight"
+      [style.top]="box().top === null ? 'auto' : box().top + 'px'"
+      [style.bottom]="box().bottom === null ? 'auto' : box().bottom + 'px'"
+      [attr.aria-activedescendant]="listId + '-' + active()"
+      (keydown)="onListKey($event)"
+    >
+      @if (!options().length) {
+        <li class="hint">Sin opciones</li>
+      }
+      @for (option of options(); track option.value; let index = $index) {
+        <li
+          role="option"
+          [id]="listId + '-' + index"
+          [attr.aria-selected]="option.value === current()"
+          [class.is-active]="index === active()"
+          (mouseenter)="active.set(index)"
+          (pointerdown)="beginPick($event, option)"
+        >
+          <span>{{ option.label }}</span>
+          @if (option.value === current()) {
+            <ui-icon name="check" [size]="16" />
+          }
+        </li>
+      }
+    </ul>
+  }
+</div>

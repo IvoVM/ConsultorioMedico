@@ -66,6 +66,15 @@ public class TenantUserStore(UserManager<TenantUser> users) : ITenantUserStore
             throw new BusinessRuleException(string.Join(' ', result.Errors.Select(e => e.Description)));
     }
 
+    public async Task AssignSpecialtyAsync(Guid id, Guid? specialtyId, CancellationToken ct)
+    {
+        var user = await users.FindByIdAsync(id.ToString()) ?? throw new NotFoundException("Usuario no encontrado.");
+        user.SpecialtyId = specialtyId;
+        var result = await users.UpdateAsync(user);
+        if (!result.Succeeded)
+            throw new BusinessRuleException(string.Join(' ', result.Errors.Select(e => e.Description)));
+    }
+
     private static TenantAccount Map(TenantUser user) =>
         new(user.Id, user.Email ?? "", user.FirstName, user.LastName, user.Role, user.LicenseNumber, user.SpecialtyId, user.MustChangePassword);
 }

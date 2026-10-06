@@ -43,6 +43,7 @@ public interface ITenantUserStore
     Task<TenantAccount> CreateAsync(string email, string password, string firstName, string lastName, TenantRole role, string? licenseNumber, Guid? specialtyId, bool mustChangePassword, CancellationToken ct);
     Task<IReadOnlyList<TenantAccount>> ListByRoleAsync(TenantRole role, Guid? specialtyId, CancellationToken ct);
     Task UpdateNameAsync(Guid id, string firstName, string lastName, CancellationToken ct);
+    Task AssignSpecialtyAsync(Guid id, Guid? specialtyId, CancellationToken ct);
 }
 
 public interface IOrganizationStore

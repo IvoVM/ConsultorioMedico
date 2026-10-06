@@ -1,11 +1,11 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AppointmentTypeDto, BillingService, FeeDto, OrganizationService, errorMessage } from 'sdk';
-import { UiButton, UiEmpty, UiField, UiSkeleton, UiTable } from 'ui';
+import { UiButton, UiEmpty, UiField, UiSelect, UiSkeleton, UiTable } from 'ui';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
-  imports: [FormsModule, UiButton, UiEmpty, UiField, UiSkeleton, UiTable],
+  imports: [FormsModule, UiButton, UiEmpty, UiField, UiSelect, UiSkeleton, UiTable],
   templateUrl: './fees.html',
 })
 export class FeesPage {
@@ -13,6 +13,7 @@ export class FeesPage {
   private readonly billing = inject(BillingService);
   readonly appointmentTypes = signal<AppointmentTypeDto[]>([]);
   readonly fees = signal<FeeDto[]>([]);
+  readonly typeOptions = computed(() => this.appointmentTypes().map((type) => ({ value: type.id, label: type.name })));
   readonly error = signal('');
   readonly loading = signal(true);
   readonly saving = signal(false);

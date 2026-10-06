@@ -108,8 +108,24 @@ public class OrganizationService(IOrganizationStore store, ITenantUserStore user
     public async Task<IReadOnlyList<ProfessionalDto>> ProfessionalsAsync(Guid? specialtyId, CancellationToken ct)
     {
         var list = await users.ListByRoleAsync(TenantRole.Doctor, specialtyId, ct);
-        return list.Select(p => new ProfessionalDto(p.Id, p.FirstName, p.LastName, p.Email, p.LicenseNumber, p.SpecialtyId)).ToList();
+        return list.Select(MapProfessional).ToList();
     }
+
+    public async Task<ProfessionalDto> AssignSpecialtyAsync(Guid id, AssignSpecialtyCommand command, CancellationToken ct)
+    {
+        var account = await users.FindByIdAsync(id, ct) ?? throw new NotFoundException("Profesional no encontrado.");
+        if (account.Role != TenantRole.Doctor)
+            throw new BusinessRuleException("Solo un médico puede sumarse a una especialidad.");
+        if (command.SpecialtyId is Guid specialtyId)
+            _ = await store.GetSpecialtyAsync(specialtyId, ct) ?? throw new NotFoundException("Especialidad no encontrada.");
+        await users.AssignSpecialtyAsync(id, command.SpecialtyId, ct);
+        await RecordAsync("edicion", "Especialidad", command.SpecialtyId ?? id, account.Email, ct);
+        var updated = await users.FindByIdAsync(id, ct) ?? account;
+        return MapProfessional(updated);
+    }
+
+    private static ProfessionalDto MapProfessional(TenantAccount account) =>
+        new(account.Id, account.FirstName, account.LastName, account.Email, account.LicenseNumber, account.SpecialtyId);
 
     private async Task RecordAsync(string action, string entity, Guid id, string? detail, CancellationToken ct) =>
         await audit.RecordAsync(currentUser.Id, action, entity, id.ToString(), detail, ct);

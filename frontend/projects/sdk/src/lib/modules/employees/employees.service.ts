@@ -2,6 +2,7 @@
 import { Injectable } from '@angular/core';
 import { ApiClient } from '../../core/api-client';
 import { queryString } from '../../core/query-string';
+import type { AssignSpecialtyCommand } from './models/assign-specialty-command';
 import type { EmployeeImportDto } from './models/employee-import-dto';
 import type { ImportEmployeesCommand } from './models/import-employees-command';
 import type { ProfessionalDto } from './models/professional-dto';
@@ -10,6 +11,10 @@ import type { ProfessionalDto } from './models/professional-dto';
 export class EmployeesService extends ApiClient {
   professionals(query?: { specialtyId?: string }) {
     return this.http.get<ProfessionalDto[]>(`${this.base}/api/profesionales${queryString(query)}`);
+  }
+
+  assignSpecialty(id: string, body: AssignSpecialtyCommand) {
+    return this.http.put<ProfessionalDto>(`${this.base}/api/profesionales/${id}/especialidad`, body);
   }
 
   importEmployees(body: ImportEmployeesCommand) {

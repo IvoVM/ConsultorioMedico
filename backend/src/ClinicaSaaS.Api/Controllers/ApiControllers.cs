@@ -131,6 +131,10 @@ public class OrganizationController(OrganizationService organization) : ApiContr
     [HttpGet("profesionales")]
     public Task<IActionResult> Professionals([FromQuery] Guid? specialtyId, CancellationToken ct) =>
         Run(() => organization.ProfessionalsAsync(specialtyId, ct));
+
+    [HttpPut("profesionales/{id:guid}/especialidad")]
+    public Task<IActionResult> AssignSpecialty(Guid id, AssignSpecialtyCommand command, CancellationToken ct) =>
+        Run(() => organization.AssignSpecialtyAsync(id, command, ct));
 }
 
 [ApiController]

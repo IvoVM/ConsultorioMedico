@@ -81,6 +81,14 @@
         "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/ProfessionalDto" } } } } } }
       }
     },
+    "/api/profesionales/{id}/especialidad": {
+      "put": {
+        "operationId": "assignSpecialty",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AssignSpecialtyCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ProfessionalDto" } } } } }
+      }
+    },
     "/api/empleados/importar": {
       "post": {
         "operationId": "importEmployees",
@@ -324,6 +332,7 @@
       "AppointmentTypeDto": { "type": "object", "required": ["id", "name", "durationMinutes"], "properties": { "id": { "type": "string" }, "name": { "type": "string" }, "durationMinutes": { "type": "integer" }, "specialtyId": { "type": "string", "nullable": true } } },
       "SaveAppointmentTypeCommand": { "type": "object", "required": ["name", "durationMinutes"], "properties": { "name": { "type": "string" }, "durationMinutes": { "type": "integer" }, "specialtyId": { "type": "string", "nullable": true } } },
       "ProfessionalDto": { "type": "object", "required": ["id", "firstName", "lastName", "email"], "properties": { "id": { "type": "string" }, "firstName": { "type": "string" }, "lastName": { "type": "string" }, "email": { "type": "string" }, "licenseNumber": { "type": "string", "nullable": true }, "specialtyId": { "type": "string", "nullable": true } } },
+      "AssignSpecialtyCommand": { "type": "object", "properties": { "specialtyId": { "type": "string", "nullable": true } } },
       "ImportEmployeesCommand": { "type": "object", "required": ["csv"], "properties": { "csv": { "type": "string" } } },
       "CreatedEmployeeDto": { "type": "object", "required": ["row", "email", "temporaryPassword", "role"], "properties": { "row": { "type": "integer" }, "email": { "type": "string" }, "temporaryPassword": { "type": "string" }, "role": { "$ref": "#/components/schemas/TenantRole" } } },
       "RejectedRowDto": { "type": "object", "required": ["row", "reason"], "properties": { "row": { "type": "integer" }, "reason": { "type": "string" } } },

@@ -2,6 +2,7 @@
 export { EmployeesService } from './employees.service';
 export * from './models/tenant-role';
 export * from './models/professional-dto';
+export * from './models/assign-specialty-command';
 export * from './models/import-employees-command';
 export * from './models/created-employee-dto';
 export * from './models/rejected-row-dto';

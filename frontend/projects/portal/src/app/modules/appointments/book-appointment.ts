@@ -12,7 +12,7 @@ import {
   clinicaSession,
   errorMessage,
 } from 'sdk';
-import { UiButton, UiEmpty, UiField, UiSpinner } from 'ui';
+import { UiButton, UiEmpty, UiField, UiSelect, UiSpinner } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { clearPending, readPending, savePending } from './pending-booking';
 
@@ -22,7 +22,7 @@ interface DayOption {
 }
 
 @Component({
-  imports: [FormsModule, RouterLink, UiButton, UiField, UiEmpty, UiSpinner],
+  imports: [FormsModule, RouterLink, UiButton, UiField, UiEmpty, UiSelect, UiSpinner],
   templateUrl: './book-appointment.html',
   styleUrl: './book-appointment.css',
 })
@@ -50,6 +50,10 @@ export class BookAppointmentPage {
   notes = '';
 
   readonly nearestIso = computed(() => this.days()[0]?.iso ?? '');
+  readonly specialtyOptions = computed(() => [
+    { value: '', label: 'Todas' },
+    ...this.specialties().map((item) => ({ value: item.id, label: item.name })),
+  ]);
 
   readonly visibleProfessionals = computed(() => {
     const specialtyId = this.specialtyId();

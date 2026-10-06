@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
   AppointmentTypeDto,
@@ -11,12 +11,12 @@ import {
   ScheduleService,
   errorMessage,
 } from 'sdk';
-import { UiButton, UiEmpty, UiField, UiSkeleton, UiTable } from 'ui';
+import { UiButton, UiEmpty, UiField, UiSelect, UiSkeleton, UiTable } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { dayLabels } from './models/day-labels';
 
 @Component({
-  imports: [FormsModule, UiButton, UiEmpty, UiField, UiSkeleton, UiTable],
+  imports: [FormsModule, UiButton, UiEmpty, UiField, UiSelect, UiSkeleton, UiTable],
   templateUrl: './schedules.html',
 })
 export class SchedulesPage {
@@ -27,6 +27,11 @@ export class SchedulesPage {
   readonly days: DayOfWeek[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   readonly professionals = signal<ProfessionalDto[]>([]);
   readonly appointmentTypes = signal<AppointmentTypeDto[]>([]);
+  readonly professionalOptions = computed(() =>
+    this.professionals().map((pro) => ({ value: pro.id, label: `${pro.lastName}, ${pro.firstName}` })),
+  );
+  readonly dayOptions = this.days.map((day) => ({ value: day, label: dayLabels[day] }));
+  readonly typeOptions = computed(() => this.appointmentTypes().map((type) => ({ value: type.id, label: type.name })));
   readonly blocks = signal<ScheduleBlockDto[]>([]);
   readonly blockouts = signal<BlockoutDto[]>([]);
   readonly error = signal('');

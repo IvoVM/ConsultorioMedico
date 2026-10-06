@@ -5,25 +5,19 @@
 } @else {
 <div class="mb-8 grid max-w-xl gap-4">
   <ui-field label="Profesional">
-    <select name="professionalId" [(ngModel)]="professionalId" (ngModelChange)="loadSchedule()">
-      @for (pro of professionals(); track pro.id) { <option [value]="pro.id">{{ pro.lastName }}, {{ pro.firstName }}</option> }
-    </select>
+    <ui-select name="professionalId" [(ngModel)]="professionalId" (ngModelChange)="loadSchedule()" [options]="professionalOptions()" />
   </ui-field>
 </div>
 @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
 <h2 class="font-serif text-2xl tracking-tight">Semana</h2>
 <form class="mb-6 mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-5" (ngSubmit)="addBlock()">
   <ui-field label="Día">
-    <select name="day" [(ngModel)]="day">
-      @for (item of days; track item) { <option [value]="item">{{ dayLabels[item] }}</option> }
-    </select>
+    <ui-select name="day" [(ngModel)]="day" [options]="dayOptions" />
   </ui-field>
   <ui-field label="Desde"><input name="from" type="time" [(ngModel)]="from" required /></ui-field>
   <ui-field label="Hasta"><input name="to" type="time" [(ngModel)]="to" required /></ui-field>
   <ui-field label="Tipo">
-    <select name="appointmentTypeId" [(ngModel)]="appointmentTypeId">
-      @for (type of appointmentTypes(); track type.id) { <option [value]="type.id">{{ type.name }}</option> }
-    </select>
+    <ui-select name="appointmentTypeId" [(ngModel)]="appointmentTypeId" [options]="typeOptions()" />
   </ui-field>
   <div class="flex items-end"><ui-button type="submit">Sumar bloque</ui-button></div>
 </form>

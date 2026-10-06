@@ -3,12 +3,12 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AppointmentTypeDto, MedicalServiceDto, OrganizationService, SpecialtyDto, errorMessage } from 'sdk';
-import { UiButton, UiEmpty, UiField, UiSkeleton, UiTable } from 'ui';
+import { UiButton, UiEmpty, UiField, UiSelect, UiSkeleton, UiTable } from 'ui';
 import { Observable, firstValueFrom } from 'rxjs';
 import { isOrganizationSection, organizationSections } from './models/section';
 
 @Component({
-  imports: [FormsModule, UiButton, UiEmpty, UiField, UiSkeleton, UiTable],
+  imports: [FormsModule, UiButton, UiEmpty, UiField, UiSelect, UiSkeleton, UiTable],
   templateUrl: './organization.html',
 })
 export class OrganizationPage {
@@ -21,6 +21,10 @@ export class OrganizationPage {
     return isOrganizationSection(value) ? value : 'servicios';
   });
   readonly sectionLabel = computed(() => organizationSections.find((item) => item.id === this.section())?.label ?? 'Servicios');
+  readonly specialtyOptions = computed(() => [
+    { value: '', label: 'Todas' },
+    ...this.specialties().map((item) => ({ value: item.id, label: item.name })),
+  ]);
   readonly services = signal<MedicalServiceDto[]>([]);
   readonly specialties = signal<SpecialtyDto[]>([]);
   readonly appointmentTypes = signal<AppointmentTypeDto[]>([]);
@@ -29,7 +33,6 @@ export class OrganizationPage {
   readonly saving = signal(false);
   locationId = '';
   serviceName = '';
-  specialtyName = '';
   typeName = '';
   duration = 30;
   specialtyId = '';
@@ -64,11 +67,6 @@ export class OrganizationPage {
   async createService() {
     await this.save(() => this.organization.createMedicalService({ locationId: this.locationId, name: this.serviceName }));
     this.serviceName = '';
-  }
-
-  async createSpecialty() {
-    await this.save(() => this.organization.createSpecialty({ name: this.specialtyName }));
-    this.specialtyName = '';
   }
 
   async createAppointmentType() {
