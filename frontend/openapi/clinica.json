@@ -74,6 +74,14 @@
         "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AppointmentTypeDto" } } } } }
       }
     },
+    "/api/tipos-turno/{id}": {
+      "put": {
+        "operationId": "updateAppointmentType",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SaveAppointmentTypeCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AppointmentTypeDto" } } } } }
+      }
+    },
     "/api/profesionales": {
       "get": {
         "operationId": "professionals",

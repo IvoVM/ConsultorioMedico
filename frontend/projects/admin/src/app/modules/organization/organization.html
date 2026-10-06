@@ -15,21 +15,4 @@
     <tbody>@for (service of services(); track service.id) { <tr><td>{{ service.name }}</td></tr> }</tbody>
   </ui-table>
   }
-} @else if (section() === 'tipos-de-turno') {
-  <form class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4" (ngSubmit)="createAppointmentType()">
-    <ui-field label="Nombre"><input name="typeName" [(ngModel)]="typeName" required /></ui-field>
-    <ui-field label="Minutos"><input name="duration" type="number" [(ngModel)]="duration" required /></ui-field>
-    <ui-field label="Especialidad">
-      <ui-select name="specialtyId" [(ngModel)]="specialtyId" [options]="specialtyOptions()" />
-    </ui-field>
-    <div class="flex items-end"><ui-button type="submit" [loading]="saving()">Agregar</ui-button></div>
-  </form>
-  @if (!appointmentTypes().length) {
-    <ui-empty message="Todavía no hay tipos de turno." />
-  } @else {
-  <ui-table>
-    <thead><tr><th>Tipo</th><th>Duración</th></tr></thead>
-    <tbody>@for (type of appointmentTypes(); track type.id) { <tr><td>{{ type.name }}</td><td>{{ type.durationMinutes }} min</td></tr> }</tbody>
-  </ui-table>
-  }
 }

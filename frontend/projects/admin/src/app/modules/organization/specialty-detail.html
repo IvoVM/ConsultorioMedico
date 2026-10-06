@@ -14,71 +14,31 @@
 } @else if (specialty(); as item) {
   <header class="mb-8">
     <h2 class="font-serif text-4xl leading-none tracking-tight">{{ item.name }}</h2>
-    <p class="mt-3 text-sm text-ink/65">{{ types().length === 1 ? '1 turno' : types().length + ' turnos' }} · {{ people().length === 1 ? '1 profesional' : people().length + ' profesionales' }}</p>
+    <p class="mt-3 text-sm text-ink/65">{{ people().length === 1 ? '1 profesional' : people().length + ' profesionales' }}</p>
   </header>
 
-  <div class="columns">
-    <section>
-      <h3>Turnos</h3>
-      @if (!types().length) {
-        <p class="hint">Creá un turno para poder asignarlo a un profesional.</p>
-      } @else {
-        <ul>
-          @for (type of types(); track type.id) {
-            <li>{{ type.name }} · {{ type.durationMinutes }} min</li>
-          }
-        </ul>
-      }
-      <form class="add-type" (ngSubmit)="createType()">
-        <ui-field label="Nombre"><input name="typeName" [(ngModel)]="typeName" required /></ui-field>
-        <ui-field label="Minutos"><input name="typeMinutes" type="number" [(ngModel)]="typeMinutes" required /></ui-field>
-        <ui-button type="submit" [loading]="busy() === 'type'">Agregar turno</ui-button>
-      </form>
-    </section>
-
-    <section>
-      <h3>Profesionales</h3>
-      @if (!people().length) {
-        <p class="hint">Nadie atiende esta especialidad todavía.</p>
-      }
-      @for (person of people(); track person.id) {
-        <div class="person">
-          <div class="person-head">
-            <p class="font-serif text-xl leading-tight">{{ person.lastName }}, {{ person.firstName }}</p>
+  <section>
+    <h3>Profesionales</h3>
+    @if (!people().length) {
+      <p class="hint">Nadie atiende esta especialidad todavía.</p>
+    } @else {
+      <ul>
+        @for (person of people(); track person.id) {
+          <li>
+            <span class="font-serif text-xl leading-tight">{{ person.lastName }}, {{ person.firstName }}</span>
             <ui-button variant="ghost" [loading]="busy() === 'remove:' + person.id" (click)="removePerson(person)">Quitar</ui-button>
-          </div>
-          @if (shiftsOf(person.id).length) {
-            <ul>
-              @for (shift of shiftsOf(person.id); track shift.id) {
-                <li>
-                  <span>{{ typeLabel(shift.appointmentTypeId) }} · {{ dayLabel(shift.day) }} {{ clock(shift.startTime) }}–{{ clock(shift.endTime) }}</span>
-                  <button type="button" class="text-link" [disabled]="busy() === 'shift:' + person.id" (click)="removeShift(person.id, shift.id)">Quitar turno</button>
-                </li>
-              }
-            </ul>
-          }
-          <div class="assign">
-            <ui-field label="Turno">
-              <ui-select [ngModel]="draft(person.id).typeId" (ngModelChange)="patchDraft(person.id, { typeId: $event })" [ngModelOptions]="{ standalone: true }" [options]="typeOptions()" placeholder="Elegir turno" />
-            </ui-field>
-            <ui-field label="Día">
-              <ui-select [ngModel]="draft(person.id).day" (ngModelChange)="patchDraft(person.id, { day: $event })" [ngModelOptions]="{ standalone: true }" [options]="dayOptions" />
-            </ui-field>
-            <ui-field label="Desde"><input [name]="'from-' + person.id" type="time" [ngModel]="draft(person.id).from" (ngModelChange)="patchDraft(person.id, { from: $event })" /></ui-field>
-            <ui-field label="Hasta"><input [name]="'to-' + person.id" type="time" [ngModel]="draft(person.id).to" (ngModelChange)="patchDraft(person.id, { to: $event })" /></ui-field>
-            <ui-button type="button" [loading]="busy() === 'shift:' + person.id" (click)="assignShift(person)">Asignar turno</ui-button>
-          </div>
-        </div>
-      }
-      <div class="add-person">
-        <ui-field label="Añadir profesional">
-          <ui-select [ngModel]="personId()" (ngModelChange)="personId.set($event)" [ngModelOptions]="{ standalone: true }" [options]="availablePeople()" placeholder="Elegir profesional" />
-        </ui-field>
-        <ui-button type="button" [disabled]="!personId()" [loading]="busy() === 'person'" (click)="addPerson()">Sumar</ui-button>
-      </div>
-      @if (!professionals().length) {
-        <p class="hint">Importá médicos desde Empleados para sumarlos acá.</p>
-      }
-    </section>
-  </div>
+          </li>
+        }
+      </ul>
+    }
+    <div class="add-person">
+      <ui-field label="Añadir profesional">
+        <ui-select [ngModel]="personId()" (ngModelChange)="personId.set($event)" [ngModelOptions]="{ standalone: true }" [options]="availablePeople()" placeholder="Elegir profesional" />
+      </ui-field>
+      <ui-button type="button" [disabled]="!personId()" [loading]="busy() === 'person'" (click)="addPerson()">Sumar</ui-button>
+    </div>
+    @if (!professionals().length) {
+      <p class="hint">Importá médicos desde Empleados para sumarlos acá.</p>
+    }
+  </section>
 }

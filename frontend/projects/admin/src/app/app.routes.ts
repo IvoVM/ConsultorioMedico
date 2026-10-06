@@ -22,6 +22,14 @@ export const routes: Routes = [
               { path: ':specialtyId', loadComponent: () => import('./modules/organization/specialty-detail').then((m) => m.SpecialtyDetailPage) },
             ],
           },
+          { path: 'tipos-de-turno', redirectTo: 'turnos' },
+          {
+            path: 'turnos',
+            children: [
+              { path: '', loadComponent: () => import('./modules/organization/turnos').then((m) => m.TurnosPage) },
+              { path: ':turnoId', loadComponent: () => import('./modules/organization/turno-detail').then((m) => m.TurnoDetailPage) },
+            ],
+          },
           {
             path: ':section',
             loadComponent: () => import('./modules/organization/organization').then((m) => m.OrganizationPage),

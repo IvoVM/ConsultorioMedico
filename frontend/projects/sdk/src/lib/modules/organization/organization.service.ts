@@ -47,4 +47,8 @@ export class OrganizationService extends ApiClient {
   createAppointmentType(body: SaveAppointmentTypeCommand) {
     return this.http.post<AppointmentTypeDto>(`${this.base}/api/tipos-turno`, body);
   }
+
+  updateAppointmentType(id: string, body: SaveAppointmentTypeCommand) {
+    return this.http.put<AppointmentTypeDto>(`${this.base}/api/tipos-turno/${id}`, body);
+  }
 }

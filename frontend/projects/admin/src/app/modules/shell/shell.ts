@@ -18,7 +18,7 @@ export class ShellPage {
         children: [
           { label: 'Servicios', path: '/organizacion/servicios' },
           { label: 'Especialidades', path: '/organizacion/especialidades' },
-          { label: 'Tipos de turno', path: '/organizacion/tipos-de-turno' },
+          { label: 'Turnos', path: '/organizacion/turnos' },
         ],
       },
       {

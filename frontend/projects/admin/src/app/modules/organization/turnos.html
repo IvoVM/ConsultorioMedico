@@ -1,20 +1,23 @@
-<h2 class="mb-6 font-serif text-2xl tracking-tight">Especialidades</h2>
+<h2 class="mb-6 font-serif text-2xl tracking-tight">Turnos</h2>
 
-<form class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end" (ngSubmit)="createSpecialty()">
-  <ui-field class="sm:w-80" label="Nueva especialidad"><input name="specialtyName" [(ngModel)]="specialtyName" required /></ui-field>
-  <div class="flex items-end"><ui-button type="submit" [loading]="saving()">Agregar especialidad</ui-button></div>
+<form class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end" (ngSubmit)="createTurno()">
+  <ui-field class="sm:w-80" label="Nuevo turno"><input name="typeName" [(ngModel)]="typeName" required /></ui-field>
+  <ui-field class="sm:w-28" label="Minutos"><input name="duration" type="number" min="5" max="240" [(ngModel)]="duration" required /></ui-field>
+  <div class="flex items-end"><ui-button type="submit" [loading]="saving()">Agregar turno</ui-button></div>
 </form>
 
 @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
 
 @if (loading()) {
-  <ui-skeleton label="Cargando especialidades" />
+  <ui-skeleton label="Cargando turnos" />
 } @else if (!rows().length) {
-  <ui-empty message="Todavía no hay especialidades. La primera que agregues abre su ficha para sumarle profesionales." />
+  <ui-empty message="Todavía no hay turnos. El que agregues abre su ficha: primero la especialidad, después los profesionales." />
 } @else {
   <ui-table>
     <thead>
       <tr>
+        <th>Turno</th>
+        <th>Duración</th>
         <th>Especialidad</th>
         <th>Profesionales</th>
         <th class="w-px"></th>
@@ -24,13 +27,15 @@
       @for (item of rows(); track item.id; let i = $index) {
         <tr class="record-row" [style.--i]="i < 12 ? i : 12">
           <td><p class="font-serif text-lg leading-tight">{{ item.name }}</p></td>
+          <td>{{ item.durationMinutes }} min</td>
+          <td>{{ item.specialtyName || 'Sin asignar' }}</td>
           <td>{{ countLabel(item.people, 'profesional', 'profesionales') }}</td>
           <td class="w-px whitespace-nowrap">
             <a
               class="row-action is-go"
-              [routerLink]="['/organizacion/especialidades', item.id]"
+              [routerLink]="['/organizacion/turnos', item.id]"
               [attr.aria-label]="'Abrir ' + item.name"
-              title="Abrir especialidad"
+              title="Abrir turno"
             >
               <svg class="arrow" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
                 <path d="M4 10h11m-4.5-4.5L15 10l-4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
