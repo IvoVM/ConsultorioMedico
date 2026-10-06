@@ -1,7 +1,7 @@
 <ui-page frame="shell" eyebrow="Administración" [title]="session.name() ?? 'Admin'">
   <div uiNav class="flex h-full min-h-0 flex-col">
     <ui-nav class="min-h-0 flex-1 overflow-y-auto" label="Administración" [nodes]="menu()" />
-    <ui-button class="mt-4 w-full shrink-0" variant="ghost" (click)="logout()">Salir</ui-button>
+    <ui-button class="mt-4 w-full shrink-0" variant="ghost" (click)="logout()"><ui-icon name="logout" />Salir</ui-button>
   </div>
   <router-outlet />
 </ui-page>

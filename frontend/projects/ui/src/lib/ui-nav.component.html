@@ -12,12 +12,7 @@
           (click)="toggle(node)"
         >
           <span>{{ node.label }}</span>
-          <span
-            class="inline-block size-1.5 shrink-0 border-r-[1.5px] border-b-[1.5px] border-current transition-transform duration-200"
-            [class.rotate-45]="isOpen(node)"
-            [class.-rotate-45]="!isOpen(node)"
-            aria-hidden="true"
-          ></span>
+          <ui-icon name="expand_more" [size]="18" class="transition-transform duration-200" [class.rotate-180]="isOpen(node)" />
         </button>
         @if (isOpen(node)) {
           <div class="mt-0.5 ml-3 flex flex-col border-l border-white/15 pl-1.5">

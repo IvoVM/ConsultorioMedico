@@ -155,7 +155,7 @@
                 </div>
                 <div class="flex flex-wrap items-center gap-3 md:col-span-2">
                   <ui-button type="submit" [loading]="saving()">Guardar historia</ui-button>
-                  <ui-button variant="ghost" [disabled]="saving()" (click)="toggle(r)">Cancelar</ui-button>
+                  <ui-button variant="outlined" [disabled]="saving()" (click)="toggle(r)">Cancelar</ui-button>
                   <a class="text-link ml-auto" [routerLink]="['/historias', r.patientId]">Editar todos los datos</a>
                 </div>
               </form>

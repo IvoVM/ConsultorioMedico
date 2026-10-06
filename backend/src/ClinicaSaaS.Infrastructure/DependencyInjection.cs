@@ -60,24 +60,65 @@ public class ClinicSeeder(TenantDbContext db, UserManager<TenantUser> users, ICo
             await db.SaveChangesAsync(ct);
         }
 
-        if (await users.Users.AnyAsync(ct))
+        var slug = configuration["Clinic:Slug"]?.Trim().ToLowerInvariant();
+        var password = configuration["Seed:AdminPassword"] ?? "Admin123!";
+        var adminEmail = configuration["Seed:AdminEmail"] ?? $"admin@{slug}.local";
+        await EnsureUserAsync(
+            adminEmail,
+            password,
+            configuration["Seed:AdminFirstName"] ?? "Admin",
+            configuration["Seed:AdminLastName"] ?? "Inicial",
+            TenantRole.TenantAdmin,
+            null,
+            ct);
+
+        if (slug != "demo")
             return;
 
-        var slug = configuration["Clinic:Slug"]?.Trim().ToLowerInvariant();
-        var email = configuration["Seed:AdminEmail"] ?? $"admin@{slug}.local";
+        await EnsureUserAsync("secretaria@demo.local", password, "Laura", "Benítez", TenantRole.Secretary, null, ct);
+        await EnsureUserAsync("medico@demo.local", password, "Martín", "Ríos", TenantRole.Doctor, "MN 12345", ct);
+        var patient = await EnsureUserAsync("paciente@demo.local", password, "Ana", "Pérez", TenantRole.Patient, null, ct);
+        if (!await db.Patients.AnyAsync(p => p.UserId == patient.Id, ct))
+        {
+            db.Patients.Add(new Patient
+            {
+                Id = Guid.NewGuid(),
+                UserId = patient.Id,
+                DocumentNumber = "30111222",
+                BirthDate = new DateOnly(1990, 4, 12),
+                Phone = "1112345678"
+            });
+            await db.SaveChangesAsync(ct);
+        }
+    }
+
+    private async Task<TenantUser> EnsureUserAsync(
+        string email,
+        string password,
+        string firstName,
+        string lastName,
+        TenantRole role,
+        string? licenseNumber,
+        CancellationToken ct)
+    {
+        if (await users.FindByEmailAsync(email) is { } existing)
+            return existing;
+
         var user = new TenantUser
         {
             Id = Guid.NewGuid(),
             UserName = email,
             Email = email,
             EmailConfirmed = true,
-            FirstName = configuration["Seed:AdminFirstName"] ?? "Admin",
-            LastName = configuration["Seed:AdminLastName"] ?? "Inicial",
-            Role = TenantRole.TenantAdmin
+            FirstName = firstName,
+            LastName = lastName,
+            Role = role,
+            LicenseNumber = licenseNumber
         };
-        var result = await users.CreateAsync(user, configuration["Seed:AdminPassword"] ?? "Admin123!");
+        var result = await users.CreateAsync(user, password);
         if (!result.Succeeded)
             throw new InvalidOperationException(string.Join(' ', result.Errors.Select(e => e.Description)));
+        return user;
     }
 }
 

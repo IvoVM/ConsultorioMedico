@@ -2,6 +2,7 @@ import { Component, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { filter, map } from 'rxjs';
+import { UiIcon } from './ui-icon.component';
 
 export type NavLink = {
   label: string;
@@ -18,9 +19,39 @@ export type NavNode = {
 
 @Component({
   selector: 'ui-nav',
-  imports: [RouterLink, RouterLinkActive],
-  host: { class: 'block min-h-0' },
+  imports: [RouterLink, RouterLinkActive, UiIcon],
+  host: { class: 'nav-scroll block min-h-0' },
   templateUrl: './ui-nav.component.html',
+  styles: `
+    :host {
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: rgb(143 208 180 / 0.7) transparent;
+    }
+
+    :host::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    :host::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    :host::-webkit-scrollbar-thumb {
+      border-radius: 999px;
+      background: rgb(143 208 180 / 0.45);
+    }
+
+    :host::-webkit-scrollbar-thumb:hover {
+      background: rgb(143 208 180 / 0.8);
+    }
+
+    :host::-webkit-scrollbar-button {
+      display: none;
+      width: 0;
+      height: 0;
+    }
+  `,
 })
 export class UiNav {
   private readonly router = inject(Router);

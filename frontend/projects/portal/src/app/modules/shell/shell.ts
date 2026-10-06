@@ -2,10 +2,10 @@ import { Component, computed, inject } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
 import { AuthService, clinicaSession } from 'sdk';
 import { firstValueFrom } from 'rxjs';
-import { NavNode, UiButton, UiNav, UiPage } from 'ui';
+import { NavNode, UiButton, UiIcon, UiNav, UiPage } from 'ui';
 
 @Component({
-  imports: [RouterOutlet, RouterLink, UiPage, UiButton, UiNav],
+  imports: [RouterOutlet, RouterLink, UiPage, UiButton, UiIcon, UiNav],
   templateUrl: './shell.html',
 })
 export class ShellPage {

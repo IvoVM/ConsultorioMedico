@@ -2,7 +2,7 @@
   <div uiNav class="flex h-full min-h-0 flex-col">
     <ui-nav class="min-h-0 flex-1 overflow-y-auto" label="Portal" [nodes]="menu()" />
     @if (session.token()) {
-      <ui-button class="mt-4 w-full shrink-0" variant="ghost" (click)="logout()">Salir</ui-button>
+      <ui-button class="mt-4 w-full shrink-0" variant="ghost" (click)="logout()"><ui-icon name="logout" />Salir</ui-button>
     } @else {
       <a routerLink="/ingreso" class="nav-link mt-4 shrink-0">Ingresar</a>
     }

@@ -5,7 +5,7 @@ Cada consultorio es un despliegue propio del mismo código. No hay una app compa
 ## Desarrollo local
 
 1. `docker compose up -d` en `clinica-saas` levanta PostgreSQL 18 con la base `clinica`. Si el volumen ya existía con el catálogo anterior, hay que recrearlo (`docker compose down -v`) para que cree esa base.
-2. `dotnet run --project backend/src/ClinicaSaaS.Api` publica la API en `http://localhost:5080`. Al arrancar migra la base de este consultorio y, si no hay usuarios, crea el admin `admin@demo.local` / `Admin123!`.
+2. `dotnet run --project backend/src/ClinicaSaaS.Api` publica la API en `http://localhost:5080`. Al arrancar migra la base de este consultorio y asegura las cuentas de demo, todas con clave `Admin123!`: `admin@demo.local` en el panel, y en el portal `secretaria@demo.local`, `medico@demo.local` y `paciente@demo.local`.
 3. La identidad sale de `appsettings.json`: `Clinic:Slug`, `Clinic:Name`, `ConnectionStrings:Clinic`, `Cors:Origins` y `TimeZone`. El local de ejemplo es el consultorio `demo`.
 4. En `frontend`, `npm run start:admin` (puerto 4200) y `npm run start:portal` (puerto 4201). Esas dos URL están en `Cors:Origins`.
 

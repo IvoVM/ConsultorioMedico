@@ -1,5 +1,7 @@
 export { UiBadge } from './ui-badge.component';
 export { UiButton } from './ui-button.component';
+export { UiIcon } from './ui-icon.component';
+export { UiSpinner } from './ui-spinner.component';
 export { UiCalendar } from './ui-calendar.component';
 export { UiEmpty } from './ui-empty.component';
 export { UiField } from './ui-field.component';
