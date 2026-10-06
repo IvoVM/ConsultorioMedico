@@ -66,6 +66,7 @@ public interface ITenantUserStore
     Task<bool> CheckPasswordAsync(Guid userId, string password, CancellationToken ct);
     Task<UsuarioTenant> CreateAsync(string email, string password, string nombre, string apellido, RolTenant rol, string? matricula, Guid? especialidadId, bool debeCambiarClave, CancellationToken ct);
     Task<IReadOnlyList<UsuarioTenant>> ListarPorRolAsync(RolTenant rol, Guid? especialidadId, CancellationToken ct);
+    Task ActualizarNombreAsync(Guid id, string nombre, string apellido, CancellationToken ct);
 }
 
 public interface IOrganizacionStore
@@ -110,6 +111,15 @@ public interface IPacienteStore
     Task<Paciente?> PorUsuarioAsync(Guid usuarioId, CancellationToken ct);
     Task<Paciente?> ObtenerAsync(Guid id, CancellationToken ct);
     Task<Paciente> AgregarAsync(Paciente paciente, CancellationToken ct);
+}
+
+public interface IHistoriaMedicaStore
+{
+    Task<IReadOnlyList<Paciente>> PacientesAsync(CancellationToken ct);
+    Task<IReadOnlyList<HistoriaMedica>> ListarAsync(CancellationToken ct);
+    Task<HistoriaMedica?> PorPacienteAsync(Guid pacienteId, CancellationToken ct);
+    void Agregar(HistoriaMedica historia);
+    Task GuardarAsync(CancellationToken ct);
 }
 
 public interface IListaEsperaStore

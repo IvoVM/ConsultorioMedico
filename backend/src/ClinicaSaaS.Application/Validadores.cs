@@ -53,6 +53,35 @@ public class CrearRecetaValidator : AbstractValidator<CrearRecetaCommand>
     }
 }
 
+public class GuardarHistoriaMedicaValidator : AbstractValidator<GuardarHistoriaMedicaCommand>
+{
+    public static readonly string[] GruposSanguineos = ["A+", "A-", "B+", "B-", "AB+", "AB-", "0+", "0-"];
+
+    public GuardarHistoriaMedicaValidator(TimeProvider clock)
+    {
+        RuleFor(x => x.Nombre).NotEmpty().MaximumLength(80);
+        RuleFor(x => x.Apellido).NotEmpty().MaximumLength(80);
+        RuleFor(x => x.Documento).NotEmpty().MaximumLength(20);
+        RuleFor(x => x.Telefono).NotEmpty().MaximumLength(30);
+        RuleFor(x => x.FechaNacimiento)
+            .Must(f => f <= DateOnly.FromDateTime(clock.GetUtcNow().DateTime))
+            .WithMessage("La fecha de nacimiento no puede ser futura.");
+        RuleFor(x => x.GrupoSanguineo)
+            .Must(g => string.IsNullOrWhiteSpace(g) || GruposSanguineos.Contains(g.Trim()))
+            .WithMessage("Grupo sanguíneo inválido.");
+        RuleFor(x => x.Alergias).MaximumLength(1000);
+        RuleFor(x => x.AntecedentesPersonales).MaximumLength(2000);
+        RuleFor(x => x.AntecedentesFamiliares).MaximumLength(2000);
+        RuleFor(x => x.MedicacionHabitual).MaximumLength(1000);
+        RuleFor(x => x.Habitos).MaximumLength(1000);
+        RuleFor(x => x.ObraSocial).MaximumLength(120);
+        RuleFor(x => x.NumeroAfiliado).MaximumLength(40);
+        RuleFor(x => x.ContactoEmergencia).MaximumLength(120);
+        RuleFor(x => x.TelefonoEmergencia).MaximumLength(30);
+        RuleFor(x => x.Observaciones).MaximumLength(2000);
+    }
+}
+
 public class GuardarEncuentroValidator : AbstractValidator<GuardarEncuentroCommand>
 {
     public GuardarEncuentroValidator()

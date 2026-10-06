@@ -12,6 +12,7 @@ public static class DependencyInjection
         services.AddScoped<IValidator<ReservarTurnoCommand>, ReservarTurnoValidator>();
         services.AddScoped<IValidator<GuardarEncuentroCommand>, GuardarEncuentroValidator>();
         services.AddScoped<IValidator<CrearRecetaCommand>, CrearRecetaValidator>();
+        services.AddScoped<IValidator<GuardarHistoriaMedicaCommand>, GuardarHistoriaMedicaValidator>();
         services.AddScoped<TenantsService>();
         services.AddScoped<PlatformAuthService>();
         services.AddScoped<AuthService>();
@@ -20,6 +21,7 @@ public static class DependencyInjection
         services.AddScoped<AgendaService>();
         services.AddScoped<ClinicaService>();
         services.AddScoped<FacturacionService>();
+        services.AddScoped<HistoriasMedicasService>();
         return services;
     }
 }

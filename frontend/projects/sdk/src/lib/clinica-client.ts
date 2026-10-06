@@ -283,6 +283,47 @@ export interface HistoriaDto {
   recetas: RecetaDto[];
 }
 
+export interface HistoriaMedicaDto {
+  pacienteId: string;
+  nombre: string;
+  apellido: string;
+  email: string;
+  documento: string;
+  fechaNacimiento: string;
+  telefono: string;
+  grupoSanguineo?: string | null;
+  alergias?: string | null;
+  antecedentesPersonales?: string | null;
+  antecedentesFamiliares?: string | null;
+  medicacionHabitual?: string | null;
+  habitos?: string | null;
+  obraSocial?: string | null;
+  numeroAfiliado?: string | null;
+  contactoEmergencia?: string | null;
+  telefonoEmergencia?: string | null;
+  observaciones?: string | null;
+  actualizadoEn?: string | null;
+}
+
+export interface GuardarHistoriaMedicaCommand {
+  nombre: string;
+  apellido: string;
+  documento: string;
+  fechaNacimiento: string;
+  telefono: string;
+  grupoSanguineo?: string | null;
+  alergias?: string | null;
+  antecedentesPersonales?: string | null;
+  antecedentesFamiliares?: string | null;
+  medicacionHabitual?: string | null;
+  habitos?: string | null;
+  obraSocial?: string | null;
+  numeroAfiliado?: string | null;
+  contactoEmergencia?: string | null;
+  telefonoEmergencia?: string | null;
+  observaciones?: string | null;
+}
+
 export interface ArancelDto {
   id: string;
   tipoTurnoId: string;
@@ -498,6 +539,18 @@ export class ClinicaClient {
 
   historia(query?: { pacienteId?: string }) {
     return this.http.get<HistoriaDto>(`${this.base}/api/historia` + this.queryString(query));
+  }
+
+  historiasMedicas() {
+    return this.http.get<HistoriaMedicaDto[]>(`${this.base}/api/historias-medicas`);
+  }
+
+  historiaMedica(pacienteId: string) {
+    return this.http.get<HistoriaMedicaDto>(`${this.base}/api/historias-medicas/${pacienteId}`);
+  }
+
+  guardarHistoriaMedica(pacienteId: string, body: GuardarHistoriaMedicaCommand) {
+    return this.http.put<HistoriaMedicaDto>(`${this.base}/api/historias-medicas/${pacienteId}`, body);
   }
 
   aranceles() {

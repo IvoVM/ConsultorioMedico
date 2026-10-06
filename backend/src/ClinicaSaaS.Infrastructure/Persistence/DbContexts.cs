@@ -42,6 +42,7 @@ public class TenantDbContext(DbContextOptions<TenantDbContext> options)
     public DbSet<AgendaSemanal> Agendas => Set<AgendaSemanal>();
     public DbSet<BloqueoAgenda> Bloqueos => Set<BloqueoAgenda>();
     public DbSet<Paciente> Pacientes => Set<Paciente>();
+    public DbSet<HistoriaMedica> HistoriasMedicas => Set<HistoriaMedica>();
     public DbSet<Turno> Turnos => Set<Turno>();
     public DbSet<ListaEspera> ListaEspera => Set<ListaEspera>();
     public DbSet<Diagnostico> Diagnosticos => Set<Diagnostico>();
@@ -91,6 +92,22 @@ public class TenantDbContext(DbContextOptions<TenantDbContext> options)
             e.Property(p => p.Documento).HasMaxLength(20);
             e.Property(p => p.Telefono).HasMaxLength(30);
             e.HasIndex(p => p.UsuarioId).IsUnique();
+        });
+        builder.Entity<HistoriaMedica>(e =>
+        {
+            e.Property(h => h.GrupoSanguineo).HasMaxLength(3);
+            e.Property(h => h.Alergias).HasMaxLength(1000);
+            e.Property(h => h.AntecedentesPersonales).HasMaxLength(2000);
+            e.Property(h => h.AntecedentesFamiliares).HasMaxLength(2000);
+            e.Property(h => h.MedicacionHabitual).HasMaxLength(1000);
+            e.Property(h => h.Habitos).HasMaxLength(1000);
+            e.Property(h => h.ObraSocial).HasMaxLength(120);
+            e.Property(h => h.NumeroAfiliado).HasMaxLength(40);
+            e.Property(h => h.ContactoEmergencia).HasMaxLength(120);
+            e.Property(h => h.TelefonoEmergencia).HasMaxLength(30);
+            e.Property(h => h.Observaciones).HasMaxLength(2000);
+            e.HasIndex(h => h.PacienteId).IsUnique();
+            e.HasOne<Paciente>().WithOne().HasForeignKey<HistoriaMedica>(h => h.PacienteId);
         });
         builder.Entity<Turno>(e =>
         {

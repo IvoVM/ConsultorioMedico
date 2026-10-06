@@ -248,6 +248,25 @@
         "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HistoriaDto" } } } } }
       }
     },
+    "/api/historias-medicas": {
+      "get": {
+        "operationId": "historiasMedicas",
+        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/HistoriaMedicaDto" } } } } } }
+      }
+    },
+    "/api/historias-medicas/{pacienteId}": {
+      "get": {
+        "operationId": "historiaMedica",
+        "parameters": [{ "name": "pacienteId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HistoriaMedicaDto" } } } } }
+      },
+      "put": {
+        "operationId": "guardarHistoriaMedica",
+        "parameters": [{ "name": "pacienteId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GuardarHistoriaMedicaCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HistoriaMedicaDto" } } } } }
+      }
+    },
     "/api/aranceles": {
       "get": {
         "operationId": "aranceles",
@@ -320,6 +339,8 @@
       "RecetaDto": { "type": "object", "required": ["id", "encuentroId", "pacienteId", "profesionalId", "profesional", "creadoEn", "items"], "properties": { "id": { "type": "string" }, "encuentroId": { "type": "string" }, "pacienteId": { "type": "string" }, "profesionalId": { "type": "string" }, "profesional": { "type": "string" }, "indicaciones": { "type": "string", "nullable": true }, "creadoEn": { "type": "string" }, "items": { "type": "array", "items": { "$ref": "#/components/schemas/RecetaItemDto" } } } },
       "PacienteResumenDto": { "type": "object", "required": ["id", "nombre", "documento", "fechaNacimiento", "telefono"], "properties": { "id": { "type": "string" }, "nombre": { "type": "string" }, "documento": { "type": "string" }, "fechaNacimiento": { "type": "string" }, "telefono": { "type": "string" } } },
       "HistoriaDto": { "type": "object", "required": ["paciente", "encuentros", "recetas"], "properties": { "paciente": { "$ref": "#/components/schemas/PacienteResumenDto" }, "encuentros": { "type": "array", "items": { "$ref": "#/components/schemas/EncuentroDto" } }, "recetas": { "type": "array", "items": { "$ref": "#/components/schemas/RecetaDto" } } } },
+      "HistoriaMedicaDto": { "type": "object", "required": ["pacienteId", "nombre", "apellido", "email", "documento", "fechaNacimiento", "telefono"], "properties": { "pacienteId": { "type": "string" }, "nombre": { "type": "string" }, "apellido": { "type": "string" }, "email": { "type": "string" }, "documento": { "type": "string" }, "fechaNacimiento": { "type": "string" }, "telefono": { "type": "string" }, "grupoSanguineo": { "type": "string", "nullable": true }, "alergias": { "type": "string", "nullable": true }, "antecedentesPersonales": { "type": "string", "nullable": true }, "antecedentesFamiliares": { "type": "string", "nullable": true }, "medicacionHabitual": { "type": "string", "nullable": true }, "habitos": { "type": "string", "nullable": true }, "obraSocial": { "type": "string", "nullable": true }, "numeroAfiliado": { "type": "string", "nullable": true }, "contactoEmergencia": { "type": "string", "nullable": true }, "telefonoEmergencia": { "type": "string", "nullable": true }, "observaciones": { "type": "string", "nullable": true }, "actualizadoEn": { "type": "string", "nullable": true } } },
+      "GuardarHistoriaMedicaCommand": { "type": "object", "required": ["nombre", "apellido", "documento", "fechaNacimiento", "telefono"], "properties": { "nombre": { "type": "string" }, "apellido": { "type": "string" }, "documento": { "type": "string" }, "fechaNacimiento": { "type": "string" }, "telefono": { "type": "string" }, "grupoSanguineo": { "type": "string", "nullable": true }, "alergias": { "type": "string", "nullable": true }, "antecedentesPersonales": { "type": "string", "nullable": true }, "antecedentesFamiliares": { "type": "string", "nullable": true }, "medicacionHabitual": { "type": "string", "nullable": true }, "habitos": { "type": "string", "nullable": true }, "obraSocial": { "type": "string", "nullable": true }, "numeroAfiliado": { "type": "string", "nullable": true }, "contactoEmergencia": { "type": "string", "nullable": true }, "telefonoEmergencia": { "type": "string", "nullable": true }, "observaciones": { "type": "string", "nullable": true } } },
       "ArancelDto": { "type": "object", "required": ["id", "tipoTurnoId", "tipoTurno", "monto", "vigenteDesde"], "properties": { "id": { "type": "string" }, "tipoTurnoId": { "type": "string" }, "tipoTurno": { "type": "string" }, "monto": { "type": "number" }, "vigenteDesde": { "type": "string" } } },
       "CrearArancelCommand": { "type": "object", "required": ["tipoTurnoId", "monto", "vigenteDesde"], "properties": { "tipoTurnoId": { "type": "string" }, "monto": { "type": "number" }, "vigenteDesde": { "type": "string" } } },
       "ComprobanteItemDto": { "type": "object", "required": ["descripcion", "importe"], "properties": { "descripcion": { "type": "string" }, "importe": { "type": "number" } } },

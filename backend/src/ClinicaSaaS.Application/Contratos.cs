@@ -119,6 +119,44 @@ public record RecetaDto(
 public record HistoriaDto(PacienteResumenDto Paciente, IReadOnlyList<EncuentroDto> Encuentros, IReadOnlyList<RecetaDto> Recetas);
 public record PacienteResumenDto(Guid Id, string Nombre, string Documento, DateOnly FechaNacimiento, string Telefono);
 
+public record HistoriaMedicaDto(
+    Guid PacienteId,
+    string Nombre,
+    string Apellido,
+    string Email,
+    string Documento,
+    DateOnly FechaNacimiento,
+    string Telefono,
+    string? GrupoSanguineo,
+    string? Alergias,
+    string? AntecedentesPersonales,
+    string? AntecedentesFamiliares,
+    string? MedicacionHabitual,
+    string? Habitos,
+    string? ObraSocial,
+    string? NumeroAfiliado,
+    string? ContactoEmergencia,
+    string? TelefonoEmergencia,
+    string? Observaciones,
+    DateTimeOffset? ActualizadoEn);
+public record GuardarHistoriaMedicaCommand(
+    string Nombre,
+    string Apellido,
+    string Documento,
+    DateOnly FechaNacimiento,
+    string Telefono,
+    string? GrupoSanguineo,
+    string? Alergias,
+    string? AntecedentesPersonales,
+    string? AntecedentesFamiliares,
+    string? MedicacionHabitual,
+    string? Habitos,
+    string? ObraSocial,
+    string? NumeroAfiliado,
+    string? ContactoEmergencia,
+    string? TelefonoEmergencia,
+    string? Observaciones);
+
 public record ArancelDto(Guid Id, Guid TipoTurnoId, string TipoTurno, decimal Monto, DateOnly VigenteDesde);
 public record CrearArancelCommand(Guid TipoTurnoId, decimal Monto, DateOnly VigenteDesde);
 public record ComprobanteItemDto(string Descripcion, decimal Importe);

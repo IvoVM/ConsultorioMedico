@@ -69,6 +69,25 @@ public class Paciente
     public string Telefono { get; set; } = "";
 }
 
+public class HistoriaMedica
+{
+    public Guid Id { get; set; }
+    public Guid PacienteId { get; set; }
+    public string? GrupoSanguineo { get; set; }
+    public string? Alergias { get; set; }
+    public string? AntecedentesPersonales { get; set; }
+    public string? AntecedentesFamiliares { get; set; }
+    public string? MedicacionHabitual { get; set; }
+    public string? Habitos { get; set; }
+    public string? ObraSocial { get; set; }
+    public string? NumeroAfiliado { get; set; }
+    public string? ContactoEmergencia { get; set; }
+    public string? TelefonoEmergencia { get; set; }
+    public string? Observaciones { get; set; }
+    public DateTimeOffset ActualizadoEn { get; set; }
+    public Guid? ActualizadoPor { get; set; }
+}
+
 public class Turno
 {
     public Guid Id { get; set; }

@@ -261,6 +261,23 @@ public class ClinicaController(ClinicaService clinica) : ApiController
 }
 
 [ApiController]
+[Authorize(Roles = "AdminTenant")]
+[Route("api/historias-medicas")]
+public class HistoriasMedicasController(HistoriasMedicasService historias) : ApiController
+{
+    [HttpGet]
+    public Task<IActionResult> Listar(CancellationToken ct) => Ejecutar(() => historias.ListarAsync(ct));
+
+    [HttpGet("{pacienteId:guid}")]
+    public Task<IActionResult> Obtener(Guid pacienteId, CancellationToken ct) =>
+        Ejecutar(() => historias.ObtenerAsync(pacienteId, ct));
+
+    [HttpPut("{pacienteId:guid}")]
+    public Task<IActionResult> Guardar(Guid pacienteId, GuardarHistoriaMedicaCommand command, CancellationToken ct) =>
+        Ejecutar(() => historias.GuardarAsync(pacienteId, command, ct));
+}
+
+[ApiController]
 [Authorize]
 [Route("api")]
 public class FacturacionController(FacturacionService facturacion) : ApiController

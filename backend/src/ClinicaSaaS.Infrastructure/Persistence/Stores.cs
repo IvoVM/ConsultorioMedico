@@ -95,6 +95,16 @@ public class TenantUserStore(UserManager<TenantUser> users) : ITenantUserStore
         return lista.Select(Map).ToList();
     }
 
+    public async Task ActualizarNombreAsync(Guid id, string nombre, string apellido, CancellationToken ct)
+    {
+        var user = await users.FindByIdAsync(id.ToString()) ?? throw new NoEncontradoException("Usuario no encontrado.");
+        user.Nombre = nombre;
+        user.Apellido = apellido;
+        var result = await users.UpdateAsync(user);
+        if (!result.Succeeded)
+            throw new ReglaNegocioException(string.Join(' ', result.Errors.Select(e => e.Description)));
+    }
+
     private static UsuarioTenant Map(TenantUser user) =>
         new(user.Id, user.Email ?? "", user.Nombre, user.Apellido, user.Rol, user.Matricula, user.EspecialidadId, user.DebeCambiarClave);
 }
@@ -104,6 +114,7 @@ public class ClinicaStores(TenantDbContext db) :
     IAgendaStore,
     ITurnoStore,
     IPacienteStore,
+    IHistoriaMedicaStore,
     IListaEsperaStore,
     IClinicaStore,
     IFacturacionStore,
@@ -232,6 +243,19 @@ public class ClinicaStores(TenantDbContext db) :
         await db.SaveChangesAsync(ct);
         return paciente;
     }
+
+    public async Task<IReadOnlyList<Paciente>> PacientesAsync(CancellationToken ct) =>
+        await db.Pacientes.ToListAsync(ct);
+
+    async Task<IReadOnlyList<HistoriaMedica>> IHistoriaMedicaStore.ListarAsync(CancellationToken ct) =>
+        await db.HistoriasMedicas.ToListAsync(ct);
+
+    public Task<HistoriaMedica?> PorPacienteAsync(Guid pacienteId, CancellationToken ct) =>
+        db.HistoriasMedicas.FirstOrDefaultAsync(h => h.PacienteId == pacienteId, ct);
+
+    public void Agregar(HistoriaMedica historia) => db.HistoriasMedicas.Add(historia);
+
+    async Task IHistoriaMedicaStore.GuardarAsync(CancellationToken ct) => await db.SaveChangesAsync(ct);
 
     public async Task<ListaEspera> AgregarAsync(ListaEspera entrada, CancellationToken ct)
     {

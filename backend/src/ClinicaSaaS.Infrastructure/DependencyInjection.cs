@@ -218,6 +218,7 @@ public static class DependencyInjection
         services.AddScoped<IAgendaStore>(sp => sp.GetRequiredService<ClinicaStores>());
         services.AddScoped<ITurnoStore>(sp => sp.GetRequiredService<ClinicaStores>());
         services.AddScoped<IPacienteStore>(sp => sp.GetRequiredService<ClinicaStores>());
+        services.AddScoped<IHistoriaMedicaStore>(sp => sp.GetRequiredService<ClinicaStores>());
         services.AddScoped<IListaEsperaStore>(sp => sp.GetRequiredService<ClinicaStores>());
         services.AddScoped<IClinicaStore>(sp => sp.GetRequiredService<ClinicaStores>());
         services.AddScoped<IFacturacionStore>(sp => sp.GetRequiredService<ClinicaStores>());
