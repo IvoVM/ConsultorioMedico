@@ -10,7 +10,7 @@
 </div>
 @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
 <h2 class="font-serif text-2xl tracking-tight">Semana</h2>
-<form class="mb-6 mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-6" (ngSubmit)="addBlock()">
+<form class="mb-6 mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-5" (ngSubmit)="addBlock()">
   <ui-field label="Día">
     <select name="day" [(ngModel)]="day">
       @for (item of days; track item) { <option [value]="item">{{ dayLabels[item] }}</option> }
@@ -18,11 +18,6 @@
   </ui-field>
   <ui-field label="Desde"><input name="from" type="time" [(ngModel)]="from" required /></ui-field>
   <ui-field label="Hasta"><input name="to" type="time" [(ngModel)]="to" required /></ui-field>
-  <ui-field label="Sede">
-    <select name="locationId" [(ngModel)]="locationId">
-      @for (location of locations(); track location.id) { <option [value]="location.id">{{ location.name }}</option> }
-    </select>
-  </ui-field>
   <ui-field label="Tipo">
     <select name="appointmentTypeId" [(ngModel)]="appointmentTypeId">
       @for (type of appointmentTypes(); track type.id) { <option [value]="type.id">{{ type.name }}</option> }
@@ -34,13 +29,12 @@
   <ui-skeleton label="Cargando horarios" />
 } @else {
 <ui-table>
-  <thead><tr><th>Día</th><th>Horario</th><th>Sede</th><th></th></tr></thead>
+  <thead><tr><th>Día</th><th>Horario</th><th></th></tr></thead>
   <tbody>
     @for (block of blocks(); track block.id; let i = $index) {
       <tr>
         <td>{{ dayLabels[block.day] }}</td>
         <td>{{ block.startTime }} - {{ block.endTime }}</td>
-        <td>{{ locationName(block.locationId) }}</td>
         <td><ui-button variant="ghost" (click)="removeBlock(i)">Quitar</ui-button></td>
       </tr>
     }

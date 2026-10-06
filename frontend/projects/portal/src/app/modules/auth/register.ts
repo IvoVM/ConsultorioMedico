@@ -2,11 +2,12 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService, ClinicService, clinicaSession, errorMessage } from 'sdk';
-import { UiButton, UiField, UiPage } from 'ui';
+import { UiButton, UiField } from 'ui';
 import { firstValueFrom } from 'rxjs';
+import { readClinicName } from './clinic-name';
 
 @Component({
-  imports: [FormsModule, RouterLink, UiPage, UiButton, UiField],
+  imports: [FormsModule, RouterLink, UiButton, UiField],
   templateUrl: './register.html',
 })
 export class RegisterPage {
@@ -25,16 +26,7 @@ export class RegisterPage {
   readonly loading = signal(false);
 
   constructor() {
-    void this.loadClinic();
-  }
-
-  private async loadClinic() {
-    try {
-      const profile = await firstValueFrom(this.clinic.clinicProfile());
-      this.clinicName.set(profile.name);
-    } catch {
-      this.clinicName.set('Consultorio');
-    }
+    void readClinicName(this.clinic).then((name) => this.clinicName.set(name));
   }
 
   async submit() {

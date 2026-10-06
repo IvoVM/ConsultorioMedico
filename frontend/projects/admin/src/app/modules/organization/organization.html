@@ -2,29 +2,14 @@
 @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
 @if (loading()) {
   <ui-skeleton [label]="'Cargando ' + sectionLabel().toLowerCase()" />
-} @else if (section() === 'sedes') {
-  <form class="mb-6 grid gap-4 md:grid-cols-3" (ngSubmit)="createLocation()">
-    <ui-field label="Nombre"><input name="locationName" [(ngModel)]="locationName" required /></ui-field>
-    <ui-field label="Dirección"><input name="address" [(ngModel)]="address" required /></ui-field>
-    <div class="flex items-end"><ui-button type="submit" [loading]="saving()">Agregar sede</ui-button></div>
-  </form>
-  <ui-table>
-    <thead><tr><th>Nombre</th><th>Dirección</th></tr></thead>
-    <tbody>@for (location of locations(); track location.id) { <tr><td>{{ location.name }}</td><td>{{ location.address }}</td></tr> }</tbody>
-  </ui-table>
 } @else if (section() === 'servicios') {
-  <form class="mb-6 grid gap-4 md:grid-cols-3" (ngSubmit)="createService()">
-    <ui-field label="Sede">
-      <select name="locationId" [(ngModel)]="locationId" required>
-        @for (location of locations(); track location.id) { <option [value]="location.id">{{ location.name }}</option> }
-      </select>
-    </ui-field>
-    <ui-field label="Servicio"><input name="serviceName" [(ngModel)]="serviceName" required /></ui-field>
+  <form class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end" (ngSubmit)="createService()">
+    <ui-field class="sm:w-80" label="Servicio"><input name="serviceName" [(ngModel)]="serviceName" required /></ui-field>
     <div class="flex items-end"><ui-button type="submit" [loading]="saving()">Agregar servicio</ui-button></div>
   </form>
   <ui-table>
-    <thead><tr><th>Servicio</th><th>Sede</th></tr></thead>
-    <tbody>@for (service of services(); track service.id) { <tr><td>{{ service.name }}</td><td>{{ locationNameOf(service.locationId) }}</td></tr> }</tbody>
+    <thead><tr><th>Servicio</th></tr></thead>
+    <tbody>@for (service of services(); track service.id) { <tr><td>{{ service.name }}</td></tr> }</tbody>
   </ui-table>
 } @else if (section() === 'especialidades') {
   <form class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end" (ngSubmit)="createSpecialty()">

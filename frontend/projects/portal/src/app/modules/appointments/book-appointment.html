@@ -1,44 +1,107 @@
-<div class="grid gap-4 md:grid-cols-2">
-    <ui-field label="Sede">
-      <select name="locationId" [(ngModel)]="locationId">
-        @for (location of locations(); track location.id) { <option [value]="location.id">{{ location.name }}</option> }
-      </select>
-    </ui-field>
-    <ui-field label="Especialidad">
-      <select name="specialtyId" [(ngModel)]="specialtyId">
-        @for (item of specialties(); track item.id) { <option [value]="item.id">{{ item.name }}</option> }
-      </select>
-    </ui-field>
-  </div>
-  <div class="mt-6">
-    <ui-calendar [date]="date" (dateChange)="date = $event; search()">
-      <ui-button [loading]="searching()" (click)="search()">Buscar huecos</ui-button>
-    </ui-calendar>
-  </div>
-  @if (error()) { <p class="mt-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
-  @if (loading() || searching()) {
-    <ui-skeleton class="mt-6" [count]="3" label="Buscando huecos" />
-  } @else if (slots().length === 0) {
-    <div class="mt-6 max-w-xl space-y-4">
-      <ui-empty message="No hay turnos libres para esa búsqueda." />
-      @if (session.role() === 'Patient') {
-        <ui-field label="Nota para la lista de espera"><input name="notes" [(ngModel)]="notes" /></ui-field>
-        <ui-button [loading]="joining()" (click)="joinWaitlist()">Anotarme en lista de espera</ui-button>
+@if (loading()) {
+  <ui-skeleton [count]="4" label="Cargando la agenda" />
+} @else {
+  <h1 class="max-w-[16ch] font-serif text-4xl leading-tight font-medium tracking-tight sm:text-5xl">Elegí el día</h1>
+  <p class="mt-3 max-w-[46ch] text-lg text-ink/75">Los horarios son de los especialistas que atienden ese día.</p>
+
+  <div class="book-grid mt-8">
+    <div>
+      @if (specialties().length > 1) {
+        <ui-field label="Especialidad">
+          <select [value]="specialtyId()" (change)="pickSpecialty($any($event.target).value)">
+            @for (item of specialties(); track item.id) {
+              <option [value]="item.id">{{ item.name }}</option>
+            }
+          </select>
+        </ui-field>
       }
+      <div class="mt-4" role="group" aria-label="Especialistas">
+        <button type="button" class="pro" [attr.aria-pressed]="professionalId() === ''" (click)="pickProfessional('')">
+          <span class="font-serif text-xl leading-tight">Cualquiera</span>
+          <span class="text-sm text-ink/70">{{ specialtyName(specialtyId()) }}</span>
+        </button>
+        @for (pro of visibleProfessionals(); track pro.id) {
+          <button type="button" class="pro" [attr.aria-pressed]="professionalId() === pro.id" (click)="pickProfessional(pro.id)">
+            <span class="font-serif text-xl leading-tight">{{ pro.firstName }} {{ pro.lastName }}</span>
+            <span class="text-sm text-ink/70">{{ specialtyName(pro.specialtyId) }}</span>
+          </button>
+        }
+        @if (visibleProfessionals().length === 0) {
+          <p class="px-3 py-4 text-sm text-ink/70">No hay especialistas en esa especialidad.</p>
+        }
+      </div>
     </div>
-  } @else {
-    <div class="mt-2">
-      @for (slot of slots(); track slot.start + slot.professionalId) {
-        <article class="flex flex-col gap-3 border-b border-rule py-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p class="font-serif text-xl leading-tight">{{ slot.professional }}</p>
-            <p class="mt-1 text-sm text-ink/70">{{ slot.appointmentType }}</p>
-          </div>
-          <div class="flex items-center justify-between gap-4 sm:justify-end">
-            <time class="text-sm tabular-nums text-ink/75">{{ slot.start }}</time>
-            <ui-button [loading]="booking() === slot.start + slot.professionalId" (click)="book(slot)">Reservar</ui-button>
+
+    <div class="cal-wrap">
+      <div class="mb-4 flex items-center justify-between gap-3">
+        <button type="button" class="cal-nav" (click)="shiftMonth(-1)" [disabled]="!canGoPrev()" aria-label="Mes anterior">
+          <ui-icon name="chevron_left" [size]="22" />
+        </button>
+        <p class="font-serif text-3xl leading-none">{{ monthLabel() }}</p>
+        <button type="button" class="cal-nav" (click)="shiftMonth(1)" aria-label="Mes siguiente">
+          <ui-icon name="chevron_right" [size]="22" />
+        </button>
+      </div>
+      <div class="cal" role="grid" [attr.aria-label]="monthLabel()">
+        @for (name of weekdays; track name) {
+          <span class="cal-label">{{ name }}</span>
+        }
+        @for (cell of cells(); track cell.iso) {
+          <button
+            type="button"
+            [disabled]="!cell.inMonth || cell.past"
+            [attr.aria-pressed]="date() === cell.iso"
+            [attr.aria-label]="cell.inMonth ? cell.label : null"
+            [class.is-today]="cell.today && cell.inMonth"
+            (click)="pickDay(cell.iso)"
+          >
+            @if (cell.inMonth) { {{ cell.day }} }
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+
+  @if (error()) { <p class="mt-6 text-sm text-pulse" role="alert">{{ error() }}</p> }
+
+  <section class="mt-10" aria-live="polite">
+    @if (held(); as slot) {
+      <p class="font-serif text-5xl leading-none">{{ timeLabel(slot.start) }}</p>
+      <p class="mt-3 text-lg">{{ slot.professional }}</p>
+      <p class="mt-2 max-w-[42ch] text-ink/75">Este turno se guarda cuando la cuenta es tuya.</p>
+      <div class="mt-6 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+        <a routerLink="/registro" class="action-link">Crear cuenta</a>
+        <a routerLink="/ingreso/cuenta" class="text-link">Ya tengo cuenta</a>
+        <ui-button variant="outlined" (click)="release()">Elegir otro horario</ui-button>
+      </div>
+    } @else if (searching()) {
+      <ui-skeleton [count]="2" label="Buscando horarios" />
+    } @else if (groups().length === 0 && searched()) {
+      <div class="max-w-xl space-y-4">
+        <ui-empty message="Ese día no tiene turnos libres." />
+        @if (session.role() === 'Patient') {
+          <ui-field label="Nota para la lista de espera"><input name="notes" [(ngModel)]="notes" /></ui-field>
+          <ui-button [loading]="joining()" (click)="joinWaitlist()">Anotarme en lista de espera</ui-button>
+        }
+      </div>
+    } @else {
+      @for (group of groups(); track group.id) {
+        <article class="border-b border-rule py-5">
+          <h2 class="font-serif text-2xl leading-tight">{{ group.name }}</h2>
+          <p class="mt-1 text-sm text-ink/70">{{ group.type }}</p>
+          <div class="times mt-4">
+            @for (slot of group.slots; track slot.start + slot.professionalId) {
+              <button type="button" [disabled]="!!booking()" (click)="book(slot)">
+                @if (booking() === slot.start + slot.professionalId) {
+                  <ui-spinner [size]="16" />
+                } @else {
+                  {{ timeLabel(slot.start) }}
+                }
+              </button>
+            }
           </div>
         </article>
       }
-    </div>
-  }
+    }
+  </section>
+}

@@ -1,8 +1,9 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
-import { AuthService, clinicaSession } from 'sdk';
+import { AuthService, ClinicService, clinicaSession } from 'sdk';
 import { firstValueFrom } from 'rxjs';
 import { NavNode, UiButton, UiIcon, UiNav, UiPage } from 'ui';
+import { readClinicName } from '../auth/clinic-name';
 
 @Component({
   imports: [RouterOutlet, RouterLink, UiPage, UiButton, UiIcon, UiNav],
@@ -10,7 +11,9 @@ import { NavNode, UiButton, UiIcon, UiNav, UiPage } from 'ui';
 })
 export class ShellPage {
   private readonly auth = inject(AuthService);
+  private readonly clinic = inject(ClinicService);
   readonly session = clinicaSession;
+  readonly clinicName = signal('Consultorio');
   readonly menu = computed((): NavNode[] => {
     const role = this.session.role();
     const nodes: NavNode[] = [];
@@ -30,7 +33,7 @@ export class ShellPage {
           { label: 'Recetas', path: '/recetas' },
         ],
       });
-    } else {
+    } else if (this.session.token()) {
       nodes.push({ label: 'Reservar', path: '/reservar' });
     }
     if (role === 'Doctor') {
@@ -45,6 +48,10 @@ export class ShellPage {
     if (role === 'Secretary' || role === 'TenantAdmin') nodes.push({ label: 'Secretaría', path: '/secretaria' });
     return nodes;
   });
+
+  constructor() {
+    void readClinicName(this.clinic).then((name) => this.clinicName.set(name));
+  }
 
   logout() {
     void firstValueFrom(this.auth.logout()).finally(() => {

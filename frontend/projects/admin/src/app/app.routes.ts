@@ -14,7 +14,7 @@ export const routes: Routes = [
         path: 'organizacion',
         canActivate: [roleGuard('TenantAdmin')],
         children: [
-          { path: '', pathMatch: 'full', redirectTo: 'sedes' },
+          { path: '', pathMatch: 'full', redirectTo: 'servicios' },
           {
             path: ':section',
             loadComponent: () => import('./modules/organization/organization').then((m) => m.OrganizationPage),

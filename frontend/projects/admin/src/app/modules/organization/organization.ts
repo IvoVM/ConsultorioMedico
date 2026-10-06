@@ -2,7 +2,7 @@ import { Component, computed, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { AppointmentTypeDto, LocationDto, MedicalServiceDto, OrganizationService, SpecialtyDto, errorMessage } from 'sdk';
+import { AppointmentTypeDto, MedicalServiceDto, OrganizationService, SpecialtyDto, errorMessage } from 'sdk';
 import { UiButton, UiField, UiSkeleton, UiTable } from 'ui';
 import { Observable, firstValueFrom } from 'rxjs';
 import { isOrganizationSection, organizationSections } from './models/section';
@@ -18,18 +18,15 @@ export class OrganizationPage {
   private readonly params = toSignal(this.route.paramMap);
   readonly section = computed(() => {
     const value = this.params()?.get('section') ?? null;
-    return isOrganizationSection(value) ? value : 'sedes';
+    return isOrganizationSection(value) ? value : 'servicios';
   });
-  readonly sectionLabel = computed(() => organizationSections.find((item) => item.id === this.section())?.label ?? 'Sedes');
-  readonly locations = signal<LocationDto[]>([]);
+  readonly sectionLabel = computed(() => organizationSections.find((item) => item.id === this.section())?.label ?? 'Servicios');
   readonly services = signal<MedicalServiceDto[]>([]);
   readonly specialties = signal<SpecialtyDto[]>([]);
   readonly appointmentTypes = signal<AppointmentTypeDto[]>([]);
   readonly error = signal('');
   readonly loading = signal(true);
   readonly saving = signal(false);
-  locationName = '';
-  address = '';
   locationId = '';
   serviceName = '';
   specialtyName = '';
@@ -40,7 +37,7 @@ export class OrganizationPage {
   constructor() {
     effect(() => {
       const value = this.params()?.get('section');
-      if (value && !isOrganizationSection(value)) void this.router.navigate(['/organizacion/sedes'], { replaceUrl: true });
+      if (value && !isOrganizationSection(value)) void this.router.navigate(['/organizacion/servicios'], { replaceUrl: true });
     });
     void this.load();
   }
@@ -53,7 +50,6 @@ export class OrganizationPage {
         firstValueFrom(this.organization.specialties()),
         firstValueFrom(this.organization.appointmentTypes()),
       ]);
-      this.locations.set(locations);
       this.services.set(services);
       this.specialties.set(specialties);
       this.appointmentTypes.set(appointmentTypes);
@@ -63,16 +59,6 @@ export class OrganizationPage {
     } finally {
       this.loading.set(false);
     }
-  }
-
-  locationNameOf(id: string) {
-    return this.locations().find((location) => location.id === id)?.name ?? '';
-  }
-
-  async createLocation() {
-    await this.save(() => this.organization.createLocation({ name: this.locationName, address: this.address }));
-    this.locationName = '';
-    this.address = '';
   }
 
   async createService() {

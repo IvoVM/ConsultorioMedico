@@ -5,7 +5,6 @@ import {
   BlockoutDto,
   DayOfWeek,
   EmployeesService,
-  LocationDto,
   OrganizationService,
   ProfessionalDto,
   ScheduleBlockDto,
@@ -27,7 +26,6 @@ export class SchedulesPage {
   readonly dayLabels = dayLabels;
   readonly days: DayOfWeek[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   readonly professionals = signal<ProfessionalDto[]>([]);
-  readonly locations = signal<LocationDto[]>([]);
   readonly appointmentTypes = signal<AppointmentTypeDto[]>([]);
   readonly blocks = signal<ScheduleBlockDto[]>([]);
   readonly blockouts = signal<BlockoutDto[]>([]);
@@ -59,7 +57,6 @@ export class SchedulesPage {
         firstValueFrom(this.organization.appointmentTypes()),
       ]);
       this.professionals.set(professionals);
-      this.locations.set(locations);
       this.appointmentTypes.set(appointmentTypes);
       this.professionalId = professionals[0]?.id ?? '';
       this.locationId = locations[0]?.id ?? '';
@@ -87,10 +84,6 @@ export class SchedulesPage {
     } finally {
       this.scheduleLoading.set(false);
     }
-  }
-
-  locationName(id: string) {
-    return this.locations().find((location) => location.id === id)?.name ?? '';
   }
 
   addBlock() {

@@ -1,0 +1,211 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.gate {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow: hidden;
+  background: var(--color-paper);
+}
+
+.panel {
+  position: absolute;
+  inset: 0;
+  display: block;
+  color: var(--color-ink);
+  text-decoration: none;
+}
+
+.photo,
+.veil {
+  position: absolute;
+  pointer-events: none;
+}
+
+.photo {
+  inset: -2.5rem;
+  background-position: center;
+  background-size: cover;
+  filter: blur(6px) saturate(0.94);
+  transform: scale(1.05);
+  transition: filter 0.45s ease, transform 0.6s ease;
+}
+
+.patient .photo {
+  inset: 36% -2rem -2rem -2rem;
+  background-position: 32% 28%;
+}
+
+.staff .photo {
+  inset: -2rem -2rem 42% -2rem;
+  background-position: 52% 46%;
+}
+
+.veil {
+  inset: 0;
+  transition: opacity 0.35s ease;
+}
+
+.patient .veil {
+  background: linear-gradient(
+    to top,
+    rgb(243 246 244 / 0.94) 0%,
+    rgb(243 246 244 / 0.82) 16%,
+    rgb(243 246 244 / 0.22) 38%,
+    rgb(243 246 244 / 0.08) 100%
+  );
+}
+
+.staff .veil {
+  background: linear-gradient(
+    to bottom,
+    rgb(18 74 56 / 0.8) 0%,
+    rgb(23 51 44 / 0.42) 24%,
+    rgb(23 51 44 / 0.14) 58%,
+    rgb(23 51 44 / 0.08) 100%
+  );
+}
+
+.panel:hover .photo,
+.panel:focus-visible .photo {
+  filter: blur(2px) saturate(1);
+  transform: scale(1.08);
+}
+
+.panel:hover .veil,
+.panel:focus-visible .veil {
+  opacity: 0.78;
+}
+
+.panel:focus-visible {
+  outline: none;
+}
+
+.panel:focus-visible .copy {
+  outline: 2px solid currentColor;
+  outline-offset: 8px;
+}
+
+.copy {
+  position: absolute;
+  z-index: 1;
+}
+
+.patient {
+  clip-path: polygon(0 60%, 100% 46%, 100% 100%, 0 100%);
+}
+
+.patient .copy {
+  right: 1.25rem;
+  bottom: 0;
+  left: 0;
+  max-width: 34rem;
+  padding: 1.5rem 1.5rem 2rem;
+}
+
+.staff {
+  color: white;
+  clip-path: polygon(0 0, 100% 0, 100% 42%, 0 56%);
+}
+
+.staff .copy {
+  top: 0;
+  right: 1.25rem;
+  left: 1.25rem;
+  max-width: 28rem;
+  padding: 1.75rem 0.25rem 0;
+}
+
+.clinic {
+  margin-bottom: 0.75rem;
+  font-family: var(--font-serif);
+  font-size: 1.35rem;
+  color: var(--color-clinic-deep);
+}
+
+.role {
+  margin-bottom: 0.75rem;
+  color: rgb(255 255 255 / 0.72);
+}
+
+h1 {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  letter-spacing: -0.03em;
+}
+
+.patient h1 {
+  max-width: 9ch;
+  font-size: clamp(3.2rem, 8vw, 4.5rem);
+  line-height: 0.92;
+}
+
+.staff h1 {
+  max-width: 16ch;
+  font-size: clamp(1.85rem, 4vw, 2.4rem);
+  line-height: 1.05;
+}
+
+.lead {
+  max-width: 28ch;
+  margin-top: 1rem;
+  font-size: 1.15rem;
+  line-height: 1.35;
+  color: rgb(23 51 44 / 0.82);
+}
+
+@media (min-width: 768px) {
+  .patient {
+    clip-path: polygon(0 0, 46% 0, 74% 100%, 0 100%);
+  }
+
+  .staff {
+    clip-path: polygon(47.6% 0, 100% 0, 100% 100%, 75.6% 100%);
+  }
+
+  .patient .copy {
+    right: auto;
+    max-width: min(36rem, 62%);
+    padding: 0 0 4.5rem 3.5rem;
+  }
+
+  .staff .copy {
+    top: 0;
+    right: 0;
+    left: auto;
+    width: min(22rem, 34vw);
+    max-width: none;
+    padding: 4rem 3.5rem 0 0;
+  }
+
+  .patient .photo {
+    inset: -2rem 16% -2rem -2rem;
+    background-position: 46% 64%;
+    background-size: cover;
+  }
+
+  .staff .photo {
+    inset: -3rem;
+    background-size: 150% auto;
+    background-position: 10% 36%;
+  }
+
+  .patient h1 {
+    font-size: clamp(4.5rem, 6vw, 6.5rem);
+  }
+
+  .staff h1 {
+    font-size: clamp(2.1rem, 2.6vw, 3rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .photo,
+  .veil {
+    transition: none;
+  }
+}

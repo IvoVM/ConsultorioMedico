@@ -1,0 +1,148 @@
+:host {
+  display: block;
+}
+
+.book-grid {
+  display: grid;
+  gap: 2.5rem;
+}
+
+@media (min-width: 960px) {
+  .book-grid {
+    grid-template-columns: 18rem minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .cal-wrap {
+    position: sticky;
+    top: 1rem;
+  }
+}
+
+.pro {
+  display: flex;
+  width: 100%;
+  cursor: pointer;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  border-bottom: 1px solid var(--color-rule);
+  background: transparent;
+  padding: 0.9rem 0.75rem;
+  text-align: left;
+}
+
+.pro[aria-pressed='true'] {
+  background: var(--color-clinic-wash);
+  box-shadow: inset 3px 0 0 var(--color-clinic);
+}
+
+.pro:hover:not([aria-pressed='true']) {
+  background: var(--color-mist);
+}
+
+.cal-nav {
+  display: inline-flex;
+  height: 2.5rem;
+  width: 2.5rem;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  color: var(--color-ink);
+  box-shadow: inset 0 0 0 1px var(--color-rule);
+}
+
+.cal-nav:disabled {
+  cursor: not-allowed;
+  background: var(--color-mist);
+  color: rgb(23 51 44 / 0.4);
+}
+
+.cal {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+
+.cal-label {
+  padding-bottom: 0.35rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: rgb(23 51 44 / 0.6);
+}
+
+.cal button {
+  aspect-ratio: 1;
+  min-height: 2.75rem;
+  cursor: pointer;
+  background: white;
+  color: var(--color-ink);
+  font-variant-numeric: tabular-nums;
+  box-shadow: inset 0 0 0 1px var(--color-rule);
+}
+
+@media (min-width: 768px) {
+  .cal button {
+    min-height: 4.5rem;
+    font-size: 1.125rem;
+  }
+}
+
+.cal button:hover:not(:disabled):not([aria-pressed='true']) {
+  background: var(--color-clinic-wash);
+}
+
+.cal button[aria-pressed='true'] {
+  background: var(--color-clinic);
+  color: white;
+  font-weight: 700;
+  box-shadow: none;
+}
+
+.cal button.is-today:not([aria-pressed='true']) {
+  box-shadow: inset 0 0 0 1.5px var(--color-clinic);
+}
+
+.cal button:disabled {
+  cursor: default;
+  background: transparent;
+  color: transparent;
+  box-shadow: none;
+}
+
+.cal button:disabled.is-today,
+.cal button:disabled[aria-label] {
+  color: rgb(23 51 44 / 0.28);
+}
+
+.times {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.times button {
+  display: inline-flex;
+  min-width: 5.5rem;
+  min-height: 3rem;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  color: var(--color-ink);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  box-shadow: inset 0 0 0 1px var(--color-rule);
+}
+
+.times button:hover:not(:disabled) {
+  background: var(--color-clinic-wash);
+}
+
+.times button:disabled {
+  cursor: not-allowed;
+  background: var(--color-mist);
+  color: rgb(23 51 44 / 0.4);
+  box-shadow: inset 0 0 0 1px var(--color-rule);
+}

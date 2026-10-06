@@ -1,11 +1,22 @@
-<ui-page frame="shell" eyebrow="Portal" [title]="session.name() ?? 'Paciente'">
-  <div uiNav class="flex h-full min-h-0 flex-col">
-    <ui-nav class="min-h-0 flex-1 overflow-y-auto" label="Portal" [nodes]="menu()" />
-    @if (session.token()) {
+@if (session.token()) {
+  <ui-page frame="shell" eyebrow="Portal" [title]="session.name() ?? 'Paciente'">
+    <div uiNav class="flex h-full min-h-0 flex-col">
+      <ui-nav class="min-h-0 flex-1 overflow-y-auto" label="Portal" [nodes]="menu()" />
       <ui-button class="mt-4 w-full shrink-0" variant="ghost" (click)="logout()"><ui-icon name="logout" />Salir</ui-button>
-    } @else {
-      <a routerLink="/ingreso" class="nav-link mt-4 shrink-0">Ingresar</a>
-    }
+    </div>
+    <router-outlet />
+  </ui-page>
+} @else {
+  <div class="min-h-screen bg-paper text-ink">
+    <header class="flex items-center justify-between gap-4 border-b border-rule px-5 py-4 sm:px-8">
+      <a routerLink="/ingreso" class="flex items-center gap-3 text-ink no-underline">
+        <img src="logo.svg" alt="" class="h-11 w-11" />
+        <span class="font-serif text-2xl leading-none text-clinic-deep">{{ clinicName() }}</span>
+      </a>
+      <a routerLink="/ingreso/cuenta" class="text-link shrink-0">Ya tengo cuenta</a>
+    </header>
+    <main class="mx-auto w-full max-w-6xl px-5 py-8 sm:px-8">
+      <router-outlet />
+    </main>
   </div>
-  <router-outlet />
-</ui-page>
+}

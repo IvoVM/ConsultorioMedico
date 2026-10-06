@@ -1,22 +1,21 @@
-<ui-page frame="auth">
-  <div uiBrand class="brand-lockup">
-    <img class="brand-logo h-20 w-20" src="logo.svg" alt="Logo del consultorio" width="80" height="80" />
-    <p class="mt-5 font-serif text-4xl leading-none text-clinic-deep">{{ clinicName() }}</p>
-    <h1 class="mt-3 font-serif text-2xl tracking-tight">Registro de paciente</h1>
-    <p class="mt-1 text-sm text-ink/60">Portal</p>
-  </div>
-  <form class="auth-form grid max-w-2xl gap-x-4 gap-y-5 sm:grid-cols-2" (ngSubmit)="submit()">
+<main class="min-h-screen bg-paper px-6 py-10 text-ink sm:px-10 sm:py-14">
+  <a routerLink="/paciente" class="text-link">Volver</a>
+  <p class="mt-10 font-serif text-2xl text-clinic-deep">{{ clinicName() }}</p>
+  <h1 class="mt-3 font-serif text-5xl leading-tight font-medium tracking-tight">Crear tu cuenta</h1>
+  <p class="mt-4 max-w-[46ch] text-lg leading-relaxed text-ink/75">
+    Con la cuenta ves y cancelás tus turnos, consultás la historia clínica y tenés las recetas guardadas.
+  </p>
+  <form class="mt-10 grid max-w-2xl gap-x-4 gap-y-5 sm:grid-cols-2" (ngSubmit)="submit()">
     <ui-field label="Documento"><input name="documentNumber" [(ngModel)]="documentNumber" required /></ui-field>
-    <ui-field label="Nombre"><input name="firstName" [(ngModel)]="firstName" required /></ui-field>
-    <ui-field label="Apellido"><input name="lastName" [(ngModel)]="lastName" required /></ui-field>
+    <ui-field label="Nombre"><input name="firstName" [(ngModel)]="firstName" required autocomplete="given-name" /></ui-field>
+    <ui-field label="Apellido"><input name="lastName" [(ngModel)]="lastName" required autocomplete="family-name" /></ui-field>
     <ui-field label="Nacimiento"><input name="birthDate" type="date" [(ngModel)]="birthDate" required /></ui-field>
-    <ui-field label="Teléfono"><input name="phone" [(ngModel)]="phone" required /></ui-field>
-    <ui-field label="Email"><input name="email" type="email" [(ngModel)]="email" required /></ui-field>
-    <ui-field label="Contraseña"><input name="password" type="password" [(ngModel)]="password" required /></ui-field>
+    <ui-field label="Teléfono"><input name="phone" [(ngModel)]="phone" required autocomplete="tel" /></ui-field>
+    <ui-field label="Email"><input name="email" type="email" [(ngModel)]="email" required autocomplete="email" /></ui-field>
+    <ui-field label="Contraseña"><input name="password" type="password" [(ngModel)]="password" required autocomplete="new-password" /></ui-field>
     @if (error()) { <p class="text-sm text-pulse sm:col-span-2" role="alert">{{ error() }}</p> }
-    <div class="flex flex-col gap-4 pt-1 sm:col-span-2 sm:flex-row sm:items-center">
-      <ui-button class="w-full sm:w-auto" type="submit" [loading]="loading()">Crear cuenta</ui-button>
-      <a routerLink="/ingreso" class="text-link">Ya tengo cuenta</a>
+    <div class="pt-1 sm:col-span-2">
+      <ui-button type="submit" [loading]="loading()">Crear cuenta</ui-button>
     </div>
   </form>
-</ui-page>
+</main>

@@ -1,5 +1,4 @@
 export const organizationSections = [
-  { id: 'sedes', label: 'Sedes' },
   { id: 'servicios', label: 'Servicios' },
   { id: 'especialidades', label: 'Especialidades' },
   { id: 'tipos-de-turno', label: 'Tipos de turno' },

@@ -72,6 +72,19 @@ public class ClinicSeeder(TenantDbContext db, UserManager<TenantUser> users, ICo
             null,
             ct);
 
+        if (!await db.Locations.AnyAsync(ct))
+        {
+            var clinicName = configuration["Clinic:Name"]?.Trim();
+            db.Locations.Add(new Location
+            {
+                Id = Guid.NewGuid(),
+                Name = string.IsNullOrEmpty(clinicName) ? "Consultorio" : clinicName,
+                Address = "",
+                IsActive = true
+            });
+            await db.SaveChangesAsync(ct);
+        }
+
         if (slug != "demo")
             return;
 
