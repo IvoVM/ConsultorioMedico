@@ -1,6 +1,3 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
 using ClinicaSaaS.Application;
 using ClinicaSaaS.Domain;
 using ClinicaSaaS.Infrastructure.Identity;
@@ -10,7 +7,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.IdentityModel.Tokens;
 using Npgsql;
 
 namespace ClinicaSaaS.Infrastructure;
@@ -21,39 +17,6 @@ public class DataProtectionSecretProtector(IDataProtectionProvider provider) : I
 
     public string Protect(string value) => _protector.Protect(value);
     public string Unprotect(string value) => _protector.Unprotect(value);
-}
-
-public class JwtTokenService(IConfiguration configuration) : ITokenService
-{
-    public string CreatePlatformToken(Guid userId, string email, string name) =>
-        Create(userId, email, name, "SuperAdmin", null, false);
-
-    public string CreateTenantToken(Guid userId, string email, string name, string slug, TenantRole role, bool mustChangePassword) =>
-        Create(userId, email, name, role.ToString(), slug, mustChangePassword);
-
-    private string Create(Guid userId, string email, string name, string role, string? slug, bool mustChangePassword)
-    {
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"]!));
-        var claims = new List<Claim>
-        {
-            new(ClaimTypes.NameIdentifier, userId.ToString()),
-            new(ClaimTypes.Email, email),
-            new(ClaimTypes.Name, name),
-            new(ClaimTypes.Role, role),
-            new("must_change_password", mustChangePassword ? "true" : "false")
-        };
-        if (slug is not null)
-            claims.Add(new Claim("tenant_slug", slug));
-
-        var minutes = int.TryParse(configuration["Jwt:ExpiresMinutes"], out var value) ? value : 720;
-        var token = new JwtSecurityToken(
-            issuer: configuration["Jwt:Issuer"],
-            audience: configuration["Jwt:Audience"],
-            claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(minutes),
-            signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256));
-        return new JwtSecurityTokenHandler().WriteToken(token);
-    }
 }
 
 public class ConfiguredTimeZone(IConfiguration configuration) : ITimeZoneProvider

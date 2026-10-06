@@ -1,13 +1,10 @@
-using System.Text;
 using System.Text.Json.Serialization;
 using ClinicaSaaS.Api;
 using Microsoft.AspNetCore.DataProtection;
 using ClinicaSaaS.Application;
 using ClinicaSaaS.Infrastructure;
 using ClinicaSaaS.Infrastructure.Persistence;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,26 +18,9 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 builder.Services.AddOpenApi();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddApplication();
+builder.Services.AddClinicaJwt(builder.Configuration);
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
-
-var jwtKey = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("Falta Jwt:Key.");
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
-{
-    options.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuer = true,
-        ValidIssuer = builder.Configuration["Jwt:Issuer"],
-        ValidateAudience = true,
-        ValidAudience = builder.Configuration["Jwt:Audience"],
-        ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
-        ValidateLifetime = true,
-        RoleClaimType = System.Security.Claims.ClaimTypes.Role,
-        NameClaimType = System.Security.Claims.ClaimTypes.Name
-    };
-});
-builder.Services.AddAuthorization();
 builder.Services.AddCors(options => options.AddDefaultPolicy(policy =>
     policy.SetIsOriginAllowed(origin =>
     {
@@ -69,7 +49,7 @@ await using (var scope = app.Services.CreateAsyncScope())
 }
 
 if (app.Environment.IsDevelopment())
-    app.MapOpenApi();
+    app.MapOpenApi().AllowAnonymous();
 
 app.UseMiddleware<ApiExceptionMiddleware>();
 app.UseCors();

@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using ClinicaSaaS.Application;
 
@@ -5,10 +6,22 @@ namespace ClinicaSaaS.Api;
 
 public class CurrentUser(IHttpContextAccessor http) : ICurrentUser
 {
-    public Guid? Id =>
-        Guid.TryParse(http.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : null;
+    private ClaimsPrincipal? Principal => http.HttpContext?.User;
 
-    public string? Role => http.HttpContext?.User.FindFirstValue(ClaimTypes.Role);
+    public Guid? Id
+    {
+        get
+        {
+            var value = Principal?.FindFirstValue(AuthClaims.LoggedUserId)
+                ?? Principal?.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            return Guid.TryParse(value, out var id) ? id : null;
+        }
+    }
 
-    public string? TenantSlug => http.HttpContext?.User.FindFirstValue("tenant_slug");
+    public IReadOnlyList<string> Roles =>
+        Principal?.FindAll(AuthClaims.Role).Select(claim => claim.Value).Distinct().ToArray() ?? [];
+
+    public string? Role => Roles.Count > 0 ? Roles[0] : null;
+
+    public string? TenantSlug => Principal?.FindFirstValue(AuthClaims.TenantSlug);
 }

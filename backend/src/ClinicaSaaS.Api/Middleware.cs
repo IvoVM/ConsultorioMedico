@@ -74,7 +74,7 @@ public class TenantMiddleware(RequestDelegate next)
             return;
         }
 
-        var tokenSlug = context.User.FindFirst("tenant_slug")?.Value;
+        var tokenSlug = context.User.FindFirst(AuthClaims.TenantSlug)?.Value;
         if (tokenSlug is not null && !string.Equals(tokenSlug, tenant.Slug, StringComparison.OrdinalIgnoreCase))
         {
             context.Response.StatusCode = StatusCodes.Status403Forbidden;

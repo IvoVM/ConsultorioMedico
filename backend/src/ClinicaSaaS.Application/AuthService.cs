@@ -15,7 +15,7 @@ public class PlatformAuthService(IPlatformUserStore platformUsers, ITokenService
             tokens.CreatePlatformToken(user.Id, user.Email, user.Name),
             user.Email,
             user.Name,
-            "SuperAdmin",
+            AppRoles.SuperAdmin,
             null,
             false);
     }
@@ -37,7 +37,7 @@ public class AuthService(
             throw new BusinessRuleException("Credenciales inválidas.");
         var name = $"{user.FirstName} {user.LastName}".Trim();
         return new TokenDto(
-            tokens.CreateTenantToken(user.Id, user.Email, name, tenant.Slug, user.Role, user.MustChangePassword),
+            tokens.CreateTenantToken(user.Id, user.Email, name, tenant.Slug, [user.Role.ToString()], user.MustChangePassword),
             user.Email,
             name,
             user.Role.ToString(),
@@ -74,7 +74,7 @@ public class AuthService(
         await audit.RecordAsync(user.Id, "registro", "Paciente", user.Id.ToString(), command.Email, ct);
         var name = $"{user.FirstName} {user.LastName}".Trim();
         return new TokenDto(
-            tokens.CreateTenantToken(user.Id, user.Email, name, tenant.Slug, user.Role, false),
+            tokens.CreateTenantToken(user.Id, user.Email, name, tenant.Slug, [user.Role.ToString()], false),
             user.Email,
             name,
             user.Role.ToString(),

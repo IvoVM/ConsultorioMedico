@@ -6,6 +6,7 @@ public interface ICurrentUser
 {
     Guid? Id { get; }
     string? Role { get; }
+    IReadOnlyList<string> Roles { get; }
     string? TenantSlug { get; }
 }
 
@@ -28,7 +29,7 @@ public interface ISecretProtector
 public interface ITokenService
 {
     string CreatePlatformToken(Guid userId, string email, string name);
-    string CreateTenantToken(Guid userId, string email, string name, string slug, TenantRole role, bool mustChangePassword);
+    string CreateTenantToken(Guid userId, string email, string name, string slug, IReadOnlyList<string> roles, bool mustChangePassword);
 }
 
 public interface ICatalogStore
