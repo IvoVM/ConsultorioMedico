@@ -7,11 +7,7 @@ import type { TokenDto } from './models/token-dto';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService extends ApiClient {
-  platformLogin(body: LoginCommand) {
-    return this.http.post<TokenDto>(`${this.base}/api/plataforma/acceso/ingreso`, body);
-  }
-
-  tenantLogin(body: LoginCommand) {
+  login(body: LoginCommand) {
     return this.http.post<TokenDto>(`${this.base}/api/acceso/ingreso`, body);
   }
 

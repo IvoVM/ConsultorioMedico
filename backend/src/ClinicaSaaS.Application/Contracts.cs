@@ -12,9 +12,7 @@ public record TenantAccount(
     Guid? SpecialtyId,
     bool MustChangePassword);
 
-public record CreateTenantCommand(string Slug, string Name, TenantType Type);
-public record TenantDto(Guid Id, string Slug, string Name, TenantType Type, TenantStatus Status, DateTimeOffset CreatedAt);
-public record ChangeTenantStatusCommand(TenantStatus Status);
+public record ClinicDto(string Slug, string Name);
 
 public record LoginCommand(string Email, string Password);
 public record TokenDto(string Token, string Email, string Name, string Role, string? TenantSlug, bool MustChangePassword);

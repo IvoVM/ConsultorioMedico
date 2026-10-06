@@ -8,8 +8,6 @@ public static class SlugRules
         !string.IsNullOrWhiteSpace(slug)
         && slug.Length <= 40
         && System.Text.RegularExpressions.Regex.IsMatch(slug, "^[a-z0-9]+(?:-[a-z0-9]+)*$");
-
-    public static string DatabaseName(string slug) => "tenant_" + slug.Replace('-', '_');
 }
 
 public static class SchedulingRules

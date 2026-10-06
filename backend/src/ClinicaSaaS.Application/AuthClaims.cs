@@ -10,7 +10,6 @@ public static class AuthClaims
 
 public static class AppRoles
 {
-    public const string SuperAdmin = "SuperAdmin";
     public const string TenantAdmin = nameof(Domain.TenantRole.TenantAdmin);
     public const string Doctor = nameof(Domain.TenantRole.Doctor);
     public const string Secretary = nameof(Domain.TenantRole.Secretary);

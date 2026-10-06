@@ -13,6 +13,7 @@ public interface ICurrentUser
 public interface ICurrentTenant
 {
     string Slug { get; }
+    string Name { get; }
 }
 
 public interface ITimeZoneProvider
@@ -20,45 +21,10 @@ public interface ITimeZoneProvider
     TimeZoneInfo Zone { get; }
 }
 
-public interface ISecretProtector
-{
-    string Protect(string value);
-    string Unprotect(string value);
-}
-
 public interface ITokenService
 {
-    string CreatePlatformToken(Guid userId, string email, string name);
     string CreateTenantToken(Guid userId, string email, string name, string slug, IReadOnlyList<string> roles, bool mustChangePassword);
 }
-
-public interface ICatalogStore
-{
-    Task<bool> SlugExistsAsync(string slug, CancellationToken ct);
-    Task AddAsync(Tenant tenant, CancellationToken ct);
-    Task<IReadOnlyList<Tenant>> ListAsync(CancellationToken ct);
-    Task<Tenant?> GetByIdAsync(Guid id, CancellationToken ct);
-    Task<Tenant?> GetBySlugAsync(string slug, CancellationToken ct);
-    Task SaveAsync(CancellationToken ct);
-}
-
-public interface ITenantProvisioner
-{
-    Task<string> ProvisionAsync(string slug, CancellationToken ct);
-}
-
-public interface ITenantMigrator
-{
-    Task MigrateAllAsync(CancellationToken ct);
-}
-
-public interface IPlatformUserStore
-{
-    Task<PlatformLogin?> FindByEmailAsync(string email, CancellationToken ct);
-    Task<bool> CheckPasswordAsync(Guid userId, string password, CancellationToken ct);
-}
-
-public record PlatformLogin(Guid Id, string Email, string Name);
 
 public interface ITenantUserStore
 {

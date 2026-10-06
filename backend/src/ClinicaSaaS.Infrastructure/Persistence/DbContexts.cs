@@ -7,31 +7,6 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace ClinicaSaaS.Infrastructure.Persistence;
 
-public class CatalogDbContext(DbContextOptions<CatalogDbContext> options)
-    : IdentityDbContext<PlatformUser, IdentityRole<Guid>, Guid>(options)
-{
-    public DbSet<Tenant> Tenants => Set<Tenant>();
-
-    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
-    {
-        UtcDates.Apply(configurationBuilder);
-    }
-
-    protected override void OnModelCreating(ModelBuilder builder)
-    {
-        base.OnModelCreating(builder);
-        builder.Entity<Tenant>(e =>
-        {
-            e.HasIndex(t => t.Slug).IsUnique();
-            e.Property(t => t.Slug).HasMaxLength(40);
-            e.Property(t => t.Name).HasMaxLength(120);
-            e.Property(t => t.Type).HasConversion<string>().HasMaxLength(20);
-            e.Property(t => t.Status).HasConversion<string>().HasMaxLength(20);
-            e.Property(t => t.ProtectedConnectionString).HasMaxLength(2000);
-        });
-    }
-}
-
 public class TenantDbContext(DbContextOptions<TenantDbContext> options)
     : IdentityDbContext<TenantUser, IdentityRole<Guid>, Guid>(options)
 {

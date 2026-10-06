@@ -10,7 +10,6 @@ export const routes: Routes = [
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'inicio' },
       { path: 'inicio', loadComponent: () => import('./modules/shell/home').then((m) => m.HomePage) },
-      { path: 'consultorios', canActivate: [roleGuard('SuperAdmin')], loadComponent: () => import('./modules/tenants/tenants').then((m) => m.TenantsPage) },
       {
         path: 'organizacion',
         canActivate: [roleGuard('TenantAdmin')],

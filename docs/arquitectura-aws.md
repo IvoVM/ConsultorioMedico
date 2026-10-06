@@ -1,21 +1,19 @@
 # Arquitectura prevista en AWS
 
-El sistema corre hoy en local. Esta nota describe el despliegue típico en AWS, sin Terraform ni recursos creados.
+Cada consultorio es un despliegue propio del mismo código. No hay una app compartida donde se elige el consultorio: la URL, la configuración y la base llegan armadas con esa instalación.
 
 ## Desarrollo local
 
-1. `docker compose up -d` en `clinica-saas` levanta PostgreSQL 18. El catálogo queda en `clinica_catalog` y cada consultorio recibe su propia base `tenant_{slug}`.
-2. `dotnet run --project backend/src/ClinicaSaaS.Api` publica la API en `http://localhost:5080`. Al arrancar migra el catálogo y crea el superadmin `admin@clinica.local` / `Admin123!`. Cada consultorio nuevo recibe un admin inicial `admin@{slug}.local` con la misma clave.
-3. `dotnet run --project backend/src/ClinicaSaaS.Api -- migrate-tenants` reaplica las migraciones de todas las bases de consultorio.
-4. En `frontend`, `npm run start:admin` (puerto 4200) y `npm run start:portal` (puerto 4201).
-5. El portal manda el slug en `X-Tenant-Slug`. También acepta un subdominio `{slug}.localhost`.
+1. `docker compose up -d` en `clinica-saas` levanta PostgreSQL 18 con la base `clinica`. Si el volumen ya existía con el catálogo anterior, hay que recrearlo (`docker compose down -v`) para que cree esa base.
+2. `dotnet run --project backend/src/ClinicaSaaS.Api` publica la API en `http://localhost:5080`. Al arrancar migra la base de este consultorio y, si no hay usuarios, crea el admin `admin@demo.local` / `Admin123!`.
+3. La identidad sale de `appsettings.json`: `Clinic:Slug`, `Clinic:Name`, `ConnectionStrings:Clinic`, `Cors:Origins` y `TimeZone`. El local de ejemplo es el consultorio `demo`.
+4. En `frontend`, `npm run start:admin` (puerto 4200) y `npm run start:portal` (puerto 4201). Esas dos URL están en `Cors:Origins`.
 
-## AWS
+## Un stack por consultorio
 
-- Route 53 resuelve `admin.ejemplo.com` y `*.ejemplo.com`.
-- Dos distribuciones de CloudFront sirven los estáticos de admin y portal desde buckets S3.
-- Un Application Load Balancer entrega la API a un servicio ECS Fargate.
-- RDS PostgreSQL aloja el catálogo y las bases de cada tenant en la misma instancia.
-- Secrets Manager reemplaza el cifrado local de Data Protection para las connection strings.
+- Route 53 apunta el dominio de ese consultorio (panel y portal) a sus distribuciones de CloudFront. Los estáticos salen de buckets S3 de esa instalación.
+- Un Application Load Balancer entrega la API a un servicio ECS Fargate con la configuración de ese consultorio: nombre, slug, zona horaria, orígenes CORS y clave JWT.
+- RDS PostgreSQL es la base de ese consultorio. AWS Backup guarda los respaldos de esa instancia, aparte de las demás.
+- Secrets Manager guarda la connection string y la clave JWT.
 - Un bucket S3 aparte queda reservado para adjuntos clínicos, todavía no implementados.
-- Los SPA no hablan con la base: solo con la API, por HTTPS, con el mismo JWT y el encabezado de tenant.
+- Los SPA hablan solo con la API de su consultorio, por HTTPS y con JWT. No envían un consultorio elegido por el usuario: el proceso ya está atado a su base.

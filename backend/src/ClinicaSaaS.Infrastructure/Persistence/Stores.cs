@@ -6,44 +6,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ClinicaSaaS.Infrastructure.Persistence;
 
-public class CatalogStore(CatalogDbContext db) : ICatalogStore
-{
-    public Task<bool> SlugExistsAsync(string slug, CancellationToken ct) =>
-        db.Tenants.AnyAsync(t => t.Slug == slug, ct);
-
-    public async Task AddAsync(Tenant tenant, CancellationToken ct)
-    {
-        db.Tenants.Add(tenant);
-        await db.SaveChangesAsync(ct);
-    }
-
-    public async Task<IReadOnlyList<Tenant>> ListAsync(CancellationToken ct) =>
-        await db.Tenants.OrderBy(t => t.Name).ToListAsync(ct);
-
-    public Task<Tenant?> GetByIdAsync(Guid id, CancellationToken ct) =>
-        db.Tenants.FirstOrDefaultAsync(t => t.Id == id, ct);
-
-    public Task<Tenant?> GetBySlugAsync(string slug, CancellationToken ct) =>
-        db.Tenants.FirstOrDefaultAsync(t => t.Slug == slug, ct);
-
-    public Task SaveAsync(CancellationToken ct) => db.SaveChangesAsync(ct);
-}
-
-public class PlatformUserStore(UserManager<PlatformUser> users) : IPlatformUserStore
-{
-    public async Task<PlatformLogin?> FindByEmailAsync(string email, CancellationToken ct)
-    {
-        var user = await users.FindByEmailAsync(email);
-        return user is null ? null : new PlatformLogin(user.Id, user.Email ?? email, user.Name);
-    }
-
-    public async Task<bool> CheckPasswordAsync(Guid userId, string password, CancellationToken ct)
-    {
-        var user = await users.FindByIdAsync(userId.ToString());
-        return user is not null && await users.CheckPasswordAsync(user, password);
-    }
-}
-
 public class TenantUserStore(UserManager<TenantUser> users) : ITenantUserStore
 {
     public async Task<TenantAccount?> FindByEmailAsync(string email, CancellationToken ct)

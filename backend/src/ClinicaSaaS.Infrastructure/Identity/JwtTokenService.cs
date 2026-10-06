@@ -8,13 +8,10 @@ namespace ClinicaSaaS.Infrastructure;
 
 public class JwtTokenService(JwtOptions jwt) : ITokenService
 {
-    public string CreatePlatformToken(Guid userId, string email, string name) =>
-        Create(userId, email, name, [AppRoles.SuperAdmin], null, false);
-
     public string CreateTenantToken(Guid userId, string email, string name, string slug, IReadOnlyList<string> roles, bool mustChangePassword) =>
         Create(userId, email, name, roles, slug, mustChangePassword);
 
-    private string Create(Guid userId, string email, string name, IReadOnlyList<string> roles, string? slug, bool mustChangePassword)
+    private string Create(Guid userId, string email, string name, IReadOnlyList<string> roles, string slug, bool mustChangePassword)
     {
         var distinctRoles = roles.Where(role => !string.IsNullOrWhiteSpace(role)).Distinct(StringComparer.Ordinal).ToArray();
         if (distinctRoles.Length == 0)
@@ -29,8 +26,7 @@ public class JwtTokenService(JwtOptions jwt) : ITokenService
             new(AuthClaims.LoggedUserId, userId.ToString()),
             new(AuthClaims.MustChangePassword, mustChangePassword ? "true" : "false")
         };
-        if (slug is not null)
-            claims.Add(new Claim(AuthClaims.TenantSlug, slug));
+        claims.Add(new Claim(AuthClaims.TenantSlug, slug));
         foreach (var role in distinctRoles)
             claims.Add(new Claim(AuthClaims.Role, role));
 

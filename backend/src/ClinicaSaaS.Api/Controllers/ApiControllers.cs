@@ -15,29 +15,11 @@ public class HealthController : ControllerBase
 
 [ApiController]
 [AllowAnonymous]
-[Route("api/plataforma/acceso")]
-public class PlatformAuthController(PlatformAuthService auth) : ApiController
-{
-    [HttpPost("ingreso")]
-    public Task<IActionResult> Login(LoginCommand command, CancellationToken ct) =>
-        Run(() => auth.LoginAsync(command, ct));
-}
-
-[ApiController]
-[Authorize(Roles = AppRoles.SuperAdmin)]
-[Route("api/plataforma/consultorios")]
-public class PlatformTenantsController(TenantsService tenants) : ApiController
+[Route("api/clinica")]
+public class ClinicController(ICurrentTenant clinic) : ControllerBase
 {
     [HttpGet]
-    public Task<IActionResult> List(CancellationToken ct) => Run(() => tenants.ListAsync(ct));
-
-    [HttpPost]
-    public Task<IActionResult> Create(CreateTenantCommand command, CancellationToken ct) =>
-        Run(() => tenants.CreateAsync(command, ct));
-
-    [HttpPatch("{id:guid}/estado")]
-    public Task<IActionResult> ChangeStatus(Guid id, ChangeTenantStatusCommand command, CancellationToken ct) =>
-        Run(() => tenants.ChangeStatusAsync(id, command, ct));
+    public ClinicDto Get() => new(clinic.Slug, clinic.Name);
 }
 
 [ApiController]

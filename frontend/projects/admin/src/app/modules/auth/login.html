@@ -1,18 +1,11 @@
 <ui-page frame="auth">
   <div uiBrand class="brand-lockup">
     <img class="brand-logo h-20 w-20" src="logo.svg" alt="Logo del consultorio" width="80" height="80" />
-    <p class="mt-5 font-serif text-4xl leading-none text-clinic-deep">Clínica</p>
+    <p class="mt-5 font-serif text-4xl leading-none text-clinic-deep">{{ clinicName() }}</p>
     <h1 class="mt-3 font-serif text-2xl tracking-tight">Ingreso</h1>
     <p class="mt-1 text-sm text-ink/60">Administración</p>
   </div>
   <form class="auth-form max-w-md space-y-5" (ngSubmit)="submit()">
-    <div class="flex flex-wrap gap-2">
-      <ui-button type="button" [variant]="mode() === 'platform' ? 'primary' : 'ghost'" (click)="mode.set('platform')">Plataforma</ui-button>
-      <ui-button type="button" [variant]="mode() === 'tenant' ? 'primary' : 'ghost'" (click)="mode.set('tenant')">Consultorio</ui-button>
-    </div>
-    @if (mode() === 'tenant') {
-      <ui-field label="Slug del consultorio"><input name="slug" [(ngModel)]="slug" required /></ui-field>
-    }
     <ui-field label="Email"><input name="email" type="email" [(ngModel)]="email" required /></ui-field>
     <ui-field label="Contraseña"><input name="password" type="password" [(ngModel)]="password" required /></ui-field>
     @if (error()) { <p class="text-sm text-pulse" role="alert">{{ error() }}</p> }

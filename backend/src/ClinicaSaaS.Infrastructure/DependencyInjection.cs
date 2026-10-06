@@ -2,21 +2,29 @@ using ClinicaSaaS.Application;
 using ClinicaSaaS.Domain;
 using ClinicaSaaS.Infrastructure.Identity;
 using ClinicaSaaS.Infrastructure.Persistence;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Npgsql;
 
 namespace ClinicaSaaS.Infrastructure;
 
-public class DataProtectionSecretProtector(IDataProtectionProvider provider) : ISecretProtector
+public sealed class ConfiguredClinic : ICurrentTenant
 {
-    private readonly IDataProtector _protector = provider.CreateProtector("ClinicaSaaS.TenantConnection");
+    public ConfiguredClinic(IConfiguration configuration)
+    {
+        var slug = configuration["Clinic:Slug"]?.Trim().ToLowerInvariant();
+        if (!SlugRules.IsValid(slug))
+            throw new InvalidOperationException("Clinic:Slug inválido. Usá minúsculas, números y guiones.");
+        Slug = slug!;
+        var name = configuration["Clinic:Name"]?.Trim();
+        if (string.IsNullOrWhiteSpace(name))
+            throw new InvalidOperationException("Falta Clinic:Name.");
+        Name = name;
+    }
 
-    public string Protect(string value) => _protector.Protect(value);
-    public string Unprotect(string value) => _protector.Unprotect(value);
+    public string Slug { get; }
+    public string Name { get; }
 }
 
 public class ConfiguredTimeZone(IConfiguration configuration) : ITimeZoneProvider
@@ -25,7 +33,7 @@ public class ConfiguredTimeZone(IConfiguration configuration) : ITimeZoneProvide
         configuration["TimeZone"] ?? "America/Argentina/Buenos_Aires");
 }
 
-public class TenantProvisioner(IConfiguration configuration) : ITenantProvisioner
+public class ClinicSeeder(TenantDbContext db, UserManager<TenantUser> users, IConfiguration configuration)
 {
     public static readonly (string Code, string Name)[] SeedDiagnoses =
     [
@@ -39,33 +47,8 @@ public class TenantProvisioner(IConfiguration configuration) : ITenantProvisione
         ("J00", "Resfrío común")
     ];
 
-    public async Task<string> ProvisionAsync(string slug, CancellationToken ct)
+    public async Task SeedAsync(CancellationToken ct)
     {
-        if (!SlugRules.IsValid(slug))
-            throw new BusinessRuleException("Slug inválido.");
-        var database = SlugRules.DatabaseName(slug);
-        if (!System.Text.RegularExpressions.Regex.IsMatch(database, "^tenant_[a-z0-9_]+$"))
-            throw new BusinessRuleException("Nombre de base inválido.");
-
-        var admin = configuration.GetConnectionString("Admin")
-            ?? throw new InvalidOperationException("Falta la connection string Admin.");
-        await using (var connection = new NpgsqlConnection(admin))
-        {
-            await connection.OpenAsync(ct);
-            await using var exists = new NpgsqlCommand("SELECT 1 FROM pg_database WHERE datname = @name", connection);
-            exists.Parameters.AddWithValue("name", database);
-            if (await exists.ExecuteScalarAsync(ct) is null)
-            {
-                await using var create = new NpgsqlCommand($"CREATE DATABASE \"{database}\"", connection);
-                await create.ExecuteNonQueryAsync(ct);
-            }
-        }
-
-        var builder = new NpgsqlConnectionStringBuilder(admin) { Database = database };
-        var tenantConnection = builder.ConnectionString;
-        var options = new DbContextOptionsBuilder<TenantDbContext>().UseNpgsql(tenantConnection).Options;
-        await using var db = new TenantDbContext(options);
-        await db.Database.MigrateAsync(ct);
         if (!await db.Diagnoses.AnyAsync(ct))
         {
             db.Diagnoses.AddRange(SeedDiagnoses.Select(d => new Diagnosis
@@ -74,66 +57,25 @@ public class TenantProvisioner(IConfiguration configuration) : ITenantProvisione
                 Code = d.Code,
                 Name = d.Name
             }));
+            await db.SaveChangesAsync(ct);
         }
 
-        if (!await db.Users.AnyAsync(ct))
-        {
-            var email = $"admin@{slug}.local";
-            var adminUser = new TenantUser
-            {
-                Id = Guid.NewGuid(),
-                UserName = email,
-                NormalizedUserName = email.ToUpperInvariant(),
-                Email = email,
-                NormalizedEmail = email.ToUpperInvariant(),
-                EmailConfirmed = true,
-                FirstName = "Admin",
-                LastName = "Inicial",
-                Role = TenantRole.TenantAdmin,
-                SecurityStamp = Guid.NewGuid().ToString(),
-                ConcurrencyStamp = Guid.NewGuid().ToString()
-            };
-            adminUser.PasswordHash = new PasswordHasher<TenantUser>().HashPassword(adminUser, "Admin123!");
-            db.Users.Add(adminUser);
-        }
-
-        await db.SaveChangesAsync(ct);
-
-        return tenantConnection;
-    }
-}
-
-public class TenantMigrator(CatalogDbContext catalog, ISecretProtector protector) : ITenantMigrator
-{
-    public async Task MigrateAllAsync(CancellationToken ct)
-    {
-        var tenants = await catalog.Tenants.AsNoTracking().ToListAsync(ct);
-        foreach (var tenant in tenants)
-        {
-            var connection = protector.Unprotect(tenant.ProtectedConnectionString);
-            var options = new DbContextOptionsBuilder<TenantDbContext>().UseNpgsql(connection).Options;
-            await using var db = new TenantDbContext(options);
-            await db.Database.MigrateAsync(ct);
-        }
-    }
-}
-
-public class SuperAdminSeeder(UserManager<PlatformUser> users, IConfiguration configuration)
-{
-    public async Task SeedAsync(CancellationToken ct)
-    {
-        var email = configuration["Seed:SuperAdminEmail"] ?? "admin@clinica.local";
-        if (await users.FindByEmailAsync(email) is not null)
+        if (await users.Users.AnyAsync(ct))
             return;
-        var user = new PlatformUser
+
+        var slug = configuration["Clinic:Slug"]?.Trim().ToLowerInvariant();
+        var email = configuration["Seed:AdminEmail"] ?? $"admin@{slug}.local";
+        var user = new TenantUser
         {
             Id = Guid.NewGuid(),
             UserName = email,
             Email = email,
             EmailConfirmed = true,
-            Name = configuration["Seed:SuperAdminName"] ?? "Administrador"
+            FirstName = configuration["Seed:AdminFirstName"] ?? "Admin",
+            LastName = configuration["Seed:AdminLastName"] ?? "Inicial",
+            Role = TenantRole.TenantAdmin
         };
-        var result = await users.CreateAsync(user, configuration["Seed:SuperAdminPassword"] ?? "Admin123!");
+        var result = await users.CreateAsync(user, configuration["Seed:AdminPassword"] ?? "Admin123!");
         if (!result.Succeeded)
             throw new InvalidOperationException(string.Join(' ', result.Errors.Select(e => e.Description)));
     }
@@ -143,27 +85,10 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddDbContext<CatalogDbContext>(options =>
-            options.UseNpgsql(configuration.GetConnectionString("Catalog")));
-
-        services.AddScoped<CurrentTenant>();
-        services.AddScoped<ICurrentTenant>(sp => sp.GetRequiredService<CurrentTenant>());
-
-        services.AddDbContext<TenantDbContext>((sp, options) =>
-        {
-            var current = sp.GetRequiredService<CurrentTenant>();
-            if (!current.IsResolved || string.IsNullOrWhiteSpace(current.ConnectionString))
-                throw new InvalidOperationException("No hay un consultorio resuelto para esta operación.");
-            options.UseNpgsql(current.ConnectionString);
-        });
-
-        services.AddIdentityCore<PlatformUser>(options =>
-            {
-                options.User.RequireUniqueEmail = true;
-                options.Password.RequiredLength = 8;
-                options.Password.RequireNonAlphanumeric = false;
-            })
-            .AddEntityFrameworkStores<CatalogDbContext>();
+        var connection = configuration.GetConnectionString("Clinic")
+            ?? throw new InvalidOperationException("Falta ConnectionStrings:Clinic.");
+        services.AddDbContext<TenantDbContext>(options => options.UseNpgsql(connection));
+        services.AddSingleton<ICurrentTenant, ConfiguredClinic>();
 
         services.AddIdentityCore<TenantUser>(options =>
             {
@@ -173,8 +98,6 @@ public static class DependencyInjection
             })
             .AddEntityFrameworkStores<TenantDbContext>();
 
-        services.AddScoped<ICatalogStore, CatalogStore>();
-        services.AddScoped<IPlatformUserStore, PlatformUserStore>();
         services.AddScoped<ITenantUserStore, TenantUserStore>();
         services.AddScoped<IOrganizationStore, OrganizationStore>();
         services.AddScoped<IScheduleStore, ScheduleStore>();
@@ -185,12 +108,9 @@ public static class DependencyInjection
         services.AddScoped<IClinicalStore, ClinicalStore>();
         services.AddScoped<IBillingStore, BillingStore>();
         services.AddScoped<IAuditStore, AuditStore>();
-        services.AddSingleton<ISecretProtector, DataProtectionSecretProtector>();
         services.AddSingleton<ITokenService, JwtTokenService>();
         services.AddSingleton<ITimeZoneProvider, ConfiguredTimeZone>();
-        services.AddScoped<ITenantProvisioner, TenantProvisioner>();
-        services.AddScoped<ITenantMigrator, TenantMigrator>();
-        services.AddScoped<SuperAdminSeeder>();
+        services.AddScoped<ClinicSeeder>();
         services.AddSingleton(TimeProvider.System);
         return services;
     }

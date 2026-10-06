@@ -1,12 +1,15 @@
 using System.Text.Json.Serialization;
 using ClinicaSaaS.Api;
-using Microsoft.AspNetCore.DataProtection;
 using ClinicaSaaS.Application;
 using ClinicaSaaS.Infrastructure;
 using ClinicaSaaS.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var origins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? [];
+if (origins.Length == 0)
+    throw new InvalidOperationException("Falta Cors:Origins con las URL de este consultorio.");
 
 var timeZone = TimeZoneInfo.FindSystemTimeZoneById(builder.Configuration["TimeZone"] ?? "America/Argentina/Buenos_Aires");
 builder.Services.AddControllers().AddJsonOptions(options =>
@@ -22,30 +25,16 @@ builder.Services.AddClinicaJwt(builder.Configuration);
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 builder.Services.AddCors(options => options.AddDefaultPolicy(policy =>
-    policy.SetIsOriginAllowed(origin =>
-    {
-        if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri))
-            return false;
-        return uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase)
-            || uri.Host.EndsWith(".localhost", StringComparison.OrdinalIgnoreCase);
-    }).AllowAnyHeader().AllowAnyMethod()));
-
-builder.Services.AddDataProtection()
-    .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(builder.Environment.ContentRootPath, "keys")))
-    .SetApplicationName("ClinicaSaaS");
+    policy.WithOrigins(origins).AllowAnyHeader().AllowAnyMethod()));
 
 var app = builder.Build();
 
 await using (var scope = app.Services.CreateAsyncScope())
 {
-    var catalog = scope.ServiceProvider.GetRequiredService<CatalogDbContext>();
-    await catalog.Database.MigrateAsync();
-    await scope.ServiceProvider.GetRequiredService<SuperAdminSeeder>().SeedAsync(CancellationToken.None);
-    if (args.Contains("migrate-tenants"))
-    {
-        await scope.ServiceProvider.GetRequiredService<ITenantMigrator>().MigrateAllAsync(CancellationToken.None);
-        return;
-    }
+    _ = scope.ServiceProvider.GetRequiredService<ICurrentTenant>();
+    var db = scope.ServiceProvider.GetRequiredService<TenantDbContext>();
+    await db.Database.MigrateAsync();
+    await scope.ServiceProvider.GetRequiredService<ClinicSeeder>().SeedAsync(CancellationToken.None);
 }
 
 if (app.Environment.IsDevelopment())
@@ -54,7 +43,7 @@ if (app.Environment.IsDevelopment())
 app.UseMiddleware<ApiExceptionMiddleware>();
 app.UseCors();
 app.UseAuthentication();
-app.UseMiddleware<TenantMiddleware>();
+app.UseMiddleware<ClinicTokenMiddleware>();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();

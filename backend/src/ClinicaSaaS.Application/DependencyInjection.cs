@@ -7,15 +7,12 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
-        services.AddScoped<IValidator<CreateTenantCommand>, CreateTenantValidator>();
         services.AddScoped<IValidator<RegisterPatientCommand>, RegisterPatientValidator>();
         services.AddScoped<IValidator<BookAppointmentCommand>, BookAppointmentValidator>();
         services.AddScoped<IValidator<SaveEncounterCommand>, SaveEncounterValidator>();
         services.AddScoped<IValidator<CreatePrescriptionCommand>, CreatePrescriptionValidator>();
         services.AddScoped<IValidator<SaveMedicalRecordCommand>, SaveMedicalRecordValidator>();
         services.AddScoped<IValidator<CreatePatientCommand>, CreatePatientValidator>();
-        services.AddScoped<TenantsService>();
-        services.AddScoped<PlatformAuthService>();
         services.AddScoped<AuthService>();
         services.AddScoped<OrganizationService>();
         services.AddScoped<EmployeesService>();

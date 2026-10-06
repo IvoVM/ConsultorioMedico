@@ -1,18 +1,5 @@
 namespace ClinicaSaaS.Domain;
 
-public enum TenantType
-{
-    Practice,
-    Hospital
-}
-
-public enum TenantStatus
-{
-    Active,
-    Suspended,
-    Deactivated
-}
-
 public enum TenantRole
 {
     TenantAdmin,

@@ -1,9 +1,5 @@
 using System.Text.Json;
 using ClinicaSaaS.Application;
-using ClinicaSaaS.Domain;
-using ClinicaSaaS.Infrastructure.Identity;
-using ClinicaSaaS.Infrastructure.Persistence;
-using Microsoft.EntityFrameworkCore;
 
 namespace ClinicaSaaS.Api;
 
@@ -29,60 +25,18 @@ public class ApiExceptionMiddleware(RequestDelegate next)
     }
 }
 
-public class TenantMiddleware(RequestDelegate next)
+public class ClinicTokenMiddleware(RequestDelegate next)
 {
-    public async Task Invoke(HttpContext context, CatalogDbContext catalog, CurrentTenant current, ISecretProtector protector)
+    public async Task Invoke(HttpContext context, ICurrentTenant clinic)
     {
-        var path = context.Request.Path.Value ?? "";
-        if (!path.StartsWith("/api/", StringComparison.OrdinalIgnoreCase)
-            || path.StartsWith("/api/plataforma", StringComparison.OrdinalIgnoreCase)
-            || path.StartsWith("/api/salud", StringComparison.OrdinalIgnoreCase))
-        {
-            await next(context);
-            return;
-        }
-
-        var slug = context.Request.Headers["X-Tenant-Slug"].FirstOrDefault();
-        if (string.IsNullOrWhiteSpace(slug))
-        {
-            var host = context.Request.Host.Host;
-            var dot = host.IndexOf('.');
-            if (dot > 0 && host.EndsWith(".localhost", StringComparison.OrdinalIgnoreCase))
-                slug = host[..dot];
-        }
-
-        if (string.IsNullOrWhiteSpace(slug))
-        {
-            context.Response.StatusCode = StatusCodes.Status400BadRequest;
-            await context.Response.WriteAsJsonAsync(new { error = "Falta el consultorio (encabezado X-Tenant-Slug)." });
-            return;
-        }
-
-        var tenant = await catalog.Tenants.AsNoTracking()
-            .FirstOrDefaultAsync(t => t.Slug == slug.Trim().ToLowerInvariant());
-        if (tenant is null)
-        {
-            context.Response.StatusCode = StatusCodes.Status404NotFound;
-            await context.Response.WriteAsJsonAsync(new { error = "Consultorio no encontrado." });
-            return;
-        }
-
-        if (tenant.Status != TenantStatus.Active)
-        {
-            context.Response.StatusCode = StatusCodes.Status403Forbidden;
-            await context.Response.WriteAsJsonAsync(new { error = "El consultorio no está activo." });
-            return;
-        }
-
         var tokenSlug = context.User.FindFirst(AuthClaims.TenantSlug)?.Value;
-        if (tokenSlug is not null && !string.Equals(tokenSlug, tenant.Slug, StringComparison.OrdinalIgnoreCase))
+        if (tokenSlug is not null && !string.Equals(tokenSlug, clinic.Slug, StringComparison.OrdinalIgnoreCase))
         {
             context.Response.StatusCode = StatusCodes.Status403Forbidden;
             await context.Response.WriteAsJsonAsync(new { error = "El token no corresponde a este consultorio." });
             return;
         }
 
-        current.Resolve(tenant.Slug, protector.Unprotect(tenant.ProtectedConnectionString), tenant.Status);
         await next(context);
     }
 }

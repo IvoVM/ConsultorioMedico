@@ -2,35 +2,15 @@
   "openapi": "3.0.3",
   "info": { "title": "ClinicaSaaS", "version": "1.0.0" },
   "paths": {
-    "/api/plataforma/acceso/ingreso": {
-      "post": {
-        "operationId": "platformLogin",
-        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LoginCommand" } } } },
-        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TokenDto" } } } } }
-      }
-    },
-    "/api/plataforma/consultorios": {
+    "/api/clinica": {
       "get": {
-        "operationId": "listTenants",
-        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/TenantDto" } } } } } }
-      },
-      "post": {
-        "operationId": "createTenant",
-        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateTenantCommand" } } } },
-        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TenantDto" } } } } }
-      }
-    },
-    "/api/plataforma/consultorios/{id}/estado": {
-      "patch": {
-        "operationId": "changeTenantStatus",
-        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
-        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ChangeTenantStatusCommand" } } } },
-        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TenantDto" } } } } }
+        "operationId": "clinicProfile",
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ClinicDto" } } } } }
       }
     },
     "/api/acceso/ingreso": {
       "post": {
-        "operationId": "tenantLogin",
+        "operationId": "login",
         "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LoginCommand" } } } },
         "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TokenDto" } } } } }
       }
@@ -313,19 +293,15 @@
   },
   "components": {
     "schemas": {
-      "TenantType": { "type": "string", "enum": ["Practice", "Hospital"] },
-      "TenantStatus": { "type": "string", "enum": ["Active", "Suspended", "Deactivated"] },
       "TenantRole": { "type": "string", "enum": ["TenantAdmin", "Doctor", "Secretary", "Patient"] },
       "AppointmentStatus": { "type": "string", "enum": ["Booked", "CheckedIn", "InProgress", "Completed", "Cancelled", "NoShow"] },
       "WaitlistStatus": { "type": "string", "enum": ["Pending", "Offered", "Accepted", "Cancelled"] },
       "PaymentMethod": { "type": "string", "enum": ["Cash", "Transfer", "Card"] },
       "InvoiceStatus": { "type": "string", "enum": ["Pending", "Paid", "Voided"] },
       "DayOfWeek": { "type": "string", "enum": ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] },
+      "ClinicDto": { "type": "object", "required": ["slug", "name"], "properties": { "slug": { "type": "string" }, "name": { "type": "string" } } },
       "LoginCommand": { "type": "object", "required": ["email", "password"], "properties": { "email": { "type": "string" }, "password": { "type": "string" } } },
       "TokenDto": { "type": "object", "required": ["token", "email", "name", "role", "mustChangePassword"], "properties": { "token": { "type": "string" }, "email": { "type": "string" }, "name": { "type": "string" }, "role": { "type": "string" }, "tenantSlug": { "type": "string", "nullable": true }, "mustChangePassword": { "type": "boolean" } } },
-      "CreateTenantCommand": { "type": "object", "required": ["slug", "name", "type"], "properties": { "slug": { "type": "string" }, "name": { "type": "string" }, "type": { "$ref": "#/components/schemas/TenantType" } } },
-      "ChangeTenantStatusCommand": { "type": "object", "required": ["status"], "properties": { "status": { "$ref": "#/components/schemas/TenantStatus" } } },
-      "TenantDto": { "type": "object", "required": ["id", "slug", "name", "type", "status", "createdAt"], "properties": { "id": { "type": "string" }, "slug": { "type": "string" }, "name": { "type": "string" }, "type": { "$ref": "#/components/schemas/TenantType" }, "status": { "$ref": "#/components/schemas/TenantStatus" }, "createdAt": { "type": "string" } } },
       "RegisterPatientCommand": { "type": "object", "required": ["email", "password", "firstName", "lastName", "documentNumber", "birthDate", "phone"], "properties": { "email": { "type": "string" }, "password": { "type": "string" }, "firstName": { "type": "string" }, "lastName": { "type": "string" }, "documentNumber": { "type": "string" }, "birthDate": { "type": "string" }, "phone": { "type": "string" } } },
       "LocationDto": { "type": "object", "required": ["id", "name", "address", "isActive"], "properties": { "id": { "type": "string" }, "name": { "type": "string" }, "address": { "type": "string" }, "isActive": { "type": "boolean" } } },
       "SaveLocationCommand": { "type": "object", "required": ["name", "address"], "properties": { "name": { "type": "string" }, "address": { "type": "string" } } },

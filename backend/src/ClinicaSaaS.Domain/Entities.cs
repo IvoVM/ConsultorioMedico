@@ -1,16 +1,5 @@
 namespace ClinicaSaaS.Domain;
 
-public class Tenant
-{
-    public Guid Id { get; set; }
-    public string Slug { get; set; } = "";
-    public string Name { get; set; } = "";
-    public TenantType Type { get; set; }
-    public TenantStatus Status { get; set; } = TenantStatus.Active;
-    public string ProtectedConnectionString { get; set; } = "";
-    public DateTimeOffset CreatedAt { get; set; }
-}
-
 public class Location
 {
     public Guid Id { get; set; }

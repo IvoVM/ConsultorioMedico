@@ -3,24 +3,6 @@ using FluentValidation;
 
 namespace ClinicaSaaS.Application;
 
-public class PlatformAuthService(IPlatformUserStore platformUsers, ITokenService tokens)
-{
-    public async Task<TokenDto> LoginAsync(LoginCommand command, CancellationToken ct)
-    {
-        var user = await platformUsers.FindByEmailAsync(command.Email.Trim(), ct)
-            ?? throw new BusinessRuleException("Credenciales inválidas.");
-        if (!await platformUsers.CheckPasswordAsync(user.Id, command.Password, ct))
-            throw new BusinessRuleException("Credenciales inválidas.");
-        return new TokenDto(
-            tokens.CreatePlatformToken(user.Id, user.Email, user.Name),
-            user.Email,
-            user.Name,
-            AppRoles.SuperAdmin,
-            null,
-            false);
-    }
-}
-
 public class AuthService(
     ITenantUserStore users,
     IPatientStore patients,

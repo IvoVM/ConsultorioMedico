@@ -9,14 +9,7 @@ import { NavNode, UiButton, UiNav, UiPage } from 'ui';
 })
 export class ShellPage {
   readonly session = clinicaSession;
-  readonly menu = computed((): NavNode[] => {
-    if (this.session.role() === 'SuperAdmin') {
-      return [
-        { label: 'Inicio', path: '/inicio', exact: true },
-        { label: 'Consultorios', path: '/consultorios' },
-      ];
-    }
-    return [
+  readonly menu = computed((): NavNode[] => [
       { label: 'Inicio', path: '/inicio', exact: true },
       {
         label: 'Organización',
@@ -44,8 +37,7 @@ export class ShellPage {
         ],
       },
       { label: 'Auditoría', path: '/auditoria' },
-    ];
-  });
+    ]);
 
   logout() {
     clinicaSession.clear();

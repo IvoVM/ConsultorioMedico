@@ -10,7 +10,6 @@ import {
   SpecialtyDto,
   clinicaSession,
   errorMessage,
-  tenantFromHost,
 } from 'sdk';
 import { UiButton, UiCalendar, UiEmpty, UiField, UiSkeleton } from 'ui';
 import { firstValueFrom } from 'rxjs';
@@ -29,22 +28,20 @@ export class BookAppointmentPage {
   readonly specialties = signal<SpecialtyDto[]>([]);
   readonly slots = signal<SlotDto[]>([]);
   readonly error = signal('');
-  readonly loading = signal(Boolean(tenantFromHost() ?? clinicaSession.tenant()));
+  readonly loading = signal(true);
   readonly searching = signal(false);
   readonly joining = signal(false);
   readonly booking = signal('');
-  slug = tenantFromHost() ?? clinicaSession.tenant() ?? '';
   locationId = '';
   specialtyId = '';
   date = new Date().toISOString().slice(0, 10);
   notes = '';
 
   constructor() {
-    if (this.slug) void this.prepare();
+    void this.prepare();
   }
 
   async prepare() {
-    clinicaSession.setTenant(this.slug.trim().toLowerCase());
     try {
       const [locations, specialties] = await Promise.all([
         firstValueFrom(this.organization.locations()),
@@ -64,7 +61,6 @@ export class BookAppointmentPage {
   async search() {
     this.error.set('');
     this.searching.set(true);
-    clinicaSession.setTenant(this.slug.trim().toLowerCase());
     try {
       this.slots.set(
         await firstValueFrom(

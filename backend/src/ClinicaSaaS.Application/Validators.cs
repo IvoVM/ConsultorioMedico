@@ -3,16 +3,6 @@ using FluentValidation;
 
 namespace ClinicaSaaS.Application;
 
-public class CreateTenantValidator : AbstractValidator<CreateTenantCommand>
-{
-    public CreateTenantValidator()
-    {
-        RuleFor(x => x.Slug).Must(SlugRules.IsValid).WithMessage("El slug solo admite minúsculas, números y guiones.");
-        RuleFor(x => x.Name).NotEmpty().MaximumLength(120);
-        RuleFor(x => x.Type).IsInEnum();
-    }
-}
-
 public class RegisterPatientValidator : AbstractValidator<RegisterPatientCommand>
 {
     public RegisterPatientValidator()
