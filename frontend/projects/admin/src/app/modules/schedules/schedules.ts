@@ -12,12 +12,12 @@ import {
   ScheduleService,
   errorMessage,
 } from 'sdk';
-import { UiButton, UiField, UiTable } from 'ui';
+import { UiButton, UiField, UiSkeleton, UiTable } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { dayLabels } from './models/day-labels';
 
 @Component({
-  imports: [FormsModule, UiButton, UiField, UiTable],
+  imports: [FormsModule, UiButton, UiField, UiSkeleton, UiTable],
   templateUrl: './schedules.html',
 })
 export class SchedulesPage {
@@ -32,6 +32,11 @@ export class SchedulesPage {
   readonly blocks = signal<ScheduleBlockDto[]>([]);
   readonly blockouts = signal<BlockoutDto[]>([]);
   readonly error = signal('');
+  readonly loading = signal(true);
+  readonly scheduleLoading = signal(false);
+  readonly publishing = signal(false);
+  readonly blocking = signal(false);
+  readonly pending = signal('');
   professionalId = '';
   day: DayOfWeek = 'Monday';
   from = '09:00';
@@ -62,17 +67,26 @@ export class SchedulesPage {
       if (this.professionalId) await this.loadSchedule();
     } catch (error) {
       this.error.set(errorMessage(error));
+    } finally {
+      this.loading.set(false);
     }
   }
 
   async loadSchedule() {
     if (!this.professionalId) return;
-    const [blocks, blockouts] = await Promise.all([
-      firstValueFrom(this.schedule.getSchedule({ professionalId: this.professionalId })),
-      firstValueFrom(this.schedule.blockouts({ professionalId: this.professionalId })),
-    ]);
-    this.blocks.set(blocks);
-    this.blockouts.set(blockouts);
+    if (!this.loading()) this.scheduleLoading.set(true);
+    try {
+      const [blocks, blockouts] = await Promise.all([
+        firstValueFrom(this.schedule.getSchedule({ professionalId: this.professionalId })),
+        firstValueFrom(this.schedule.blockouts({ professionalId: this.professionalId })),
+      ]);
+      this.blocks.set(blocks);
+      this.blockouts.set(blockouts);
+    } catch (error) {
+      this.error.set(errorMessage(error));
+    } finally {
+      this.scheduleLoading.set(false);
+    }
   }
 
   locationName(id: string) {
@@ -99,16 +113,20 @@ export class SchedulesPage {
 
   async save() {
     this.error.set('');
+    this.publishing.set(true);
     try {
       const blocks = await firstValueFrom(this.schedule.saveSchedule({ professionalId: this.professionalId, blocks: this.blocks() }));
       this.blocks.set(blocks);
     } catch (error) {
       this.error.set(errorMessage(error));
+    } finally {
+      this.publishing.set(false);
     }
   }
 
   async createBlockout() {
     this.error.set('');
+    this.blocking.set(true);
     try {
       await firstValueFrom(
         this.schedule.createBlockout({
@@ -122,11 +140,20 @@ export class SchedulesPage {
       await this.loadSchedule();
     } catch (error) {
       this.error.set(errorMessage(error));
+    } finally {
+      this.blocking.set(false);
     }
   }
 
   async deleteBlockout(blockout: BlockoutDto) {
-    await firstValueFrom(this.schedule.deleteBlockout(blockout.id));
-    await this.loadSchedule();
+    this.pending.set(blockout.id);
+    try {
+      await firstValueFrom(this.schedule.deleteBlockout(blockout.id));
+      await this.loadSchedule();
+    } catch (error) {
+      this.error.set(errorMessage(error));
+    } finally {
+      this.pending.set('');
+    }
   }
 }

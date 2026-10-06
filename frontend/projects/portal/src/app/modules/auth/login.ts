@@ -16,9 +16,11 @@ export class LoginPage {
   email = '';
   password = '';
   readonly error = signal('');
+  readonly loading = signal(false);
 
   async submit() {
     this.error.set('');
+    this.loading.set(true);
     clinicaSession.setTenant(this.slug.trim().toLowerCase());
     try {
       const token = await firstValueFrom(this.auth.tenantLogin({ email: this.email, password: this.password }));
@@ -26,6 +28,8 @@ export class LoginPage {
       await this.router.navigateByUrl('/panel');
     } catch (error) {
       this.error.set(errorMessage(error));
+    } finally {
+      this.loading.set(false);
     }
   }
 }

@@ -2,11 +2,11 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AppointmentDto, AppointmentsService, ClinicalService, DiagnosisDto, errorMessage } from 'sdk';
 import { appointmentStatusLabels } from '../appointments/models/appointment-status-labels';
-import { UiButton, UiCalendar, UiField, UiTable } from 'ui';
+import { UiButton, UiCalendar, UiField, UiSkeleton, UiTable } from 'ui';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
-  imports: [FormsModule, UiButton, UiCalendar, UiField, UiTable],
+  imports: [FormsModule, UiButton, UiCalendar, UiField, UiSkeleton, UiTable],
   templateUrl: './doctor.html',
 })
 export class DoctorPage {
@@ -16,6 +16,11 @@ export class DoctorPage {
   readonly appointments = signal<AppointmentDto[]>([]);
   readonly diagnoses = signal<DiagnosisDto[]>([]);
   readonly error = signal('');
+  readonly loading = signal(true);
+  readonly refreshing = signal(false);
+  readonly saving = signal(false);
+  readonly closing = signal(false);
+  readonly prescribing = signal(false);
   date = new Date().toISOString().slice(0, 10);
   appointmentId = '';
   encounterId = '';
@@ -35,7 +40,8 @@ export class DoctorPage {
     void this.load();
   }
 
-  async load() {
+  async load(quiet = false) {
+    if (!quiet && !this.loading()) this.refreshing.set(true);
     try {
       const [appointments, diagnoses] = await Promise.all([
         firstValueFrom(this.appointmentsApi.appointmentsForDay({ date: this.date })),
@@ -45,6 +51,9 @@ export class DoctorPage {
       this.diagnoses.set(diagnoses);
     } catch (error) {
       this.error.set(errorMessage(error));
+    } finally {
+      this.loading.set(false);
+      this.refreshing.set(false);
     }
   }
 
@@ -55,6 +64,7 @@ export class DoctorPage {
 
   async save() {
     this.error.set('');
+    this.saving.set(true);
     try {
       const encounter = await firstValueFrom(
         this.clinical.saveEncounter({
@@ -68,24 +78,30 @@ export class DoctorPage {
         }),
       );
       this.encounterId = encounter.id;
-      await this.load();
+      await this.load(true);
     } catch (error) {
       this.error.set(errorMessage(error));
+    } finally {
+      this.saving.set(false);
     }
   }
 
   async close() {
-    if (!this.encounterId) await this.save();
-    if (!this.encounterId) return;
+    this.closing.set(true);
     try {
+      if (!this.encounterId) await this.save();
+      if (!this.encounterId) return;
       await firstValueFrom(this.clinical.closeEncounter(this.encounterId));
-      await this.load();
+      await this.load(true);
     } catch (error) {
       this.error.set(errorMessage(error));
+    } finally {
+      this.closing.set(false);
     }
   }
 
   async prescribe() {
+    this.prescribing.set(true);
     try {
       await firstValueFrom(
         this.clinical.createPrescription({
@@ -98,6 +114,8 @@ export class DoctorPage {
       this.error.set('Receta emitida.');
     } catch (error) {
       this.error.set(errorMessage(error));
+    } finally {
+      this.prescribing.set(false);
     }
   }
 }

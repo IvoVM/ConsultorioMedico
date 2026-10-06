@@ -1,5 +1,7 @@
 @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
-@if (appointments().length === 0) {
+@if (loading()) {
+  <ui-skeleton label="Cargando turnos" />
+} @else if (appointments().length === 0) {
   <ui-empty message="No tenés turnos." />
 } @else {
   <ui-table>
@@ -13,7 +15,7 @@
           <td><ui-badge [tone]="appointment.status === 'Cancelled' ? 'warn' : 'ok'">{{ statusLabels[appointment.status] }}</ui-badge></td>
           <td>
             @if (appointment.status === 'Booked') {
-              <ui-button variant="ghost" (click)="cancel(appointment)">Cancelar</ui-button>
+              <ui-button variant="ghost" [loading]="pending() === appointment.id" (click)="cancel(appointment)">Cancelar</ui-button>
             }
           </td>
         </tr>

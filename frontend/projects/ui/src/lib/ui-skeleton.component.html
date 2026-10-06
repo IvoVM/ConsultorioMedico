@@ -1,0 +1,10 @@
+<div class="stack" [class.is-framed]="framed() && appearance() === 'line'">
+  @for (row of rows(); track row) {
+    <span
+      class="bar"
+      [class.is-circle]="appearance() === 'circle'"
+      [style.height]="appearance() === 'circle' ? height() : height()"
+      [style.width]="appearance() === 'circle' ? height() : width()"
+    ></span>
+  }
+</div>

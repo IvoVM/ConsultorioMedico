@@ -3,12 +3,12 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AppointmentTypeDto, LocationDto, MedicalServiceDto, OrganizationService, SpecialtyDto, errorMessage } from 'sdk';
-import { UiButton, UiField, UiTable } from 'ui';
+import { UiButton, UiField, UiSkeleton, UiTable } from 'ui';
 import { Observable, firstValueFrom } from 'rxjs';
 import { isOrganizationSection, organizationSections } from './models/section';
 
 @Component({
-  imports: [FormsModule, UiButton, UiField, UiTable],
+  imports: [FormsModule, UiButton, UiField, UiSkeleton, UiTable],
   templateUrl: './organization.html',
 })
 export class OrganizationPage {
@@ -26,6 +26,8 @@ export class OrganizationPage {
   readonly specialties = signal<SpecialtyDto[]>([]);
   readonly appointmentTypes = signal<AppointmentTypeDto[]>([]);
   readonly error = signal('');
+  readonly loading = signal(true);
+  readonly saving = signal(false);
   locationName = '';
   address = '';
   locationId = '';
@@ -58,6 +60,8 @@ export class OrganizationPage {
       this.locationId ||= locations[0]?.id ?? '';
     } catch (error) {
       this.error.set(errorMessage(error));
+    } finally {
+      this.loading.set(false);
     }
   }
 
@@ -94,11 +98,14 @@ export class OrganizationPage {
 
   private async save(action: () => Observable<unknown>) {
     this.error.set('');
+    this.saving.set(true);
     try {
       await firstValueFrom(action());
       await this.load();
     } catch (error) {
       this.error.set(errorMessage(error));
+    } finally {
+      this.saving.set(false);
     }
   }
 }

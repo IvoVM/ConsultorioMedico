@@ -12,11 +12,11 @@ import {
   errorMessage,
   tenantFromHost,
 } from 'sdk';
-import { UiButton, UiCalendar, UiEmpty, UiField } from 'ui';
+import { UiButton, UiCalendar, UiEmpty, UiField, UiSkeleton } from 'ui';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
-  imports: [FormsModule, UiButton, UiField, UiCalendar, UiEmpty],
+  imports: [FormsModule, UiButton, UiField, UiCalendar, UiEmpty, UiSkeleton],
   templateUrl: './book-appointment.html',
 })
 export class BookAppointmentPage {
@@ -29,6 +29,10 @@ export class BookAppointmentPage {
   readonly specialties = signal<SpecialtyDto[]>([]);
   readonly slots = signal<SlotDto[]>([]);
   readonly error = signal('');
+  readonly loading = signal(Boolean(tenantFromHost() ?? clinicaSession.tenant()));
+  readonly searching = signal(false);
+  readonly joining = signal(false);
+  readonly booking = signal('');
   slug = tenantFromHost() ?? clinicaSession.tenant() ?? '';
   locationId = '';
   specialtyId = '';
@@ -52,11 +56,14 @@ export class BookAppointmentPage {
       this.specialtyId ||= specialties[0]?.id ?? '';
     } catch (error) {
       this.error.set(errorMessage(error));
+    } finally {
+      this.loading.set(false);
     }
   }
 
   async search() {
     this.error.set('');
+    this.searching.set(true);
     clinicaSession.setTenant(this.slug.trim().toLowerCase());
     try {
       this.slots.set(
@@ -66,6 +73,8 @@ export class BookAppointmentPage {
       );
     } catch (error) {
       this.error.set(errorMessage(error));
+    } finally {
+      this.searching.set(false);
     }
   }
 
@@ -74,6 +83,7 @@ export class BookAppointmentPage {
       await this.router.navigateByUrl('/ingreso');
       return;
     }
+    this.booking.set(slot.start + slot.professionalId);
     try {
       await firstValueFrom(
         this.appointmentsApi.bookAppointment({
@@ -88,10 +98,13 @@ export class BookAppointmentPage {
       await this.router.navigateByUrl('/mis-turnos');
     } catch (error) {
       this.error.set(errorMessage(error));
+    } finally {
+      this.booking.set('');
     }
   }
 
   async joinWaitlist() {
+    this.joining.set(true);
     try {
       await firstValueFrom(
         this.appointmentsApi.joinWaitlist({
@@ -105,6 +118,8 @@ export class BookAppointmentPage {
       this.error.set('Quedaste en la lista de espera.');
     } catch (error) {
       this.error.set(errorMessage(error));
+    } finally {
+      this.joining.set(false);
     }
   }
 }

@@ -3,7 +3,7 @@
     CSV con encabezado: nombre,apellido,email,rol,matricula,especialidad. Roles: Medico, Secretario o AdminTenant.
   </p>
   <input class="mt-4" type="file" accept=".csv,text/csv" (change)="readFile($event)" />
-  <div class="mt-4"><ui-button [disabled]="!csv()" (click)="import()">Importar</ui-button></div>
+  <div class="mt-4"><ui-button [disabled]="!csv()" [loading]="saving()" (click)="import()">Importar</ui-button></div>
 </section>
 @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
 @if (created().length) {

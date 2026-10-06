@@ -1,4 +1,7 @@
 @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
+@if (loading()) {
+  <ui-skeleton label="Cargando auditoría" />
+} @else {
 <ui-table>
   <thead><tr><th>Fecha</th><th>Acción</th><th>Entidad</th><th>Detalle</th></tr></thead>
   <tbody>
@@ -7,3 +10,4 @@
     }
   </tbody>
 </ui-table>
+}

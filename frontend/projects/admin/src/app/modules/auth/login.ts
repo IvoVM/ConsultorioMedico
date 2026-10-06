@@ -17,9 +17,11 @@ export class LoginPage {
   email = '';
   password = '';
   readonly error = signal('');
+  readonly loading = signal(false);
 
   async submit() {
     this.error.set('');
+    this.loading.set(true);
     try {
       if (this.mode() === 'tenant') clinicaSession.setTenant(this.slug.trim().toLowerCase());
       else clinicaSession.setTenant(null);
@@ -31,6 +33,8 @@ export class LoginPage {
       await this.router.navigateByUrl('/inicio');
     } catch (error) {
       this.error.set(errorMessage(error));
+    } finally {
+      this.loading.set(false);
     }
   }
 }

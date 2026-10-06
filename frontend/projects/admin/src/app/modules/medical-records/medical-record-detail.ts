@@ -2,12 +2,12 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { MedicalRecordDto, MedicalRecordsService, errorMessage } from 'sdk';
-import { UiButton, UiField } from 'ui';
+import { UiButton, UiField, UiSkeleton } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { BLOOD_TYPES, MedicalRecordForm, age, shortDate, toForm } from './models/medical-record-form';
 
 @Component({
-  imports: [FormsModule, RouterLink, UiButton, UiField],
+  imports: [FormsModule, RouterLink, UiButton, UiField, UiSkeleton],
   templateUrl: './medical-record-detail.html',
 })
 export class MedicalRecordDetailPage {

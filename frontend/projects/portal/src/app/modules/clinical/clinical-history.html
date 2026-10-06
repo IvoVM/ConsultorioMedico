@@ -1,11 +1,13 @@
 @if (session.role() !== 'Patient') {
   <form class="mb-8 flex flex-col gap-4 border-b border-rule pb-8 sm:flex-row sm:items-end" (ngSubmit)="load()">
     <ui-field class="sm:w-80" label="Id del paciente"><input name="patientId" [(ngModel)]="patientId" required /></ui-field>
-    <ui-button type="submit">Ver historia</ui-button>
+    <ui-button type="submit" [loading]="loading()">Ver historia</ui-button>
   </form>
 }
 @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
-@if (history(); as data) {
+@if (loading() && !history()) {
+  <ui-skeleton [framed]="false" [count]="3" height="6rem" label="Cargando historia" />
+} @else if (history(); as data) {
   <header class="mb-2">
     <h2 class="font-serif text-2xl tracking-tight">{{ data.patient.name }}</h2>
     <p class="mt-1 text-sm text-ink/70">Documento {{ data.patient.documentNumber }}</p>

@@ -15,6 +15,7 @@ export class EmployeesPage {
   readonly created = signal<CreatedEmployeeDto[]>([]);
   readonly rejected = signal<RejectedRowDto[]>([]);
   readonly error = signal('');
+  readonly saving = signal(false);
 
   readFile(event: Event) {
     const file = (event.target as HTMLInputElement).files?.[0];
@@ -24,12 +25,15 @@ export class EmployeesPage {
 
   async import() {
     this.error.set('');
+    this.saving.set(true);
     try {
       const result = await firstValueFrom(this.employees.importEmployees({ csv: this.csv() }));
       this.created.set(result.created);
       this.rejected.set(result.rejected);
     } catch (error) {
       this.error.set(errorMessage(error));
+    } finally {
+      this.saving.set(false);
     }
   }
 }

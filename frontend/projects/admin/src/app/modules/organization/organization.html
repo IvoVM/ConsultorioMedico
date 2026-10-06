@@ -1,17 +1,18 @@
 <h2 class="mb-6 font-serif text-2xl tracking-tight">{{ sectionLabel() }}</h2>
 @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
-@if (section() === 'sedes') {
+@if (loading()) {
+  <ui-skeleton [label]="'Cargando ' + sectionLabel().toLowerCase()" />
+} @else if (section() === 'sedes') {
   <form class="mb-6 grid gap-4 md:grid-cols-3" (ngSubmit)="createLocation()">
     <ui-field label="Nombre"><input name="locationName" [(ngModel)]="locationName" required /></ui-field>
     <ui-field label="Dirección"><input name="address" [(ngModel)]="address" required /></ui-field>
-    <div class="flex items-end"><ui-button type="submit">Agregar sede</ui-button></div>
+    <div class="flex items-end"><ui-button type="submit" [loading]="saving()">Agregar sede</ui-button></div>
   </form>
   <ui-table>
     <thead><tr><th>Nombre</th><th>Dirección</th></tr></thead>
     <tbody>@for (location of locations(); track location.id) { <tr><td>{{ location.name }}</td><td>{{ location.address }}</td></tr> }</tbody>
   </ui-table>
-}
-@if (section() === 'servicios') {
+} @else if (section() === 'servicios') {
   <form class="mb-6 grid gap-4 md:grid-cols-3" (ngSubmit)="createService()">
     <ui-field label="Sede">
       <select name="locationId" [(ngModel)]="locationId" required>
@@ -19,24 +20,22 @@
       </select>
     </ui-field>
     <ui-field label="Servicio"><input name="serviceName" [(ngModel)]="serviceName" required /></ui-field>
-    <div class="flex items-end"><ui-button type="submit">Agregar servicio</ui-button></div>
+    <div class="flex items-end"><ui-button type="submit" [loading]="saving()">Agregar servicio</ui-button></div>
   </form>
   <ui-table>
     <thead><tr><th>Servicio</th><th>Sede</th></tr></thead>
     <tbody>@for (service of services(); track service.id) { <tr><td>{{ service.name }}</td><td>{{ locationNameOf(service.locationId) }}</td></tr> }</tbody>
   </ui-table>
-}
-@if (section() === 'especialidades') {
+} @else if (section() === 'especialidades') {
   <form class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end" (ngSubmit)="createSpecialty()">
     <ui-field class="sm:w-80" label="Nombre"><input name="specialtyName" [(ngModel)]="specialtyName" required /></ui-field>
-    <div class="flex items-end"><ui-button type="submit">Agregar</ui-button></div>
+    <div class="flex items-end"><ui-button type="submit" [loading]="saving()">Agregar</ui-button></div>
   </form>
   <ui-table>
     <thead><tr><th>Especialidad</th></tr></thead>
     <tbody>@for (item of specialties(); track item.id) { <tr><td>{{ item.name }}</td></tr> }</tbody>
   </ui-table>
-}
-@if (section() === 'tipos-de-turno') {
+} @else if (section() === 'tipos-de-turno') {
   <form class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4" (ngSubmit)="createAppointmentType()">
     <ui-field label="Nombre"><input name="typeName" [(ngModel)]="typeName" required /></ui-field>
     <ui-field label="Minutos"><input name="duration" type="number" [(ngModel)]="duration" required /></ui-field>
@@ -46,7 +45,7 @@
         @for (item of specialties(); track item.id) { <option [value]="item.id">{{ item.name }}</option> }
       </select>
     </ui-field>
-    <div class="flex items-end"><ui-button type="submit">Agregar</ui-button></div>
+    <div class="flex items-end"><ui-button type="submit" [loading]="saving()">Agregar</ui-button></div>
   </form>
   <ui-table>
     <thead><tr><th>Tipo</th><th>Duración</th></tr></thead>

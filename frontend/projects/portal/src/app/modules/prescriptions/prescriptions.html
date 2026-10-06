@@ -2,7 +2,9 @@
   <ui-button variant="ghost" (click)="print()">Imprimir</ui-button>
 </div>
 @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
-@if (prescriptions().length === 0) { <ui-empty message="No tenés recetas." /> }
+@if (loading()) {
+  <ui-skeleton [framed]="false" [count]="3" height="7rem" label="Cargando recetas" />
+} @else if (prescriptions().length === 0) { <ui-empty message="No tenés recetas." /> }
 <div id="prescriptions" class="space-y-8">
   @for (prescription of prescriptions(); track prescription.id) {
     <article class="border border-rule bg-white px-5 py-5 sm:px-6">

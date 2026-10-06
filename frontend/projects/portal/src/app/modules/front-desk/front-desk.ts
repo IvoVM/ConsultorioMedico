@@ -1,13 +1,13 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AppointmentDto, AppointmentsService, BillingService, InvoiceDto, PatientLookupDto, PatientsService, PaymentMethod, WaitlistEntryDto, errorMessage } from 'sdk';
-import { UiBadge, UiButton, UiCalendar, UiField, UiTable } from 'ui';
+import { UiBadge, UiButton, UiCalendar, UiField, UiSkeleton, UiTable } from 'ui';
 import { Observable, firstValueFrom } from 'rxjs';
 import { appointmentStatusLabels } from '../appointments/models/appointment-status-labels';
 import { invoiceStatusLabels } from './models/invoice-labels';
 
 @Component({
-  imports: [FormsModule, UiBadge, UiButton, UiCalendar, UiField, UiTable],
+  imports: [FormsModule, UiBadge, UiButton, UiCalendar, UiField, UiSkeleton, UiTable],
   templateUrl: './front-desk.html',
 })
 export class FrontDeskPage {
@@ -22,6 +22,9 @@ export class FrontDeskPage {
   readonly waitlist = signal<WaitlistEntryDto[]>([]);
   readonly invoices = signal<InvoiceDto[]>([]);
   readonly error = signal('');
+  readonly loading = signal(true);
+  readonly refreshing = signal(false);
+  readonly pending = signal('');
   readonly searchError = signal('');
   readonly searching = signal(false);
   readonly matches = signal<PatientLookupDto[]>([]);
@@ -77,31 +80,28 @@ export class FrontDeskPage {
   }
 
   async load() {
+    if (!this.loading()) this.refreshing.set(true);
     this.error.set('');
     try {
-      const [appointments, waitlist, invoices] = await Promise.all([
-        firstValueFrom(this.appointmentsApi.appointmentsForDay({ date: this.date })),
-        firstValueFrom(this.appointmentsApi.waitlist()),
-        firstValueFrom(this.billing.invoices()),
-      ]);
-      this.appointments.set(appointments);
-      this.waitlist.set(waitlist);
-      this.invoices.set(invoices);
+      await this.fetchDay();
     } catch (error) {
       this.error.set(errorMessage(error));
+    } finally {
+      this.loading.set(false);
+      this.refreshing.set(false);
     }
   }
 
   async checkIn(appointment: AppointmentDto) {
-    await this.run(() => this.appointmentsApi.checkInAppointment(appointment.id));
+    await this.run(`checkin:${appointment.id}`, () => this.appointmentsApi.checkInAppointment(appointment.id));
   }
 
   async cancel(appointment: AppointmentDto) {
-    await this.run(() => this.appointmentsApi.cancelAppointment(appointment.id));
+    await this.run(`cancel:${appointment.id}`, () => this.appointmentsApi.cancelAppointment(appointment.id));
   }
 
   async reschedule() {
-    await this.run(() => this.appointmentsApi.rescheduleAppointment(this.appointmentId, { start: new Date(this.newStart).toISOString() }));
+    await this.run('reschedule', () => this.appointmentsApi.rescheduleAppointment(this.appointmentId, { start: new Date(this.newStart).toISOString() }));
   }
 
   pickWaitlistEntry(item: WaitlistEntryDto) {
@@ -109,7 +109,7 @@ export class FrontDeskPage {
   }
 
   async assign() {
-    await this.run(() =>
+    await this.run('assign', () =>
       this.appointmentsApi.assignWaitlistEntry(this.waitlistEntryId, {
         start: new Date(this.newStart).toISOString(),
         appointmentTypeId: this.appointmentTypeId,
@@ -118,16 +118,30 @@ export class FrontDeskPage {
   }
 
   async pay(item: InvoiceDto, method: PaymentMethod) {
-    await this.run(() => this.billing.payInvoice(item.id, { method }));
+    await this.run(`pay:${item.id}:${method}`, () => this.billing.payInvoice(item.id, { method }));
   }
 
-  private async run(call: () => Observable<unknown>) {
+  private async fetchDay() {
+    const [appointments, waitlist, invoices] = await Promise.all([
+      firstValueFrom(this.appointmentsApi.appointmentsForDay({ date: this.date })),
+      firstValueFrom(this.appointmentsApi.waitlist()),
+      firstValueFrom(this.billing.invoices()),
+    ]);
+    this.appointments.set(appointments);
+    this.waitlist.set(waitlist);
+    this.invoices.set(invoices);
+  }
+
+  private async run(key: string, call: () => Observable<unknown>) {
+    this.pending.set(key);
     this.error.set('');
     try {
       await firstValueFrom(call());
-      await this.load();
+      await this.fetchDay();
     } catch (error) {
       this.error.set(errorMessage(error));
+    } finally {
+      this.pending.set('');
     }
   }
 }

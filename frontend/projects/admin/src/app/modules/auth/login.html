@@ -16,6 +16,6 @@
     <ui-field label="Email"><input name="email" type="email" [(ngModel)]="email" required /></ui-field>
     <ui-field label="Contraseña"><input name="password" type="password" [(ngModel)]="password" required /></ui-field>
     @if (error()) { <p class="text-sm text-pulse" role="alert">{{ error() }}</p> }
-    <ui-button class="w-full sm:w-auto" type="submit">Entrar</ui-button>
+    <ui-button class="w-full sm:w-auto" type="submit" [loading]="loading()">Entrar</ui-button>
   </form>
 </ui-page>

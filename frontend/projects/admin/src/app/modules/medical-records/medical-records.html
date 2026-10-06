@@ -32,9 +32,7 @@
 @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
 
 @if (loading()) {
-  <div class="space-y-px border border-rule bg-rule" aria-label="Cargando historias">
-    @for (n of [1, 2, 3, 4]; track n) { <div class="skeleton-row bg-white"></div> }
-  </div>
+  <ui-skeleton label="Cargando historias" />
 } @else if (visible().length) {
   <ui-table>
     <thead>
@@ -156,8 +154,8 @@
                   <ui-field label="N.º de afiliado"><input name="memberNumber" maxlength="40" [(ngModel)]="draft.memberNumber" /></ui-field>
                 </div>
                 <div class="flex flex-wrap items-center gap-3 md:col-span-2">
-                  <ui-button type="submit" [disabled]="saving()">{{ saving() ? 'Guardando…' : 'Guardar historia' }}</ui-button>
-                  <ui-button variant="ghost" (click)="toggle(r)">Cancelar</ui-button>
+                  <ui-button type="submit" [loading]="saving()">Guardar historia</ui-button>
+                  <ui-button variant="ghost" [disabled]="saving()" (click)="toggle(r)">Cancelar</ui-button>
                   <a class="text-link ml-auto" [routerLink]="['/historias', r.patientId]">Editar todos los datos</a>
                 </div>
               </form>

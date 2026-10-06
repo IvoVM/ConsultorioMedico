@@ -6,9 +6,12 @@
   </ui-field>
   <ui-field label="Monto"><input name="amount" type="number" [(ngModel)]="amount" required /></ui-field>
   <ui-field label="Vigente desde"><input name="effectiveFrom" type="date" [(ngModel)]="effectiveFrom" required /></ui-field>
-  <div class="flex items-end"><ui-button type="submit">Guardar arancel</ui-button></div>
+  <div class="flex items-end"><ui-button type="submit" [loading]="saving()" [disabled]="loading()">Guardar arancel</ui-button></div>
 </form>
 @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
+@if (loading()) {
+  <ui-skeleton label="Cargando aranceles" />
+} @else {
 <ui-table>
   <thead><tr><th>Tipo</th><th>Monto</th><th>Desde</th></tr></thead>
   <tbody>
@@ -17,3 +20,4 @@
     }
   </tbody>
 </ui-table>
+}

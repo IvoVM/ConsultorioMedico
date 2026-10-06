@@ -13,16 +13,18 @@
   </div>
   <div class="mt-6">
     <ui-calendar [date]="date" (dateChange)="date = $event; search()">
-      <ui-button (click)="search()">Buscar huecos</ui-button>
+      <ui-button [loading]="searching()" (click)="search()">Buscar huecos</ui-button>
     </ui-calendar>
   </div>
   @if (error()) { <p class="mt-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
-  @if (slots().length === 0) {
+  @if (loading() || searching()) {
+    <ui-skeleton class="mt-6" [count]="3" label="Buscando huecos" />
+  } @else if (slots().length === 0) {
     <div class="mt-6 max-w-xl space-y-4">
       <ui-empty message="No hay turnos libres para esa búsqueda." />
       @if (session.role() === 'Patient') {
         <ui-field label="Nota para la lista de espera"><input name="notes" [(ngModel)]="notes" /></ui-field>
-        <ui-button (click)="joinWaitlist()">Anotarme en lista de espera</ui-button>
+        <ui-button [loading]="joining()" (click)="joinWaitlist()">Anotarme en lista de espera</ui-button>
       }
     </div>
   } @else {
@@ -35,7 +37,7 @@
           </div>
           <div class="flex items-center justify-between gap-4 sm:justify-end">
             <time class="text-sm tabular-nums text-ink/75">{{ slot.start }}</time>
-            <ui-button (click)="book(slot)">Reservar</ui-button>
+            <ui-button [loading]="booking() === slot.start + slot.professionalId" (click)="book(slot)">Reservar</ui-button>
           </div>
         </article>
       }

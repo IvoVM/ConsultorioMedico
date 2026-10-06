@@ -11,7 +11,7 @@
     <ui-field label="Contraseña"><input name="password" type="password" [(ngModel)]="password" required /></ui-field>
     @if (error()) { <p class="text-sm text-pulse" role="alert">{{ error() }}</p> }
     <div class="flex flex-col gap-4 pt-1 sm:flex-row sm:items-center">
-      <ui-button class="w-full sm:w-auto" type="submit">Entrar</ui-button>
+      <ui-button class="w-full sm:w-auto" type="submit" [loading]="loading()">Entrar</ui-button>
       <a routerLink="/registro" class="text-link">Crear cuenta de paciente</a>
     </div>
   </form>

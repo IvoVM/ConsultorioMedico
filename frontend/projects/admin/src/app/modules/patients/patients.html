@@ -37,8 +37,8 @@
         <ui-field label="Teléfono"><input name="emergencyPhone" type="tel" maxlength="30" [(ngModel)]="emergencyPhone" /></ui-field>
       </div>
       <div class="mt-5 flex flex-wrap gap-3">
-        <ui-button type="submit" [disabled]="saving()">{{ saving() ? 'Guardando…' : 'Dar de alta' }}</ui-button>
-        <ui-button variant="ghost" (click)="altaOpen.set(false)">Cancelar</ui-button>
+        <ui-button type="submit" [loading]="saving()">Dar de alta</ui-button>
+        <ui-button variant="ghost" [disabled]="saving()" (click)="altaOpen.set(false)">Cancelar</ui-button>
       </div>
     </fieldset>
   </form>
@@ -63,9 +63,7 @@
 </div>
 
 @if (loading()) {
-  <div class="space-y-px border border-rule bg-rule" aria-label="Cargando pacientes">
-    @for (n of [1, 2, 3, 4]; track n) { <div class="skeleton-row bg-white"></div> }
-  </div>
+  <ui-skeleton label="Cargando pacientes" />
 } @else if (visible().length) {
   <ui-table>
     <thead>

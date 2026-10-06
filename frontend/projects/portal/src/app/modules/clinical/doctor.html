@@ -1,8 +1,11 @@
 <ui-calendar [date]="date" (dateChange)="date = $event; load()">
-  <ui-button (click)="load()">Ver agenda</ui-button>
+  <ui-button [loading]="refreshing()" (click)="load()">Ver agenda</ui-button>
 </ui-calendar>
 @if (error()) { <p class="mt-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
 <div class="mt-6">
+  @if (loading()) {
+    <ui-skeleton label="Cargando agenda" />
+  } @else {
   <ui-table>
     <thead><tr><th>Hora</th><th>Paciente</th><th>Estado</th><th></th></tr></thead>
     <tbody>
@@ -16,6 +19,7 @@
       }
     </tbody>
   </ui-table>
+  }
 </div>
 @if (appointmentId) {
   <form class="mt-10 grid gap-5 border-t border-rule pt-8" (ngSubmit)="save()">
@@ -36,8 +40,8 @@
       </select>
     </ui-field>
     <div class="flex flex-wrap gap-2">
-      <ui-button type="submit">Guardar encuentro</ui-button>
-      <ui-button type="button" variant="ghost" (click)="close()">Cerrar y facturar</ui-button>
+      <ui-button type="submit" [loading]="saving()">Guardar encuentro</ui-button>
+      <ui-button type="button" variant="ghost" [loading]="closing()" (click)="close()">Cerrar y facturar</ui-button>
     </div>
   </form>
   @if (encounterId) {
@@ -48,7 +52,7 @@
       <ui-field label="Frecuencia"><input name="frequency" [(ngModel)]="frequency" required /></ui-field>
       <ui-field label="Duración"><input name="duration" [(ngModel)]="duration" required /></ui-field>
       <ui-field label="Indicaciones"><input name="instructions" [(ngModel)]="instructions" /></ui-field>
-      <div class="flex items-end"><ui-button type="submit">Emitir receta</ui-button></div>
+      <div class="flex items-end"><ui-button type="submit" [loading]="prescribing()">Emitir receta</ui-button></div>
     </form>
   }
 }
