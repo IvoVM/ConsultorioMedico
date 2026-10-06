@@ -12,7 +12,7 @@ import {
   clinicaSession,
   errorMessage,
 } from 'sdk';
-import { UiButton, UiEmpty, UiField, UiSelect, UiSpinner } from 'ui';
+import { UiButton, UiEmpty, UiField, UiSelect, UiSpinner, formatFecha } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { clearPending, readPending, savePending } from './pending-booking';
 
@@ -81,9 +81,7 @@ export class BookAppointmentPage {
   }
 
   timeLabel(value: string) {
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return value;
-    return new Intl.DateTimeFormat('es-AR', { hour: '2-digit', minute: '2-digit' }).format(date);
+    return formatFecha(value, 'hora');
   }
 
   dayTitle(iso: string) {
@@ -91,7 +89,7 @@ export class BookAppointmentPage {
   }
 
   weekday(iso: string) {
-    return formatDay(iso, { weekday: 'short' }).replace('.', '');
+    return formatDay(iso, { weekday: 'long' });
   }
 
   dayNumber(iso: string) {

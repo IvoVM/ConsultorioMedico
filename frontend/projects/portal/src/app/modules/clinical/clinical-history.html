@@ -15,7 +15,7 @@
   </header>
   @for (encounter of data.encounters; track encounter.id) {
     <article class="border-t border-rule py-5">
-      <p class="text-sm text-ink/60">{{ encounter.createdAt }}</p>
+      <p class="text-sm text-ink/60">{{ encounter.createdAt | fecha }}</p>
       <p class="mt-3 max-w-prose whitespace-pre-wrap leading-relaxed">{{ encounter.note }}</p>
       <dl class="mt-4 grid grid-cols-2 gap-px bg-rule sm:grid-cols-4">
         <div class="bg-white px-3 py-2">

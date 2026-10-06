@@ -10,7 +10,7 @@
     <article class="border border-rule bg-white px-5 py-5 sm:px-6">
       <header class="flex flex-col gap-1 border-b border-rule pb-3 sm:flex-row sm:items-baseline sm:justify-between">
         <p class="font-serif text-xl">{{ prescription.professional }}</p>
-        <p class="text-sm text-ink/60">{{ prescription.createdAt }}</p>
+        <p class="text-sm text-ink/60">{{ prescription.createdAt | fecha }}</p>
       </header>
       <ul>
         @for (item of prescription.items; track item.medication) {

@@ -1,10 +1,10 @@
 import { Component, inject, signal } from '@angular/core';
 import { ClinicalService, PrescriptionDto, errorMessage } from 'sdk';
-import { UiButton, UiEmpty, UiSkeleton } from 'ui';
+import { FechaPipe, UiButton, UiEmpty, UiSkeleton } from 'ui';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
-  imports: [UiButton, UiEmpty, UiSkeleton],
+  imports: [FechaPipe, UiButton, UiEmpty, UiSkeleton],
   templateUrl: './prescriptions.html',
 })
 export class PrescriptionsPage {

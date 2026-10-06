@@ -10,15 +10,15 @@ import { UiSpinner } from './ui-spinner.component';
     button {
       display: inline-flex;
       width: 100%;
-      min-height: 2.5rem;
+      min-height: 2.75rem;
       cursor: pointer;
       align-items: center;
       justify-content: center;
       gap: 0.5rem;
       border-radius: 2px;
       padding: 0.5rem 0.875rem;
-      font-size: 0.875rem;
-      line-height: 1.25rem;
+      font-size: 1.125rem;
+      line-height: 1.4;
       transition:
         background-color 0.2s ease,
         color 0.2s ease,

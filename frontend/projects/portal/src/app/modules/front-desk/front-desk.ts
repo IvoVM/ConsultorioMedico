@@ -1,13 +1,13 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AppointmentDto, AppointmentsService, BillingService, InvoiceDto, PatientLookupDto, PatientsService, PaymentMethod, WaitlistEntryDto, errorMessage } from 'sdk';
-import { UiBadge, UiButton, UiCalendar, UiEmpty, UiField, UiSkeleton, UiTable } from 'ui';
+import { FechaPipe, UiBadge, UiButton, UiCalendar, UiEmpty, UiField, UiSkeleton, UiTable } from 'ui';
 import { Observable, firstValueFrom } from 'rxjs';
 import { appointmentStatusLabels } from '../appointments/models/appointment-status-labels';
 import { invoiceStatusLabels } from './models/invoice-labels';
 
 @Component({
-  imports: [FormsModule, UiBadge, UiButton, UiCalendar, UiEmpty, UiField, UiSkeleton, UiTable],
+  imports: [FormsModule, FechaPipe, UiBadge, UiButton, UiCalendar, UiEmpty, UiField, UiSkeleton, UiTable],
   templateUrl: './front-desk.html',
 })
 export class FrontDeskPage {

@@ -2,11 +2,11 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { ClinicalHistoryDto, ClinicalService, DiagnosisDto, clinicaSession, errorMessage } from 'sdk';
-import { UiButton, UiEmpty, UiField, UiSkeleton } from 'ui';
+import { FechaPipe, UiButton, UiEmpty, UiField, UiSkeleton } from 'ui';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
-  imports: [FormsModule, UiButton, UiField, UiEmpty, UiSkeleton],
+  imports: [FormsModule, FechaPipe, UiButton, UiField, UiEmpty, UiSkeleton],
   templateUrl: './clinical-history.html',
 })
 export class ClinicalHistoryPage {

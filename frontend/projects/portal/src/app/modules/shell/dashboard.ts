@@ -1,7 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AppointmentDto, AppointmentsService, clinicaSession, errorMessage } from 'sdk';
-import { UiBadge, UiEmpty, UiSkeleton, UiTable } from 'ui';
+import { UiBadge, UiEmpty, UiSkeleton, UiTable, formatFecha } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { appointmentStatusLabels } from '../appointments/models/appointment-status-labels';
 
@@ -27,15 +27,7 @@ export class DashboardPage {
   }
 
   whenLabel(start: string) {
-    const date = new Date(start);
-    if (Number.isNaN(date.getTime())) return start;
-    return new Intl.DateTimeFormat('es-AR', {
-      weekday: 'short',
-      day: 'numeric',
-      month: 'short',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(date);
+    return formatFecha(start);
   }
 
   private today() {

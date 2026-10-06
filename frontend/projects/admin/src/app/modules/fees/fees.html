@@ -16,7 +16,7 @@
   <thead><tr><th>Tipo</th><th>Monto</th><th>Desde</th></tr></thead>
   <tbody>
     @for (fee of fees(); track fee.id) {
-      <tr><td>{{ fee.appointmentType }}</td><td>{{ fee.amount }}</td><td>{{ fee.effectiveFrom }}</td></tr>
+      <tr><td>{{ fee.appointmentType }}</td><td>{{ fee.amount }}</td><td>{{ fee.effectiveFrom | fecha }}</td></tr>
     }
   </tbody>
 </ui-table>

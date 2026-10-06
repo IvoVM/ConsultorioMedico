@@ -11,12 +11,12 @@ import {
   ScheduleService,
   errorMessage,
 } from 'sdk';
-import { UiButton, UiEmpty, UiField, UiSelect, UiSkeleton, UiTable } from 'ui';
+import { FechaPipe, UiButton, UiEmpty, UiField, UiSelect, UiSkeleton, UiTable } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { dayLabels } from './models/day-labels';
 
 @Component({
-  imports: [FormsModule, UiButton, UiEmpty, UiField, UiSelect, UiSkeleton, UiTable],
+  imports: [FormsModule, FechaPipe, UiButton, UiEmpty, UiField, UiSelect, UiSkeleton, UiTable],
   templateUrl: './schedules.html',
 })
 export class SchedulesPage {

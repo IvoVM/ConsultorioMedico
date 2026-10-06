@@ -1,11 +1,11 @@
 import { Component, inject, signal } from '@angular/core';
 import { AppointmentDto, AppointmentsService, errorMessage } from 'sdk';
 import { appointmentStatusLabels } from './models/appointment-status-labels';
-import { UiBadge, UiButton, UiEmpty, UiSkeleton, UiTable } from 'ui';
+import { FechaPipe, UiBadge, UiButton, UiEmpty, UiSkeleton, UiTable } from 'ui';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
-  imports: [UiTable, UiBadge, UiButton, UiEmpty, UiSkeleton],
+  imports: [FechaPipe, UiTable, UiBadge, UiButton, UiEmpty, UiSkeleton],
   templateUrl: './my-appointments.html',
 })
 export class MyAppointmentsPage {

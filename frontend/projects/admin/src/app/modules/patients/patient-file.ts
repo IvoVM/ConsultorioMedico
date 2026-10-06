@@ -2,7 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ClinicalHistoryDto, ClinicalService, DiagnosisDto, MedicalRecordDto, MedicalRecordsService, errorMessage } from 'sdk';
-import { UiButton, UiEmpty, UiField, UiSkeleton } from 'ui';
+import { UiButton, UiEmpty, UiField, UiSkeleton, formatFecha } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { BLOOD_TYPES, MedicalRecordForm, age, shortDate, toForm } from '../medical-records/models/medical-record-form';
 
@@ -88,13 +88,7 @@ export class PatientFilePage {
   }
 
   when(value: string) {
-    return new Intl.DateTimeFormat('es-AR', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(new Date(value));
+    return formatFecha(value);
   }
 
   async save() {

@@ -2,11 +2,11 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AppointmentDto, AppointmentsService, ClinicalService, DiagnosisDto, errorMessage } from 'sdk';
 import { appointmentStatusLabels } from '../appointments/models/appointment-status-labels';
-import { UiButton, UiCalendar, UiEmpty, UiField, UiSkeleton, UiTable } from 'ui';
+import { FechaPipe, UiButton, UiCalendar, UiEmpty, UiField, UiSkeleton, UiTable } from 'ui';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
-  imports: [FormsModule, UiButton, UiCalendar, UiEmpty, UiField, UiSkeleton, UiTable],
+  imports: [FormsModule, FechaPipe, UiButton, UiCalendar, UiEmpty, UiField, UiSkeleton, UiTable],
   templateUrl: './doctor.html',
 })
 export class DoctorPage {

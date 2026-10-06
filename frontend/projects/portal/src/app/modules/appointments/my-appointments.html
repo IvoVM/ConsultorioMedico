@@ -9,7 +9,7 @@
     <tbody>
       @for (appointment of appointments(); track appointment.id) {
         <tr>
-          <td>{{ appointment.start }}</td>
+          <td>{{ appointment.start | fecha }}</td>
           <td>{{ appointment.professional }}</td>
           <td><ui-badge [tone]="appointment.status === 'Cancelled' ? 'warn' : 'ok'">{{ statusLabels[appointment.status] }}</ui-badge></td>
           <td>

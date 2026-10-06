@@ -1,3 +1,4 @@
+export { FechaPipe, formatFecha } from './fecha';
 export { UiBadge } from './ui-badge.component';
 export { UiButton } from './ui-button.component';
 export { UiIcon } from './ui-icon.component';

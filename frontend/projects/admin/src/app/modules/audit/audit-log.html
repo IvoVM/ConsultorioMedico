@@ -8,7 +8,7 @@
   <thead><tr><th>Fecha</th><th>Acción</th><th>Entidad</th><th>Detalle</th></tr></thead>
   <tbody>
     @for (item of entries(); track item.id) {
-      <tr><td>{{ item.timestamp }}</td><td>{{ item.action }}</td><td>{{ item.entity }}</td><td>{{ item.detail }}</td></tr>
+      <tr><td>{{ item.timestamp | fecha }}</td><td>{{ item.action }}</td><td>{{ item.entity }}</td><td>{{ item.detail }}</td></tr>
     }
   </tbody>
 </ui-table>

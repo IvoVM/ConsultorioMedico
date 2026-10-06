@@ -46,7 +46,7 @@
       <tbody>
         @for (appointment of appointments(); track appointment.id) {
           <tr>
-            <td class="whitespace-nowrap tabular-nums">{{ appointment.start }}</td>
+            <td class="whitespace-nowrap tabular-nums">{{ appointment.start | fecha:'hora' }}</td>
             <td>{{ appointment.patient }}</td>
             <td>{{ appointment.professional }}</td>
             <td><ui-badge>{{ statusLabels[appointment.status] }}</ui-badge></td>

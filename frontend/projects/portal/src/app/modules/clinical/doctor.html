@@ -13,7 +13,7 @@
     <tbody>
       @for (appointment of appointments(); track appointment.id) {
         <tr>
-          <td class="whitespace-nowrap tabular-nums">{{ appointment.start }}</td>
+          <td class="whitespace-nowrap tabular-nums">{{ appointment.start | fecha:'hora' }}</td>
           <td>{{ appointment.patient }}</td>
           <td>{{ statusLabels[appointment.status] }}</td>
           <td><ui-button variant="ghost" (click)="pick(appointment)">Atender</ui-button></td>

@@ -1,4 +1,5 @@
 import { MedicalRecordDto, SaveMedicalRecordCommand } from 'sdk';
+import { formatFecha } from 'ui';
 
 export const BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', '0+', '0-'];
 
@@ -36,6 +37,6 @@ export function age(birthDate: string) {
 }
 
 export function shortDate(value?: string | null) {
-  if (!value) return null;
-  return new Intl.DateTimeFormat('es-AR', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(value));
+  const text = formatFecha(value);
+  return text || null;
 }
