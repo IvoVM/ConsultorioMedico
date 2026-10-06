@@ -53,6 +53,14 @@ export class HistoriaFichaPage {
     this.guardada.set(false);
   }
 
+  ir(id: string) {
+    const seccion = document.getElementById(id);
+    if (!seccion) return;
+    const quieto = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    seccion.scrollIntoView({ behavior: quieto ? 'auto' : 'smooth', block: 'start' });
+    seccion.querySelector<HTMLElement>('input:not([disabled]), textarea')?.focus({ preventScroll: true });
+  }
+
   descartar() {
     this.ficha.set(JSON.parse(this.original()));
   }

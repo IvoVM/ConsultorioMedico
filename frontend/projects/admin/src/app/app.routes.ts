@@ -14,6 +14,8 @@ export const routes: Routes = [
       { path: 'organizacion', canActivate: [roleGuard('AdminTenant')], loadComponent: () => import('./pages/organizacion').then((m) => m.OrganizacionPage) },
       { path: 'empleados', canActivate: [roleGuard('AdminTenant')], loadComponent: () => import('./pages/empleados').then((m) => m.EmpleadosPage) },
       { path: 'agendas', canActivate: [roleGuard('AdminTenant')], loadComponent: () => import('./pages/agendas').then((m) => m.AgendasPage) },
+      { path: 'historias', canActivate: [roleGuard('AdminTenant')], loadComponent: () => import('./pages/historias').then((m) => m.HistoriasPage) },
+      { path: 'historias/:pacienteId', canActivate: [roleGuard('AdminTenant')], loadComponent: () => import('./pages/historia-ficha').then((m) => m.HistoriaFichaPage) },
       { path: 'aranceles', canActivate: [roleGuard('AdminTenant')], loadComponent: () => import('./pages/aranceles').then((m) => m.ArancelesPage) },
       { path: 'comprobantes', canActivate: [roleGuard('AdminTenant')], loadComponent: () => import('./pages/comprobantes').then((m) => m.ComprobantesPage) },
       { path: 'auditoria', canActivate: [roleGuard('AdminTenant')], loadComponent: () => import('./pages/auditoria').then((m) => m.AuditoriaPage) },
