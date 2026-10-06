@@ -41,7 +41,7 @@ public class JwtTokenService(JwtOptions jwt) : ITokenService
             Audience = jwt.Audience,
             NotBefore = now,
             IssuedAt = now,
-            Expires = now.AddMinutes(jwt.ExpiresMinutes),
+            Expires = now.AddMinutes(jwt.AccessMinutes),
             SigningCredentials = credentials
         };
         var handler = new JwtSecurityTokenHandler();

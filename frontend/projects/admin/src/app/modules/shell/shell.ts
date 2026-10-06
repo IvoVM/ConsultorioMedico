@@ -1,6 +1,7 @@
-import { Component, computed } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { clinicaSession } from 'sdk';
+import { AuthService, clinicaSession } from 'sdk';
+import { firstValueFrom } from 'rxjs';
 import { NavNode, UiButton, UiNav, UiPage } from 'ui';
 
 @Component({
@@ -8,6 +9,7 @@ import { NavNode, UiButton, UiNav, UiPage } from 'ui';
   templateUrl: './shell.html',
 })
 export class ShellPage {
+  private readonly auth = inject(AuthService);
   readonly session = clinicaSession;
   readonly menu = computed((): NavNode[] => [
       { label: 'Inicio', path: '/inicio', exact: true },
@@ -40,7 +42,9 @@ export class ShellPage {
     ]);
 
   logout() {
-    clinicaSession.clear();
-    location.href = '/ingreso';
+    void firstValueFrom(this.auth.logout()).finally(() => {
+      clinicaSession.clear();
+      location.href = '/ingreso';
+    });
   }
 }

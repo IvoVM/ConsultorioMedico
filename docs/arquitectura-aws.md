@@ -16,4 +16,4 @@ Cada consultorio es un despliegue propio del mismo código. No hay una app compa
 - RDS PostgreSQL es la base de ese consultorio. AWS Backup guarda los respaldos de esa instancia, aparte de las demás.
 - Secrets Manager guarda la connection string y la clave JWT.
 - Un bucket S3 aparte queda reservado para adjuntos clínicos, todavía no implementados.
-- Los SPA hablan solo con la API de su consultorio, por HTTPS y con JWT. No envían un consultorio elegido por el usuario: el proceso ya está atado a su base.
+- Los SPA hablan solo con la API de su consultorio, por HTTPS. El access token dura quince minutos y vive en memoria. El refresh token dura catorce días y viaja en una cookie `HttpOnly`, `Secure` y `SameSite=Lax`, solo hacia `/api/acceso`. No envían un consultorio elegido por el usuario: el proceso ya está atado a su base.

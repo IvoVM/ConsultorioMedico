@@ -99,6 +99,7 @@ public static class DependencyInjection
             .AddEntityFrameworkStores<TenantDbContext>();
 
         services.AddScoped<ITenantUserStore, TenantUserStore>();
+        services.AddScoped<IRefreshSessionStore, RefreshSessionStore>();
         services.AddScoped<IOrganizationStore, OrganizationStore>();
         services.AddScoped<IScheduleStore, ScheduleStore>();
         services.AddScoped<IAppointmentStore, AppointmentStore>();

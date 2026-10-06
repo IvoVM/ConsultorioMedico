@@ -10,7 +10,8 @@ public sealed class JwtOptions
     public string Issuer { get; set; } = "";
     public string Audience { get; set; } = "";
     public string Key { get; set; } = "";
-    public int ExpiresMinutes { get; set; } = 720;
+    public int AccessMinutes { get; set; } = 15;
+    public int RefreshDays { get; set; } = 14;
 
     public static JwtOptions Bind(IConfiguration configuration)
     {
@@ -20,8 +21,10 @@ public sealed class JwtOptions
             throw new InvalidOperationException("Faltan Jwt:Issuer o Jwt:Audience.");
         if (string.IsNullOrWhiteSpace(options.Key) || Encoding.UTF8.GetByteCount(options.Key) < 32)
             throw new InvalidOperationException("Jwt:Key debe tener al menos 32 bytes.");
-        if (options.ExpiresMinutes <= 0)
-            throw new InvalidOperationException("Jwt:ExpiresMinutes debe ser mayor a cero.");
+        if (options.AccessMinutes <= 0)
+            throw new InvalidOperationException("Jwt:AccessMinutes debe ser mayor a cero.");
+        if (options.RefreshDays <= 0)
+            throw new InvalidOperationException("Jwt:RefreshDays debe ser mayor a cero.");
         return options;
     }
 }

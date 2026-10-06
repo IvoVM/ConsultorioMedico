@@ -26,6 +26,15 @@ public interface ITokenService
     string CreateTenantToken(Guid userId, string email, string name, string slug, IReadOnlyList<string> roles, bool mustChangePassword);
 }
 
+public record RefreshGrant(Guid UserId, string RawToken, DateTimeOffset Expires);
+
+public interface IRefreshSessionStore
+{
+    Task<RefreshGrant> IssueAsync(Guid userId, CancellationToken ct);
+    Task<RefreshGrant?> RotateAsync(string? rawToken, CancellationToken ct);
+    Task RevokeAsync(string? rawToken, CancellationToken ct);
+}
+
 public interface ITenantUserStore
 {
     Task<TenantAccount?> FindByEmailAsync(string email, CancellationToken ct);

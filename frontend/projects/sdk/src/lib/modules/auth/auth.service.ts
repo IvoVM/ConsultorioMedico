@@ -14,4 +14,12 @@ export class AuthService extends ApiClient {
   registerPatient(body: RegisterPatientCommand) {
     return this.http.post<TokenDto>(`${this.base}/api/acceso/registro`, body);
   }
+
+  refresh() {
+    return this.http.post<TokenDto>(`${this.base}/api/acceso/renovar`, {});
+  }
+
+  logout() {
+    return this.http.post<void>(`${this.base}/api/acceso/salir`, {});
+  }
 }

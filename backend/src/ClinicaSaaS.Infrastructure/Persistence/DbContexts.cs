@@ -29,6 +29,7 @@ public class TenantDbContext(DbContextOptions<TenantDbContext> options)
     public DbSet<Invoice> Invoices => Set<Invoice>();
     public DbSet<InvoiceItem> InvoiceItems => Set<InvoiceItem>();
     public DbSet<AuditEntry> AuditEntries => Set<AuditEntry>();
+    public DbSet<RefreshSession> RefreshSessions => Set<RefreshSession>();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
@@ -140,6 +141,12 @@ public class TenantDbContext(DbContextOptions<TenantDbContext> options)
             e.Property(a => a.Entity).HasMaxLength(40);
             e.Property(a => a.Detail).HasMaxLength(500);
             e.HasIndex(a => a.Timestamp);
+        });
+        builder.Entity<RefreshSession>(e =>
+        {
+            e.Property(s => s.TokenHash).HasMaxLength(64);
+            e.HasIndex(s => s.UserId);
+            e.HasOne<TenantUser>().WithMany().HasForeignKey(s => s.UserId).OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

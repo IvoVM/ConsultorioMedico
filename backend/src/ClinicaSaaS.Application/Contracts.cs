@@ -17,6 +17,8 @@ public record ClinicDto(string Slug, string Name);
 public record LoginCommand(string Email, string Password);
 public record TokenDto(string Token, string Email, string Name, string Role, string? TenantSlug, bool MustChangePassword);
 
+public record IssuedSession(TokenDto Access, string RefreshToken, DateTimeOffset RefreshExpires);
+
 public record RegisterPatientCommand(
     string Email,
     string Password,

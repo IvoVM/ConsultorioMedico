@@ -33,6 +33,7 @@ internal static class ErrorMap
 {
     public static HttpError? Translate(Exception ex) => ex switch
     {
+        UnauthorizedException unauthorized => new(StatusCodes.Status401Unauthorized, unauthorized.Message),
         ValidationException validation => new(StatusCodes.Status400BadRequest, string.Join(' ', validation.Errors.Select(e => e.ErrorMessage))),
         NotFoundException notFound => new(StatusCodes.Status404NotFound, notFound.Message),
         ConflictException conflict => new(StatusCodes.Status409Conflict, conflict.Message),
