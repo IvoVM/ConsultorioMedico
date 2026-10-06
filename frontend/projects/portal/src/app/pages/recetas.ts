@@ -1,0 +1,49 @@
+import { Component, inject, signal } from '@angular/core';
+import { ClinicaClient, RecetaDto, mensajeError } from 'sdk';
+import { UiButton, UiEmpty } from 'ui';
+import { firstValueFrom } from 'rxjs';
+
+@Component({
+  imports: [UiButton, UiEmpty],
+  template: `
+    <div class="mb-6 flex justify-start sm:justify-end">
+      <ui-button variant="ghost" (click)="imprimir()">Imprimir</ui-button>
+    </div>
+    @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
+    @if (recetas().length === 0) { <ui-empty message="No tenés recetas." /> }
+    <div id="recetas" class="space-y-8">
+      @for (receta of recetas(); track receta.id) {
+        <article class="border border-rule bg-white px-5 py-5 sm:px-6">
+          <header class="flex flex-col gap-1 border-b border-rule pb-3 sm:flex-row sm:items-baseline sm:justify-between">
+            <p class="font-serif text-xl">{{ receta.profesional }}</p>
+            <p class="text-sm text-ink/60">{{ receta.creadoEn }}</p>
+          </header>
+          <ul>
+            @for (item of receta.items; track item.medicamento) {
+              <li class="border-b border-rule py-3 last:border-b-0">
+                <p class="font-bold">{{ item.medicamento }}</p>
+                <p class="mt-1 text-sm leading-relaxed text-ink/75">{{ item.dosis }}, {{ item.frecuencia }}, {{ item.duracion }}</p>
+              </li>
+            }
+          </ul>
+          @if (receta.indicaciones) { <p class="mt-3 max-w-prose text-sm leading-relaxed">{{ receta.indicaciones }}</p> }
+        </article>
+      }
+    </div>
+  `,
+})
+export class RecetasPage {
+  private readonly api = inject(ClinicaClient);
+  readonly recetas = signal<RecetaDto[]>([]);
+  readonly error = signal('');
+
+  constructor() {
+    void firstValueFrom(this.api.misRecetas())
+      .then((lista) => this.recetas.set(lista))
+      .catch((error) => this.error.set(mensajeError(error)));
+  }
+
+  imprimir() {
+    window.print();
+  }
+}

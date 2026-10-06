@@ -1,0 +1,34 @@
+import { Component } from '@angular/core';
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { clinicaSession } from 'sdk';
+import { UiButton, UiPage } from 'ui';
+
+@Component({
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, UiPage, UiButton],
+  template: `
+    <ui-page frame="shell" eyebrow="Administración" [title]="session.nombre() ?? 'Admin'">
+      <div uiNav class="flex h-full flex-col gap-1">
+        <a routerLink="/inicio" routerLinkActive="is-current" [routerLinkActiveOptions]="{ exact: true }" class="nav-link">Inicio</a>
+        @if (session.rol() === 'SuperAdmin') {
+          <a routerLink="/tenants" routerLinkActive="is-current" class="nav-link">Consultorios</a>
+        } @else {
+          <a routerLink="/organizacion" routerLinkActive="is-current" class="nav-link">Organización</a>
+          <a routerLink="/empleados" routerLinkActive="is-current" class="nav-link">Empleados</a>
+          <a routerLink="/agendas" routerLinkActive="is-current" class="nav-link">Agendas</a>
+          <a routerLink="/aranceles" routerLinkActive="is-current" class="nav-link">Aranceles</a>
+          <a routerLink="/comprobantes" routerLinkActive="is-current" class="nav-link">Comprobantes</a>
+          <a routerLink="/auditoria" routerLinkActive="is-current" class="nav-link">Auditoría</a>
+        }
+        <ui-button class="mt-auto w-full pt-4" variant="ghost" (click)="salir()">Salir</ui-button>
+      </div>
+      <router-outlet />
+    </ui-page>
+  `,
+})
+export class ShellPage {
+  readonly session = clinicaSession;
+  salir() {
+    clinicaSession.clear();
+    location.href = '/login';
+  }
+}

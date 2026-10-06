@@ -1,0 +1,73 @@
+import { Component, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { ClinicaClient, HistoriaDto, clinicaSession, mensajeError } from 'sdk';
+import { UiButton, UiEmpty, UiField } from 'ui';
+import { firstValueFrom } from 'rxjs';
+
+@Component({
+  imports: [FormsModule, UiButton, UiField, UiEmpty],
+  template: `
+    @if (session.rol() !== 'Paciente') {
+      <form class="mb-8 flex flex-col gap-4 border-b border-rule pb-8 sm:flex-row sm:items-end" (ngSubmit)="cargar()">
+        <ui-field class="sm:w-80" label="Id del paciente"><input name="pacienteId" [(ngModel)]="pacienteId" required /></ui-field>
+        <ui-button type="submit">Ver historia</ui-button>
+      </form>
+    }
+    @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
+    @if (historia(); as data) {
+      <header class="mb-2">
+        <h2 class="font-serif text-2xl tracking-tight">{{ data.paciente.nombre }}</h2>
+        <p class="mt-1 text-sm text-ink/70">Documento {{ data.paciente.documento }}</p>
+        <p class="text-sm text-ink/70">{{ data.paciente.telefono }}</p>
+      </header>
+      @for (encuentro of data.encuentros; track encuentro.id) {
+        <article class="border-t border-rule py-5">
+          <p class="text-sm text-ink/60">{{ encuentro.creadoEn }}</p>
+          <p class="mt-3 max-w-prose whitespace-pre-wrap leading-relaxed">{{ encuentro.nota }}</p>
+          <dl class="mt-4 grid grid-cols-2 gap-px bg-rule sm:grid-cols-4">
+            <div class="bg-white px-3 py-2">
+              <dt class="text-sm text-ink/60">Tensión</dt>
+              <dd class="mt-1 font-serif text-lg">{{ encuentro.tensionArterial || '—' }}</dd>
+            </div>
+            <div class="bg-white px-3 py-2">
+              <dt class="text-sm text-ink/60">Frecuencia</dt>
+              <dd class="mt-1 font-serif text-lg">{{ encuentro.frecuenciaCardiaca || '—' }}</dd>
+            </div>
+            <div class="bg-white px-3 py-2">
+              <dt class="text-sm text-ink/60">Temperatura</dt>
+              <dd class="mt-1 font-serif text-lg">{{ encuentro.temperatura || '—' }}</dd>
+            </div>
+            <div class="bg-white px-3 py-2">
+              <dt class="text-sm text-ink/60">Peso</dt>
+              <dd class="mt-1 font-serif text-lg">{{ encuentro.pesoKg || '—' }}</dd>
+            </div>
+          </dl>
+          @if (encuentro.diagnosticos.length) {
+            <p class="mt-3 max-w-prose text-sm leading-relaxed">{{ encuentro.diagnosticos.map(d => d.codigo + ' ' + d.nombre).join(', ') }}</p>
+          }
+        </article>
+      }
+      @if (data.encuentros.length === 0) { <ui-empty message="Sin encuentros clínicos." /> }
+    }
+  `,
+})
+export class HistoriaPage {
+  private readonly api = inject(ClinicaClient);
+  readonly session = clinicaSession;
+  readonly historia = signal<HistoriaDto | null>(null);
+  readonly error = signal('');
+  pacienteId = '';
+
+  constructor() {
+    if (clinicaSession.rol() === 'Paciente') void this.cargar();
+  }
+
+  async cargar() {
+    this.error.set('');
+    try {
+      this.historia.set(await firstValueFrom(this.api.historia(clinicaSession.rol() === 'Paciente' ? {} : { pacienteId: this.pacienteId })));
+    } catch (error) {
+      this.error.set(mensajeError(error));
+    }
+  }
+}

@@ -1,0 +1,25 @@
+import { Component } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { clinicaSession } from 'sdk';
+
+@Component({
+  imports: [RouterLink],
+  template: `
+    <section>
+      <dl class="grid max-w-lg grid-cols-2 gap-px border border-rule bg-rule">
+        <div class="bg-white px-4 py-3">
+          <dt class="text-sm text-ink/60">Rol</dt>
+          <dd class="mt-1 font-serif text-lg">{{ session.rol() }}</dd>
+        </div>
+        <div class="bg-white px-4 py-3">
+          <dt class="text-sm text-ink/60">Consultorio</dt>
+          <dd class="mt-1 break-words font-serif text-lg">{{ session.tenant() }}</dd>
+        </div>
+      </dl>
+      <a routerLink="/reservar" class="action-link mt-6">Sacar un turno</a>
+    </section>
+  `,
+})
+export class PanelPage {
+  readonly session = clinicaSession;
+}

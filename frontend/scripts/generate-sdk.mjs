@@ -1,0 +1,95 @@
+import { readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const root = dirname(fileURLToPath(import.meta.url));
+const spec = JSON.parse(readFileSync(join(root, '../openapi/clinica.json'), 'utf8'));
+
+function tsType(schema) {
+  if (!schema) return 'void';
+  if (schema.$ref) return schema.$ref.split('/').pop();
+  if (schema.enum) return schema.enum.map((value) => JSON.stringify(value)).join(' | ');
+  if (schema.type === 'array') return `${tsType(schema.items)}[]`;
+  if (schema.type === 'integer' || schema.type === 'number') return 'number';
+  if (schema.type === 'boolean') return 'boolean';
+  if (schema.type === 'string') return 'string';
+  return 'unknown';
+}
+
+function emitSchemas() {
+  return Object.entries(spec.components.schemas)
+    .map(([name, schema]) => {
+      if (schema.enum) {
+        return `export type ${name} = ${schema.enum.map((value) => JSON.stringify(value)).join(' | ')};`;
+      }
+      const required = new Set(schema.required ?? []);
+      const fields = Object.entries(schema.properties ?? {}).map(([prop, def]) => {
+        const optional = required.has(prop) ? '' : '?';
+        const nullable = def.nullable ? ' | null' : '';
+        return `  ${prop}${optional}: ${tsType(def)}${nullable};`;
+      });
+      return `export interface ${name} {\n${fields.join('\n')}\n}`;
+    })
+    .join('\n\n');
+}
+
+function emitMethods() {
+  const methods = [];
+  for (const [path, verbs] of Object.entries(spec.paths)) {
+    for (const [verb, op] of Object.entries(verbs)) {
+      const params = (op.parameters ?? []).filter((item) => item.in === 'path');
+      const query = (op.parameters ?? []).filter((item) => item.in === 'query');
+      const body = op.requestBody?.content?.['application/json']?.schema;
+      const response =
+        op.responses?.['200']?.content?.['application/json']?.schema ??
+        op.responses?.['201']?.content?.['application/json']?.schema;
+      const args = params.map((item) => `${item.name}: ${tsType(item.schema)}`);
+      if (body) args.push(`body: ${tsType(body)}`);
+      if (query.length) {
+        const fields = query
+          .map((item) => `${item.name}${item.required ? '' : '?'}: ${tsType(item.schema)}`)
+          .join('; ');
+        const optional = query.some((item) => item.required) ? '' : '?';
+        args.push(`query${optional}: { ${fields} }`);
+      }
+      const responseType = response ? tsType(response) : 'void';
+      const url = path.replaceAll(/\{([^}]+)\}/g, '${$1}');
+      const queryArg = query.length ? ' + this.queryString(query)' : '';
+      const call =
+        verb === 'get' || verb === 'delete'
+          ? `this.http.${verb}<${responseType}>(\`\${this.base}${url}\`${queryArg})`
+          : `this.http.${verb}<${responseType}>(\`\${this.base}${url}\`${queryArg}, ${body ? 'body' : '{}'})`;
+      methods.push(`  ${op.operationId}(${args.join(', ')}) {\n    return ${call};\n  }`);
+    }
+  }
+  return methods.join('\n\n');
+}
+
+const output = `/* Código generado por scripts/generate-sdk.mjs a partir de openapi/clinica.json. No editar a mano. */
+import { HttpClient } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
+import { CLINICA_API_URL } from './tokens';
+
+${emitSchemas()}
+
+@Injectable({ providedIn: 'root' })
+export class ClinicaClient {
+  private readonly http = inject(HttpClient);
+  private readonly base = inject(CLINICA_API_URL);
+
+  private queryString(query?: Record<string, unknown>) {
+    if (!query) return '';
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(query)) {
+      if (value !== undefined && value !== null && value !== '') params.set(key, String(value));
+    }
+    const text = params.toString();
+    return text ? \`?\${text}\` : '';
+  }
+
+${emitMethods()}
+}
+`;
+
+writeFileSync(join(root, '../projects/sdk/src/lib/clinica-client.ts'), output);
+console.log('SDK generado');

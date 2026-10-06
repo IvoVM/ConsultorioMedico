@@ -1,0 +1,331 @@
+{
+  "openapi": "3.0.3",
+  "info": { "title": "ClinicaSaaS", "version": "1.0.0" },
+  "paths": {
+    "/api/platform/auth/login": {
+      "post": {
+        "operationId": "loginPlataforma",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LoginCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TokenDto" } } } } }
+      }
+    },
+    "/api/platform/tenants": {
+      "get": {
+        "operationId": "listarTenants",
+        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/TenantDto" } } } } } }
+      },
+      "post": {
+        "operationId": "crearTenant",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AltaTenantCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TenantDto" } } } } }
+      }
+    },
+    "/api/platform/tenants/{id}/estado": {
+      "patch": {
+        "operationId": "cambiarEstadoTenant",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CambiarEstadoTenantCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TenantDto" } } } } }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "operationId": "loginTenant",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LoginCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TokenDto" } } } } }
+      }
+    },
+    "/api/auth/registro": {
+      "post": {
+        "operationId": "registrarPaciente",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RegistroPacienteCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TokenDto" } } } } }
+      }
+    },
+    "/api/sedes": {
+      "get": { "operationId": "sedes", "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/SedeDto" } } } } } } },
+      "post": {
+        "operationId": "crearSede",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GuardarSedeCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SedeDto" } } } } }
+      }
+    },
+    "/api/sedes/{id}": {
+      "put": {
+        "operationId": "actualizarSede",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GuardarSedeCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SedeDto" } } } } }
+      }
+    },
+    "/api/servicios": {
+      "get": { "operationId": "servicios", "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/ServicioDto" } } } } } } },
+      "post": {
+        "operationId": "crearServicio",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GuardarServicioCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ServicioDto" } } } } }
+      }
+    },
+    "/api/especialidades": {
+      "get": { "operationId": "especialidades", "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/EspecialidadDto" } } } } } } },
+      "post": {
+        "operationId": "crearEspecialidad",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GuardarEspecialidadCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EspecialidadDto" } } } } }
+      }
+    },
+    "/api/tipos-turno": {
+      "get": { "operationId": "tiposTurno", "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/TipoTurnoDto" } } } } } } },
+      "post": {
+        "operationId": "crearTipoTurno",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GuardarTipoTurnoCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TipoTurnoDto" } } } } }
+      }
+    },
+    "/api/profesionales": {
+      "get": {
+        "operationId": "profesionales",
+        "parameters": [{ "name": "especialidadId", "in": "query", "schema": { "type": "string" } }],
+        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/ProfesionalDto" } } } } } }
+      }
+    },
+    "/api/empleados/importar": {
+      "post": {
+        "operationId": "importarEmpleados",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ImportarEmpleadosCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ImportacionEmpleadosDto" } } } } }
+      }
+    },
+    "/api/agendas": {
+      "get": {
+        "operationId": "obtenerAgenda",
+        "parameters": [{ "name": "profesionalId", "in": "query", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/BloqueAgendaDto" } } } } } }
+      },
+      "put": {
+        "operationId": "guardarAgenda",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GuardarAgendaCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/BloqueAgendaDto" } } } } } }
+      }
+    },
+    "/api/bloqueos": {
+      "get": {
+        "operationId": "bloqueos",
+        "parameters": [{ "name": "profesionalId", "in": "query", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/BloqueoDto" } } } } } }
+      },
+      "post": {
+        "operationId": "crearBloqueo",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CrearBloqueoCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BloqueoDto" } } } } }
+      }
+    },
+    "/api/bloqueos/{id}": {
+      "delete": {
+        "operationId": "eliminarBloqueo",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "204": { "description": "Eliminado" } }
+      }
+    },
+    "/api/disponibilidad": {
+      "get": {
+        "operationId": "disponibilidad",
+        "parameters": [
+          { "name": "sedeId", "in": "query", "required": true, "schema": { "type": "string" } },
+          { "name": "especialidadId", "in": "query", "required": true, "schema": { "type": "string" } },
+          { "name": "profesionalId", "in": "query", "schema": { "type": "string" } },
+          { "name": "fecha", "in": "query", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/HuecoDto" } } } } } }
+      }
+    },
+    "/api/turnos": {
+      "get": {
+        "operationId": "turnosDelDia",
+        "parameters": [
+          { "name": "fecha", "in": "query", "required": true, "schema": { "type": "string" } },
+          { "name": "profesionalId", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/TurnoDto" } } } } } }
+      },
+      "post": {
+        "operationId": "reservarTurno",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ReservarTurnoCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TurnoDto" } } } } }
+      }
+    },
+    "/api/turnos/mios": {
+      "get": {
+        "operationId": "misTurnos",
+        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/TurnoDto" } } } } } }
+      }
+    },
+    "/api/turnos/{id}/cancelar": {
+      "post": {
+        "operationId": "cancelarTurno",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TurnoDto" } } } } }
+      }
+    },
+    "/api/turnos/{id}/admitir": {
+      "post": {
+        "operationId": "admitirTurno",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TurnoDto" } } } } }
+      }
+    },
+    "/api/turnos/{id}/reprogramar": {
+      "post": {
+        "operationId": "reprogramarTurno",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ReprogramarTurnoCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TurnoDto" } } } } }
+      }
+    },
+    "/api/lista-espera": {
+      "get": {
+        "operationId": "listaEspera",
+        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/ListaEsperaDto" } } } } } }
+      },
+      "post": {
+        "operationId": "anotarEspera",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CrearListaEsperaCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ListaEsperaDto" } } } } }
+      }
+    },
+    "/api/lista-espera/{id}/asignar": {
+      "post": {
+        "operationId": "asignarEspera",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AsignarListaEsperaCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TurnoDto" } } } } }
+      }
+    },
+    "/api/diagnosticos": {
+      "get": {
+        "operationId": "diagnosticos",
+        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/DiagnosticoDto" } } } } } }
+      }
+    },
+    "/api/encuentros": {
+      "post": {
+        "operationId": "guardarEncuentro",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GuardarEncuentroCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EncuentroDto" } } } } }
+      }
+    },
+    "/api/encuentros/{id}/cerrar": {
+      "post": {
+        "operationId": "cerrarEncuentro",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EncuentroDto" } } } } }
+      }
+    },
+    "/api/recetas": {
+      "post": {
+        "operationId": "crearReceta",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CrearRecetaCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RecetaDto" } } } } }
+      }
+    },
+    "/api/recetas/mias": {
+      "get": {
+        "operationId": "misRecetas",
+        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/RecetaDto" } } } } } }
+      }
+    },
+    "/api/recetas/{id}": {
+      "get": {
+        "operationId": "obtenerReceta",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RecetaDto" } } } } }
+      }
+    },
+    "/api/historia": {
+      "get": {
+        "operationId": "historia",
+        "parameters": [{ "name": "pacienteId", "in": "query", "schema": { "type": "string" } }],
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HistoriaDto" } } } } }
+      }
+    },
+    "/api/aranceles": {
+      "get": {
+        "operationId": "aranceles",
+        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/ArancelDto" } } } } } }
+      },
+      "post": {
+        "operationId": "crearArancel",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CrearArancelCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ArancelDto" } } } } }
+      }
+    },
+    "/api/comprobantes": {
+      "get": {
+        "operationId": "comprobantes",
+        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/ComprobanteDto" } } } } } }
+      }
+    },
+    "/api/comprobantes/{id}/pagar": {
+      "post": {
+        "operationId": "pagarComprobante",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PagarComprobanteCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ComprobanteDto" } } } } }
+      }
+    },
+    "/api/auditoria": {
+      "get": {
+        "operationId": "auditoria",
+        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/AuditoriaDto" } } } } } }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "LoginCommand": { "type": "object", "required": ["email", "password"], "properties": { "email": { "type": "string" }, "password": { "type": "string" } } },
+      "TokenDto": { "type": "object", "required": ["token", "email", "nombre", "rol", "debeCambiarClave"], "properties": { "token": { "type": "string" }, "email": { "type": "string" }, "nombre": { "type": "string" }, "rol": { "type": "string" }, "tenantSlug": { "type": "string", "nullable": true }, "debeCambiarClave": { "type": "boolean" } } },
+      "AltaTenantCommand": { "type": "object", "required": ["slug", "nombre", "tipo"], "properties": { "slug": { "type": "string" }, "nombre": { "type": "string" }, "tipo": { "type": "string" } } },
+      "CambiarEstadoTenantCommand": { "type": "object", "required": ["estado"], "properties": { "estado": { "type": "string" } } },
+      "TenantDto": { "type": "object", "required": ["id", "slug", "nombre", "tipo", "estado", "creadoEn"], "properties": { "id": { "type": "string" }, "slug": { "type": "string" }, "nombre": { "type": "string" }, "tipo": { "type": "string" }, "estado": { "type": "string" }, "creadoEn": { "type": "string" } } },
+      "RegistroPacienteCommand": { "type": "object", "required": ["email", "password", "nombre", "apellido", "documento", "fechaNacimiento", "telefono"], "properties": { "email": { "type": "string" }, "password": { "type": "string" }, "nombre": { "type": "string" }, "apellido": { "type": "string" }, "documento": { "type": "string" }, "fechaNacimiento": { "type": "string" }, "telefono": { "type": "string" } } },
+      "SedeDto": { "type": "object", "required": ["id", "nombre", "direccion", "activa"], "properties": { "id": { "type": "string" }, "nombre": { "type": "string" }, "direccion": { "type": "string" }, "activa": { "type": "boolean" } } },
+      "GuardarSedeCommand": { "type": "object", "required": ["nombre", "direccion"], "properties": { "nombre": { "type": "string" }, "direccion": { "type": "string" } } },
+      "ServicioDto": { "type": "object", "required": ["id", "sedeId", "nombre"], "properties": { "id": { "type": "string" }, "sedeId": { "type": "string" }, "nombre": { "type": "string" } } },
+      "GuardarServicioCommand": { "type": "object", "required": ["sedeId", "nombre"], "properties": { "sedeId": { "type": "string" }, "nombre": { "type": "string" } } },
+      "EspecialidadDto": { "type": "object", "required": ["id", "nombre"], "properties": { "id": { "type": "string" }, "nombre": { "type": "string" } } },
+      "GuardarEspecialidadCommand": { "type": "object", "required": ["nombre"], "properties": { "nombre": { "type": "string" } } },
+      "TipoTurnoDto": { "type": "object", "required": ["id", "nombre", "duracionMinutos"], "properties": { "id": { "type": "string" }, "nombre": { "type": "string" }, "duracionMinutos": { "type": "integer" }, "especialidadId": { "type": "string", "nullable": true } } },
+      "GuardarTipoTurnoCommand": { "type": "object", "required": ["nombre", "duracionMinutos"], "properties": { "nombre": { "type": "string" }, "duracionMinutos": { "type": "integer" }, "especialidadId": { "type": "string", "nullable": true } } },
+      "ProfesionalDto": { "type": "object", "required": ["id", "nombre", "apellido", "email"], "properties": { "id": { "type": "string" }, "nombre": { "type": "string" }, "apellido": { "type": "string" }, "email": { "type": "string" }, "matricula": { "type": "string", "nullable": true }, "especialidadId": { "type": "string", "nullable": true } } },
+      "ImportarEmpleadosCommand": { "type": "object", "required": ["csv"], "properties": { "csv": { "type": "string" } } },
+      "EmpleadoCreadoDto": { "type": "object", "required": ["fila", "email", "claveTemporal", "rol"], "properties": { "fila": { "type": "integer" }, "email": { "type": "string" }, "claveTemporal": { "type": "string" }, "rol": { "type": "string" } } },
+      "FilaRechazadaDto": { "type": "object", "required": ["fila", "motivo"], "properties": { "fila": { "type": "integer" }, "motivo": { "type": "string" } } },
+      "ImportacionEmpleadosDto": { "type": "object", "required": ["creados", "rechazados"], "properties": { "creados": { "type": "array", "items": { "$ref": "#/components/schemas/EmpleadoCreadoDto" } }, "rechazados": { "type": "array", "items": { "$ref": "#/components/schemas/FilaRechazadaDto" } } } },
+      "BloqueAgendaDto": { "type": "object", "required": ["id", "dia", "horaDesde", "horaHasta", "sedeId", "tipoTurnoId"], "properties": { "id": { "type": "string" }, "dia": { "type": "string" }, "horaDesde": { "type": "string" }, "horaHasta": { "type": "string" }, "sedeId": { "type": "string" }, "tipoTurnoId": { "type": "string" } } },
+      "GuardarAgendaCommand": { "type": "object", "required": ["profesionalId", "bloques"], "properties": { "profesionalId": { "type": "string" }, "bloques": { "type": "array", "items": { "$ref": "#/components/schemas/BloqueAgendaDto" } } } },
+      "BloqueoDto": { "type": "object", "required": ["id", "profesionalId", "inicio", "fin", "motivo"], "properties": { "id": { "type": "string" }, "profesionalId": { "type": "string" }, "inicio": { "type": "string" }, "fin": { "type": "string" }, "motivo": { "type": "string" } } },
+      "CrearBloqueoCommand": { "type": "object", "required": ["profesionalId", "inicio", "fin", "motivo"], "properties": { "profesionalId": { "type": "string" }, "inicio": { "type": "string" }, "fin": { "type": "string" }, "motivo": { "type": "string" } } },
+      "HuecoDto": { "type": "object", "required": ["profesionalId", "profesional", "sedeId", "tipoTurnoId", "tipoTurno", "inicio", "fin"], "properties": { "profesionalId": { "type": "string" }, "profesional": { "type": "string" }, "sedeId": { "type": "string" }, "tipoTurnoId": { "type": "string" }, "tipoTurno": { "type": "string" }, "inicio": { "type": "string" }, "fin": { "type": "string" } } },
+      "ReservarTurnoCommand": { "type": "object", "required": ["profesionalId", "sedeId", "tipoTurnoId", "inicio"], "properties": { "pacienteId": { "type": "string", "nullable": true }, "profesionalId": { "type": "string" }, "sedeId": { "type": "string" }, "tipoTurnoId": { "type": "string" }, "inicio": { "type": "string" }, "motivoConsulta": { "type": "string", "nullable": true } } },
+      "TurnoDto": { "type": "object", "required": ["id", "pacienteId", "paciente", "profesionalId", "profesional", "sedeId", "sede", "tipoTurnoId", "tipoTurno", "inicio", "fin", "estado"], "properties": { "id": { "type": "string" }, "pacienteId": { "type": "string" }, "paciente": { "type": "string" }, "profesionalId": { "type": "string" }, "profesional": { "type": "string" }, "sedeId": { "type": "string" }, "sede": { "type": "string" }, "tipoTurnoId": { "type": "string" }, "tipoTurno": { "type": "string" }, "inicio": { "type": "string" }, "fin": { "type": "string" }, "estado": { "type": "string" }, "motivoConsulta": { "type": "string", "nullable": true } } },
+      "ReprogramarTurnoCommand": { "type": "object", "required": ["inicio"], "properties": { "inicio": { "type": "string" } } },
+      "ListaEsperaDto": { "type": "object", "required": ["id", "pacienteId", "paciente", "sedeId", "especialidadId", "estado", "creadoEn"], "properties": { "id": { "type": "string" }, "pacienteId": { "type": "string" }, "paciente": { "type": "string" }, "profesionalId": { "type": "string", "nullable": true }, "sedeId": { "type": "string" }, "especialidadId": { "type": "string" }, "estado": { "type": "string" }, "creadoEn": { "type": "string" }, "notas": { "type": "string", "nullable": true } } },
+      "CrearListaEsperaCommand": { "type": "object", "required": ["sedeId", "especialidadId"], "properties": { "pacienteId": { "type": "string", "nullable": true }, "profesionalId": { "type": "string", "nullable": true }, "sedeId": { "type": "string" }, "especialidadId": { "type": "string" }, "notas": { "type": "string", "nullable": true } } },
+      "AsignarListaEsperaCommand": { "type": "object", "required": ["inicio", "tipoTurnoId"], "properties": { "inicio": { "type": "string" }, "tipoTurnoId": { "type": "string" } } },
+      "DiagnosticoDto": { "type": "object", "required": ["id", "codigo", "nombre"], "properties": { "id": { "type": "string" }, "codigo": { "type": "string" }, "nombre": { "type": "string" } } },
+      "GuardarEncuentroCommand": { "type": "object", "required": ["turnoId", "diagnosticoIds"], "properties": { "turnoId": { "type": "string" }, "nota": { "type": "string", "nullable": true }, "tensionArterial": { "type": "string", "nullable": true }, "frecuenciaCardiaca": { "type": "integer", "nullable": true }, "temperatura": { "type": "number", "nullable": true }, "pesoKg": { "type": "number", "nullable": true }, "diagnosticoIds": { "type": "array", "items": { "type": "string" } } } },
+      "EncuentroDto": { "type": "object", "required": ["id", "turnoId", "pacienteId", "profesionalId", "cerrado", "creadoEn", "diagnosticos"], "properties": { "id": { "type": "string" }, "turnoId": { "type": "string" }, "pacienteId": { "type": "string" }, "profesionalId": { "type": "string" }, "nota": { "type": "string", "nullable": true }, "tensionArterial": { "type": "string", "nullable": true }, "frecuenciaCardiaca": { "type": "integer", "nullable": true }, "temperatura": { "type": "number", "nullable": true }, "pesoKg": { "type": "number", "nullable": true }, "cerrado": { "type": "boolean" }, "creadoEn": { "type": "string" }, "diagnosticos": { "type": "array", "items": { "$ref": "#/components/schemas/DiagnosticoDto" } } } },
+      "RecetaItemDto": { "type": "object", "required": ["medicamento", "dosis", "frecuencia", "duracion"], "properties": { "medicamento": { "type": "string" }, "dosis": { "type": "string" }, "frecuencia": { "type": "string" }, "duracion": { "type": "string" } } },
+      "CrearRecetaCommand": { "type": "object", "required": ["encuentroId", "items"], "properties": { "encuentroId": { "type": "string" }, "indicaciones": { "type": "string", "nullable": true }, "items": { "type": "array", "items": { "$ref": "#/components/schemas/RecetaItemDto" } } } },
+      "RecetaDto": { "type": "object", "required": ["id", "encuentroId", "pacienteId", "profesionalId", "profesional", "creadoEn", "items"], "properties": { "id": { "type": "string" }, "encuentroId": { "type": "string" }, "pacienteId": { "type": "string" }, "profesionalId": { "type": "string" }, "profesional": { "type": "string" }, "indicaciones": { "type": "string", "nullable": true }, "creadoEn": { "type": "string" }, "items": { "type": "array", "items": { "$ref": "#/components/schemas/RecetaItemDto" } } } },
+      "PacienteResumenDto": { "type": "object", "required": ["id", "nombre", "documento", "fechaNacimiento", "telefono"], "properties": { "id": { "type": "string" }, "nombre": { "type": "string" }, "documento": { "type": "string" }, "fechaNacimiento": { "type": "string" }, "telefono": { "type": "string" } } },
+      "HistoriaDto": { "type": "object", "required": ["paciente", "encuentros", "recetas"], "properties": { "paciente": { "$ref": "#/components/schemas/PacienteResumenDto" }, "encuentros": { "type": "array", "items": { "$ref": "#/components/schemas/EncuentroDto" } }, "recetas": { "type": "array", "items": { "$ref": "#/components/schemas/RecetaDto" } } } },
+      "ArancelDto": { "type": "object", "required": ["id", "tipoTurnoId", "tipoTurno", "monto", "vigenteDesde"], "properties": { "id": { "type": "string" }, "tipoTurnoId": { "type": "string" }, "tipoTurno": { "type": "string" }, "monto": { "type": "number" }, "vigenteDesde": { "type": "string" } } },
+      "CrearArancelCommand": { "type": "object", "required": ["tipoTurnoId", "monto", "vigenteDesde"], "properties": { "tipoTurnoId": { "type": "string" }, "monto": { "type": "number" }, "vigenteDesde": { "type": "string" } } },
+      "ComprobanteItemDto": { "type": "object", "required": ["descripcion", "importe"], "properties": { "descripcion": { "type": "string" }, "importe": { "type": "number" } } },
+      "ComprobanteDto": { "type": "object", "required": ["id", "turnoId", "pacienteId", "paciente", "total", "estado", "creadoEn", "items"], "properties": { "id": { "type": "string" }, "turnoId": { "type": "string" }, "pacienteId": { "type": "string" }, "paciente": { "type": "string" }, "total": { "type": "number" }, "estado": { "type": "string" }, "metodoPago": { "type": "string", "nullable": true }, "creadoEn": { "type": "string" }, "pagadoEn": { "type": "string", "nullable": true }, "items": { "type": "array", "items": { "$ref": "#/components/schemas/ComprobanteItemDto" } } } },
+      "PagarComprobanteCommand": { "type": "object", "required": ["metodo"], "properties": { "metodo": { "type": "string" } } },
+      "AuditoriaDto": { "type": "object", "required": ["id", "accion", "entidad", "fecha"], "properties": { "id": { "type": "string" }, "usuarioId": { "type": "string", "nullable": true }, "accion": { "type": "string" }, "entidad": { "type": "string" }, "entidadId": { "type": "string", "nullable": true }, "detalle": { "type": "string", "nullable": true }, "fecha": { "type": "string" } } }
+    }
+  }
+}
