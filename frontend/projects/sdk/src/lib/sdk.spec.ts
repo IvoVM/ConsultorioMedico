@@ -1,8 +1,7 @@
-import { TestBed } from '@angular/core/testing';
-import { ClinicaClient } from './clinica-client';
+import { AuthService } from './modules/auth';
 
-describe('ClinicaClient', () => {
+describe('AuthService', () => {
   it('is defined', () => {
-    expect(ClinicaClient).toBeTruthy();
+    expect(AuthService).toBeTruthy();
   });
 });
