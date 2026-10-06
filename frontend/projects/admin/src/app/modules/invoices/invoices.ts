@@ -1,11 +1,11 @@
 import { Component, inject, signal } from '@angular/core';
 import { BillingService, InvoiceDto, errorMessage } from 'sdk';
 import { invoiceStatusLabels, paymentMethodLabels } from './models/invoice-labels';
-import { UiBadge, UiSkeleton, UiTable } from 'ui';
+import { UiBadge, UiEmpty, UiSkeleton, UiTable } from 'ui';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
-  imports: [UiTable, UiBadge, UiSkeleton],
+  imports: [UiTable, UiBadge, UiEmpty, UiSkeleton],
   templateUrl: './invoices.html',
 })
 export class InvoicesPage {

@@ -2,7 +2,7 @@
 @if (loading()) {
   <ui-skeleton label="Cargando turnos" />
 } @else if (appointments().length === 0) {
-  <ui-empty message="No tenés turnos." />
+  <ui-empty message="Todavía no tenés turnos. Cuando reserves uno, aparece acá." />
 } @else {
   <ui-table>
     <thead><tr><th>Cuándo</th><th>Profesional</th><th>Estado</th><th></th></tr></thead>

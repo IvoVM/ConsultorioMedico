@@ -5,6 +5,8 @@
 <div class="mt-6">
   @if (loading()) {
     <ui-skeleton label="Cargando agenda" />
+  } @else if (!appointments().length) {
+    <ui-empty message="No hay turnos en este día." />
   } @else {
   <ui-table>
     <thead><tr><th>Hora</th><th>Paciente</th><th>Estado</th><th></th></tr></thead>

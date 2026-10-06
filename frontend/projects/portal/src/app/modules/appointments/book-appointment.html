@@ -44,7 +44,7 @@
           </button>
         }
         @if (visibleProfessionals().length === 0) {
-          <p class="px-3 py-4 text-sm text-ink/70">No hay especialistas en esa especialidad.</p>
+          <ui-empty message="Ningún especialista coincide con esa especialidad." />
         }
       </div>
     </div>
@@ -62,7 +62,7 @@
         </div>
       } @else if (days().length === 0) {
         <div class="max-w-xl space-y-4">
-          <ui-empty message="No hay turnos libres en las próximas semanas." />
+          <ui-empty message="No hay turnos libres en las próximas semanas. Probá otra especialidad o anotáte en la lista de espera." />
           @if (session.role() === 'Patient') {
             <ui-field label="Nota para la lista de espera"><input name="notes" [(ngModel)]="notes" /></ui-field>
             <ui-button [loading]="joining()" (click)="joinWaitlist()">Anotarme en lista de espera</ui-button>

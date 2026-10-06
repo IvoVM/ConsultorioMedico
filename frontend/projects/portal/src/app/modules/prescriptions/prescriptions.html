@@ -4,7 +4,7 @@
 @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
 @if (loading()) {
   <ui-skeleton [framed]="false" [count]="3" height="7rem" label="Cargando recetas" />
-} @else if (prescriptions().length === 0) { <ui-empty message="No tenés recetas." /> }
+} @else if (prescriptions().length === 0) { <ui-empty message="Todavía no tenés recetas. Cuando el médico emita una, aparece acá." /> }
 <div id="prescriptions" class="space-y-8">
   @for (prescription of prescriptions(); track prescription.id) {
     <article class="border border-rule bg-white px-5 py-5 sm:px-6">

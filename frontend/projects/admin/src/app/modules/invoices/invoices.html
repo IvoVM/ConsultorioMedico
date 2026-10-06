@@ -1,6 +1,8 @@
 @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
 @if (loading()) {
   <ui-skeleton label="Cargando comprobantes" />
+} @else if (!invoices().length) {
+  <ui-empty message="Todavía no hay comprobantes. Se generan cuando se cierra una atención." />
 } @else {
 <ui-table>
   <thead><tr><th>Paciente</th><th>Total</th><th>Estado</th><th>Pago</th></tr></thead>

@@ -103,6 +103,10 @@ public class ClinicSeeder(TenantDbContext db, UserManager<TenantUser> users, ICo
             });
             await db.SaveChangesAsync(ct);
         }
+
+        var zone = TimeZoneInfo.FindSystemTimeZoneById(configuration["TimeZone"] ?? "America/Argentina/Buenos_Aires");
+        var admin = await users.FindByEmailAsync(adminEmail);
+        await new DemoDataSeeder(db, users).SeedAsync(password, zone, admin?.Id, ct);
     }
 
     private async Task<TenantUser> EnsureUserAsync(

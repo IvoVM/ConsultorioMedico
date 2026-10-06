@@ -11,6 +11,8 @@
 @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
 @if (loading()) {
   <ui-skeleton label="Cargando aranceles" />
+} @else if (!fees().length) {
+  <ui-empty message="Todavía no hay aranceles. El primero que guardes queda vigente desde la fecha que elijas." />
 } @else {
 <ui-table>
   <thead><tr><th>Tipo</th><th>Monto</th><th>Desde</th></tr></thead>

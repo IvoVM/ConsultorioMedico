@@ -24,4 +24,4 @@
     <tbody>@for (item of rejected(); track item.row) { <tr><td>{{ item.row }}</td><td>{{ item.reason }}</td></tr> }</tbody>
   </ui-table>
 }
-@if (!created().length && !rejected().length) { <ui-empty message="Todavía no importaste un archivo." /> }
+@if (!created().length && !rejected().length) { <ui-empty message="Todavía no hay una importación. Cuando subas el archivo, el resultado aparece acá." /> }

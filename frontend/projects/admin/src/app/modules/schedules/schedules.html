@@ -1,5 +1,7 @@
 @if (loading()) {
   <ui-skeleton label="Cargando agenda" />
+} @else if (!professionals().length) {
+  <ui-empty message="Todavía no hay profesionales. Importalos desde Empleados para armar la agenda." />
 } @else {
 <div class="mb-8 grid max-w-xl gap-4">
   <ui-field label="Profesional">
@@ -28,6 +30,9 @@
 @if (scheduleLoading()) {
   <ui-skeleton label="Cargando horarios" />
 } @else {
+@if (!blocks().length) {
+  <ui-empty message="Esta agenda todavía no tiene horarios. Sumá un bloque y publicala." />
+} @else {
 <ui-table>
   <thead><tr><th>Día</th><th>Horario</th><th></th></tr></thead>
   <tbody>
@@ -40,6 +45,7 @@
     }
   </tbody>
 </ui-table>
+}
 <div class="my-6"><ui-button [loading]="publishing()" (click)="save()">Publicar agenda</ui-button></div>
 <h2 class="font-serif text-2xl tracking-tight">Bloqueos</h2>
 <form class="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4" (ngSubmit)="createBlockout()">
@@ -49,6 +55,9 @@
   <div class="flex items-end"><ui-button type="submit" [loading]="blocking()">Bloquear</ui-button></div>
 </form>
 <div class="mt-6">
+  @if (!blockouts().length) {
+    <ui-empty message="No hay bloqueos en esta agenda." />
+  } @else {
   <ui-table>
     <thead><tr><th>Desde</th><th>Hasta</th><th>Motivo</th><th></th></tr></thead>
     <tbody>
@@ -62,6 +71,7 @@
       }
     </tbody>
   </ui-table>
+  }
 </div>
 }
 }

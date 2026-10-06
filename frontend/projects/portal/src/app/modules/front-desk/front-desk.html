@@ -26,7 +26,7 @@
       }
     </ul>
   } @else if (!searching() && query.trim().length >= 2 && !searchError()) {
-    <p class="mt-3 text-sm text-ink/60">Ningún paciente coincide.</p>
+    <ui-empty message="Ningún paciente coincide con esa búsqueda." />
   }
 </section>
 <ui-calendar [date]="date" (dateChange)="date = $event; load()">
@@ -38,6 +38,8 @@
   <div class="mt-4">
     @if (loading()) {
       <ui-skeleton label="Cargando agenda" />
+    } @else if (!appointments().length) {
+      <ui-empty message="No hay turnos en este día." />
     } @else {
     <ui-table>
       <thead><tr><th>Hora</th><th>Paciente</th><th>Profesional</th><th>Estado</th><th></th></tr></thead>
@@ -76,6 +78,8 @@
   <div class="mt-4">
     @if (loading()) {
       <ui-skeleton label="Cargando lista de espera" />
+    } @else if (!waitlist().length) {
+      <ui-empty message="La lista de espera está vacía." />
     } @else {
     <ui-table>
       <thead><tr><th>Paciente</th><th>Notas</th><th></th></tr></thead>
@@ -102,6 +106,8 @@
   <div class="mt-4">
     @if (loading()) {
       <ui-skeleton label="Cargando cobros" />
+    } @else if (!invoices().length) {
+      <ui-empty message="Todavía no hay cobros." />
     } @else {
     <ui-table>
       <thead><tr><th>Paciente</th><th>Total</th><th>Estado</th><th></th></tr></thead>

@@ -1,11 +1,11 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AppointmentTypeDto, BillingService, FeeDto, OrganizationService, errorMessage } from 'sdk';
-import { UiButton, UiField, UiSkeleton, UiTable } from 'ui';
+import { UiButton, UiEmpty, UiField, UiSkeleton, UiTable } from 'ui';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
-  imports: [FormsModule, UiButton, UiField, UiSkeleton, UiTable],
+  imports: [FormsModule, UiButton, UiEmpty, UiField, UiSkeleton, UiTable],
   templateUrl: './fees.html',
 })
 export class FeesPage {

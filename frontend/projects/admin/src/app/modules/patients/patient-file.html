@@ -141,7 +141,7 @@
             </article>
           }
           @if (data.encounters.length === 0) {
-            <ui-empty message="Todavía no hay atenciones. El médico las carga desde el consultorio." />
+            <ui-empty message="Todavía no hay atenciones en esta ficha. El médico las carga desde el consultorio." />
           }
         } @else {
           <ui-skeleton [count]="2" height="5.5rem" label="Cargando atenciones" />

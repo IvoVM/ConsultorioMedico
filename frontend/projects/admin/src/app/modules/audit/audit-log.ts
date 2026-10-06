@@ -1,10 +1,10 @@
 import { Component, inject, signal } from '@angular/core';
 import { AuditEntryDto, AuditService, errorMessage } from 'sdk';
-import { UiSkeleton, UiTable } from 'ui';
+import { UiEmpty, UiSkeleton, UiTable } from 'ui';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
-  imports: [UiTable, UiSkeleton],
+  imports: [UiTable, UiEmpty, UiSkeleton],
   templateUrl: './audit-log.html',
 })
 export class AuditLogPage {

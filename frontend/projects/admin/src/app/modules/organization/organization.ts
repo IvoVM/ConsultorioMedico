@@ -3,12 +3,12 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AppointmentTypeDto, MedicalServiceDto, OrganizationService, SpecialtyDto, errorMessage } from 'sdk';
-import { UiButton, UiField, UiSkeleton, UiTable } from 'ui';
+import { UiButton, UiEmpty, UiField, UiSkeleton, UiTable } from 'ui';
 import { Observable, firstValueFrom } from 'rxjs';
 import { isOrganizationSection, organizationSections } from './models/section';
 
 @Component({
-  imports: [FormsModule, UiButton, UiField, UiSkeleton, UiTable],
+  imports: [FormsModule, UiButton, UiEmpty, UiField, UiSkeleton, UiTable],
   templateUrl: './organization.html',
 })
 export class OrganizationPage {
