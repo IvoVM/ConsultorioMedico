@@ -22,7 +22,7 @@ export class WelcomePage implements OnDestroy {
   open(side: 'patient' | 'staff', event: Event) {
     event.preventDefault();
     if (this.chosen()) return;
-    const next = side === 'patient' ? '/paciente' : '/ingreso/empleado';
+    const next = side === 'patient' ? '/reservar' : '/ingreso/empleado';
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduce) {
       void this.router.navigateByUrl(next);

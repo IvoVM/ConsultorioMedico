@@ -5,7 +5,7 @@ export const routes: Routes = [
   { path: 'ingreso', loadComponent: () => import('./modules/auth/welcome').then((m) => m.WelcomePage) },
   { path: 'ingreso/empleado', loadComponent: () => import('./modules/auth/login').then((m) => m.LoginPage), data: { audience: 'staff' } },
   { path: 'ingreso/cuenta', loadComponent: () => import('./modules/auth/login').then((m) => m.LoginPage), data: { audience: 'patient' } },
-  { path: 'paciente', loadComponent: () => import('./modules/auth/patient-entry').then((m) => m.PatientEntryPage) },
+  { path: 'paciente', redirectTo: 'reservar' },
   { path: 'registro', loadComponent: () => import('./modules/auth/register').then((m) => m.RegisterPage) },
   {
     path: '',

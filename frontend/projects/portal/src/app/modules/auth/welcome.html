@@ -1,11 +1,11 @@
 <section class="gate" [class.is-patient]="chosen() === 'patient'" [class.is-staff]="chosen() === 'staff'">
-  <a class="panel patient" href="/paciente" (click)="open('patient', $event)">
+  <a class="panel patient" href="/reservar" (click)="open('patient', $event)">
     <span class="photo" style="background-image: url('fila.jpg')" aria-hidden="true"></span>
     <span class="veil" aria-hidden="true"></span>
     <span class="copy">
       <p class="clinic">{{ clinicName() }}</p>
       <h1>Soy paciente</h1>
-      <p class="lead">Reservá un turno, o accedé a tus recetas y revisá tu historial médico.</p>
+      <p class="lead">Reservá un turno.</p>
     </span>
   </a>
   <a class="panel staff" href="/ingreso/empleado" (click)="open('staff', $event)">
