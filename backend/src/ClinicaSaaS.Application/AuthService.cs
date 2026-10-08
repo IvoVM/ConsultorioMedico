@@ -5,7 +5,7 @@ namespace ClinicaSaaS.Application;
 
 public class AuthService(
     ITenantUserStore users,
-    IPatientStore patients,
+    IClientStore clients,
     ITokenService tokens,
     ICurrentTenant tenant,
     IRefreshSessionStore sessions,
@@ -35,11 +35,9 @@ public class AuthService(
             command.FirstName.Trim(),
             command.LastName.Trim(),
             TenantRole.Patient,
-            null,
-            null,
             false,
             ct);
-        await patients.AddAsync(new Patient
+        await clients.AddAsync(new Client
         {
             Id = Guid.NewGuid(),
             UserId = user.Id,
@@ -57,8 +55,7 @@ public class AuthService(
             ?? throw new UnauthorizedException("La sesión expiró. Volvé a ingresar.");
         var user = await users.FindByIdAsync(grant.UserId, ct)
             ?? throw new UnauthorizedException("La sesión expiró. Volvé a ingresar.");
-        var name = $"{user.FirstName} {user.LastName}".Trim();
-        return new IssuedSession(Access(user, name), grant.RawToken, grant.Expires);
+        return new IssuedSession(Access(user, user.Name), grant.RawToken, grant.Expires);
     }
 
     public Task LogoutAsync(string? rawToken, CancellationToken ct) => sessions.RevokeAsync(rawToken, ct);
@@ -66,8 +63,7 @@ public class AuthService(
     private async Task<IssuedSession> IssueAsync(TenantAccount user, CancellationToken ct)
     {
         var grant = await sessions.IssueAsync(user.Id, ct);
-        var name = $"{user.FirstName} {user.LastName}".Trim();
-        return new IssuedSession(Access(user, name), grant.RawToken, grant.Expires);
+        return new IssuedSession(Access(user, user.Name), grant.RawToken, grant.Expires);
     }
 
     private TokenDto Access(TenantAccount user, string name) => new(

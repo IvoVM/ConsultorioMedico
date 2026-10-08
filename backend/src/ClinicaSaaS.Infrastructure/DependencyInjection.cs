@@ -90,13 +90,13 @@ public class ClinicSeeder(TenantDbContext db, UserManager<TenantUser> users, ICo
 
         await EnsureUserAsync("secretaria@demo.local", password, "Laura", "Benítez", TenantRole.Secretary, null, ct);
         await EnsureUserAsync("medico@demo.local", password, "Martín", "Ríos", TenantRole.Doctor, "MN 12345", ct);
-        var patient = await EnsureUserAsync("paciente@demo.local", password, "Ana", "Pérez", TenantRole.Patient, null, ct);
-        if (!await db.Patients.AnyAsync(p => p.UserId == patient.Id, ct))
+        var clientUser = await EnsureUserAsync("paciente@demo.local", password, "Ana", "Pérez", TenantRole.Patient, null, ct);
+        if (!await db.Clients.AnyAsync(c => c.UserId == clientUser.Id, ct))
         {
-            db.Patients.Add(new Patient
+            db.Clients.Add(new Client
             {
                 Id = Guid.NewGuid(),
-                UserId = patient.Id,
+                UserId = clientUser.Id,
                 DocumentNumber = "30111222",
                 BirthDate = new DateOnly(1990, 4, 12),
                 Phone = "1112345678"
@@ -119,7 +119,11 @@ public class ClinicSeeder(TenantDbContext db, UserManager<TenantUser> users, ICo
         CancellationToken ct)
     {
         if (await users.FindByEmailAsync(email) is { } existing)
+        {
+            if (role != TenantRole.Patient)
+                await EnsureEmployeeAsync(existing.Id, licenseNumber, null, ct);
             return existing;
+        }
 
         var user = new TenantUser
         {
@@ -129,13 +133,37 @@ public class ClinicSeeder(TenantDbContext db, UserManager<TenantUser> users, ICo
             EmailConfirmed = true,
             FirstName = firstName,
             LastName = lastName,
-            Role = role,
-            LicenseNumber = licenseNumber
+            Role = role
         };
         var result = await users.CreateAsync(user, password);
         if (!result.Succeeded)
             throw new InvalidOperationException(string.Join(' ', result.Errors.Select(e => e.Description)));
+        if (role != TenantRole.Patient)
+            await EnsureEmployeeAsync(user.Id, licenseNumber, null, ct);
         return user;
+    }
+
+    private async Task EnsureEmployeeAsync(Guid userId, string? licenseNumber, Guid? specialtyId, CancellationToken ct)
+    {
+        var employee = await db.Employees.FirstOrDefaultAsync(e => e.UserId == userId, ct);
+        if (employee is null)
+        {
+            db.Employees.Add(new Employee
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                LicenseNumber = licenseNumber,
+                SpecialtyId = specialtyId
+            });
+            await db.SaveChangesAsync(ct);
+            return;
+        }
+
+        if (licenseNumber is not null)
+            employee.LicenseNumber = licenseNumber;
+        if (specialtyId is Guid specialty)
+            employee.SpecialtyId = specialty;
+        await db.SaveChangesAsync(ct);
     }
 }
 
@@ -157,11 +185,12 @@ public static class DependencyInjection
             .AddEntityFrameworkStores<TenantDbContext>();
 
         services.AddScoped<ITenantUserStore, TenantUserStore>();
+        services.AddScoped<IEmployeeStore, EmployeeStore>();
         services.AddScoped<IRefreshSessionStore, RefreshSessionStore>();
         services.AddScoped<IOrganizationStore, OrganizationStore>();
         services.AddScoped<IScheduleStore, ScheduleStore>();
         services.AddScoped<IAppointmentStore, AppointmentStore>();
-        services.AddScoped<IPatientStore, PatientStore>();
+        services.AddScoped<IClientStore, ClientStore>();
         services.AddScoped<IMedicalRecordStore, MedicalRecordStore>();
         services.AddScoped<IWaitlistStore, WaitlistStore>();
         services.AddScoped<IClinicalStore, ClinicalStore>();

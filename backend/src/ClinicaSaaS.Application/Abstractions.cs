@@ -40,10 +40,17 @@ public interface ITenantUserStore
     Task<TenantAccount?> FindByEmailAsync(string email, CancellationToken ct);
     Task<TenantAccount?> FindByIdAsync(Guid id, CancellationToken ct);
     Task<bool> CheckPasswordAsync(Guid userId, string password, CancellationToken ct);
-    Task<TenantAccount> CreateAsync(string email, string password, string firstName, string lastName, TenantRole role, string? licenseNumber, Guid? specialtyId, bool mustChangePassword, CancellationToken ct);
-    Task<IReadOnlyList<TenantAccount>> ListByRoleAsync(TenantRole role, Guid? specialtyId, CancellationToken ct);
+    Task<TenantAccount> CreateAsync(string email, string password, string firstName, string lastName, TenantRole role, bool mustChangePassword, CancellationToken ct);
+    Task<IReadOnlyList<TenantAccount>> ListByRoleAsync(TenantRole role, CancellationToken ct);
     Task UpdateNameAsync(Guid id, string firstName, string lastName, CancellationToken ct);
-    Task AssignSpecialtyAsync(Guid id, Guid? specialtyId, CancellationToken ct);
+}
+
+public interface IEmployeeStore
+{
+    Task<Employee?> GetByUserAsync(Guid userId, CancellationToken ct);
+    Task<Employee> AddAsync(Employee employee, CancellationToken ct);
+    Task<IReadOnlyList<Employee>> ListAsync(Guid? specialtyId, CancellationToken ct);
+    Task AssignSpecialtyAsync(Guid userId, Guid? specialtyId, CancellationToken ct);
 }
 
 public interface IOrganizationStore
@@ -78,23 +85,23 @@ public interface IAppointmentStore
 {
     Task<Appointment?> GetAsync(Guid id, CancellationToken ct);
     Task<IReadOnlyList<Appointment>> ForDayAsync(DateOnly date, Guid? professionalId, TimeZoneInfo zone, CancellationToken ct);
-    Task<IReadOnlyList<Appointment>> ForPatientAsync(Guid patientId, CancellationToken ct);
+    Task<IReadOnlyList<Appointment>> ForClientAsync(Guid clientId, CancellationToken ct);
     Task<Appointment> BookAsync(Appointment appointment, CancellationToken ct);
     Task SaveAsync(CancellationToken ct);
 }
 
-public interface IPatientStore
+public interface IClientStore
 {
-    Task<Patient?> GetByUserAsync(Guid userId, CancellationToken ct);
-    Task<Patient?> GetAsync(Guid id, CancellationToken ct);
-    Task<Patient> AddAsync(Patient patient, CancellationToken ct);
+    Task<Client?> GetByUserAsync(Guid userId, CancellationToken ct);
+    Task<Client?> GetAsync(Guid id, CancellationToken ct);
+    Task<Client> AddAsync(Client client, CancellationToken ct);
 }
 
 public interface IMedicalRecordStore
 {
-    Task<IReadOnlyList<Patient>> PatientsAsync(CancellationToken ct);
+    Task<IReadOnlyList<Client>> ClientsAsync(CancellationToken ct);
     Task<IReadOnlyList<MedicalRecord>> ListAsync(CancellationToken ct);
-    Task<MedicalRecord?> GetByPatientAsync(Guid patientId, CancellationToken ct);
+    Task<MedicalRecord?> GetByClientAsync(Guid clientId, CancellationToken ct);
     void Add(MedicalRecord record);
     Task SaveAsync(CancellationToken ct);
 }
@@ -114,11 +121,11 @@ public interface IClinicalStore
     Task<Encounter?> GetEncounterAsync(Guid id, CancellationToken ct);
     Task<Encounter> AddEncounterAsync(Encounter encounter, CancellationToken ct);
     Task ReplaceDiagnosesAsync(Guid encounterId, IReadOnlyList<Guid> diagnosisIds, CancellationToken ct);
-    Task<IReadOnlyList<Encounter>> EncountersForPatientAsync(Guid patientId, CancellationToken ct);
+    Task<IReadOnlyList<Encounter>> EncountersForClientAsync(Guid clientId, CancellationToken ct);
     Task<IReadOnlyList<Diagnosis>> DiagnosesForEncounterAsync(Guid encounterId, CancellationToken ct);
     Task<Prescription> AddPrescriptionAsync(Prescription prescription, CancellationToken ct);
     Task<Prescription?> GetPrescriptionAsync(Guid id, CancellationToken ct);
-    Task<IReadOnlyList<Prescription>> PrescriptionsForPatientAsync(Guid patientId, CancellationToken ct);
+    Task<IReadOnlyList<Prescription>> PrescriptionsForClientAsync(Guid clientId, CancellationToken ct);
     Task<IReadOnlyList<PrescriptionItem>> PrescriptionItemsAsync(Guid prescriptionId, CancellationToken ct);
     Task SaveAsync(CancellationToken ct);
 }

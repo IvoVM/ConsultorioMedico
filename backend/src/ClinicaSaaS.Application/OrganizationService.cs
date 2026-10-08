@@ -2,7 +2,7 @@ using ClinicaSaaS.Domain;
 
 namespace ClinicaSaaS.Application;
 
-public class OrganizationService(IOrganizationStore store, ITenantUserStore users, IAuditStore audit, ICurrentUser currentUser)
+public class OrganizationService(IOrganizationStore store, ITenantUserStore users, IEmployeeStore employees, IAuditStore audit, ICurrentUser currentUser)
 {
     public async Task<IReadOnlyList<LocationDto>> LocationsAsync(CancellationToken ct) =>
         (await store.LocationsAsync(ct)).Select(l => new LocationDto(l.Id, l.Name, l.Address, l.IsActive)).ToList();
@@ -107,8 +107,9 @@ public class OrganizationService(IOrganizationStore store, ITenantUserStore user
 
     public async Task<IReadOnlyList<ProfessionalDto>> ProfessionalsAsync(Guid? specialtyId, CancellationToken ct)
     {
-        var list = await users.ListByRoleAsync(TenantRole.Doctor, specialtyId, ct);
-        return list.Select(MapProfessional).ToList();
+        var accounts = await users.ListByRoleAsync(TenantRole.Doctor, ct);
+        var profiles = (await employees.ListAsync(specialtyId, ct)).ToDictionary(e => e.UserId);
+        return accounts.Where(a => profiles.ContainsKey(a.Id)).Select(a => MapProfessional(a, profiles[a.Id])).ToList();
     }
 
     public async Task<ProfessionalDto> AssignSpecialtyAsync(Guid id, AssignSpecialtyCommand command, CancellationToken ct)
@@ -116,16 +117,17 @@ public class OrganizationService(IOrganizationStore store, ITenantUserStore user
         var account = await users.FindByIdAsync(id, ct) ?? throw new NotFoundException("Profesional no encontrado.");
         if (account.Role != TenantRole.Doctor)
             throw new BusinessRuleException("Solo un médico puede sumarse a una especialidad.");
+        _ = await employees.GetByUserAsync(id, ct) ?? throw new NotFoundException("Empleado no encontrado.");
         if (command.SpecialtyId is Guid specialtyId)
             _ = await store.GetSpecialtyAsync(specialtyId, ct) ?? throw new NotFoundException("Especialidad no encontrada.");
-        await users.AssignSpecialtyAsync(id, command.SpecialtyId, ct);
+        await employees.AssignSpecialtyAsync(id, command.SpecialtyId, ct);
         await RecordAsync("edicion", "Especialidad", command.SpecialtyId ?? id, account.Email, ct);
-        var updated = await users.FindByIdAsync(id, ct) ?? account;
-        return MapProfessional(updated);
+        var employee = await employees.GetByUserAsync(id, ct) ?? throw new NotFoundException("Empleado no encontrado.");
+        return MapProfessional(account, employee);
     }
 
-    private static ProfessionalDto MapProfessional(TenantAccount account) =>
-        new(account.Id, account.FirstName, account.LastName, account.Email, account.LicenseNumber, account.SpecialtyId);
+    private static ProfessionalDto MapProfessional(TenantAccount account, Employee employee) =>
+        new(account.Id, account.FirstName, account.LastName, account.Email, employee.LicenseNumber, employee.SpecialtyId);
 
     private async Task RecordAsync(string action, string entity, Guid id, string? detail, CancellationToken ct) =>
         await audit.RecordAsync(currentUser.Id, action, entity, id.ToString(), detail, ct);

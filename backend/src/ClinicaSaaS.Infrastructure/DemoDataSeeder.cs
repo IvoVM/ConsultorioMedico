@@ -21,7 +21,7 @@ public class DemoDataSeeder(TenantDbContext db, UserManager<TenantUser> users)
         zone = timeZone;
         diagnoses = await db.Diagnoses.ToDictionaryAsync(d => d.Code, d => d.Id, ct);
         var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, zone).DateTime);
-        var recorded = (await db.MedicalRecords.Select(r => r.PatientId).ToListAsync(ct)).ToHashSet();
+        var recorded = (await db.MedicalRecords.Select(r => r.ClientId).ToListAsync(ct)).ToHashSet();
         var clinicaId = Guid.NewGuid();
         var pediatriaId = Guid.NewGuid();
         var traumaId = Guid.NewGuid();
@@ -33,7 +33,7 @@ public class DemoDataSeeder(TenantDbContext db, UserManager<TenantUser> users)
         var sofia = await AccountAsync("sofia.herrera@demo.local", "Sofía", "Herrera", TenantRole.Doctor, "MN 19077", cardioId, ct);
         var anaUser = await users.FindByEmailAsync("paciente@demo.local")
             ?? throw new InvalidOperationException("Falta la paciente de demostración.");
-        var ana = await db.Patients.FirstAsync(p => p.UserId == anaUser.Id, ct);
+        var ana = await db.Clients.FirstAsync(c => c.UserId == anaUser.Id, ct);
         var bruno = await PatientAsync("bruno.diaz@demo.local", "Bruno", "Díaz", "28441990", new DateOnly(1985, 11, 3), "1155550101", ct);
         var camila = await PatientAsync("camila.ortiz@demo.local", "Camila", "Ortiz", "45667801", new DateOnly(2016, 7, 22), "1166660202", ct);
         var diego = await PatientAsync("diego.fernandez@demo.local", "Diego", "Fernández", "25990112", new DateOnly(1978, 2, 14), "1177770303", ct);
@@ -153,7 +153,7 @@ public class DemoDataSeeder(TenantDbContext db, UserManager<TenantUser> users)
             new WaitlistEntry
             {
                 Id = Guid.NewGuid(),
-                PatientId = valentina.Id,
+                ClientId = valentina.Id,
                 LocationId = anexo.Id,
                 SpecialtyId = trauma.Id,
                 Status = WaitlistStatus.Pending,
@@ -163,7 +163,7 @@ public class DemoDataSeeder(TenantDbContext db, UserManager<TenantUser> users)
             new WaitlistEntry
             {
                 Id = Guid.NewGuid(),
-                PatientId = camila.Id,
+                ClientId = camila.Id,
                 ProfessionalId = elena.Id,
                 LocationId = main.Id,
                 SpecialtyId = pediatria.Id,
@@ -195,38 +195,51 @@ public class DemoDataSeeder(TenantDbContext db, UserManager<TenantUser> users)
         Guid? specialtyId,
         CancellationToken ct)
     {
-        if (await users.FindByEmailAsync(email) is { } existing)
+        var user = await users.FindByEmailAsync(email);
+        if (user is null)
         {
-            if (specialtyId is Guid specialty && existing.SpecialtyId != specialty)
+            user = new TenantUser
             {
-                existing.SpecialtyId = specialty;
-                var updated = await users.UpdateAsync(existing);
-                if (!updated.Succeeded)
-                    throw new InvalidOperationException(string.Join(' ', updated.Errors.Select(e => e.Description)));
-            }
-
-            return existing;
+                Id = Guid.NewGuid(),
+                UserName = email,
+                Email = email,
+                EmailConfirmed = true,
+                FirstName = firstName,
+                LastName = lastName,
+                Role = role
+            };
+            var result = await users.CreateAsync(user, password);
+            if (!result.Succeeded)
+                throw new InvalidOperationException(string.Join(' ', result.Errors.Select(e => e.Description)));
         }
 
-        var user = new TenantUser
-        {
-            Id = Guid.NewGuid(),
-            UserName = email,
-            Email = email,
-            EmailConfirmed = true,
-            FirstName = firstName,
-            LastName = lastName,
-            Role = role,
-            LicenseNumber = license,
-            SpecialtyId = specialtyId
-        };
-        var result = await users.CreateAsync(user, password);
-        if (!result.Succeeded)
-            throw new InvalidOperationException(string.Join(' ', result.Errors.Select(e => e.Description)));
+        if (role != TenantRole.Patient)
+            await EnsureEmployeeAsync(user.Id, license, specialtyId, ct);
         return user;
     }
 
-    private async Task<Patient> PatientAsync(
+    private async Task EnsureEmployeeAsync(Guid userId, string? license, Guid? specialtyId, CancellationToken ct)
+    {
+        var employee = await db.Employees.FirstOrDefaultAsync(e => e.UserId == userId, ct);
+        if (employee is null)
+        {
+            db.Employees.Add(new Employee
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                LicenseNumber = license,
+                SpecialtyId = specialtyId
+            });
+            return;
+        }
+
+        if (license is not null)
+            employee.LicenseNumber = license;
+        if (specialtyId is Guid specialty)
+            employee.SpecialtyId = specialty;
+    }
+
+    private async Task<Client> PatientAsync(
         string email,
         string firstName,
         string lastName,
@@ -236,11 +249,11 @@ public class DemoDataSeeder(TenantDbContext db, UserManager<TenantUser> users)
         CancellationToken ct)
     {
         var user = await AccountAsync(email, firstName, lastName, TenantRole.Patient, null, null, ct);
-        var existing = await db.Patients.FirstOrDefaultAsync(p => p.UserId == user.Id, ct);
+        var existing = await db.Clients.FirstOrDefaultAsync(c => c.UserId == user.Id, ct);
         if (existing is not null)
             return existing;
 
-        var patient = new Patient
+        var patient = new Client
         {
             Id = Guid.NewGuid(),
             UserId = user.Id,
@@ -248,13 +261,13 @@ public class DemoDataSeeder(TenantDbContext db, UserManager<TenantUser> users)
             BirthDate = birth,
             Phone = phone
         };
-        db.Patients.Add(patient);
+        db.Clients.Add(patient);
         return patient;
     }
 
     private void File(
         HashSet<Guid> recorded,
-        Patient patient,
+        Client patient,
         Guid? updatedBy,
         string? blood,
         string? allergies,
@@ -274,7 +287,7 @@ public class DemoDataSeeder(TenantDbContext db, UserManager<TenantUser> users)
         db.MedicalRecords.Add(new MedicalRecord
         {
             Id = Guid.NewGuid(),
-            PatientId = patient.Id,
+            ClientId = patient.Id,
             BloodType = blood,
             Allergies = allergies,
             PersonalHistory = personal,
@@ -292,7 +305,7 @@ public class DemoDataSeeder(TenantDbContext db, UserManager<TenantUser> users)
     }
 
     private void AddVisit(
-        Patient patient,
+        Client patient,
         TenantUser professional,
         Guid locationId,
         Guid typeId,
@@ -309,7 +322,7 @@ public class DemoDataSeeder(TenantDbContext db, UserManager<TenantUser> users)
         var appointment = new Appointment
         {
             Id = Guid.NewGuid(),
-            PatientId = patient.Id,
+            ClientId = patient.Id,
             ProfessionalId = professional.Id,
             LocationId = locationId,
             AppointmentTypeId = typeId,
@@ -326,7 +339,7 @@ public class DemoDataSeeder(TenantDbContext db, UserManager<TenantUser> users)
         {
             Id = Guid.NewGuid(),
             AppointmentId = appointment.Id,
-            PatientId = patient.Id,
+            ClientId = patient.Id,
             ProfessionalId = professional.Id,
             Note = chart.Note,
             BloodPressure = chart.BloodPressure,
@@ -349,7 +362,7 @@ public class DemoDataSeeder(TenantDbContext db, UserManager<TenantUser> users)
             {
                 Id = Guid.NewGuid(),
                 EncounterId = encounter.Id,
-                PatientId = patient.Id,
+                ClientId = patient.Id,
                 ProfessionalId = professional.Id,
                 Instructions = rx.Instructions,
                 CreatedAt = start.AddMinutes(15)
@@ -376,7 +389,7 @@ public class DemoDataSeeder(TenantDbContext db, UserManager<TenantUser> users)
         {
             Id = Guid.NewGuid(),
             AppointmentId = appointment.Id,
-            PatientId = patient.Id,
+            ClientId = patient.Id,
             Total = bill.Amount,
             Status = bill.Status,
             PaymentMethod = bill.Method,

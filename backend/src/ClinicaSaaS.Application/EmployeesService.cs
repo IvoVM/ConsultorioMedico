@@ -2,7 +2,7 @@ using ClinicaSaaS.Domain;
 
 namespace ClinicaSaaS.Application;
 
-public class EmployeesService(ITenantUserStore users, IOrganizationStore organization, IAuditStore audit, ICurrentUser currentUser)
+public class EmployeesService(ITenantUserStore users, IEmployeeStore employees, IOrganizationStore organization, IAuditStore audit, ICurrentUser currentUser)
 {
     private static readonly Dictionary<string, TenantRole> CsvRoles = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -74,7 +74,14 @@ public class EmployeesService(ITenantUserStore users, IOrganizationStore organiz
             }
 
             var password = TemporaryPassword.Generate();
-            var account = await users.CreateAsync(email, password, firstName, lastName, role, string.IsNullOrWhiteSpace(licenseNumber) ? null : licenseNumber, specialtyId, true, ct);
+            var account = await users.CreateAsync(email, password, firstName, lastName, role, true, ct);
+            await employees.AddAsync(new Employee
+            {
+                Id = Guid.NewGuid(),
+                UserId = account.Id,
+                LicenseNumber = string.IsNullOrWhiteSpace(licenseNumber) ? null : licenseNumber,
+                SpecialtyId = specialtyId
+            }, ct);
             created.Add(new CreatedEmployeeDto(row, account.Email, password, role));
         }
 

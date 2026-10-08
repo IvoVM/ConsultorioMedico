@@ -13,12 +13,22 @@ erDiagram
         string FirstName
         string LastName
         string Email
-        string UserName
         string PhoneNumber
         string Role
-        uuid SpecialtyId
-        string LicenseNumber
         bool MustChangePassword
+    }
+    Employees {
+        uuid Id PK
+        uuid UserId
+        string LicenseNumber
+        uuid SpecialtyId
+    }
+    Clients {
+        uuid Id PK
+        uuid UserId
+        string DocumentNumber
+        date BirthDate
+        string Phone
     }
     Roles {
         uuid Id PK
@@ -100,16 +110,9 @@ erDiagram
         string Reason
     }
 
-    Patients {
-        uuid Id PK
-        uuid UserId
-        string DocumentNumber
-        date BirthDate
-        string Phone
-    }
     MedicalRecords {
         uuid Id PK
-        uuid PatientId
+        uuid ClientId
         string BloodType
         string Allergies
         string PersonalHistory
@@ -126,7 +129,7 @@ erDiagram
     }
     Appointments {
         uuid Id PK
-        uuid PatientId
+        uuid ClientId
         uuid ProfessionalId
         uuid LocationId
         uuid AppointmentTypeId
@@ -137,7 +140,7 @@ erDiagram
     }
     WaitlistEntries {
         uuid Id PK
-        uuid PatientId
+        uuid ClientId
         uuid ProfessionalId
         uuid LocationId
         uuid SpecialtyId
@@ -154,7 +157,7 @@ erDiagram
     Encounters {
         uuid Id PK
         uuid AppointmentId
-        uuid PatientId
+        uuid ClientId
         uuid ProfessionalId
         string Note
         string BloodPressure
@@ -171,7 +174,7 @@ erDiagram
     Prescriptions {
         uuid Id PK
         uuid EncounterId
-        uuid PatientId
+        uuid ClientId
         uuid ProfessionalId
         string Instructions
         timestamptz CreatedAt
@@ -194,7 +197,7 @@ erDiagram
     Invoices {
         uuid Id PK
         uuid AppointmentId
-        uuid PatientId
+        uuid ClientId
         decimal Total
         string Status
         string PaymentMethod
@@ -217,14 +220,15 @@ erDiagram
         timestamptz Timestamp
     }
 
-    Users ||--o| Patients : "UserId unico, sin FK"
+    Users ||--o| Employees : "UserId FK cascade, unico"
+    Users ||--o| Clients : "UserId FK cascade, unico"
     Users ||--o{ RefreshSessions : "UserId FK cascade"
     Users ||--o{ ScheduleBlocks : "ProfessionalId sin FK"
     Users ||--o{ ScheduleBlockouts : "ProfessionalId sin FK"
     Users ||--o{ Appointments : "ProfessionalId sin FK"
     Users ||--o{ Encounters : "ProfessionalId sin FK"
     Users ||--o{ Prescriptions : "ProfessionalId sin FK"
-    Users }o--o| Specialties : "SpecialtyId sin FK"
+    Employees }o--o| Specialties : "SpecialtyId FK set null"
 
     Specialties ||--o{ AppointmentTypes : "SpecialtyId sin FK"
     Specialties ||--o{ WaitlistEntries : "SpecialtyId sin FK"
@@ -238,12 +242,12 @@ erDiagram
     AppointmentTypes ||--o{ Appointments : "AppointmentTypeId sin FK"
     AppointmentTypes ||--o{ Fees : "AppointmentTypeId sin FK"
 
-    Patients ||--|| MedicalRecords : "PatientId FK cascade, unico"
-    Patients ||--o{ Appointments : "PatientId sin FK"
-    Patients ||--o{ WaitlistEntries : "PatientId sin FK"
-    Patients ||--o{ Encounters : "PatientId sin FK"
-    Patients ||--o{ Prescriptions : "PatientId sin FK"
-    Patients ||--o{ Invoices : "PatientId sin FK"
+    Clients ||--|| MedicalRecords : "ClientId FK cascade, unico"
+    Clients ||--o{ Appointments : "ClientId FK cascade"
+    Clients ||--o{ WaitlistEntries : "ClientId sin FK"
+    Clients ||--o{ Encounters : "ClientId sin FK"
+    Clients ||--o{ Prescriptions : "ClientId sin FK"
+    Clients ||--o{ Invoices : "ClientId sin FK"
 
     Appointments ||--o| Encounters : "AppointmentId unico, sin FK"
     Appointments ||--o| Invoices : "AppointmentId unico, sin FK"
@@ -274,17 +278,18 @@ erDiagram
 | `AppointmentTypes` | `Id` | `SpecialtyId?` → `Specialties` | ninguna |
 | `ScheduleBlocks` | `Id` | `ProfessionalId` → `Users`, `LocationId` → `Locations`, `AppointmentTypeId` → `AppointmentTypes` | índice en `ProfessionalId` |
 | `ScheduleBlockouts` | `Id` | `ProfessionalId` → `Users` | ninguna |
-| `Patients` | `Id` | `UserId` → `Users` | `UserId` único |
-| `MedicalRecords` | `Id` | `PatientId` → `Patients`, `UpdatedBy?` → `Users` | FK `PatientId` cascade, índice único (1:1) |
-| `Appointments` | `Id` | `PatientId`, `ProfessionalId`, `LocationId`, `AppointmentTypeId` | índice `(ProfessionalId, Start)` |
-| `WaitlistEntries` | `Id` | `PatientId`, `ProfessionalId?`, `LocationId`, `SpecialtyId` | ninguna |
+| `Employees` | `Id` | `UserId` → `Users`, `SpecialtyId?` → `Specialties` | FK `UserId` cascade, índice único (1:1). FK `SpecialtyId` set null |
+| `Clients` | `Id` | `UserId` → `Users` | FK `UserId` cascade, índice único (1:1) |
+| `MedicalRecords` | `Id` | `ClientId` → `Clients`, `UpdatedBy?` → `Users` | FK `ClientId` cascade, índice único (1:1) |
+| `Appointments` | `Id` | `ClientId` → `Clients`, `ProfessionalId`, `LocationId`, `AppointmentTypeId` | FK `ClientId` cascade. Índice `(ProfessionalId, Start)` |
+| `WaitlistEntries` | `Id` | `ClientId`, `ProfessionalId?`, `LocationId`, `SpecialtyId` | ninguna |
 | `Diagnoses` | `Id` | — | `Code` único |
-| `Encounters` | `Id` | `AppointmentId`, `PatientId`, `ProfessionalId` | `AppointmentId` único (1:1 lógico) |
+| `Encounters` | `Id` | `AppointmentId`, `ClientId`, `ProfessionalId` | `AppointmentId` único (1:1 lógico) |
 | `EncounterDiagnoses` | `(EncounterId, DiagnosisId)` | ambas columnas | FK cascade a `Encounters` y a `Diagnoses` |
-| `Prescriptions` | `Id` | `EncounterId`, `PatientId`, `ProfessionalId` | ninguna |
+| `Prescriptions` | `Id` | `EncounterId`, `ClientId`, `ProfessionalId` | ninguna |
 | `PrescriptionItems` | `Id` | `PrescriptionId` | FK cascade a `Prescriptions` |
 | `Fees` | `Id` | `AppointmentTypeId` | ninguna |
-| `Invoices` | `Id` | `AppointmentId`, `PatientId` | `AppointmentId` único (1:1 lógico) |
+| `Invoices` | `Id` | `AppointmentId`, `ClientId` | `AppointmentId` único (1:1 lógico) |
 | `InvoiceItems` | `Id` | `InvoiceId` | FK cascade a `Invoices` |
 | `AuditEntries` | `Id` | `UserId?` (sin tabla forzada) | índice en `Timestamp` |
 
@@ -292,7 +297,11 @@ erDiagram
 
 ## Identidad
 
-`Users` es `TenantUser`. Además de nombre, apellido, matrícula, especialidad y el rol de la clínica (`TenantAdmin`, `Doctor`, `Secretary`, `Patient`) guarda las columnas de acceso: contraseña, bloqueo, confirmación de email y teléfono, y los valores normalizados que usa el login.
+`Users` es la cuenta. Guarda nombre, apellido, el rol de la clínica (`TenantAdmin`, `Doctor`, `Secretary`, `Patient`) y las columnas de acceso: contraseña, bloqueo, confirmación de email y teléfono.
+
+El nombre visible no es una columna. Se proyecta como `FirstName` + `LastName` (`PersonName` / `TenantUser.Name`). Identity sigue guardando `UserName` y `NormalizedUserName` con el email, porque el login lo exige; no es un dato del dominio.
+
+Un usuario es empleado o cliente, nunca las dos cosas. `Employees` tiene la matrícula y la especialidad. `Clients` tiene documento, nacimiento y teléfono. El rol distingue admin, médico y secretaria dentro de los empleados.
 
 `Roles` y `UserRoles` son el catálogo de Identity. Conviven con la columna `Users.Role`: esa columna es la que usa la aplicación.
 
@@ -304,8 +313,10 @@ erDiagram
 
 ## Cardinalidades que importan
 
-- Un usuario tiene como máximo un paciente (`Patients.UserId` único).
-- Un paciente tiene exactamente una historia clínica (`MedicalRecords.PatientId` único + FK).
+- Un usuario tiene como máximo un empleado o un cliente (`Employees.UserId` y `Clients.UserId` únicos).
+- La especialidad del médico está en `Employees.SpecialtyId`.
+- Un cliente tiene exactamente una historia clínica (`MedicalRecords.ClientId` único + FK).
+- Los turnos apuntan al cliente (`Appointments.ClientId`).
 - Un turno tiene como máximo un encuentro y como máximo una factura (índices únicos, sin FK).
 - Un encuentro tiene muchos diagnósticos a través de `EncounterDiagnoses`.
 - Una receta tiene muchos ítems; una factura tiene muchos ítems. Esas dos sí borran en cascada.

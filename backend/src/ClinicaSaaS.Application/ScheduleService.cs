@@ -7,8 +7,9 @@ public class ScheduleService(
     IScheduleStore schedules,
     IOrganizationStore organization,
     ITenantUserStore users,
+    IEmployeeStore employees,
     IAppointmentStore appointments,
-    IPatientStore patients,
+    IClientStore clients,
     IWaitlistStore waitlist,
     ITimeZoneProvider timeZone,
     ICurrentUser currentUser,
@@ -71,7 +72,8 @@ public class ScheduleService(
     public async Task<IReadOnlyList<SlotDto>> AvailabilityAsync(AvailabilityQuery query, CancellationToken ct)
     {
         var specialtyId = query.SpecialtyId == Guid.Empty ? (Guid?)null : query.SpecialtyId;
-        var professionals = await users.ListByRoleAsync(TenantRole.Doctor, specialtyId, ct);
+        var profiles = (await employees.ListAsync(specialtyId, ct)).Select(e => e.UserId).ToHashSet();
+        var professionals = (await users.ListByRoleAsync(TenantRole.Doctor, ct)).Where(p => profiles.Contains(p.Id)).ToList();
         if (query.ProfessionalId is Guid filter)
             professionals = professionals.Where(p => p.Id == filter).ToList();
 
@@ -96,7 +98,7 @@ public class ScheduleService(
                 {
                     result.Add(new SlotDto(
                         professional.Id,
-                        $"{professional.FirstName} {professional.LastName}".Trim(),
+                        professional.Name,
                         block.LocationId,
                         type.Id,
                         type.Name,
@@ -116,7 +118,7 @@ public class ScheduleService(
         if (!result.IsValid)
             throw new ValidationException(result.Errors);
 
-        var patient = await ResolvePatientAsync(command.PatientId, ct);
+        var client = await ResolveClientAsync(command.PatientId, ct);
         var slots = await AvailabilityAsync(new AvailabilityQuery(command.LocationId, Guid.Empty, command.ProfessionalId, DateOnly.FromDateTime(command.Start.DateTime)), ct);
         var slot = slots.FirstOrDefault(s => s.ProfessionalId == command.ProfessionalId && s.AppointmentTypeId == command.AppointmentTypeId && s.Start.UtcDateTime == command.Start.UtcDateTime)
             ?? throw new ConflictException("Ese horario ya no está disponible.");
@@ -124,7 +126,7 @@ public class ScheduleService(
         var appointment = await appointments.BookAsync(new Appointment
         {
             Id = Guid.NewGuid(),
-            PatientId = patient.Id,
+            ClientId = client.Id,
             ProfessionalId = command.ProfessionalId,
             LocationId = command.LocationId,
             AppointmentTypeId = command.AppointmentTypeId,
@@ -150,9 +152,9 @@ public class ScheduleService(
 
     public async Task<IReadOnlyList<AppointmentDto>> MineAsync(CancellationToken ct)
     {
-        var patient = await patients.GetByUserAsync(currentUser.Id ?? Guid.Empty, ct)
+        var client = await clients.GetByUserAsync(currentUser.Id ?? Guid.Empty, ct)
             ?? throw new NotFoundException("No hay un paciente asociado a esta cuenta.");
-        var list = await appointments.ForPatientAsync(patient.Id, ct);
+        var list = await appointments.ForClientAsync(client.Id, ct);
         var dtos = new List<AppointmentDto>();
         foreach (var appointment in list.OrderByDescending(a => a.Start))
             dtos.Add(await MapAppointmentAsync(appointment, ct));
@@ -164,9 +166,9 @@ public class ScheduleService(
         var appointment = await appointments.GetAsync(id, ct) ?? throw new NotFoundException("Turno no encontrado.");
         if (currentUser.Role == TenantRole.Patient.ToString())
         {
-            var patient = await patients.GetByUserAsync(currentUser.Id ?? Guid.Empty, ct)
+            var client = await clients.GetByUserAsync(currentUser.Id ?? Guid.Empty, ct)
                 ?? throw new NotFoundException("No hay un paciente asociado a esta cuenta.");
-            if (appointment.PatientId != patient.Id)
+            if (appointment.ClientId != client.Id)
                 throw new BusinessRuleException("No podés cancelar un turno de otra persona.");
             if (!SchedulingRules.PatientCanCancel(appointment.Status, appointment.Start, clock.GetUtcNow()))
                 throw new BusinessRuleException("El paciente solo puede cancelar un turno reservado con al menos 24 horas de anticipación.");
@@ -211,11 +213,11 @@ public class ScheduleService(
 
     public async Task<WaitlistEntryDto> JoinWaitlistAsync(CreateWaitlistEntryCommand command, CancellationToken ct)
     {
-        var patient = await ResolvePatientAsync(command.PatientId, ct);
+        var client = await ResolveClientAsync(command.PatientId, ct);
         var entry = await waitlist.AddAsync(new WaitlistEntry
         {
             Id = Guid.NewGuid(),
-            PatientId = patient.Id,
+            ClientId = client.Id,
             ProfessionalId = command.ProfessionalId,
             LocationId = command.LocationId,
             SpecialtyId = command.SpecialtyId,
@@ -244,7 +246,7 @@ public class ScheduleService(
             throw new BusinessRuleException("Elegí un profesional antes de asignar el turno.");
 
         var appointment = await BookAsync(new BookAppointmentCommand(
-            entry.PatientId,
+            entry.ClientId,
             entry.ProfessionalId.Value,
             entry.LocationId,
             command.AppointmentTypeId,
@@ -268,32 +270,32 @@ public class ScheduleService(
             .ToList();
     }
 
-    private async Task<Patient> ResolvePatientAsync(Guid? patientId, CancellationToken ct)
+    private async Task<Client> ResolveClientAsync(Guid? patientId, CancellationToken ct)
     {
         if (currentUser.Role == TenantRole.Patient.ToString())
         {
-            return await patients.GetByUserAsync(currentUser.Id ?? Guid.Empty, ct)
+            return await clients.GetByUserAsync(currentUser.Id ?? Guid.Empty, ct)
                 ?? throw new NotFoundException("No hay un paciente asociado a esta cuenta.");
         }
 
         if (patientId is null || patientId == Guid.Empty)
             throw new BusinessRuleException("Indicá el paciente.");
-        return await patients.GetAsync(patientId.Value, ct) ?? throw new NotFoundException("Paciente no encontrado.");
+        return await clients.GetAsync(patientId.Value, ct) ?? throw new NotFoundException("Paciente no encontrado.");
     }
 
     private async Task<AppointmentDto> MapAppointmentAsync(Appointment appointment, CancellationToken ct)
     {
-        var patient = await patients.GetAsync(appointment.PatientId, ct);
-        var patientAccount = patient is null ? null : await users.FindByIdAsync(patient.UserId, ct);
+        var client = await clients.GetAsync(appointment.ClientId, ct);
+        var clientAccount = client is null ? null : await users.FindByIdAsync(client.UserId, ct);
         var professional = await users.FindByIdAsync(appointment.ProfessionalId, ct);
         var location = await organization.GetLocationAsync(appointment.LocationId, ct);
         var type = await organization.GetAppointmentTypeAsync(appointment.AppointmentTypeId, ct);
         return new AppointmentDto(
             appointment.Id,
-            appointment.PatientId,
-            patientAccount is null ? "Paciente" : $"{patientAccount.FirstName} {patientAccount.LastName}".Trim(),
+            appointment.ClientId,
+            clientAccount?.Name ?? "Paciente",
             appointment.ProfessionalId,
-            professional is null ? "Profesional" : $"{professional.FirstName} {professional.LastName}".Trim(),
+            professional?.Name ?? "Profesional",
             appointment.LocationId,
             location?.Name ?? "",
             appointment.AppointmentTypeId,
@@ -306,12 +308,12 @@ public class ScheduleService(
 
     private async Task<WaitlistEntryDto> MapWaitlistEntryAsync(WaitlistEntry entry, CancellationToken ct)
     {
-        var patient = await patients.GetAsync(entry.PatientId, ct);
-        var account = patient is null ? null : await users.FindByIdAsync(patient.UserId, ct);
+        var client = await clients.GetAsync(entry.ClientId, ct);
+        var account = client is null ? null : await users.FindByIdAsync(client.UserId, ct);
         return new WaitlistEntryDto(
             entry.Id,
-            entry.PatientId,
-            account is null ? "Paciente" : $"{account.FirstName} {account.LastName}".Trim(),
+            entry.ClientId,
+            account?.Name ?? "Paciente",
             entry.ProfessionalId,
             entry.LocationId,
             entry.SpecialtyId,

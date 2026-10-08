@@ -5,7 +5,7 @@ namespace ClinicaSaaS.Application;
 public class BillingService(
     IBillingStore store,
     IOrganizationStore organization,
-    IPatientStore patients,
+    IClientStore clients,
     ITenantUserStore users,
     ICurrentUser currentUser,
     IAuditStore audit,
@@ -62,16 +62,16 @@ public class BillingService(
 
     private async Task<InvoiceDto> MapAsync(Invoice invoice, CancellationToken ct)
     {
-        var patient = await patients.GetAsync(invoice.PatientId, ct);
-        var account = patient is null ? null : await users.FindByIdAsync(patient.UserId, ct);
+        var client = await clients.GetAsync(invoice.ClientId, ct);
+        var account = client is null ? null : await users.FindByIdAsync(client.UserId, ct);
         var items = invoice.Items.Count > 0
             ? invoice.Items
             : (await store.InvoiceItemsAsync(invoice.Id, ct)).ToList();
         return new InvoiceDto(
             invoice.Id,
             invoice.AppointmentId,
-            invoice.PatientId,
-            account is null ? "Paciente" : $"{account.FirstName} {account.LastName}".Trim(),
+            invoice.ClientId,
+            account?.Name ?? "Paciente",
             invoice.Total,
             invoice.Status,
             invoice.PaymentMethod,

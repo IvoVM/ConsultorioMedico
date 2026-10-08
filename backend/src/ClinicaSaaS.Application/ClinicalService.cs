@@ -6,7 +6,7 @@ namespace ClinicaSaaS.Application;
 public class ClinicalService(
     IClinicalStore clinical,
     IAppointmentStore appointments,
-    IPatientStore patients,
+    IClientStore clients,
     ITenantUserStore users,
     IBillingStore billing,
     ICurrentUser currentUser,
@@ -37,7 +37,7 @@ public class ClinicalService(
             {
                 Id = Guid.NewGuid(),
                 AppointmentId = appointment.Id,
-                PatientId = appointment.PatientId,
+                ClientId = appointment.ClientId,
                 ProfessionalId = appointment.ProfessionalId,
                 CreatedAt = clock.GetUtcNow()
             };
@@ -93,7 +93,7 @@ public class ClinicalService(
         {
             Id = Guid.NewGuid(),
             EncounterId = encounter.Id,
-            PatientId = encounter.PatientId,
+            ClientId = encounter.ClientId,
             ProfessionalId = encounter.ProfessionalId,
             Instructions = command.Instructions?.Trim(),
             CreatedAt = clock.GetUtcNow(),
@@ -113,28 +113,28 @@ public class ClinicalService(
     public async Task<PrescriptionDto> GetPrescriptionAsync(Guid id, CancellationToken ct)
     {
         var prescription = await clinical.GetPrescriptionAsync(id, ct) ?? throw new NotFoundException("Receta no encontrada.");
-        await EnsurePatientAccessAsync(prescription.PatientId, ct);
+        await EnsurePatientAccessAsync(prescription.ClientId, ct);
         return await MapPrescriptionAsync(prescription, ct);
     }
 
     public async Task<ClinicalHistoryDto> HistoryAsync(Guid? patientId, CancellationToken ct)
     {
-        Patient patient;
+        Client client;
         if (currentUser.Role == TenantRole.Patient.ToString())
         {
-            patient = await patients.GetByUserAsync(currentUser.Id ?? Guid.Empty, ct)
+            client = await clients.GetByUserAsync(currentUser.Id ?? Guid.Empty, ct)
                 ?? throw new NotFoundException("No hay un paciente asociado a esta cuenta.");
         }
         else
         {
             if (patientId is null)
                 throw new BusinessRuleException("Indicá el paciente.");
-            patient = await patients.GetAsync(patientId.Value, ct) ?? throw new NotFoundException("Paciente no encontrado.");
+            client = await clients.GetAsync(patientId.Value, ct) ?? throw new NotFoundException("Paciente no encontrado.");
         }
 
-        var account = await users.FindByIdAsync(patient.UserId, ct);
-        var encounters = await clinical.EncountersForPatientAsync(patient.Id, ct);
-        var prescriptions = await clinical.PrescriptionsForPatientAsync(patient.Id, ct);
+        var account = await users.FindByIdAsync(client.UserId, ct);
+        var encounters = await clinical.EncountersForClientAsync(client.Id, ct);
+        var prescriptions = await clinical.PrescriptionsForClientAsync(client.Id, ct);
         var encounterDtos = new List<EncounterDto>();
         foreach (var encounter in encounters.OrderByDescending(e => e.CreatedAt))
             encounterDtos.Add(await MapEncounterAsync(encounter, ct));
@@ -144,11 +144,11 @@ public class ClinicalService(
 
         return new ClinicalHistoryDto(
             new PatientSummaryDto(
-                patient.Id,
-                account is null ? "Paciente" : $"{account.FirstName} {account.LastName}".Trim(),
-                patient.DocumentNumber,
-                patient.BirthDate,
-                patient.Phone),
+                client.Id,
+                account?.Name ?? "Paciente",
+                client.DocumentNumber,
+                client.BirthDate,
+                client.Phone),
             encounterDtos,
             prescriptionDtos);
     }
@@ -170,7 +170,7 @@ public class ClinicalService(
         {
             Id = Guid.NewGuid(),
             AppointmentId = appointment.Id,
-            PatientId = appointment.PatientId,
+            ClientId = appointment.ClientId,
             Total = BillingRules.Total([amount]),
             Status = InvoiceStatus.Pending,
             CreatedAt = clock.GetUtcNow(),
@@ -190,9 +190,9 @@ public class ClinicalService(
     {
         if (currentUser.Role != TenantRole.Patient.ToString())
             return;
-        var patient = await patients.GetByUserAsync(currentUser.Id ?? Guid.Empty, ct)
+        var client = await clients.GetByUserAsync(currentUser.Id ?? Guid.Empty, ct)
             ?? throw new NotFoundException("No hay un paciente asociado a esta cuenta.");
-        if (patient.Id != patientId)
+        if (client.Id != patientId)
             throw new BusinessRuleException("No podés ver datos de otra persona.");
     }
 
@@ -202,7 +202,7 @@ public class ClinicalService(
         return new EncounterDto(
             encounter.Id,
             encounter.AppointmentId,
-            encounter.PatientId,
+            encounter.ClientId,
             encounter.ProfessionalId,
             encounter.Note,
             encounter.BloodPressure,
@@ -221,9 +221,9 @@ public class ClinicalService(
         return new PrescriptionDto(
             prescription.Id,
             prescription.EncounterId,
-            prescription.PatientId,
+            prescription.ClientId,
             prescription.ProfessionalId,
-            professional is null ? "Profesional" : $"{professional.FirstName} {professional.LastName}".Trim(),
+            professional?.Name ?? "Profesional",
             prescription.Instructions,
             prescription.CreatedAt,
             items.Select(i => new PrescriptionItemDto(i.Medication, i.Dose, i.Frequency, i.Duration)).ToList());

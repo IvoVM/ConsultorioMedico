@@ -8,9 +8,10 @@ public record TenantAccount(
     string FirstName,
     string LastName,
     TenantRole Role,
-    string? LicenseNumber,
-    Guid? SpecialtyId,
-    bool MustChangePassword);
+    bool MustChangePassword)
+{
+    public string Name => PersonName.Of(FirstName, LastName);
+}
 
 public record ClinicDto(string Slug, string Name);
 

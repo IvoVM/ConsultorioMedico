@@ -49,7 +49,15 @@ public class ScheduleBlockout
     public string Reason { get; set; } = "";
 }
 
-public class Patient
+public class Employee
+{
+    public Guid Id { get; set; }
+    public Guid UserId { get; set; }
+    public string? LicenseNumber { get; set; }
+    public Guid? SpecialtyId { get; set; }
+}
+
+public class Client
 {
     public Guid Id { get; set; }
     public Guid UserId { get; set; }
@@ -61,7 +69,7 @@ public class Patient
 public class MedicalRecord
 {
     public Guid Id { get; set; }
-    public Guid PatientId { get; set; }
+    public Guid ClientId { get; set; }
     public string? BloodType { get; set; }
     public string? Allergies { get; set; }
     public string? PersonalHistory { get; set; }
@@ -80,7 +88,7 @@ public class MedicalRecord
 public class Appointment
 {
     public Guid Id { get; set; }
-    public Guid PatientId { get; set; }
+    public Guid ClientId { get; set; }
     public Guid ProfessionalId { get; set; }
     public Guid LocationId { get; set; }
     public Guid AppointmentTypeId { get; set; }
@@ -93,7 +101,7 @@ public class Appointment
 public class WaitlistEntry
 {
     public Guid Id { get; set; }
-    public Guid PatientId { get; set; }
+    public Guid ClientId { get; set; }
     public Guid? ProfessionalId { get; set; }
     public Guid LocationId { get; set; }
     public Guid SpecialtyId { get; set; }
@@ -113,7 +121,7 @@ public class Encounter
 {
     public Guid Id { get; set; }
     public Guid AppointmentId { get; set; }
-    public Guid PatientId { get; set; }
+    public Guid ClientId { get; set; }
     public Guid ProfessionalId { get; set; }
     public string? Note { get; set; }
     public string? BloodPressure { get; set; }
@@ -137,7 +145,7 @@ public class Prescription
 {
     public Guid Id { get; set; }
     public Guid EncounterId { get; set; }
-    public Guid PatientId { get; set; }
+    public Guid ClientId { get; set; }
     public Guid ProfessionalId { get; set; }
     public string? Instructions { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
@@ -167,7 +175,7 @@ public class Invoice
 {
     public Guid Id { get; set; }
     public Guid AppointmentId { get; set; }
-    public Guid PatientId { get; set; }
+    public Guid ClientId { get; set; }
     public decimal Total { get; set; }
     public InvoiceStatus Status { get; set; } = InvoiceStatus.Pending;
     public PaymentMethod? PaymentMethod { get; set; }
