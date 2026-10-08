@@ -41,11 +41,18 @@ public class TenantDbContext(DbContextOptions<TenantDbContext> options)
         base.OnModelCreating(builder);
         builder.Entity<TenantUser>(e =>
         {
+            e.ToTable("Users");
             e.Property(u => u.FirstName).HasMaxLength(80);
             e.Property(u => u.LastName).HasMaxLength(80);
             e.Property(u => u.LicenseNumber).HasMaxLength(40);
             e.Property(u => u.Role).HasConversion<string>().HasMaxLength(20);
         });
+        builder.Entity<IdentityRole<Guid>>().ToTable("Roles");
+        builder.Entity<IdentityUserRole<Guid>>().ToTable("UserRoles");
+        builder.Entity<IdentityUserClaim<Guid>>().ToTable("UserClaims");
+        builder.Entity<IdentityUserLogin<Guid>>().ToTable("UserLogins");
+        builder.Entity<IdentityUserToken<Guid>>().ToTable("UserTokens");
+        builder.Entity<IdentityRoleClaim<Guid>>().ToTable("RoleClaims");
         builder.Entity<Location>(e =>
         {
             e.Property(l => l.Name).HasMaxLength(120);
