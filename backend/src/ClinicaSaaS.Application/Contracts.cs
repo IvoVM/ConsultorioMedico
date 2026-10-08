@@ -10,7 +10,7 @@ public record TenantAccount(
     TenantRole Role,
     bool MustChangePassword)
 {
-    public string Name => PersonName.Of(FirstName, LastName);
+    public string Name => $"{FirstName} {LastName}".Trim();
 }
 
 public record ClinicDto(string Slug, string Name);

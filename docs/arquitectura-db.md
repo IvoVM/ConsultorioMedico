@@ -299,7 +299,7 @@ erDiagram
 
 `Users` es la cuenta. Guarda nombre, apellido, el rol de la clínica (`TenantAdmin`, `Doctor`, `Secretary`, `Patient`) y las columnas de acceso: contraseña, bloqueo, confirmación de email y teléfono.
 
-El nombre visible no es una columna. Se proyecta como `FirstName` + `LastName` (`PersonName` / `TenantUser.Name`). Identity sigue guardando `UserName` y `NormalizedUserName` con el email, porque el login lo exige; no es un dato del dominio.
+El nombre visible no es una columna. `TenantUser.Name` lo proyecta como `FirstName` + `LastName`. Identity sigue guardando `UserName` y `NormalizedUserName` con el email, porque el login lo exige; no es un dato del dominio.
 
 Un usuario es empleado o cliente, nunca las dos cosas. `Employees` tiene la matrícula y la especialidad. `Clients` tiene documento, nacimiento y teléfono. El rol distingue admin, médico y secretaria dentro de los empleados.
 

@@ -10,5 +10,5 @@ public class TenantUser : IdentityUser<Guid>
     public TenantRole Role { get; set; }
     public bool MustChangePassword { get; set; }
 
-    public string Name => PersonName.Of(FirstName, LastName);
+    public string Name => $"{FirstName} {LastName}".Trim();
 }
