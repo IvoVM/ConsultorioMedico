@@ -10,5 +10,8 @@ public class TenantUser : IdentityUser<Guid>
     public TenantRole Role { get; set; }
     public bool MustChangePassword { get; set; }
 
+    public virtual Client? Client { get; set; }
+    public virtual Employee? Employee { get; set; }
+
     public string Name => $"{FirstName} {LastName}".Trim();
 }

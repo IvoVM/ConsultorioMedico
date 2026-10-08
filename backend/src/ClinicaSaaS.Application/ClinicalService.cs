@@ -1,5 +1,7 @@
+using ClinicaSaaS.Application.Mappings;
 using ClinicaSaaS.Domain;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 
 namespace ClinicaSaaS.Application;
 
@@ -7,7 +9,6 @@ public class ClinicalService(
     IClinicalStore clinical,
     IAppointmentStore appointments,
     IClientStore clients,
-    ITenantUserStore users,
     IBillingStore billing,
     ICurrentUser currentUser,
     IAuditStore audit,
@@ -16,7 +17,7 @@ public class ClinicalService(
     TimeProvider clock)
 {
     public async Task<IReadOnlyList<DiagnosisDto>> DiagnosesAsync(CancellationToken ct) =>
-        (await clinical.DiagnosesAsync(ct)).Select(d => new DiagnosisDto(d.Id, d.Code, d.Name)).ToList();
+        await clinical.Diagnoses.OrderBy(d => d.Code).ToDiagnosisDtos().ToListAsync(ct);
 
     public async Task<EncounterDto> SaveEncounterAsync(SaveEncounterCommand command, CancellationToken ct)
     {
@@ -59,7 +60,7 @@ public class ClinicalService(
         await appointments.SaveAsync(ct);
         await clinical.SaveAsync(ct);
         await audit.RecordAsync(currentUser.Id, "encuentro", "Encuentro", encounter.Id.ToString(), null, ct);
-        return await MapEncounterAsync(encounter, ct);
+        return await LoadEncounterAsync(encounter.Id, ct);
     }
 
     public async Task<EncounterDto> CloseEncounterAsync(Guid id, CancellationToken ct)
@@ -68,7 +69,7 @@ public class ClinicalService(
         if (!EncounterRules.CanClose(encounter.Note))
             throw new BusinessRuleException("Para cerrar el encuentro hace falta una nota clínica.");
         if (encounter.IsClosed)
-            return await MapEncounterAsync(encounter, ct);
+            return await LoadEncounterAsync(encounter.Id, ct);
 
         var appointment = await appointments.GetAsync(encounter.AppointmentId, ct) ?? throw new NotFoundException("Turno no encontrado.");
         encounter.IsClosed = true;
@@ -77,7 +78,7 @@ public class ClinicalService(
         await appointments.SaveAsync(ct);
         await CreateInvoiceIfMissingAsync(appointment, ct);
         await audit.RecordAsync(currentUser.Id, "cierre", "Encuentro", encounter.Id.ToString(), null, ct);
-        return await MapEncounterAsync(encounter, ct);
+        return await LoadEncounterAsync(encounter.Id, ct);
     }
 
     public async Task<PrescriptionDto> CreatePrescriptionAsync(CreatePrescriptionCommand command, CancellationToken ct)
@@ -107,50 +108,50 @@ public class ClinicalService(
             }).ToList()
         }, ct);
         await audit.RecordAsync(currentUser.Id, "receta", "Receta", prescription.Id.ToString(), null, ct);
-        return await MapPrescriptionAsync(prescription, ct);
+        return await clinical.Prescriptions.Where(p => p.Id == prescription.Id).ToPrescriptionDtos().FirstAsync(ct);
     }
 
     public async Task<PrescriptionDto> GetPrescriptionAsync(Guid id, CancellationToken ct)
     {
-        var prescription = await clinical.GetPrescriptionAsync(id, ct) ?? throw new NotFoundException("Receta no encontrada.");
-        await EnsurePatientAccessAsync(prescription.ClientId, ct);
-        return await MapPrescriptionAsync(prescription, ct);
+        var prescription = await clinical.Prescriptions.Where(p => p.Id == id).ToPrescriptionDtos().FirstOrDefaultAsync(ct)
+            ?? throw new NotFoundException("Receta no encontrada.");
+        await EnsurePatientAccessAsync(prescription.PatientId, ct);
+        return prescription;
     }
 
     public async Task<ClinicalHistoryDto> HistoryAsync(Guid? patientId, CancellationToken ct)
     {
-        Client client;
+        Guid clientId;
         if (currentUser.Role == TenantRole.Patient.ToString())
         {
-            client = await clients.GetByUserAsync(currentUser.Id ?? Guid.Empty, ct)
-                ?? throw new NotFoundException("No hay un paciente asociado a esta cuenta.");
+            clientId = await clients.Clients
+                .Where(c => c.UserId == (currentUser.Id ?? Guid.Empty))
+                .Select(c => c.Id)
+                .FirstOrDefaultAsync(ct);
+            if (clientId == Guid.Empty)
+                throw new NotFoundException("No hay un paciente asociado a esta cuenta.");
         }
         else
         {
             if (patientId is null)
                 throw new BusinessRuleException("Indicá el paciente.");
-            client = await clients.GetAsync(patientId.Value, ct) ?? throw new NotFoundException("Paciente no encontrado.");
+            clientId = patientId.Value;
+            if (!await clients.Clients.AnyAsync(c => c.Id == clientId, ct))
+                throw new NotFoundException("Paciente no encontrado.");
         }
 
-        var account = await users.FindByIdAsync(client.UserId, ct);
-        var encounters = await clinical.EncountersForClientAsync(client.Id, ct);
-        var prescriptions = await clinical.PrescriptionsForClientAsync(client.Id, ct);
-        var encounterDtos = new List<EncounterDto>();
-        foreach (var encounter in encounters.OrderByDescending(e => e.CreatedAt))
-            encounterDtos.Add(await MapEncounterAsync(encounter, ct));
-        var prescriptionDtos = new List<PrescriptionDto>();
-        foreach (var prescription in prescriptions.OrderByDescending(p => p.CreatedAt))
-            prescriptionDtos.Add(await MapPrescriptionAsync(prescription, ct));
-
-        return new ClinicalHistoryDto(
-            new PatientSummaryDto(
-                client.Id,
-                account?.Name ?? "Paciente",
-                client.DocumentNumber,
-                client.BirthDate,
-                client.Phone),
-            encounterDtos,
-            prescriptionDtos);
+        var summary = await clients.Clients.Where(c => c.Id == clientId).ToPatientSummaries().FirstAsync(ct);
+        var encounters = await clinical.Encounters
+            .Where(e => e.ClientId == clientId)
+            .OrderByDescending(e => e.CreatedAt)
+            .ToEncounterDtos()
+            .ToListAsync(ct);
+        var prescriptions = await clinical.Prescriptions
+            .Where(p => p.ClientId == clientId)
+            .OrderByDescending(p => p.CreatedAt)
+            .ToPrescriptionDtos()
+            .ToListAsync(ct);
+        return new ClinicalHistoryDto(summary, encounters, prescriptions);
     }
 
     public async Task<IReadOnlyList<PrescriptionDto>> MyPrescriptionsAsync(CancellationToken ct)
@@ -161,11 +162,14 @@ public class ClinicalService(
 
     private async Task CreateInvoiceIfMissingAsync(Appointment appointment, CancellationToken ct)
     {
-        if (await billing.GetInvoiceByAppointmentAsync(appointment.Id, ct) is not null)
+        if (await billing.Invoices.AnyAsync(i => i.AppointmentId == appointment.Id, ct))
             return;
         var today = DateOnly.FromDateTime(clock.GetUtcNow().DateTime);
-        var fee = await billing.CurrentFeeAsync(appointment.AppointmentTypeId, today, ct);
-        var amount = fee?.Amount ?? 0;
+        var amount = await billing.Fees
+            .Where(f => f.AppointmentTypeId == appointment.AppointmentTypeId && f.EffectiveFrom <= today)
+            .OrderByDescending(f => f.EffectiveFrom)
+            .Select(f => (decimal?)f.Amount)
+            .FirstOrDefaultAsync(ct) ?? 0;
         await billing.AddInvoiceAsync(new Invoice
         {
             Id = Guid.NewGuid(),
@@ -190,42 +194,14 @@ public class ClinicalService(
     {
         if (currentUser.Role != TenantRole.Patient.ToString())
             return;
-        var client = await clients.GetByUserAsync(currentUser.Id ?? Guid.Empty, ct)
-            ?? throw new NotFoundException("No hay un paciente asociado a esta cuenta.");
-        if (client.Id != patientId)
+        var clientId = await clients.Clients
+            .Where(c => c.UserId == (currentUser.Id ?? Guid.Empty))
+            .Select(c => (Guid?)c.Id)
+            .FirstOrDefaultAsync(ct) ?? throw new NotFoundException("No hay un paciente asociado a esta cuenta.");
+        if (clientId != patientId)
             throw new BusinessRuleException("No podés ver datos de otra persona.");
     }
 
-    private async Task<EncounterDto> MapEncounterAsync(Encounter encounter, CancellationToken ct)
-    {
-        var diagnoses = await clinical.DiagnosesForEncounterAsync(encounter.Id, ct);
-        return new EncounterDto(
-            encounter.Id,
-            encounter.AppointmentId,
-            encounter.ClientId,
-            encounter.ProfessionalId,
-            encounter.Note,
-            encounter.BloodPressure,
-            encounter.HeartRate,
-            encounter.Temperature,
-            encounter.WeightKg,
-            encounter.IsClosed,
-            encounter.CreatedAt,
-            diagnoses.Select(d => new DiagnosisDto(d.Id, d.Code, d.Name)).ToList());
-    }
-
-    private async Task<PrescriptionDto> MapPrescriptionAsync(Prescription prescription, CancellationToken ct)
-    {
-        var professional = await users.FindByIdAsync(prescription.ProfessionalId, ct);
-        var items = prescription.Items.Count > 0 ? prescription.Items : (await clinical.PrescriptionItemsAsync(prescription.Id, ct)).ToList();
-        return new PrescriptionDto(
-            prescription.Id,
-            prescription.EncounterId,
-            prescription.ClientId,
-            prescription.ProfessionalId,
-            professional?.Name ?? "Profesional",
-            prescription.Instructions,
-            prescription.CreatedAt,
-            items.Select(i => new PrescriptionItemDto(i.Medication, i.Dose, i.Frequency, i.Duration)).ToList());
-    }
+    private Task<EncounterDto> LoadEncounterAsync(Guid id, CancellationToken ct) =>
+        clinical.Encounters.Where(e => e.Id == id).ToEncounterDtos().FirstAsync(ct);
 }

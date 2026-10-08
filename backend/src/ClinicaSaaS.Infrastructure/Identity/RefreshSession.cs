@@ -4,6 +4,7 @@ public class RefreshSession
 {
     public Guid Id { get; set; }
     public Guid UserId { get; set; }
+    public virtual TenantUser User { get; set; } = null!;
     public string TokenHash { get; set; } = "";
     public DateTimeOffset ExpiresAt { get; set; }
     public DateTimeOffset CreatedAt { get; set; }

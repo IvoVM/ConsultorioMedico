@@ -1,6 +1,8 @@
 using ClinicaSaaS.Application;
+using ClinicaSaaS.Application.Mappings;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace ClinicaSaaS.Api.Controllers;
 
@@ -328,7 +330,5 @@ public class AuditController(IAuditStore audit) : ApiController
 {
     [HttpGet]
     public Task<IActionResult> List(CancellationToken ct) => Run(async () =>
-        (await audit.ListAsync(ct))
-            .Select(a => new AuditEntryDto(a.Id, a.UserId, a.Action, a.Entity, a.EntityId, a.Detail, a.Timestamp))
-            .ToList());
+        await audit.Entries.OrderByDescending(a => a.Timestamp).Take(200).ToAuditDtos().ToListAsync(ct));
 }

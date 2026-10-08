@@ -2,7 +2,7 @@
 
 Una sola base PostgreSQL por consultorio (`clinica` en local). El modelo sale de `TenantDbContext` y del snapshot de migraciones.
 
-Las líneas sólidas del diagrama son claves foráneas de verdad. El resto son columnas `uuid` que apuntan a otra tabla, pero **no** tienen FK en la base: la integridad la mantiene la aplicación.
+Las líneas del diagrama son claves foráneas. Las relaciones clínicas nuevas usan `ON DELETE RESTRICT`, así borrar una sede, un profesional o un tipo de turno no arrastra turnos, encuentros ni facturas. `AuditEntries.UserId`, `MedicalRecords.UpdatedBy` y `RefreshSessions.ReplacedById` siguen sin FK. En el dominio cada FK es una propiedad `virtual`.
 
 ## Diagrama
 
@@ -223,38 +223,39 @@ erDiagram
     Users ||--o| Employees : "UserId FK cascade, unico"
     Users ||--o| Clients : "UserId FK cascade, unico"
     Users ||--o{ RefreshSessions : "UserId FK cascade"
-    Users ||--o{ ScheduleBlocks : "ProfessionalId sin FK"
-    Users ||--o{ ScheduleBlockouts : "ProfessionalId sin FK"
-    Users ||--o{ Appointments : "ProfessionalId sin FK"
-    Users ||--o{ Encounters : "ProfessionalId sin FK"
-    Users ||--o{ Prescriptions : "ProfessionalId sin FK"
+    Users ||--o{ ScheduleBlocks : "ProfessionalId FK restrict"
+    Users ||--o{ ScheduleBlockouts : "ProfessionalId FK restrict"
+    Users ||--o{ Appointments : "ProfessionalId FK restrict"
+    Users ||--o{ Encounters : "ProfessionalId FK restrict"
+    Users ||--o{ Prescriptions : "ProfessionalId FK restrict"
+    Users ||--o{ WaitlistEntries : "ProfessionalId FK restrict"
     Employees }o--o| Specialties : "SpecialtyId FK set null"
 
-    Specialties ||--o{ AppointmentTypes : "SpecialtyId sin FK"
-    Specialties ||--o{ WaitlistEntries : "SpecialtyId sin FK"
+    Specialties ||--o{ AppointmentTypes : "SpecialtyId FK set null"
+    Specialties ||--o{ WaitlistEntries : "SpecialtyId FK restrict"
 
-    Locations ||--o{ MedicalServices : "LocationId sin FK"
-    Locations ||--o{ ScheduleBlocks : "LocationId sin FK"
-    Locations ||--o{ Appointments : "LocationId sin FK"
-    Locations ||--o{ WaitlistEntries : "LocationId sin FK"
+    Locations ||--o{ MedicalServices : "LocationId FK restrict"
+    Locations ||--o{ ScheduleBlocks : "LocationId FK restrict"
+    Locations ||--o{ Appointments : "LocationId FK restrict"
+    Locations ||--o{ WaitlistEntries : "LocationId FK restrict"
 
-    AppointmentTypes ||--o{ ScheduleBlocks : "AppointmentTypeId sin FK"
-    AppointmentTypes ||--o{ Appointments : "AppointmentTypeId sin FK"
-    AppointmentTypes ||--o{ Fees : "AppointmentTypeId sin FK"
+    AppointmentTypes ||--o{ ScheduleBlocks : "AppointmentTypeId FK restrict"
+    AppointmentTypes ||--o{ Appointments : "AppointmentTypeId FK restrict"
+    AppointmentTypes ||--o{ Fees : "AppointmentTypeId FK restrict"
 
     Clients ||--|| MedicalRecords : "ClientId FK cascade, unico"
     Clients ||--o{ Appointments : "ClientId FK cascade"
-    Clients ||--o{ WaitlistEntries : "ClientId sin FK"
-    Clients ||--o{ Encounters : "ClientId sin FK"
-    Clients ||--o{ Prescriptions : "ClientId sin FK"
-    Clients ||--o{ Invoices : "ClientId sin FK"
+    Clients ||--o{ WaitlistEntries : "ClientId FK restrict"
+    Clients ||--o{ Encounters : "ClientId FK restrict"
+    Clients ||--o{ Prescriptions : "ClientId FK restrict"
+    Clients ||--o{ Invoices : "ClientId FK restrict"
 
-    Appointments ||--o| Encounters : "AppointmentId unico, sin FK"
-    Appointments ||--o| Invoices : "AppointmentId unico, sin FK"
+    Appointments ||--o| Encounters : "AppointmentId FK restrict, unico"
+    Appointments ||--o| Invoices : "AppointmentId FK restrict, unico"
 
     Encounters ||--o{ EncounterDiagnoses : "EncounterId FK cascade"
     Diagnoses ||--o{ EncounterDiagnoses : "DiagnosisId FK cascade"
-    Encounters ||--o{ Prescriptions : "EncounterId sin FK"
+    Encounters ||--o{ Prescriptions : "EncounterId FK restrict"
     Prescriptions ||--o{ PrescriptionItems : "PrescriptionId FK cascade"
     Invoices ||--o{ InvoiceItems : "InvoiceId FK cascade"
 
@@ -273,23 +274,23 @@ erDiagram
 | Tabla | Clave | Columnas que apuntan a otra tabla | Restricción real |
 |---|---|---|---|
 | `Locations` | `Id` | — | — |
-| `MedicalServices` | `Id` | `LocationId` → `Locations` | ninguna |
+| `MedicalServices` | `Id` | `LocationId` → `Locations` | FK restrict |
 | `Specialties` | `Id` | — | `Name` único |
-| `AppointmentTypes` | `Id` | `SpecialtyId?` → `Specialties` | ninguna |
-| `ScheduleBlocks` | `Id` | `ProfessionalId` → `Users`, `LocationId` → `Locations`, `AppointmentTypeId` → `AppointmentTypes` | índice en `ProfessionalId` |
-| `ScheduleBlockouts` | `Id` | `ProfessionalId` → `Users` | ninguna |
+| `AppointmentTypes` | `Id` | `SpecialtyId?` → `Specialties` | FK set null |
+| `ScheduleBlocks` | `Id` | `ProfessionalId` → `Users`, `LocationId` → `Locations`, `AppointmentTypeId` → `AppointmentTypes` | FK restrict. Índice en `ProfessionalId` |
+| `ScheduleBlockouts` | `Id` | `ProfessionalId` → `Users` | FK restrict |
 | `Employees` | `Id` | `UserId` → `Users`, `SpecialtyId?` → `Specialties` | FK `UserId` cascade, índice único (1:1). FK `SpecialtyId` set null |
 | `Clients` | `Id` | `UserId` → `Users` | FK `UserId` cascade, índice único (1:1) |
 | `MedicalRecords` | `Id` | `ClientId` → `Clients`, `UpdatedBy?` → `Users` | FK `ClientId` cascade, índice único (1:1) |
-| `Appointments` | `Id` | `ClientId` → `Clients`, `ProfessionalId`, `LocationId`, `AppointmentTypeId` | FK `ClientId` cascade. Índice `(ProfessionalId, Start)` |
-| `WaitlistEntries` | `Id` | `ClientId`, `ProfessionalId?`, `LocationId`, `SpecialtyId` | ninguna |
+| `Appointments` | `Id` | `ClientId` → `Clients`, `ProfessionalId` → `Users`, `LocationId` → `Locations`, `AppointmentTypeId` → `AppointmentTypes` | FK `ClientId` cascade. El resto restrict. Índice `(ProfessionalId, Start)` |
+| `WaitlistEntries` | `Id` | `ClientId`, `ProfessionalId?`, `LocationId`, `SpecialtyId` | FK restrict |
 | `Diagnoses` | `Id` | — | `Code` único |
-| `Encounters` | `Id` | `AppointmentId`, `ClientId`, `ProfessionalId` | `AppointmentId` único (1:1 lógico) |
+| `Encounters` | `Id` | `AppointmentId`, `ClientId`, `ProfessionalId` | FK restrict. `AppointmentId` único (1:1) |
 | `EncounterDiagnoses` | `(EncounterId, DiagnosisId)` | ambas columnas | FK cascade a `Encounters` y a `Diagnoses` |
-| `Prescriptions` | `Id` | `EncounterId`, `ClientId`, `ProfessionalId` | ninguna |
+| `Prescriptions` | `Id` | `EncounterId`, `ClientId`, `ProfessionalId` | FK restrict |
 | `PrescriptionItems` | `Id` | `PrescriptionId` | FK cascade a `Prescriptions` |
-| `Fees` | `Id` | `AppointmentTypeId` | ninguna |
-| `Invoices` | `Id` | `AppointmentId`, `ClientId` | `AppointmentId` único (1:1 lógico) |
+| `Fees` | `Id` | `AppointmentTypeId` | FK restrict |
+| `Invoices` | `Id` | `AppointmentId`, `ClientId` | FK restrict. `AppointmentId` único (1:1) |
 | `InvoiceItems` | `Id` | `InvoiceId` | FK cascade a `Invoices` |
 | `AuditEntries` | `Id` | `UserId?` (sin tabla forzada) | índice en `Timestamp` |
 
@@ -317,6 +318,6 @@ Un usuario es empleado o cliente, nunca las dos cosas. `Employees` tiene la matr
 - La especialidad del médico está en `Employees.SpecialtyId`.
 - Un cliente tiene exactamente una historia clínica (`MedicalRecords.ClientId` único + FK).
 - Los turnos apuntan al cliente (`Appointments.ClientId`).
-- Un turno tiene como máximo un encuentro y como máximo una factura (índices únicos, sin FK).
+- Un turno tiene como máximo un encuentro y como máximo una factura (índice único y FK restrict).
 - Un encuentro tiene muchos diagnósticos a través de `EncounterDiagnoses`.
 - Una receta tiene muchos ítems; una factura tiene muchos ítems. Esas dos sí borran en cascada.

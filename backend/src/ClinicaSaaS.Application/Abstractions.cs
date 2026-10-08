@@ -1,4 +1,5 @@
 using ClinicaSaaS.Domain;
+using ClinicaSaaS.Infrastructure.Identity;
 
 namespace ClinicaSaaS.Application;
 
@@ -37,35 +38,35 @@ public interface IRefreshSessionStore
 
 public interface ITenantUserStore
 {
+    IQueryable<TenantUser> Users { get; }
     Task<TenantAccount?> FindByEmailAsync(string email, CancellationToken ct);
     Task<TenantAccount?> FindByIdAsync(Guid id, CancellationToken ct);
     Task<bool> CheckPasswordAsync(Guid userId, string password, CancellationToken ct);
     Task<TenantAccount> CreateAsync(string email, string password, string firstName, string lastName, TenantRole role, bool mustChangePassword, CancellationToken ct);
-    Task<IReadOnlyList<TenantAccount>> ListByRoleAsync(TenantRole role, CancellationToken ct);
     Task UpdateNameAsync(Guid id, string firstName, string lastName, CancellationToken ct);
 }
 
 public interface IEmployeeStore
 {
+    IQueryable<Employee> Employees { get; }
     Task<Employee?> GetByUserAsync(Guid userId, CancellationToken ct);
     Task<Employee> AddAsync(Employee employee, CancellationToken ct);
-    Task<IReadOnlyList<Employee>> ListAsync(Guid? specialtyId, CancellationToken ct);
     Task AssignSpecialtyAsync(Guid userId, Guid? specialtyId, CancellationToken ct);
 }
 
 public interface IOrganizationStore
 {
-    Task<IReadOnlyList<Location>> LocationsAsync(CancellationToken ct);
+    IQueryable<Location> Locations { get; }
     Task<Location> AddLocationAsync(Location location, CancellationToken ct);
     Task<Location?> GetLocationAsync(Guid id, CancellationToken ct);
-    Task<IReadOnlyList<MedicalService>> MedicalServicesAsync(CancellationToken ct);
+    IQueryable<MedicalService> MedicalServices { get; }
     Task<MedicalService> AddMedicalServiceAsync(MedicalService service, CancellationToken ct);
     Task<MedicalService?> GetMedicalServiceAsync(Guid id, CancellationToken ct);
-    Task<IReadOnlyList<Specialty>> SpecialtiesAsync(CancellationToken ct);
+    IQueryable<Specialty> Specialties { get; }
     Task<Specialty?> GetSpecialtyByNameAsync(string name, CancellationToken ct);
     Task<Specialty> AddSpecialtyAsync(Specialty specialty, CancellationToken ct);
     Task<Specialty?> GetSpecialtyAsync(Guid id, CancellationToken ct);
-    Task<IReadOnlyList<AppointmentType>> AppointmentTypesAsync(CancellationToken ct);
+    IQueryable<AppointmentType> AppointmentTypes { get; }
     Task<AppointmentType?> GetAppointmentTypeAsync(Guid id, CancellationToken ct);
     Task<AppointmentType> AddAppointmentTypeAsync(AppointmentType type, CancellationToken ct);
     Task SaveAsync(CancellationToken ct);
@@ -73,25 +74,24 @@ public interface IOrganizationStore
 
 public interface IScheduleStore
 {
-    Task<IReadOnlyList<ScheduleBlock>> BlocksAsync(Guid professionalId, CancellationToken ct);
+    IQueryable<ScheduleBlock> Blocks { get; }
     Task ReplaceBlocksAsync(Guid professionalId, IReadOnlyList<ScheduleBlock> blocks, CancellationToken ct);
-    Task<IReadOnlyList<ScheduleBlockout>> BlockoutsAsync(Guid professionalId, CancellationToken ct);
+    IQueryable<ScheduleBlockout> Blockouts { get; }
     Task<ScheduleBlockout> AddBlockoutAsync(ScheduleBlockout blockout, CancellationToken ct);
     Task DeleteBlockoutAsync(Guid id, CancellationToken ct);
-    Task<IReadOnlyList<Appointment>> AppointmentsForDayAsync(Guid professionalId, DateOnly date, TimeZoneInfo zone, CancellationToken ct);
 }
 
 public interface IAppointmentStore
 {
+    IQueryable<Appointment> Appointments { get; }
     Task<Appointment?> GetAsync(Guid id, CancellationToken ct);
-    Task<IReadOnlyList<Appointment>> ForDayAsync(DateOnly date, Guid? professionalId, TimeZoneInfo zone, CancellationToken ct);
-    Task<IReadOnlyList<Appointment>> ForClientAsync(Guid clientId, CancellationToken ct);
     Task<Appointment> BookAsync(Appointment appointment, CancellationToken ct);
     Task SaveAsync(CancellationToken ct);
 }
 
 public interface IClientStore
 {
+    IQueryable<Client> Clients { get; }
     Task<Client?> GetByUserAsync(Guid userId, CancellationToken ct);
     Task<Client?> GetAsync(Guid id, CancellationToken ct);
     Task<Client> AddAsync(Client client, CancellationToken ct);
@@ -99,8 +99,6 @@ public interface IClientStore
 
 public interface IMedicalRecordStore
 {
-    Task<IReadOnlyList<Client>> ClientsAsync(CancellationToken ct);
-    Task<IReadOnlyList<MedicalRecord>> ListAsync(CancellationToken ct);
     Task<MedicalRecord?> GetByClientAsync(Guid clientId, CancellationToken ct);
     void Add(MedicalRecord record);
     Task SaveAsync(CancellationToken ct);
@@ -108,43 +106,37 @@ public interface IMedicalRecordStore
 
 public interface IWaitlistStore
 {
+    IQueryable<WaitlistEntry> Entries { get; }
     Task<WaitlistEntry> AddAsync(WaitlistEntry entry, CancellationToken ct);
-    Task<IReadOnlyList<WaitlistEntry>> PendingAsync(CancellationToken ct);
     Task<WaitlistEntry?> GetAsync(Guid id, CancellationToken ct);
     Task SaveAsync(CancellationToken ct);
 }
 
 public interface IClinicalStore
 {
-    Task<IReadOnlyList<Diagnosis>> DiagnosesAsync(CancellationToken ct);
+    IQueryable<Diagnosis> Diagnoses { get; }
     Task<Encounter?> GetEncounterByAppointmentAsync(Guid appointmentId, CancellationToken ct);
     Task<Encounter?> GetEncounterAsync(Guid id, CancellationToken ct);
     Task<Encounter> AddEncounterAsync(Encounter encounter, CancellationToken ct);
     Task ReplaceDiagnosesAsync(Guid encounterId, IReadOnlyList<Guid> diagnosisIds, CancellationToken ct);
-    Task<IReadOnlyList<Encounter>> EncountersForClientAsync(Guid clientId, CancellationToken ct);
-    Task<IReadOnlyList<Diagnosis>> DiagnosesForEncounterAsync(Guid encounterId, CancellationToken ct);
+    IQueryable<Encounter> Encounters { get; }
     Task<Prescription> AddPrescriptionAsync(Prescription prescription, CancellationToken ct);
-    Task<Prescription?> GetPrescriptionAsync(Guid id, CancellationToken ct);
-    Task<IReadOnlyList<Prescription>> PrescriptionsForClientAsync(Guid clientId, CancellationToken ct);
-    Task<IReadOnlyList<PrescriptionItem>> PrescriptionItemsAsync(Guid prescriptionId, CancellationToken ct);
+    IQueryable<Prescription> Prescriptions { get; }
     Task SaveAsync(CancellationToken ct);
 }
 
 public interface IBillingStore
 {
-    Task<IReadOnlyList<Fee>> FeesAsync(CancellationToken ct);
-    Task<Fee?> CurrentFeeAsync(Guid appointmentTypeId, DateOnly date, CancellationToken ct);
+    IQueryable<Fee> Fees { get; }
     Task<Fee> AddFeeAsync(Fee fee, CancellationToken ct);
-    Task<Invoice?> GetInvoiceByAppointmentAsync(Guid appointmentId, CancellationToken ct);
     Task<Invoice> AddInvoiceAsync(Invoice invoice, CancellationToken ct);
     Task<Invoice?> GetInvoiceAsync(Guid id, CancellationToken ct);
-    Task<IReadOnlyList<Invoice>> InvoicesAsync(CancellationToken ct);
-    Task<IReadOnlyList<InvoiceItem>> InvoiceItemsAsync(Guid invoiceId, CancellationToken ct);
+    IQueryable<Invoice> Invoices { get; }
     Task SaveAsync(CancellationToken ct);
 }
 
 public interface IAuditStore
 {
     Task RecordAsync(Guid? userId, string action, string entity, string? entityId, string? detail, CancellationToken ct);
-    Task<IReadOnlyList<AuditEntry>> ListAsync(CancellationToken ct);
+    IQueryable<AuditEntry> Entries { get; }
 }

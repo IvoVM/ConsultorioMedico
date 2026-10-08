@@ -1,13 +1,14 @@
+using ClinicaSaaS.Application.Mappings;
 using ClinicaSaaS.Domain;
+using ClinicaSaaS.Domain.QueryViews;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 
 namespace ClinicaSaaS.Application;
 
 public class ScheduleService(
     IScheduleStore schedules,
     IOrganizationStore organization,
-    ITenantUserStore users,
-    IEmployeeStore employees,
     IAppointmentStore appointments,
     IClientStore clients,
     IWaitlistStore waitlist,
@@ -18,9 +19,12 @@ public class ScheduleService(
     TimeProvider clock)
 {
     public async Task<IReadOnlyList<ScheduleBlockDto>> GetScheduleAsync(Guid professionalId, CancellationToken ct) =>
-        (await schedules.BlocksAsync(professionalId, ct))
-            .Select(b => new ScheduleBlockDto(b.Id, b.Day, b.StartTime, b.EndTime, b.LocationId, b.AppointmentTypeId))
-            .ToList();
+        await schedules.Blocks
+            .Where(b => b.ProfessionalId == professionalId)
+            .OrderBy(b => b.Day)
+            .ThenBy(b => b.StartTime)
+            .ToScheduleBlockDtos()
+            .ToListAsync(ct);
 
     public async Task<IReadOnlyList<ScheduleBlockDto>> SaveScheduleAsync(SaveScheduleCommand command, CancellationToken ct)
     {
@@ -48,9 +52,11 @@ public class ScheduleService(
     }
 
     public async Task<IReadOnlyList<BlockoutDto>> BlockoutsAsync(Guid professionalId, CancellationToken ct) =>
-        (await schedules.BlockoutsAsync(professionalId, ct))
-            .Select(b => new BlockoutDto(b.Id, b.ProfessionalId, b.Start, b.End, b.Reason))
-            .ToList();
+        await schedules.Blockouts
+            .Where(b => b.ProfessionalId == professionalId)
+            .OrderBy(b => b.Start)
+            .ToBlockoutDtos()
+            .ToListAsync(ct);
 
     public async Task<BlockoutDto> CreateBlockoutAsync(CreateBlockoutCommand command, CancellationToken ct)
     {
@@ -71,40 +77,54 @@ public class ScheduleService(
 
     public async Task<IReadOnlyList<SlotDto>> AvailabilityAsync(AvailabilityQuery query, CancellationToken ct)
     {
-        var specialtyId = query.SpecialtyId == Guid.Empty ? (Guid?)null : query.SpecialtyId;
-        var profiles = (await employees.ListAsync(specialtyId, ct)).Select(e => e.UserId).ToHashSet();
-        var professionals = (await users.ListByRoleAsync(TenantRole.Doctor, ct)).Where(p => profiles.Contains(p.Id)).ToList();
-        if (query.ProfessionalId is Guid filter)
-            professionals = professionals.Where(p => p.Id == filter).ToList();
+        var openingsQuery = schedules.Blocks
+            .Where(b => b.Day == query.Date.DayOfWeek && b.LocationId == query.LocationId)
+            .Where(b => b.Professional.Role == TenantRole.Doctor && b.Professional.Employee != null);
+        if (query.SpecialtyId != Guid.Empty)
+            openingsQuery = openingsQuery.Where(b => b.Professional.Employee!.SpecialtyId == query.SpecialtyId);
+        if (query.ProfessionalId is Guid professionalId)
+            openingsQuery = openingsQuery.Where(b => b.ProfessionalId == professionalId);
 
-        var types = await organization.AppointmentTypesAsync(ct);
+        var openings = await openingsQuery.ToOpenings().ToListAsync(ct);
+        if (openings.Count == 0)
+            return [];
+
+        var ids = openings.Select(o => o.ProfessionalId).Distinct().ToList();
+        var dayStart = SchedulingRules.Combine(query.Date, TimeOnly.MinValue, timeZone.Zone);
+        var dayEnd = dayStart.AddDays(1);
+        var busy = await appointments.Appointments
+            .Where(a => ids.Contains(a.ProfessionalId) && a.Start >= dayStart && a.Start < dayEnd)
+            .ToBusyIntervals()
+            .ToListAsync(ct);
+        var offs = await schedules.Blockouts
+            .Where(b => ids.Contains(b.ProfessionalId) && b.Start < dayEnd && b.End > dayStart)
+            .Select(b => new BusyInterval { ProfessionalId = b.ProfessionalId, Start = b.Start, End = b.End })
+            .ToListAsync(ct);
+
         var result = new List<SlotDto>();
-        foreach (var professional in professionals)
+        foreach (var group in openings.GroupBy(o => o.ProfessionalId))
         {
-            var blocks = (await schedules.BlocksAsync(professional.Id, ct))
-                .Where(b => b.Day == query.Date.DayOfWeek && b.LocationId == query.LocationId)
+            var occupied = busy
+                .Where(b => b.ProfessionalId == group.Key && b.Status is AppointmentStatus status && SchedulingRules.CountsAsBusy(status))
+                .Select(b => new TimeRange(b.Start, b.End))
+                .Concat(offs.Where(b => b.ProfessionalId == group.Key).Select(b => new TimeRange(b.Start, b.End)))
                 .ToList();
-            if (blocks.Count == 0)
-                continue;
-
-            var busy = await BusyRangesAsync(professional.Id, query.Date, ct);
-            foreach (var block in blocks)
+            foreach (var opening in group)
             {
-                var type = types.FirstOrDefault(t => t.Id == block.AppointmentTypeId);
-                if (type is null)
-                    continue;
-                var slots = SchedulingRules.GenerateSlots(query.Date, block.StartTime, block.EndTime, type.DurationMinutes, timeZone.Zone, busy);
+                var slots = SchedulingRules.GenerateSlots(
+                    query.Date, opening.StartTime, opening.EndTime, opening.DurationMinutes, timeZone.Zone, occupied);
+                var name = $"{opening.ProfessionalFirstName} {opening.ProfessionalLastName}".Trim();
                 foreach (var slot in slots)
                 {
                     result.Add(new SlotDto(
-                        professional.Id,
-                        professional.Name,
-                        block.LocationId,
-                        type.Id,
-                        type.Name,
+                        opening.ProfessionalId,
+                        name,
+                        opening.LocationId,
+                        opening.AppointmentTypeId,
+                        opening.AppointmentType,
                         slot.Start,
                         slot.End));
-                    busy.Add(slot);
+                    occupied.Add(slot);
                 }
             }
         }
@@ -136,29 +156,32 @@ public class ScheduleService(
             VisitReason = command.VisitReason?.Trim()
         }, ct);
         await audit.RecordAsync(currentUser.Id, "reserva", "Turno", appointment.Id.ToString(), appointment.Start.ToString("O"), ct);
-        return await MapAppointmentAsync(appointment, ct);
+        return await LoadAppointmentAsync(appointment.Id, ct);
     }
 
     public async Task<IReadOnlyList<AppointmentDto>> ForDayAsync(DateOnly date, Guid? professionalId, CancellationToken ct)
     {
         if (currentUser.Role == TenantRole.Doctor.ToString())
             professionalId = currentUser.Id;
-        var list = await appointments.ForDayAsync(date, professionalId, timeZone.Zone, ct);
-        var dtos = new List<AppointmentDto>();
-        foreach (var appointment in list.OrderBy(a => a.Start))
-            dtos.Add(await MapAppointmentAsync(appointment, ct));
-        return dtos;
+        var start = SchedulingRules.Combine(date, TimeOnly.MinValue, timeZone.Zone);
+        var end = start.AddDays(1);
+        var query = appointments.Appointments.Where(a => a.Start >= start && a.Start < end);
+        if (professionalId is Guid id)
+            query = query.Where(a => a.ProfessionalId == id);
+        return await query.OrderBy(a => a.Start).ToAppointmentDtos().ToListAsync(ct);
     }
 
     public async Task<IReadOnlyList<AppointmentDto>> MineAsync(CancellationToken ct)
     {
-        var client = await clients.GetByUserAsync(currentUser.Id ?? Guid.Empty, ct)
-            ?? throw new NotFoundException("No hay un paciente asociado a esta cuenta.");
-        var list = await appointments.ForClientAsync(client.Id, ct);
-        var dtos = new List<AppointmentDto>();
-        foreach (var appointment in list.OrderByDescending(a => a.Start))
-            dtos.Add(await MapAppointmentAsync(appointment, ct));
-        return dtos;
+        var clientId = await clients.Clients
+            .Where(c => c.UserId == (currentUser.Id ?? Guid.Empty))
+            .Select(c => (Guid?)c.Id)
+            .FirstOrDefaultAsync(ct) ?? throw new NotFoundException("No hay un paciente asociado a esta cuenta.");
+        return await appointments.Appointments
+            .Where(a => a.ClientId == clientId)
+            .OrderByDescending(a => a.Start)
+            .ToAppointmentDtos()
+            .ToListAsync(ct);
     }
 
     public async Task<AppointmentDto> CancelAsync(Guid id, CancellationToken ct)
@@ -181,7 +204,7 @@ public class ScheduleService(
         appointment.Status = AppointmentStatus.Cancelled;
         await appointments.SaveAsync(ct);
         await audit.RecordAsync(currentUser.Id, "cancelacion", "Turno", appointment.Id.ToString(), null, ct);
-        return await MapAppointmentAsync(appointment, ct);
+        return await LoadAppointmentAsync(appointment.Id, ct);
     }
 
     public async Task<AppointmentDto> CheckInAsync(Guid id, CancellationToken ct)
@@ -192,7 +215,7 @@ public class ScheduleService(
         appointment.Status = AppointmentStatus.CheckedIn;
         await appointments.SaveAsync(ct);
         await audit.RecordAsync(currentUser.Id, "admision", "Turno", appointment.Id.ToString(), null, ct);
-        return await MapAppointmentAsync(appointment, ct);
+        return await LoadAppointmentAsync(appointment.Id, ct);
     }
 
     public async Task<AppointmentDto> RescheduleAsync(Guid id, RescheduleAppointmentCommand command, CancellationToken ct)
@@ -208,7 +231,7 @@ public class ScheduleService(
         appointment.End = slot.End;
         await appointments.SaveAsync(ct);
         await audit.RecordAsync(currentUser.Id, "reprogramacion", "Turno", appointment.Id.ToString(), appointment.Start.ToString("O"), ct);
-        return await MapAppointmentAsync(appointment, ct);
+        return await LoadAppointmentAsync(appointment.Id, ct);
     }
 
     public async Task<WaitlistEntryDto> JoinWaitlistAsync(CreateWaitlistEntryCommand command, CancellationToken ct)
@@ -225,17 +248,15 @@ public class ScheduleService(
             CreatedAt = clock.GetUtcNow(),
             Notes = command.Notes?.Trim()
         }, ct);
-        return await MapWaitlistEntryAsync(entry, ct);
+        return await waitlist.Entries.Where(w => w.Id == entry.Id).ToWaitlistDtos().FirstAsync(ct);
     }
 
-    public async Task<IReadOnlyList<WaitlistEntryDto>> WaitlistAsync(CancellationToken ct)
-    {
-        var list = await waitlist.PendingAsync(ct);
-        var dtos = new List<WaitlistEntryDto>();
-        foreach (var entry in list)
-            dtos.Add(await MapWaitlistEntryAsync(entry, ct));
-        return dtos;
-    }
+    public async Task<IReadOnlyList<WaitlistEntryDto>> WaitlistAsync(CancellationToken ct) =>
+        await waitlist.Entries
+            .Where(w => w.Status == WaitlistStatus.Pending || w.Status == WaitlistStatus.Offered)
+            .OrderBy(w => w.CreatedAt)
+            .ToWaitlistDtos()
+            .ToListAsync(ct);
 
     public async Task<AppointmentDto> AssignWaitlistEntryAsync(Guid id, AssignWaitlistEntryCommand command, CancellationToken ct)
     {
@@ -257,19 +278,6 @@ public class ScheduleService(
         return appointment;
     }
 
-    private async Task<List<TimeRange>> BusyRangesAsync(Guid professionalId, DateOnly date, CancellationToken ct)
-    {
-        var dayAppointments = await schedules.AppointmentsForDayAsync(professionalId, date, timeZone.Zone, ct);
-        var blockouts = await schedules.BlockoutsAsync(professionalId, ct);
-        var dayStart = SchedulingRules.Combine(date, TimeOnly.MinValue, timeZone.Zone);
-        var dayEnd = dayStart.AddDays(1);
-        return dayAppointments
-            .Where(a => SchedulingRules.CountsAsBusy(a.Status))
-            .Select(a => new TimeRange(a.Start, a.End))
-            .Concat(blockouts.Where(b => b.Start < dayEnd && b.End > dayStart).Select(b => new TimeRange(b.Start, b.End)))
-            .ToList();
-    }
-
     private async Task<Client> ResolveClientAsync(Guid? patientId, CancellationToken ct)
     {
         if (currentUser.Role == TenantRole.Patient.ToString())
@@ -283,42 +291,6 @@ public class ScheduleService(
         return await clients.GetAsync(patientId.Value, ct) ?? throw new NotFoundException("Paciente no encontrado.");
     }
 
-    private async Task<AppointmentDto> MapAppointmentAsync(Appointment appointment, CancellationToken ct)
-    {
-        var client = await clients.GetAsync(appointment.ClientId, ct);
-        var clientAccount = client is null ? null : await users.FindByIdAsync(client.UserId, ct);
-        var professional = await users.FindByIdAsync(appointment.ProfessionalId, ct);
-        var location = await organization.GetLocationAsync(appointment.LocationId, ct);
-        var type = await organization.GetAppointmentTypeAsync(appointment.AppointmentTypeId, ct);
-        return new AppointmentDto(
-            appointment.Id,
-            appointment.ClientId,
-            clientAccount?.Name ?? "Paciente",
-            appointment.ProfessionalId,
-            professional?.Name ?? "Profesional",
-            appointment.LocationId,
-            location?.Name ?? "",
-            appointment.AppointmentTypeId,
-            type?.Name ?? "",
-            appointment.Start,
-            appointment.End,
-            appointment.Status,
-            appointment.VisitReason);
-    }
-
-    private async Task<WaitlistEntryDto> MapWaitlistEntryAsync(WaitlistEntry entry, CancellationToken ct)
-    {
-        var client = await clients.GetAsync(entry.ClientId, ct);
-        var account = client is null ? null : await users.FindByIdAsync(client.UserId, ct);
-        return new WaitlistEntryDto(
-            entry.Id,
-            entry.ClientId,
-            account?.Name ?? "Paciente",
-            entry.ProfessionalId,
-            entry.LocationId,
-            entry.SpecialtyId,
-            entry.Status,
-            entry.CreatedAt,
-            entry.Notes);
-    }
+    private Task<AppointmentDto> LoadAppointmentAsync(Guid id, CancellationToken ct) =>
+        appointments.Appointments.Where(a => a.Id == id).ToAppointmentDtos().FirstAsync(ct);
 }

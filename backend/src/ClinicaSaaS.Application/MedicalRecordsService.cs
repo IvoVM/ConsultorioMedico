@@ -1,7 +1,10 @@
 using System.Globalization;
 using System.Text;
+using ClinicaSaaS.Application.Mappings;
 using ClinicaSaaS.Domain;
+using ClinicaSaaS.Domain.QueryViews;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 
 namespace ClinicaSaaS.Application;
 
@@ -25,7 +28,7 @@ public class MedicalRecordsService(
         var document = command.DocumentNumber.Trim();
         if (await users.FindByEmailAsync(email, ct) is not null)
             throw new ConflictException("Ese email ya está registrado.");
-        if ((await records.ClientsAsync(ct)).Any(c => string.Equals(c.DocumentNumber, document, StringComparison.OrdinalIgnoreCase)))
+        if (await clients.Clients.AnyAsync(c => c.DocumentNumber.ToLower() == document.ToLower(), ct))
             throw new ConflictException("Ya hay un paciente con ese documento.");
 
         var password = TemporaryPassword.Generate();
@@ -70,44 +73,37 @@ public class MedicalRecordsService(
             throw new BusinessRuleException("Escribí al menos 2 caracteres: documento, nombre o afiliado.");
 
         var needle = Normalize(text);
-        var clientList = await records.ClientsAsync(ct);
-        var accounts = (await users.ListByRoleAsync(TenantRole.Patient, ct)).ToDictionary(u => u.Id);
-        var recordsByClient = (await records.ListAsync(ct)).ToDictionary(r => r.ClientId);
-
-        return clientList
-            .Select(client => (
-                client,
-                account: accounts.GetValueOrDefault(client.UserId),
-                record: recordsByClient.GetValueOrDefault(client.Id)))
-            .Where(item => Matches(item.client, item.account, item.record, needle))
-            .OrderBy(item => item.account?.LastName)
-            .ThenBy(item => item.account?.FirstName)
+        var cards = await clients.Clients.ToClientCards().ToListAsync(ct);
+        return cards
+            .Where(card => Matches(card, needle))
+            .OrderBy(card => card.LastName)
+            .ThenBy(card => card.FirstName)
             .Take(12)
-            .Select(item => new PatientLookupDto(
-                item.client.Id,
-                item.account?.FirstName ?? "",
-                item.account?.LastName ?? "",
-                item.client.DocumentNumber,
-                item.client.BirthDate,
-                item.client.Phone,
-                item.record?.HealthInsurance,
-                item.record?.MemberNumber,
-                item.record?.EmergencyContact,
-                item.record?.EmergencyPhone))
+            .Select(card => new PatientLookupDto(
+                card.ClientId,
+                card.FirstName,
+                card.LastName,
+                card.DocumentNumber,
+                card.BirthDate,
+                card.Phone,
+                card.HealthInsurance,
+                card.MemberNumber,
+                card.EmergencyContact,
+                card.EmergencyPhone))
             .ToList();
     }
 
-    private static bool Matches(Client client, TenantAccount? account, MedicalRecord? record, string needle)
+    private static bool Matches(ClientCard card, string needle)
     {
         var haystack = Normalize(string.Join(' ',
-            account?.FirstName,
-            account?.LastName,
-            client.DocumentNumber,
-            client.Phone,
-            record?.HealthInsurance,
-            record?.MemberNumber,
-            record?.EmergencyContact,
-            record?.EmergencyPhone));
+            card.FirstName,
+            card.LastName,
+            card.DocumentNumber,
+            card.Phone,
+            card.HealthInsurance,
+            card.MemberNumber,
+            card.EmergencyContact,
+            card.EmergencyPhone));
         return haystack.Contains(needle, StringComparison.Ordinal);
     }
 
@@ -120,24 +116,12 @@ public class MedicalRecordsService(
         return new string(chars.ToArray()).ToLowerInvariant();
     }
 
-    public async Task<IReadOnlyList<MedicalRecordDto>> ListAsync(CancellationToken ct)
-    {
-        var clientList = await records.ClientsAsync(ct);
-        var accounts = (await users.ListByRoleAsync(TenantRole.Patient, ct)).ToDictionary(u => u.Id);
-        var recordsByClient = (await records.ListAsync(ct)).ToDictionary(r => r.ClientId);
-        return clientList
-            .Select(c => Map(c, accounts.GetValueOrDefault(c.UserId), recordsByClient.GetValueOrDefault(c.Id)))
-            .OrderBy(r => r.LastName)
-            .ThenBy(r => r.FirstName)
-            .ToList();
-    }
+    public async Task<IReadOnlyList<MedicalRecordDto>> ListAsync(CancellationToken ct) =>
+        await clients.Clients.OrderBy(c => c.User.LastName).ThenBy(c => c.User.FirstName).ToMedicalRecordDtos().ToListAsync(ct);
 
-    public async Task<MedicalRecordDto> GetAsync(Guid patientId, CancellationToken ct)
-    {
-        var client = await clients.GetAsync(patientId, ct) ?? throw new NotFoundException("Paciente no encontrado.");
-        var account = await users.FindByIdAsync(client.UserId, ct);
-        return Map(client, account, await records.GetByClientAsync(patientId, ct));
-    }
+    public async Task<MedicalRecordDto> GetAsync(Guid patientId, CancellationToken ct) =>
+        await clients.Clients.Where(c => c.Id == patientId).ToMedicalRecordDtos().FirstOrDefaultAsync(ct)
+        ?? throw new NotFoundException("Paciente no encontrado.");
 
     public async Task<MedicalRecordDto> SaveAsync(Guid patientId, SaveMedicalRecordCommand command, CancellationToken ct)
     {
@@ -177,25 +161,4 @@ public class MedicalRecordsService(
     }
 
     private static string? Clean(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
-
-    private static MedicalRecordDto Map(Client client, TenantAccount? account, MedicalRecord? record) => new(
-        client.Id,
-        account?.FirstName ?? "",
-        account?.LastName ?? "",
-        account?.Email ?? "",
-        client.DocumentNumber,
-        client.BirthDate,
-        client.Phone,
-        record?.BloodType,
-        record?.Allergies,
-        record?.PersonalHistory,
-        record?.FamilyHistory,
-        record?.CurrentMedication,
-        record?.Habits,
-        record?.HealthInsurance,
-        record?.MemberNumber,
-        record?.EmergencyContact,
-        record?.EmergencyPhone,
-        record?.Notes,
-        record?.UpdatedAt);
 }

@@ -6,4 +6,5 @@ public class AppointmentType
     public string Name { get; set; } = "";
     public int DurationMinutes { get; set; }
     public Guid? SpecialtyId { get; set; }
+    public virtual Specialty? Specialty { get; set; }
 }

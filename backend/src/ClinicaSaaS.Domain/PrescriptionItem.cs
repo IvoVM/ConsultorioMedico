@@ -8,5 +8,5 @@ public class PrescriptionItem
     public string Dose { get; set; } = "";
     public string Frequency { get; set; } = "";
     public string Duration { get; set; } = "";
-    public Prescription? Prescription { get; set; }
+    public virtual Prescription? Prescription { get; set; }
 }

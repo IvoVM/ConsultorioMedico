@@ -1,5 +1,7 @@
 using ClinicaSaaS.Application;
+using ClinicaSaaS.Application.Mappings;
 using ClinicaSaaS.Domain;
+using ClinicaSaaS.Domain.QueryViews;
 using ClinicaSaaS.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -8,17 +10,16 @@ namespace ClinicaSaaS.Infrastructure.Persistence;
 
 public class TenantUserStore(UserManager<TenantUser> users) : ITenantUserStore
 {
-    public async Task<TenantAccount?> FindByEmailAsync(string email, CancellationToken ct)
+    public IQueryable<TenantUser> Users => users.Users.AsNoTracking();
+
+    public Task<TenantAccount?> FindByEmailAsync(string email, CancellationToken ct)
     {
-        var user = await users.FindByEmailAsync(email);
-        return user is null ? null : Map(user);
+        var normalized = users.NormalizeEmail(email);
+        return Users.Where(u => u.NormalizedEmail == normalized).ToAccounts().FirstOrDefaultAsync(ct);
     }
 
-    public async Task<TenantAccount?> FindByIdAsync(Guid id, CancellationToken ct)
-    {
-        var user = await users.FindByIdAsync(id.ToString());
-        return user is null ? null : Map(user);
-    }
+    public Task<TenantAccount?> FindByIdAsync(Guid id, CancellationToken ct) =>
+        Users.Where(u => u.Id == id).ToAccounts().FirstOrDefaultAsync(ct);
 
     public async Task<bool> CheckPasswordAsync(Guid userId, string password, CancellationToken ct)
     {
@@ -45,12 +46,6 @@ public class TenantUserStore(UserManager<TenantUser> users) : ITenantUserStore
         return Map(user);
     }
 
-    public async Task<IReadOnlyList<TenantAccount>> ListByRoleAsync(TenantRole role, CancellationToken ct)
-    {
-        var list = await users.Users.Where(u => u.Role == role).OrderBy(u => u.LastName).ToListAsync(ct);
-        return list.Select(Map).ToList();
-    }
-
     public async Task UpdateNameAsync(Guid id, string firstName, string lastName, CancellationToken ct)
     {
         var user = await users.FindByIdAsync(id.ToString()) ?? throw new NotFoundException("Usuario no encontrado.");
@@ -67,6 +62,8 @@ public class TenantUserStore(UserManager<TenantUser> users) : ITenantUserStore
 
 public class EmployeeStore(TenantDbContext db) : IEmployeeStore
 {
+    public IQueryable<Employee> Employees => db.Employees.AsNoTracking();
+
     public Task<Employee?> GetByUserAsync(Guid userId, CancellationToken ct) =>
         db.Employees.FirstOrDefaultAsync(e => e.UserId == userId, ct);
 
@@ -75,14 +72,6 @@ public class EmployeeStore(TenantDbContext db) : IEmployeeStore
         db.Employees.Add(employee);
         await db.SaveChangesAsync(ct);
         return employee;
-    }
-
-    public async Task<IReadOnlyList<Employee>> ListAsync(Guid? specialtyId, CancellationToken ct)
-    {
-        var query = db.Employees.AsQueryable();
-        if (specialtyId is Guid id)
-            query = query.Where(e => e.SpecialtyId == id);
-        return await query.ToListAsync(ct);
     }
 
     public async Task AssignSpecialtyAsync(Guid userId, Guid? specialtyId, CancellationToken ct)
@@ -96,8 +85,7 @@ public class EmployeeStore(TenantDbContext db) : IEmployeeStore
 
 public class OrganizationStore(TenantDbContext db) : IOrganizationStore
 {
-    public async Task<IReadOnlyList<Location>> LocationsAsync(CancellationToken ct) =>
-        await db.Locations.OrderBy(l => l.Name).ToListAsync(ct);
+    public IQueryable<Location> Locations => db.Locations.AsNoTracking();
 
     public async Task<Location> AddLocationAsync(Location location, CancellationToken ct)
     {
@@ -108,8 +96,7 @@ public class OrganizationStore(TenantDbContext db) : IOrganizationStore
 
     public Task<Location?> GetLocationAsync(Guid id, CancellationToken ct) => db.Locations.FirstOrDefaultAsync(l => l.Id == id, ct);
 
-    public async Task<IReadOnlyList<MedicalService>> MedicalServicesAsync(CancellationToken ct) =>
-        await db.MedicalServices.OrderBy(s => s.Name).ToListAsync(ct);
+    public IQueryable<MedicalService> MedicalServices => db.MedicalServices.AsNoTracking();
 
     public async Task<MedicalService> AddMedicalServiceAsync(MedicalService service, CancellationToken ct)
     {
@@ -120,8 +107,7 @@ public class OrganizationStore(TenantDbContext db) : IOrganizationStore
 
     public Task<MedicalService?> GetMedicalServiceAsync(Guid id, CancellationToken ct) => db.MedicalServices.FirstOrDefaultAsync(s => s.Id == id, ct);
 
-    public async Task<IReadOnlyList<Specialty>> SpecialtiesAsync(CancellationToken ct) =>
-        await db.Specialties.OrderBy(s => s.Name).ToListAsync(ct);
+    public IQueryable<Specialty> Specialties => db.Specialties.AsNoTracking();
 
     public Task<Specialty?> GetSpecialtyByNameAsync(string name, CancellationToken ct) =>
         db.Specialties.FirstOrDefaultAsync(s => s.Name.ToLower() == name.ToLower(), ct);
@@ -136,8 +122,7 @@ public class OrganizationStore(TenantDbContext db) : IOrganizationStore
     public Task<Specialty?> GetSpecialtyAsync(Guid id, CancellationToken ct) =>
         db.Specialties.FirstOrDefaultAsync(s => s.Id == id, ct);
 
-    public async Task<IReadOnlyList<AppointmentType>> AppointmentTypesAsync(CancellationToken ct) =>
-        await db.AppointmentTypes.OrderBy(t => t.Name).ToListAsync(ct);
+    public IQueryable<AppointmentType> AppointmentTypes => db.AppointmentTypes.AsNoTracking();
 
     public Task<AppointmentType?> GetAppointmentTypeAsync(Guid id, CancellationToken ct) =>
         db.AppointmentTypes.FirstOrDefaultAsync(t => t.Id == id, ct);
@@ -154,8 +139,7 @@ public class OrganizationStore(TenantDbContext db) : IOrganizationStore
 
 public class ScheduleStore(TenantDbContext db) : IScheduleStore
 {
-    public async Task<IReadOnlyList<ScheduleBlock>> BlocksAsync(Guid professionalId, CancellationToken ct) =>
-        await db.ScheduleBlocks.Where(b => b.ProfessionalId == professionalId).OrderBy(b => b.Day).ThenBy(b => b.StartTime).ToListAsync(ct);
+    public IQueryable<ScheduleBlock> Blocks => db.ScheduleBlocks.AsNoTracking();
 
     public async Task ReplaceBlocksAsync(Guid professionalId, IReadOnlyList<ScheduleBlock> blocks, CancellationToken ct)
     {
@@ -165,8 +149,7 @@ public class ScheduleStore(TenantDbContext db) : IScheduleStore
         await db.SaveChangesAsync(ct);
     }
 
-    public async Task<IReadOnlyList<ScheduleBlockout>> BlockoutsAsync(Guid professionalId, CancellationToken ct) =>
-        await db.ScheduleBlockouts.Where(b => b.ProfessionalId == professionalId).OrderBy(b => b.Start).ToListAsync(ct);
+    public IQueryable<ScheduleBlockout> Blockouts => db.ScheduleBlockouts.AsNoTracking();
 
     public async Task<ScheduleBlockout> AddBlockoutAsync(ScheduleBlockout blockout, CancellationToken ct)
     {
@@ -182,29 +165,24 @@ public class ScheduleStore(TenantDbContext db) : IScheduleStore
         db.ScheduleBlockouts.Remove(blockout);
         await db.SaveChangesAsync(ct);
     }
-
-    public Task<IReadOnlyList<Appointment>> AppointmentsForDayAsync(Guid professionalId, DateOnly date, TimeZoneInfo zone, CancellationToken ct) =>
-        AppointmentQueries.ForDayAsync(db, date, professionalId, zone, ct);
 }
 
 public class AppointmentStore(TenantDbContext db) : IAppointmentStore
 {
+    public IQueryable<Appointment> Appointments => db.Appointments.AsNoTracking();
+
     public Task<Appointment?> GetAsync(Guid id, CancellationToken ct) => db.Appointments.FirstOrDefaultAsync(a => a.Id == id, ct);
-
-    public Task<IReadOnlyList<Appointment>> ForDayAsync(DateOnly date, Guid? professionalId, TimeZoneInfo zone, CancellationToken ct) =>
-        AppointmentQueries.ForDayAsync(db, date, professionalId, zone, ct);
-
-    public async Task<IReadOnlyList<Appointment>> ForClientAsync(Guid clientId, CancellationToken ct) =>
-        await db.Appointments.Where(a => a.ClientId == clientId).ToListAsync(ct);
 
     public async Task<Appointment> BookAsync(Appointment appointment, CancellationToken ct)
     {
         await using var tx = await db.Database.BeginTransactionAsync(ct);
         var existing = await db.Appointments
+            .AsNoTracking()
             .Where(a => a.ProfessionalId == appointment.ProfessionalId && a.Start < appointment.End && a.End > appointment.Start)
+            .Select(a => new BusyInterval { Start = a.Start, End = a.End, Status = a.Status })
             .ToListAsync(ct);
         var candidate = new TimeRange(appointment.Start, appointment.End);
-        if (SchedulingRules.HasOverlap(existing.Select(a => (new TimeRange(a.Start, a.End), a.Status)), candidate))
+        if (SchedulingRules.HasOverlap(existing.Select(a => (new TimeRange(a.Start, a.End), a.Status!.Value)), candidate))
             throw new ConflictException("El horario ya no está disponible.");
         db.Appointments.Add(appointment);
         await db.SaveChangesAsync(ct);
@@ -217,6 +195,8 @@ public class AppointmentStore(TenantDbContext db) : IAppointmentStore
 
 public class ClientStore(TenantDbContext db) : IClientStore
 {
+    public IQueryable<Client> Clients => db.Clients.AsNoTracking();
+
     public Task<Client?> GetByUserAsync(Guid userId, CancellationToken ct) =>
         db.Clients.FirstOrDefaultAsync(c => c.UserId == userId, ct);
 
@@ -232,12 +212,6 @@ public class ClientStore(TenantDbContext db) : IClientStore
 
 public class MedicalRecordStore(TenantDbContext db) : IMedicalRecordStore
 {
-    public async Task<IReadOnlyList<Client>> ClientsAsync(CancellationToken ct) =>
-        await db.Clients.ToListAsync(ct);
-
-    public async Task<IReadOnlyList<MedicalRecord>> ListAsync(CancellationToken ct) =>
-        await db.MedicalRecords.ToListAsync(ct);
-
     public Task<MedicalRecord?> GetByClientAsync(Guid clientId, CancellationToken ct) =>
         db.MedicalRecords.FirstOrDefaultAsync(r => r.ClientId == clientId, ct);
 
@@ -248,16 +222,14 @@ public class MedicalRecordStore(TenantDbContext db) : IMedicalRecordStore
 
 public class WaitlistStore(TenantDbContext db) : IWaitlistStore
 {
+    public IQueryable<WaitlistEntry> Entries => db.WaitlistEntries.AsNoTracking();
+
     public async Task<WaitlistEntry> AddAsync(WaitlistEntry entry, CancellationToken ct)
     {
         db.WaitlistEntries.Add(entry);
         await db.SaveChangesAsync(ct);
         return entry;
     }
-
-    public async Task<IReadOnlyList<WaitlistEntry>> PendingAsync(CancellationToken ct) =>
-        await db.WaitlistEntries.Where(w => w.Status == WaitlistStatus.Pending || w.Status == WaitlistStatus.Offered)
-            .OrderBy(w => w.CreatedAt).ToListAsync(ct);
 
     public Task<WaitlistEntry?> GetAsync(Guid id, CancellationToken ct) => db.WaitlistEntries.FirstOrDefaultAsync(w => w.Id == id, ct);
 
@@ -266,8 +238,7 @@ public class WaitlistStore(TenantDbContext db) : IWaitlistStore
 
 public class ClinicalStore(TenantDbContext db) : IClinicalStore
 {
-    public async Task<IReadOnlyList<Diagnosis>> DiagnosesAsync(CancellationToken ct) =>
-        await db.Diagnoses.OrderBy(d => d.Code).ToListAsync(ct);
+    public IQueryable<Diagnosis> Diagnoses => db.Diagnoses.AsNoTracking();
 
     public Task<Encounter?> GetEncounterByAppointmentAsync(Guid appointmentId, CancellationToken ct) =>
         db.Encounters.FirstOrDefaultAsync(e => e.AppointmentId == appointmentId, ct);
@@ -290,11 +261,7 @@ public class ClinicalStore(TenantDbContext db) : IClinicalStore
             db.EncounterDiagnoses.Add(new EncounterDiagnosis { EncounterId = encounterId, DiagnosisId = diagnosisId });
     }
 
-    public async Task<IReadOnlyList<Encounter>> EncountersForClientAsync(Guid clientId, CancellationToken ct) =>
-        await db.Encounters.Where(e => e.ClientId == clientId).ToListAsync(ct);
-
-    public async Task<IReadOnlyList<Diagnosis>> DiagnosesForEncounterAsync(Guid encounterId, CancellationToken ct) =>
-        await db.EncounterDiagnoses.Where(x => x.EncounterId == encounterId).Select(x => x.Diagnosis!).ToListAsync(ct);
+    public IQueryable<Encounter> Encounters => db.Encounters.AsNoTracking();
 
     public async Task<Prescription> AddPrescriptionAsync(Prescription prescription, CancellationToken ct)
     {
@@ -305,26 +272,14 @@ public class ClinicalStore(TenantDbContext db) : IClinicalStore
         return prescription;
     }
 
-    public async Task<Prescription?> GetPrescriptionAsync(Guid id, CancellationToken ct) =>
-        await db.Prescriptions.Include(p => p.Items).FirstOrDefaultAsync(p => p.Id == id, ct);
-
-    public async Task<IReadOnlyList<Prescription>> PrescriptionsForClientAsync(Guid clientId, CancellationToken ct) =>
-        await db.Prescriptions.Include(p => p.Items).Where(p => p.ClientId == clientId).ToListAsync(ct);
-
-    public async Task<IReadOnlyList<PrescriptionItem>> PrescriptionItemsAsync(Guid prescriptionId, CancellationToken ct) =>
-        await db.PrescriptionItems.Where(i => i.PrescriptionId == prescriptionId).ToListAsync(ct);
+    public IQueryable<Prescription> Prescriptions => db.Prescriptions.AsNoTracking();
 
     public Task SaveAsync(CancellationToken ct) => db.SaveChangesAsync(ct);
 }
 
 public class BillingStore(TenantDbContext db) : IBillingStore
 {
-    public async Task<IReadOnlyList<Fee>> FeesAsync(CancellationToken ct) =>
-        await db.Fees.OrderByDescending(f => f.EffectiveFrom).ToListAsync(ct);
-
-    public async Task<Fee?> CurrentFeeAsync(Guid appointmentTypeId, DateOnly date, CancellationToken ct) =>
-        await db.Fees.Where(f => f.AppointmentTypeId == appointmentTypeId && f.EffectiveFrom <= date)
-            .OrderByDescending(f => f.EffectiveFrom).FirstOrDefaultAsync(ct);
+    public IQueryable<Fee> Fees => db.Fees.AsNoTracking();
 
     public async Task<Fee> AddFeeAsync(Fee fee, CancellationToken ct)
     {
@@ -332,9 +287,6 @@ public class BillingStore(TenantDbContext db) : IBillingStore
         await db.SaveChangesAsync(ct);
         return fee;
     }
-
-    public Task<Invoice?> GetInvoiceByAppointmentAsync(Guid appointmentId, CancellationToken ct) =>
-        db.Invoices.Include(i => i.Items).FirstOrDefaultAsync(i => i.AppointmentId == appointmentId, ct);
 
     public async Task<Invoice> AddInvoiceAsync(Invoice invoice, CancellationToken ct)
     {
@@ -346,13 +298,9 @@ public class BillingStore(TenantDbContext db) : IBillingStore
     }
 
     public Task<Invoice?> GetInvoiceAsync(Guid id, CancellationToken ct) =>
-        db.Invoices.Include(i => i.Items).FirstOrDefaultAsync(i => i.Id == id, ct);
+        db.Invoices.FirstOrDefaultAsync(i => i.Id == id, ct);
 
-    public async Task<IReadOnlyList<Invoice>> InvoicesAsync(CancellationToken ct) =>
-        await db.Invoices.Include(i => i.Items).OrderByDescending(i => i.CreatedAt).ToListAsync(ct);
-
-    public async Task<IReadOnlyList<InvoiceItem>> InvoiceItemsAsync(Guid invoiceId, CancellationToken ct) =>
-        await db.InvoiceItems.Where(i => i.InvoiceId == invoiceId).ToListAsync(ct);
+    public IQueryable<Invoice> Invoices => db.Invoices.AsNoTracking();
 
     public Task SaveAsync(CancellationToken ct) => db.SaveChangesAsync(ct);
 }
@@ -374,19 +322,5 @@ public class AuditStore(TenantDbContext db) : IAuditStore
         await db.SaveChangesAsync(ct);
     }
 
-    public async Task<IReadOnlyList<AuditEntry>> ListAsync(CancellationToken ct) =>
-        await db.AuditEntries.OrderByDescending(a => a.Timestamp).Take(200).ToListAsync(ct);
-}
-
-file static class AppointmentQueries
-{
-    public static async Task<IReadOnlyList<Appointment>> ForDayAsync(TenantDbContext db, DateOnly date, Guid? professionalId, TimeZoneInfo zone, CancellationToken ct)
-    {
-        var start = SchedulingRules.Combine(date, TimeOnly.MinValue, zone);
-        var end = start.AddDays(1);
-        var query = db.Appointments.Where(a => a.Start >= start && a.Start < end);
-        if (professionalId is Guid id)
-            query = query.Where(a => a.ProfessionalId == id);
-        return await query.ToListAsync(ct);
-    }
+    public IQueryable<AuditEntry> Entries => db.AuditEntries.AsNoTracking();
 }
