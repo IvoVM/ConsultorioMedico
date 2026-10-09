@@ -22,8 +22,8 @@ public class AuthController(AuthService auth) : ApiController
     {
         try
         {
-            var issued = await auth.RefreshAsync(Request.Cookies[RefreshCookie.Name], ct);
-            RefreshCookie.Set(Response, issued.RefreshToken, issued.RefreshExpires);
+            var issued = await auth.RefreshAsync(PresentedRefresh(), ct);
+            Remember(issued);
             return Ok(issued.Access);
         }
         catch (UnauthorizedException ex)
@@ -36,9 +36,20 @@ public class AuthController(AuthService auth) : ApiController
     [HttpPost("salir")]
     public async Task<IActionResult> Logout(CancellationToken ct)
     {
-        await auth.LogoutAsync(Request.Cookies[RefreshCookie.Name], ct);
+        await auth.LogoutAsync(PresentedRefresh(), ct);
         RefreshCookie.Clear(Response);
         return NoContent();
+    }
+
+    private string? PresentedRefresh() =>
+        Request.Cookies[RefreshCookie.Name] is { Length: > 0 } cookie
+            ? cookie
+            : Request.Headers[RefreshHeader.Name].FirstOrDefault();
+
+    private void Remember(IssuedSession issued)
+    {
+        RefreshCookie.Set(Response, issued.RefreshToken, issued.RefreshExpires);
+        Response.Headers[RefreshHeader.Name] = issued.RefreshToken;
     }
 
     private async Task<IActionResult> Issue(Func<Task<IssuedSession>> action)
@@ -46,7 +57,7 @@ public class AuthController(AuthService auth) : ApiController
         try
         {
             var issued = await action();
-            RefreshCookie.Set(Response, issued.RefreshToken, issued.RefreshExpires);
+            Remember(issued);
             return Ok(issued.Access);
         }
         catch (Exception ex) when (ErrorMap.Translate(ex) is { } error)

@@ -25,7 +25,7 @@ builder.Services.AddClinicaJwt(builder.Configuration);
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 builder.Services.AddCors(options => options.AddDefaultPolicy(policy =>
-    policy.WithOrigins(origins).AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
+    policy.WithOrigins(origins).AllowAnyHeader().AllowAnyMethod().AllowCredentials().WithExposedHeaders(RefreshHeader.Name)));
 
 var app = builder.Build();
 

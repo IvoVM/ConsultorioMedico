@@ -1,5 +1,10 @@
 namespace ClinicaSaaS.Api;
 
+public static class RefreshHeader
+{
+    public const string Name = "X-Refresh-Token";
+}
+
 public static class RefreshCookie
 {
     public const string Name = "clinica.refresh";
