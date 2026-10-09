@@ -1,7 +1,7 @@
 using ClinicaSaaS.Domain;
 using FluentValidation;
 
-namespace ClinicaSaaS.Application;
+namespace ClinicaSaaS.Application.Services;
 
 public class AuthService(
     ITenantUserStore users,

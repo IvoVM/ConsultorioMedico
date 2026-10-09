@@ -1,5 +1,5 @@
 using ClinicaSaaS.Application;
-using ClinicaSaaS.Application.Mappings;
+using ClinicaSaaS.Application.Services.MappingExtensions;
 using ClinicaSaaS.Domain;
 using ClinicaSaaS.Domain.QueryViews;
 using ClinicaSaaS.Infrastructure.Identity;

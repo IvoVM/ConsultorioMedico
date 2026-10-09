@@ -1,12 +1,13 @@
 using System.Globalization;
 using System.Text;
-using ClinicaSaaS.Application.Mappings;
+using ClinicaSaaS.Application.Services.MappingExtensions;
+using ClinicaSaaS.Application.Services.Utilities;
 using ClinicaSaaS.Domain;
 using ClinicaSaaS.Domain.QueryViews;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 
-namespace ClinicaSaaS.Application;
+namespace ClinicaSaaS.Application.Services;
 
 public class MedicalRecordsService(
     IMedicalRecordStore records,

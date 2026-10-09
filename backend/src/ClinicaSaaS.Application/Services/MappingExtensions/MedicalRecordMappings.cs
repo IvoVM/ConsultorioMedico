@@ -1,7 +1,7 @@
 using ClinicaSaaS.Domain;
 using ClinicaSaaS.Domain.QueryViews;
 
-namespace ClinicaSaaS.Application.Mappings;
+namespace ClinicaSaaS.Application.Services.MappingExtensions;
 
 public static class MedicalRecordMappings
 {

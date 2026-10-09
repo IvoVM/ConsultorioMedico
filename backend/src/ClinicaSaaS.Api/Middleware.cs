@@ -1,5 +1,6 @@
 using System.Text.Json;
 using ClinicaSaaS.Application;
+using ClinicaSaaS.Application.Services.Utilities;
 
 namespace ClinicaSaaS.Api;
 

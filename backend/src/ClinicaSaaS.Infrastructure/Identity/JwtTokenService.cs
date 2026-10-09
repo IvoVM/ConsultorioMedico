@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using ClinicaSaaS.Application;
+using ClinicaSaaS.Application.Services.Utilities;
 using Microsoft.IdentityModel.Tokens;
 
 namespace ClinicaSaaS.Infrastructure;

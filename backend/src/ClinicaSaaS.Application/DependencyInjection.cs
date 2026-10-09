@@ -1,3 +1,4 @@
+using ClinicaSaaS.Application.Services;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 

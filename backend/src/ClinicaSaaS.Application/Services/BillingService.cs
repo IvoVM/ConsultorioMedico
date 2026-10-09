@@ -1,8 +1,8 @@
-using ClinicaSaaS.Application.Mappings;
+using ClinicaSaaS.Application.Services.MappingExtensions;
 using ClinicaSaaS.Domain;
 using Microsoft.EntityFrameworkCore;
 
-namespace ClinicaSaaS.Application;
+namespace ClinicaSaaS.Application.Services;
 
 public class BillingService(
     IBillingStore store,

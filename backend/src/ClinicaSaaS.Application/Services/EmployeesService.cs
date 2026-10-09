@@ -1,6 +1,7 @@
+using ClinicaSaaS.Application.Services.Utilities;
 using ClinicaSaaS.Domain;
 
-namespace ClinicaSaaS.Application;
+namespace ClinicaSaaS.Application.Services;
 
 public class EmployeesService(ITenantUserStore users, IEmployeeStore employees, IOrganizationStore organization, IAuditStore audit, ICurrentUser currentUser)
 {
@@ -87,18 +88,5 @@ public class EmployeesService(ITenantUserStore users, IEmployeeStore employees, 
 
         await audit.RecordAsync(currentUser.Id, "importacion", "Empleado", null, $"{created.Count} creados, {rejected.Count} rechazados", ct);
         return new EmployeeImportDto(created, rejected);
-    }
-}
-
-public static class TemporaryPassword
-{
-    public static string Generate()
-    {
-        const string alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
-        var bytes = System.Security.Cryptography.RandomNumberGenerator.GetBytes(8);
-        var chars = new char[8];
-        for (var i = 0; i < chars.Length; i++)
-            chars[i] = alphabet[bytes[i] % alphabet.Length];
-        return $"Tmp{new string(chars)}1a";
     }
 }

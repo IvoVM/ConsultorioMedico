@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using ClinicaSaaS.Application;
+using ClinicaSaaS.Application.Services.Utilities;
 using ClinicaSaaS.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;

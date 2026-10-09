@@ -1,6 +1,6 @@
 using ClinicaSaaS.Domain;
 
-namespace ClinicaSaaS.Application.Mappings;
+namespace ClinicaSaaS.Application.Services.MappingExtensions;
 
 public static class OrganizationMappings
 {
