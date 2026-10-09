@@ -1,4 +1,4 @@
-using ClinicaSaaS.Application;
+using ClinicaSaaS.Services;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 

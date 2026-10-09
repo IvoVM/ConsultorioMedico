@@ -1,12 +1,11 @@
-using ClinicaSaaS.Application.Services;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace ClinicaSaaS.Application;
+namespace ClinicaSaaS.Services;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddApplication(this IServiceCollection services)
+    public static IServiceCollection AddServices(this IServiceCollection services)
     {
         services.AddScoped<IValidator<RegisterPatientCommand>, RegisterPatientValidator>();
         services.AddScoped<IValidator<BookAppointmentCommand>, BookAppointmentValidator>();

@@ -1,7 +1,7 @@
-using ClinicaSaaS.Application.Services.Utilities;
+using ClinicaSaaS.Services.Utilities;
 using ClinicaSaaS.Domain;
 
-namespace ClinicaSaaS.Application.Services;
+namespace ClinicaSaaS.Services;
 
 public class EmployeesService(ITenantUserStore users, IEmployeeStore employees, IOrganizationStore organization, IAuditStore audit, ICurrentUser currentUser)
 {

@@ -1,4 +1,4 @@
-namespace ClinicaSaaS.Application.Services.Utilities;
+namespace ClinicaSaaS.Services.Utilities;
 
 public static class TemporaryPassword
 {

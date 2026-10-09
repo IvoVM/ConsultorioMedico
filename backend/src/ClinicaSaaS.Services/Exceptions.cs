@@ -1,4 +1,4 @@
-namespace ClinicaSaaS.Application;
+namespace ClinicaSaaS.Services;
 
 public class UnauthorizedException(string message) : Exception(message);
 

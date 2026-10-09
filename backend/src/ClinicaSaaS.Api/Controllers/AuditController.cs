@@ -1,6 +1,6 @@
-using ClinicaSaaS.Application;
-using ClinicaSaaS.Application.Services.MappingExtensions;
-using ClinicaSaaS.Application.Services.Utilities;
+using ClinicaSaaS.Services;
+using ClinicaSaaS.Services.MappingExtensions;
+using ClinicaSaaS.Services.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;

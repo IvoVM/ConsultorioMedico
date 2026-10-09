@@ -1,7 +1,7 @@
 using ClinicaSaaS.Domain;
 using ClinicaSaaS.Infrastructure.Identity;
 
-namespace ClinicaSaaS.Application;
+namespace ClinicaSaaS.Services;
 
 public interface ICurrentUser
 {

@@ -1,4 +1,4 @@
-using ClinicaSaaS.Application;
+using ClinicaSaaS.Services;
 using ClinicaSaaS.Domain;
 using ClinicaSaaS.Infrastructure.Identity;
 using ClinicaSaaS.Infrastructure.Persistence;

@@ -1,7 +1,6 @@
-using ClinicaSaaS.Application;
 using ClinicaSaaS.Domain;
 
-namespace ClinicaSaaS.Application.Tests;
+namespace ClinicaSaaS.Services.Tests;
 
 public class SchedulingRulesTests
 {

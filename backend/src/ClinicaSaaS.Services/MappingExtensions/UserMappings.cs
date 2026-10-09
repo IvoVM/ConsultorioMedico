@@ -1,6 +1,6 @@
 using ClinicaSaaS.Infrastructure.Identity;
 
-namespace ClinicaSaaS.Application.Services.MappingExtensions;
+namespace ClinicaSaaS.Services.MappingExtensions;
 
 public static class UserMappings
 {

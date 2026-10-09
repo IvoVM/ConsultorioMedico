@@ -1,8 +1,8 @@
-using ClinicaSaaS.Application.Services.MappingExtensions;
+using ClinicaSaaS.Services.MappingExtensions;
 using ClinicaSaaS.Domain;
 using Microsoft.EntityFrameworkCore;
 
-namespace ClinicaSaaS.Application.Services;
+namespace ClinicaSaaS.Services;
 
 public class OrganizationService(IOrganizationStore store, ITenantUserStore users, IEmployeeStore employees, IAuditStore audit, ICurrentUser currentUser)
 {

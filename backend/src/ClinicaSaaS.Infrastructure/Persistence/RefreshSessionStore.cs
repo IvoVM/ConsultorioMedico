@@ -1,6 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
-using ClinicaSaaS.Application;
+using ClinicaSaaS.Services;
 using ClinicaSaaS.Infrastructure.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;

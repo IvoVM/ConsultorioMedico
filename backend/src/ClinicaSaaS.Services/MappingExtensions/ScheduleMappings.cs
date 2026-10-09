@@ -1,7 +1,7 @@
 using ClinicaSaaS.Domain;
 using ClinicaSaaS.Domain.QueryViews;
 
-namespace ClinicaSaaS.Application.Services.MappingExtensions;
+namespace ClinicaSaaS.Services.MappingExtensions;
 
 public static class ScheduleMappings
 {

@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ClinicaSaaS.Application\ClinicaSaaS.Application.csproj" />
+    <ProjectReference Include="..\ClinicaSaaS.Services\ClinicaSaaS.Services.csproj" />
     <ProjectReference Include="..\ClinicaSaaS.Infrastructure\ClinicaSaaS.Infrastructure.csproj" />
   </ItemGroup>
 

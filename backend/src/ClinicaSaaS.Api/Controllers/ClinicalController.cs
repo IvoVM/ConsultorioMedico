@@ -1,6 +1,5 @@
-using ClinicaSaaS.Application;
-using ClinicaSaaS.Application.Services;
-using ClinicaSaaS.Application.Services.Utilities;
+using ClinicaSaaS.Services;
+using ClinicaSaaS.Services.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

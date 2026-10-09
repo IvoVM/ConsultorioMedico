@@ -1,7 +1,7 @@
 using ClinicaSaaS.Domain;
 using FluentValidation;
 
-namespace ClinicaSaaS.Application;
+namespace ClinicaSaaS.Services;
 
 public class RegisterPatientValidator : AbstractValidator<RegisterPatientCommand>
 {

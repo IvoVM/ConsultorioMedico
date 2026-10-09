@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\ClinicaSaaS.Application\ClinicaSaaS.Application.csproj" />
+    <ProjectReference Include="..\..\src\ClinicaSaaS.Services\ClinicaSaaS.Services.csproj" />
     <ProjectReference Include="..\..\src\ClinicaSaaS.Domain\ClinicaSaaS.Domain.csproj" />
   </ItemGroup>
 

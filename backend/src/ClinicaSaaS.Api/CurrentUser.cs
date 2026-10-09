@@ -1,7 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using ClinicaSaaS.Application;
-using ClinicaSaaS.Application.Services.Utilities;
+using ClinicaSaaS.Services;
+using ClinicaSaaS.Services.Utilities;
 
 namespace ClinicaSaaS.Api;
 

@@ -1,6 +1,6 @@
 using ClinicaSaaS.Domain;
 
-namespace ClinicaSaaS.Application.Services.MappingExtensions;
+namespace ClinicaSaaS.Services.MappingExtensions;
 
 public static class BillingMappings
 {

@@ -1,9 +1,9 @@
-using ClinicaSaaS.Application.Services.MappingExtensions;
+using ClinicaSaaS.Services.MappingExtensions;
 using ClinicaSaaS.Domain;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 
-namespace ClinicaSaaS.Application.Services;
+namespace ClinicaSaaS.Services;
 
 public class ClinicalService(
     IClinicalStore clinical,

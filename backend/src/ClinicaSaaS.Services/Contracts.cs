@@ -1,6 +1,6 @@
 using ClinicaSaaS.Domain;
 
-namespace ClinicaSaaS.Application;
+namespace ClinicaSaaS.Services;
 
 public record TenantAccount(
     Guid Id,

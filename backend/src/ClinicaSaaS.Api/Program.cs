@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 using ClinicaSaaS.Api;
-using ClinicaSaaS.Application;
+using ClinicaSaaS.Services;
 using ClinicaSaaS.Infrastructure;
 using ClinicaSaaS.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -20,7 +20,7 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 });
 builder.Services.AddOpenApi();
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddApplication();
+builder.Services.AddServices();
 builder.Services.AddClinicaJwt(builder.Configuration);
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
