@@ -2,7 +2,7 @@
 
 Una sola base PostgreSQL por consultorio (`clinica` en local). El modelo sale de `TenantDbContext` y del snapshot de migraciones.
 
-Las líneas del diagrama son claves foráneas. Las relaciones clínicas nuevas usan `ON DELETE RESTRICT`, así borrar una sede, un profesional o un tipo de turno no arrastra turnos, encuentros ni facturas. `AuditEntries.UserId`, `MedicalRecords.UpdatedBy` y `RefreshSessions.ReplacedById` siguen sin FK. En el dominio cada FK es una propiedad `virtual`.
+Las líneas del diagrama son claves foráneas. Las relaciones clínicas nuevas usan `ON DELETE RESTRICT`, así borrar una sede, un profesional o un tipo de turno no arrastra turnos, encuentros ni facturas. `AuditEntries.UserId`, `MedicalRecords.UpdatedBy` y `RefreshSessions.ReplacedById` siguen sin FK. En el dominio cada FK es una propiedad `virtual` en los dos sentidos, separada de las columnas.
 
 ## Diagrama
 

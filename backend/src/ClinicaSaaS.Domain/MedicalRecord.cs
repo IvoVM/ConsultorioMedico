@@ -4,7 +4,6 @@ public class MedicalRecord
 {
     public Guid Id { get; set; }
     public Guid ClientId { get; set; }
-    public virtual Client Client { get; set; } = null!;
     public string? BloodType { get; set; }
     public string? Allergies { get; set; }
     public string? PersonalHistory { get; set; }
@@ -18,4 +17,7 @@ public class MedicalRecord
     public string? Notes { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
     public Guid? UpdatedBy { get; set; }
+
+
+    public virtual Client Client { get; set; } = null!;
 }

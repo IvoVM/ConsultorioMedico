@@ -6,5 +6,7 @@ public class InvoiceItem
     public Guid InvoiceId { get; set; }
     public string Description { get; set; } = "";
     public decimal Amount { get; set; }
+
+
     public virtual Invoice? Invoice { get; set; }
 }
