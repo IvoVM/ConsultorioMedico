@@ -168,6 +168,7 @@ public class ClinicalService(
         var amount = await billing.Fees
             .Where(f => f.AppointmentTypeId == appointment.AppointmentTypeId && f.EffectiveFrom <= today)
             .OrderByDescending(f => f.EffectiveFrom)
+            .ThenByDescending(f => f.Id)
             .Select(f => (decimal?)f.Amount)
             .FirstOrDefaultAsync(ct) ?? 0;
         await billing.AddInvoiceAsync(new Invoice

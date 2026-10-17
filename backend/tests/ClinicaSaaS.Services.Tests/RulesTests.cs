@@ -60,6 +60,16 @@ public class BillingAndEncounterRulesTests
     }
 
     [Fact]
+    public void Price_change_rejects_zero_negative_and_the_same_amount()
+    {
+        Assert.Equal("El valor no puede ser negativo.", BillingRules.PriceChangeError(-1, 100));
+        Assert.Equal("El valor no puede ser 0.", BillingRules.PriceChangeError(0, 100));
+        Assert.Equal("El valor tiene que ser distinto al actual.", BillingRules.PriceChangeError(100, 100));
+        Assert.Null(BillingRules.PriceChangeError(120, 100));
+        Assert.Null(BillingRules.PriceChangeError(80, null));
+    }
+
+    [Fact]
     public void Closing_an_encounter_requires_a_note()
     {
         Assert.False(EncounterRules.CanClose("  "));

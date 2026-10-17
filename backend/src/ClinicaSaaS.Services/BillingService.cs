@@ -11,22 +11,53 @@ public class BillingService(
     IAuditStore audit,
     TimeProvider clock)
 {
-    public async Task<IReadOnlyList<FeeDto>> FeesAsync(CancellationToken ct) =>
-        await store.Fees.OrderByDescending(f => f.EffectiveFrom).ToFeeDtos().ToListAsync(ct);
+    public async Task<IReadOnlyList<FeeDto>> FeesAsync(CancellationToken ct)
+    {
+        var today = DateOnly.FromDateTime(clock.GetUtcNow().DateTime);
+        var fees = await store.Fees
+            .Where(f => f.EffectiveFrom <= today)
+            .OrderByDescending(f => f.EffectiveFrom)
+            .ThenByDescending(f => f.Id)
+            .ToFeeDtos()
+            .ToListAsync(ct);
+        return fees
+            .GroupBy(f => f.AppointmentTypeId)
+            .Select(g => g.First())
+            .OrderBy(f => f.AppointmentType)
+            .ToList();
+    }
 
     public async Task<FeeDto> CreateFeeAsync(CreateFeeCommand command, CancellationToken ct)
     {
-        if (command.Amount < 0)
-            throw new BusinessRuleException("El monto no puede ser negativo.");
         var type = await organization.GetAppointmentTypeAsync(command.AppointmentTypeId, ct)
             ?? throw new NotFoundException("Tipo de turno no encontrado.");
-        var fee = await store.AddFeeAsync(new Fee
+        var today = DateOnly.FromDateTime(clock.GetUtcNow().DateTime);
+        var current = await store.GetCurrentFeeAsync(command.AppointmentTypeId, today, ct);
+        var error = BillingRules.PriceChangeError(command.Amount, current?.Amount);
+        if (error is not null)
+            throw new BusinessRuleException(error);
+
+        var amount = BillingRules.NormalizePrice(command.Amount);
+        Fee fee;
+        if (current is not null && current.EffectiveFrom == today)
         {
-            Id = Guid.NewGuid(),
-            AppointmentTypeId = command.AppointmentTypeId,
-            Amount = command.Amount,
-            EffectiveFrom = command.EffectiveFrom
-        }, ct);
+            current.Amount = amount;
+            await store.RemoveFeesEffectiveFromAsync(command.AppointmentTypeId, today, current.Id, ct);
+            await store.SaveAsync(ct);
+            fee = current;
+        }
+        else
+        {
+            await store.RemoveFeesEffectiveFromAsync(command.AppointmentTypeId, today, null, ct);
+            fee = await store.AddFeeAsync(new Fee
+            {
+                Id = Guid.NewGuid(),
+                AppointmentTypeId = command.AppointmentTypeId,
+                Amount = amount,
+                EffectiveFrom = today
+            }, ct);
+        }
+
         await audit.RecordAsync(currentUser.Id, "arancel", "Arancel", fee.Id.ToString(), fee.Amount.ToString("0.00"), ct);
         return new FeeDto(fee.Id, fee.AppointmentTypeId, type.Name, fee.Amount, fee.EffectiveFrom);
     }

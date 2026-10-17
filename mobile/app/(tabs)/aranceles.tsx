@@ -9,7 +9,6 @@ export default function Aranceles() {
   const [types, setTypes] = useState<AppointmentType[]>([]);
   const [typeId, setTypeId] = useState('');
   const [amount, setAmount] = useState('');
-  const [from, setFrom] = useState(new Date().toISOString().slice(0, 10));
   const [error, setError] = useState('');
 
   function load() {
@@ -36,12 +35,35 @@ export default function Aranceles() {
       {types.map((item) => (
         <Choice key={item.id} label={item.name} selected={item.id === typeId} onPress={() => setTypeId(item.id)} />
       ))}
+      <Text style={{ fontFamily: type.sans, color: colors.ink }}>
+        El monto nuevo rige desde ahora. Lo contratado antes queda al valor original.
+      </Text>
       <Field label="Monto" keyboardType="decimal-pad" value={amount} onChangeText={setAmount} />
-      <Field label="Vigente desde" value={from} onChangeText={setFrom} />
       <Button
-        label="Crear arancel"
+        label="Guardar precio"
         onPress={() => {
-          api.createFee(typeId, Number(amount), from).then(() => load()).catch((reason: unknown) => setError(reason instanceof Error ? reason.message : 'No se pudo crear.'));
+          const next = Number(amount);
+          const current = fees.find((item) => item.appointmentTypeId === typeId)?.amount;
+          if (Number.isNaN(next) || next === 0) {
+            setError('El valor no puede ser 0.');
+            return;
+          }
+          if (next < 0) {
+            setError('El valor no puede ser negativo.');
+            return;
+          }
+          if (current !== undefined && next === current) {
+            setError('El valor tiene que ser distinto al actual.');
+            return;
+          }
+          api
+            .createFee(typeId, next, new Date().toISOString().slice(0, 10))
+            .then(() => {
+              setAmount('');
+              setError('');
+              load();
+            })
+            .catch((reason: unknown) => setError(reason instanceof Error ? reason.message : 'No se pudo crear.'));
         }}
       />
     </Screen>

@@ -281,6 +281,22 @@ public class BillingStore(TenantDbContext db) : IBillingStore
 {
     public IQueryable<Fee> Fees => db.Fees.AsNoTracking();
 
+    public Task<Fee?> GetCurrentFeeAsync(Guid appointmentTypeId, DateOnly today, CancellationToken ct) =>
+        db.Fees
+            .Where(f => f.AppointmentTypeId == appointmentTypeId && f.EffectiveFrom <= today)
+            .OrderByDescending(f => f.EffectiveFrom)
+            .ThenByDescending(f => f.Id)
+            .FirstOrDefaultAsync(ct);
+
+    public async Task RemoveFeesEffectiveFromAsync(Guid appointmentTypeId, DateOnly day, Guid? keepId, CancellationToken ct)
+    {
+        var query = db.Fees.Where(f => f.AppointmentTypeId == appointmentTypeId && f.EffectiveFrom >= day);
+        if (keepId is Guid id)
+            query = query.Where(f => f.Id != id);
+        var rows = await query.ToListAsync(ct);
+        db.Fees.RemoveRange(rows);
+    }
+
     public async Task<Fee> AddFeeAsync(Fee fee, CancellationToken ct)
     {
         db.Fees.Add(fee);

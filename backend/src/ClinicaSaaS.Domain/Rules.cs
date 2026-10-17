@@ -72,6 +72,21 @@ public static class BillingRules
     }
 
     public static bool CanPay(InvoiceStatus status) => status == InvoiceStatus.Pending;
+
+    public static decimal NormalizePrice(decimal amount) =>
+        decimal.Round(amount, 2, MidpointRounding.AwayFromZero);
+
+    public static string? PriceChangeError(decimal amount, decimal? current)
+    {
+        var rounded = NormalizePrice(amount);
+        if (rounded < 0)
+            return "El valor no puede ser negativo.";
+        if (rounded == 0)
+            return "El valor no puede ser 0.";
+        if (current is decimal existing && NormalizePrice(existing) == rounded)
+            return "El valor tiene que ser distinto al actual.";
+        return null;
+    }
 }
 
 public static class EncounterRules
