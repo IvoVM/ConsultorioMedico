@@ -1,4 +1,4 @@
-import { Component, HostListener, input, signal } from '@angular/core';
+import { Component, HostListener, computed, input, signal } from '@angular/core';
 import { UiModal } from 'ui';
 
 @Component({
@@ -7,15 +7,24 @@ import { UiModal } from 'ui';
   host: { class: 'screen-help' },
   template: `
     <button type="button" class="screen-help-button font-serif" aria-label="Ayuda de esta pantalla" aria-haspopup="dialog" (click)="open.set(true)">?</button>
-    <ui-modal [open]="open()" [title]="screen()" (closed)="open.set(false)">
+    <ui-modal [open]="open()" [title]="view().screen" (closed)="dismiss()">
       <div class="screen-help-copy">
-        <p>@for (part of pieces(loading()); track $index) {@if (part.mark) {<em class="section-ref">{{ part.text }}</em>} @else {{{part.text}}}}</p>
-        <p><span>Por qué lo editás: </span>@for (part of pieces(reason()); track $index) {@if (part.mark) {<em class="section-ref">{{ part.text }}</em>} @else {{{part.text}}}}</p>
-        <p><span>Si no lo cargás: </span>@for (part of pieces(skip()); track $index) {@if (part.mark) {<em class="section-ref">{{ part.text }}</em>} @else {{{part.text}}}}</p>
-        @if (others()) {
-          <p><span>Quién más puede cargarlo: </span>@for (part of pieces(others()); track $index) {@if (part.mark) {<em class="section-ref">{{ part.text }}</em>} @else {{{part.text}}}}</p>
+        <p>@for (part of pieces(view().loading); track $index) {@if (part.mark) {<em class="section-ref">{{ part.text }}</em>} @else {{{part.text}}}}</p>
+        <p><span>Por qué lo editás: </span>@for (part of pieces(view().reason); track $index) {@if (part.mark) {<em class="section-ref">{{ part.text }}</em>} @else {{{part.text}}}}</p>
+        <p><span>Si no lo cargás: </span>@for (part of pieces(view().skip); track $index) {@if (part.mark) {<em class="section-ref">{{ part.text }}</em>} @else {{{part.text}}}}</p>
+        @if (view().others) {
+          <p><span>Quién más puede cargarlo: </span>@for (part of pieces(view().others); track $index) {@if (part.mark) {<em class="section-ref">{{ part.text }}</em>} @else {{{part.text}}}}</p>
         }
       </div>
+      @if (nextScreen()) {
+        <div class="help-nav" [class.is-back]="page() === 1">
+          @if (page() === 0) {
+            <button type="button" class="help-switch" (click)="page.set(1)">{{ nextScreen() }} <span aria-hidden="true">→</span></button>
+          } @else {
+            <button type="button" class="help-switch" (click)="page.set(0)"><span aria-hidden="true">←</span> {{ screen() }}</button>
+          }
+        </div>
+      }
     </ui-modal>
   `,
   styles: `
@@ -66,6 +75,34 @@ import { UiModal } from 'ui';
       font-style: normal;
       font-weight: 500;
     }
+
+    .help-nav {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 1.5rem;
+    }
+
+    .help-nav.is-back {
+      justify-content: flex-start;
+    }
+
+    .help-switch {
+      display: inline-flex;
+      min-height: 2.75rem;
+      cursor: pointer;
+      align-items: center;
+      gap: 0.5rem;
+      border-radius: 2px;
+      padding: 0.4rem 0.9rem;
+      color: var(--color-clinic-deep);
+      font-size: 1.125rem;
+      font-weight: 500;
+      box-shadow: inset 0 0 0 1.5px var(--color-clinic);
+    }
+
+    .help-switch:hover {
+      background: var(--color-clinic-wash);
+    }
   `,
 })
 export class ScreenNote {
@@ -74,11 +111,27 @@ export class ScreenNote {
   readonly reason = input.required<string>();
   readonly skip = input.required<string>();
   readonly others = input('');
+  readonly nextScreen = input('');
+  readonly nextLoading = input('');
+  readonly nextReason = input('');
+  readonly nextSkip = input('');
+  readonly nextOthers = input('');
   readonly open = signal(false);
+  readonly page = signal(0);
+  readonly view = computed(() =>
+    this.page() === 0 || !this.nextScreen()
+      ? { screen: this.screen(), loading: this.loading(), reason: this.reason(), skip: this.skip(), others: this.others() }
+      : { screen: this.nextScreen(), loading: this.nextLoading(), reason: this.nextReason(), skip: this.nextSkip(), others: this.nextOthers() },
+  );
 
   @HostListener('document:keydown.escape')
   close() {
+    this.dismiss();
+  }
+
+  dismiss() {
     this.open.set(false);
+    this.page.set(0);
   }
 
   pieces(value: string) {

@@ -6,7 +6,10 @@
       [attr.aria-label]="title()"
       (click)="$event.stopPropagation()"
     >
-      <h2 class="mb-5 font-serif text-2xl tracking-tight">{{ title() }}</h2>
+      <div class="mb-5 flex items-start justify-between gap-4">
+        <h2 class="font-serif text-2xl tracking-tight">{{ title() }}</h2>
+        <button type="button" class="modal-close" aria-label="Cerrar" (click)="closed.emit()">×</button>
+      </div>
       <ng-content />
     </div>
   </div>
