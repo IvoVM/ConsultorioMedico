@@ -2,7 +2,6 @@ import { Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AppointmentDto, AppointmentsService, errorMessage } from 'sdk';
 import { UiBadge, UiEmpty, UiSkeleton, UiTable } from 'ui';
-import { ScreenNote } from '../../screen-note';
 import { firstValueFrom } from 'rxjs';
 
 const statusLabels: Record<string, string> = {
@@ -15,7 +14,7 @@ const statusLabels: Record<string, string> = {
 };
 
 @Component({
-  imports: [RouterLink, ScreenNote, UiBadge, UiEmpty, UiSkeleton, UiTable],
+  imports: [RouterLink, UiBadge, UiEmpty, UiSkeleton, UiTable],
   templateUrl: './home.html',
 })
 export class HomePage {

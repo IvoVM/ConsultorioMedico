@@ -2,11 +2,10 @@ import { Component, inject, signal } from '@angular/core';
 import { BillingService, InvoiceDto, errorMessage } from 'sdk';
 import { invoiceStatusLabels, paymentMethodLabels } from './models/invoice-labels';
 import { UiBadge, UiEmpty, UiSkeleton, UiTable } from 'ui';
-import { ScreenNote } from '../../screen-note';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
-  imports: [ScreenNote, UiTable, UiBadge, UiEmpty, UiSkeleton],
+  imports: [UiTable, UiBadge, UiEmpty, UiSkeleton],
   templateUrl: './invoices.html',
 })
 export class InvoicesPage {

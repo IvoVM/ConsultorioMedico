@@ -1,8 +1,3 @@
-<screen-note
-  loading="Estás viendo los comprobantes de las atenciones. No se cargan a mano."
-  reason="Muestran quién debe, cuánto y si ya se cobró."
-  skip="Si no se cierra una atención, no aparece un comprobante nuevo."
-/>
 @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
 @if (loading()) {
   <ui-skeleton label="Cargando comprobantes" />

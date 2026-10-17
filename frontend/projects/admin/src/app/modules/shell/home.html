@@ -2,11 +2,6 @@
   <h2 class="font-serif text-3xl tracking-tight">Hoy en el consultorio</h2>
   <p class="mt-1 text-ink/70">{{ dayLabel }}@if (!loading()) { <span> · {{ appointments().length }} {{ appointments().length === 1 ? 'turno' : 'turnos' }}</span> }</p>
 </header>
-<screen-note
-  loading="Estás viendo los turnos de hoy. No se cargan en esta pantalla."
-  reason="Sirve para seguir quién llega y quién ya fue atendido."
-  skip="Si no hay agendas publicadas ni reservas, el día aparece vacío."
-/>
 <nav class="mb-8 flex flex-wrap gap-x-6 gap-y-2">
   <a routerLink="/pacientes" class="text-link">Pacientes</a>
   <a routerLink="/historias" class="text-link">Historias médicas</a>

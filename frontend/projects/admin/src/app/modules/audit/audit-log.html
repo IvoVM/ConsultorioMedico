@@ -1,8 +1,3 @@
-<screen-note
-  loading="Estás viendo el registro de altas, ediciones e importaciones. No se edita desde acá."
-  reason="Sirve para saber quién cambió un dato y cuándo."
-  skip="Si nadie carga ni modifica nada, esta lista queda vacía."
-/>
 @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
 @if (loading()) {
   <ui-skeleton label="Cargando auditoría" />
