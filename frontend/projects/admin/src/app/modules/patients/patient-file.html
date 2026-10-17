@@ -25,10 +25,10 @@
         <span>{{ record()?.email }}</span>
       </p>
       <screen-note
-        class="mt-4 block"
         loading="Estás editando la ficha de este paciente: datos, cobertura, emergencia e historia."
         reason="Lo que cambies acá es lo que ve secretaría y el médico."
         skip="Si no guardás, queda la ficha anterior."
+        others="Nadie más edita esta ficha. El paciente cargó nombre, documento y teléfono al crear la cuenta, desde el portal en Registro o desde la app en Crear cuenta. Secretaría la consulta desde el portal, en Secretaría, y desde la app, en Mostrador. El médico ve los datos en la atención, desde el portal y la app, en Atención."
       />
       @if (saved()) {
         <p class="saved-note mt-3" role="status">

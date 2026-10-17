@@ -441,23 +441,6 @@ tbody tr.quick-row:hover {
   padding-bottom: 6rem;
 }
 
-.screen-note {
-  max-width: 46rem;
-  margin-bottom: 1.75rem;
-  display: grid;
-  gap: 0.45rem;
-  color: rgb(23 51 44 / 0.78);
-}
-
-.screen-note span {
-  font-weight: 700;
-  color: var(--color-clinic-deep);
-}
-
-.screen-note p {
-  margin: 0;
-}
-
 .record-section {
   scroll-margin-top: 1.5rem;
   border-top: 1px solid var(--color-rule);

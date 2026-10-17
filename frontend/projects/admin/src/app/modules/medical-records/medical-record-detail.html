@@ -17,10 +17,10 @@
         <span>{{ record()?.email }}</span>
       </p>
       <screen-note
-        class="mt-4 block"
         loading="Estás editando la historia completa de este paciente."
         reason="Alergias, medicación y antecedentes quedan en la atención."
         skip="Si no guardás, la historia sigue como estaba."
+        others="El médico carga el encuentro y la receta de este paciente desde el portal, en Atención, y desde la app, en Atención. No cambia alergias ni medicación habitual. El paciente y secretaría ven la historia, sin editarla, desde el portal y la app, en Historia clínica."
       />
       @if (saved()) {
         <p class="saved-note mt-3" role="status">

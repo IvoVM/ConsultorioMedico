@@ -1,13 +1,14 @@
-<section class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-  <screen-note
-    loading="Estás cargando la ficha del paciente: documento, contacto, cobertura y emergencia."
-    reason="Secretaría lo busca por documento, teléfono o afiliado, y el médico lo ve en la atención."
-    skip="Si no das de alta la ficha, esa persona no puede tener turnos ni historia clínica."
-  />
-  @if (!altaOpen()) {
+<screen-note
+  loading="Estás cargando la ficha del paciente: documento, contacto, cobertura y emergencia."
+  reason="Secretaría lo busca por documento, teléfono o afiliado, y el médico lo ve en la atención."
+  skip="Si no das de alta la ficha, esa persona no puede tener turnos ni historia clínica."
+  others="El paciente carga nombre, documento y teléfono desde el portal, en Registro, y desde la app, en Crear cuenta. Cobertura y emergencia las carga el administrador desde Personas, en Pacientes. Secretaría busca la ficha, sin dar de alta, desde el portal, en Secretaría, y desde la app, en Mostrador."
+/>
+@if (!altaOpen()) {
+  <div class="mb-8 flex justify-end">
     <ui-button (click)="openAlta()">Dar de alta</ui-button>
-  }
-</section>
+  </div>
+}
 
 @if (altaOpen()) {
   <form class="mb-10 max-w-3xl border border-rule bg-white px-5" animate.enter="quick-in" (ngSubmit)="create()">

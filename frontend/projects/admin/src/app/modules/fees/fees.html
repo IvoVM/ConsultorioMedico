@@ -2,6 +2,7 @@
   loading="Estás viendo el precio vigente de cada servicio."
   reason="Al editarlo, ese servicio pasa a valer el monto nuevo a partir de ahora."
   skip="Si no lo cambiás, los turnos se siguen cobrando al precio que ya está vigente."
+  others="Nadie más cambia el precio. Se edita desde Cobros, en Aranceles, y desde la app, en Aranceles. Secretaría cobra el comprobante, sin tocar el arancel, desde el portal, en Secretaría, y desde la app, en Mostrador."
 />
 @if (error() && !editing()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
 @if (loading()) {
