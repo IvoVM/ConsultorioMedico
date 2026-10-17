@@ -11,8 +11,8 @@ namespace ClinicaSaaS.Api.Controllers;
 public class EmployeesController(EmployeesService employees) : ApiController
 {
     [HttpGet]
-    public Task<IActionResult> List(CancellationToken ct) =>
-        Run(() => employees.ListAsync(ct));
+    public Task<IActionResult> List([FromQuery] ListQuery query, CancellationToken ct) =>
+        Run(() => employees.ListResultAsync(query, ct));
 
     [HttpPost]
     public Task<IActionResult> Create(CreateEmployeeCommand command, CancellationToken ct) =>

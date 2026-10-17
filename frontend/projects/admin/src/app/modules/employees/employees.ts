@@ -9,9 +9,11 @@ import {
   TenantRole,
   errorMessage,
 } from 'sdk';
-import { SelectOption, UiButton, UiEmpty, UiField, UiSelect, UiSkeleton, UiTable } from 'ui';
+import { SelectOption, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { ScreenNote } from '../../screen-note';
+import { TablePager, listParams, queueSearch } from '../../table-pager';
+import { SortCol, SortState, nextSort } from '../../table-sort';
 import { roleLabels } from './models/role-labels';
 
 export const sampleCsv = `nombre,apellido,email,rol,matricula,especialidad
@@ -38,7 +40,7 @@ interface PreviewRow {
 }
 
 @Component({
-  imports: [FormsModule, ScreenNote, UiButton, UiTable, UiEmpty, UiField, UiSelect, UiSkeleton],
+  imports: [FormsModule, ScreenNote, SortCol, TablePager, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable],
   templateUrl: './employees.html',
 })
 export class EmployeesPage {
@@ -51,6 +53,8 @@ export class EmployeesPage {
     { value: 'TenantAdmin', label: 'Administrador' },
   ];
   readonly people = signal<EmployeeDto[]>([]);
+  readonly total = signal(0);
+  readonly page = signal(1);
   readonly specialties = signal<SelectOption[]>([]);
   readonly created = signal<CreatedEmployeeDto[]>([]);
   readonly rejected = signal<RejectedRowDto[]>([]);
@@ -61,6 +65,9 @@ export class EmployeesPage {
   readonly loading = signal(true);
   readonly saving = signal(false);
   readonly panel = signal<'cargar' | 'importar' | ''>('');
+  readonly query = signal('');
+  readonly sort = signal<SortState>({ key: 'name', dir: 'asc' });
+  private readonly searchHost: { timer?: ReturnType<typeof setTimeout> } = {};
   readonly csv = signal('');
   firstName = '';
   lastName = '';
@@ -78,10 +85,12 @@ export class EmployeesPage {
   async load() {
     try {
       const [people, specialties] = await Promise.all([
-        firstValueFrom(this.employees.employees()),
+        firstValueFrom(this.employees.employeesPage(listParams(this.page(), this.sort(), this.query()))),
         firstValueFrom(this.organization.specialties()),
       ]);
-      this.people.set(people);
+      this.people.set(people.items);
+      this.total.set(people.total);
+      this.page.set(people.page);
       this.specialties.set(specialties.map((item) => ({ value: item.id, label: item.name })));
       this.specialtyId ||= specialties[0]?.id ?? '';
     } catch (error) {
@@ -91,10 +100,26 @@ export class EmployeesPage {
     }
   }
 
+  sortBy(key: string) {
+    this.sort.update((current) => nextSort(current, key));
+    this.page.set(1);
+    void this.load();
+  }
+
+  onSearch(value: string) {
+    this.query.set(value);
+    this.page.set(1);
+    queueSearch(this.searchHost, () => void this.load());
+  }
+
+  go(page: number) {
+    this.page.set(page);
+    void this.load();
+  }
+
   open(panel: 'cargar' | 'importar') {
     this.error.set('');
-    this.password.set('');
-    this.panel.set(this.panel() === panel ? '' : panel);
+    this.panel.set(panel);
   }
 
   downloadSample() {
@@ -137,6 +162,7 @@ export class EmployeesPage {
         specialtyId: this.role === 'Doctor' ? this.specialtyId : null,
       }));
       this.password.set(result.temporaryPassword);
+      this.panel.set('');
       this.firstName = '';
       this.lastName = '';
       this.email = '';
@@ -156,6 +182,7 @@ export class EmployeesPage {
       const result = await firstValueFrom(this.employees.importEmployees({ csv: this.csv() }));
       this.created.set(result.created);
       this.rejected.set(result.rejected);
+      this.panel.set('');
       await this.load();
     } catch (error) {
       this.error.set(errorMessage(error));

@@ -1,11 +1,25 @@
 @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
+
+<div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end">
+  <ui-field class="sm:w-80" label="Buscar">
+    <input type="search" name="query" [ngModel]="query()" (ngModelChange)="onSearch($event)" placeholder="Paciente, estado o pago" />
+  </ui-field>
+</div>
+
 @if (loading()) {
   <ui-skeleton label="Cargando comprobantes" />
-} @else if (!invoices().length) {
-  <ui-empty message="Todavía no hay comprobantes. Se generan cuando se cierra una atención." />
+} @else if (!total()) {
+  <ui-empty [message]="query() ? 'Ningún comprobante coincide con esa búsqueda.' : 'Todavía no hay comprobantes. Se generan cuando se cierra una atención.'" />
 } @else {
 <ui-table>
-  <thead><tr><th>Paciente</th><th>Total</th><th>Estado</th><th>Pago</th></tr></thead>
+  <thead>
+    <tr>
+      <th><button type="button" sortCol [on]="sort().key === 'patient'" [dir]="sort().dir" (click)="sortBy('patient')">Paciente</button></th>
+      <th><button type="button" sortCol [on]="sort().key === 'total'" [dir]="sort().dir" (click)="sortBy('total')">Total</button></th>
+      <th><button type="button" sortCol [on]="sort().key === 'status'" [dir]="sort().dir" (click)="sortBy('status')">Estado</button></th>
+      <th><button type="button" sortCol [on]="sort().key === 'payment'" [dir]="sort().dir" (click)="sortBy('payment')">Pago</button></th>
+    </tr>
+  </thead>
   <tbody>
     @for (item of invoices(); track item.id) {
       <tr>
@@ -17,4 +31,5 @@
     }
   </tbody>
 </ui-table>
+<table-pager [total]="total()" [page]="page()" (pageChange)="go($event)" />
 }

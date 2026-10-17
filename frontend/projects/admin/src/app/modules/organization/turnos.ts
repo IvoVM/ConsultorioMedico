@@ -1,33 +1,30 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { AppointmentTypeDto, EmployeesService, OrganizationService, ScheduleBlockDto, ScheduleService, SpecialtyDto, errorMessage } from 'sdk';
-import { UiButton, UiEmpty, UiField, UiSkeleton, UiTable } from 'ui';
+import { AppointmentTypeRowDto, OrganizationService, errorMessage } from 'sdk';
+import { UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable } from 'ui';
 import { ScreenNote } from '../../screen-note';
+import { TablePager, listParams, queueSearch } from '../../table-pager';
+import { SortCol, SortState, nextSort } from '../../table-sort';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
-  imports: [FormsModule, RouterLink, ScreenNote, UiButton, UiEmpty, UiField, UiSkeleton, UiTable],
+  imports: [FormsModule, RouterLink, ScreenNote, SortCol, TablePager, UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable],
   templateUrl: './turnos.html',
 })
 export class TurnosPage {
   private readonly organization = inject(OrganizationService);
-  private readonly employees = inject(EmployeesService);
-  private readonly schedule = inject(ScheduleService);
   private readonly router = inject(Router);
-  readonly types = signal<AppointmentTypeDto[]>([]);
-  readonly specialties = signal<SpecialtyDto[]>([]);
-  readonly schedules = signal<ScheduleBlockDto[][]>([]);
+  private readonly searchHost: { timer?: ReturnType<typeof setTimeout> } = {};
+  readonly rows = signal<AppointmentTypeRowDto[]>([]);
+  readonly total = signal(0);
+  readonly page = signal(1);
   readonly error = signal('');
   readonly loading = signal(true);
   readonly saving = signal(false);
-  readonly rows = computed(() =>
-    this.types().map((item) => ({
-      ...item,
-      specialtyName: this.specialties().find((specialty) => specialty.id === item.specialtyId)?.name ?? '',
-      people: this.schedules().filter((blocks) => blocks.some((block) => block.appointmentTypeId === item.id)).length,
-    })),
-  );
+  readonly creating = signal(false);
+  readonly query = signal('');
+  readonly sort = signal<SortState>({ key: 'name', dir: 'asc' });
   typeName = '';
   duration = 30;
 
@@ -37,6 +34,23 @@ export class TurnosPage {
 
   countLabel(count: number, one: string, many: string) {
     return count === 1 ? `1 ${one}` : `${count} ${many}`;
+  }
+
+  sortBy(key: string) {
+    this.sort.update((current) => nextSort(current, key));
+    this.page.set(1);
+    void this.load();
+  }
+
+  onSearch(value: string) {
+    this.query.set(value);
+    this.page.set(1);
+    queueSearch(this.searchHost, () => void this.load());
+  }
+
+  go(page: number) {
+    this.page.set(page);
+    void this.load();
   }
 
   async createTurno() {
@@ -57,17 +71,12 @@ export class TurnosPage {
 
   private async load() {
     try {
-      const [types, specialties, professionals] = await Promise.all([
-        firstValueFrom(this.organization.appointmentTypes()),
-        firstValueFrom(this.organization.specialties()),
-        firstValueFrom(this.employees.professionals()),
-      ]);
-      const schedules = await Promise.all(
-        professionals.map((person) => firstValueFrom(this.schedule.getSchedule({ professionalId: person.id }))),
+      const result = await firstValueFrom(
+        this.organization.appointmentTypesPage(listParams(this.page(), this.sort(), this.query())),
       );
-      this.types.set(types);
-      this.specialties.set(specialties);
-      this.schedules.set(schedules);
+      this.rows.set(result.items);
+      this.total.set(result.total);
+      this.page.set(result.page);
     } catch (error) {
       this.error.set(errorMessage(error));
     } finally {

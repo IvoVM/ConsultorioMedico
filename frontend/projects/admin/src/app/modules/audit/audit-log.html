@@ -1,15 +1,30 @@
 @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
+
+<div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end">
+  <ui-field class="sm:w-80" label="Buscar">
+    <input type="search" name="query" [ngModel]="query()" (ngModelChange)="onSearch($event)" placeholder="Acción, entidad o detalle" />
+  </ui-field>
+</div>
+
 @if (loading()) {
   <ui-skeleton label="Cargando auditoría" />
-} @else if (!entries().length) {
-  <ui-empty message="Todavía no hay movimientos en la auditoría." />
+} @else if (!total()) {
+  <ui-empty [message]="query() ? 'Ningún movimiento coincide con esa búsqueda.' : 'Todavía no hay movimientos en la auditoría.'" />
 } @else {
 <ui-table>
-  <thead><tr><th>Fecha</th><th>Acción</th><th>Entidad</th><th>Detalle</th></tr></thead>
+  <thead>
+    <tr>
+      <th><button type="button" sortCol [on]="sort().key === 'date'" [dir]="sort().dir" (click)="sortBy('date')">Fecha</button></th>
+      <th><button type="button" sortCol [on]="sort().key === 'action'" [dir]="sort().dir" (click)="sortBy('action')">Acción</button></th>
+      <th><button type="button" sortCol [on]="sort().key === 'entity'" [dir]="sort().dir" (click)="sortBy('entity')">Entidad</button></th>
+      <th><button type="button" sortCol [on]="sort().key === 'detail'" [dir]="sort().dir" (click)="sortBy('detail')">Detalle</button></th>
+    </tr>
+  </thead>
   <tbody>
     @for (item of entries(); track item.id) {
       <tr><td>{{ item.timestamp | fecha }}</td><td>{{ item.action }}</td><td>{{ item.entity }}</td><td>{{ item.detail }}</td></tr>
     }
   </tbody>
 </ui-table>
+<table-pager [total]="total()" [page]="page()" (pageChange)="go($event)" />
 }

@@ -5,20 +5,46 @@
   reason="Sirven para ver qué se atiende en cada sede y para ordenar la organización."
   skip="Si no los cargás, esta lista queda vacía y no queda registrado qué ofrece la clínica."
 />
-@if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
+
+@if (section() === 'servicios') {
+  <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <ui-field class="sm:w-80" label="Buscar">
+      <input type="search" name="query" [ngModel]="query()" (ngModelChange)="onSearch($event)" placeholder="Nombre" />
+    </ui-field>
+    <ui-button (click)="creating.set(true)">Crear</ui-button>
+  </div>
+}
+
+@if (error() && !creating()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
 @if (loading()) {
   <ui-skeleton [label]="'Cargando ' + sectionLabel().toLowerCase()" />
 } @else if (section() === 'servicios') {
-  <form class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end" (ngSubmit)="createService()">
-    <ui-field class="sm:w-80" label="Servicio"><input name="serviceName" [(ngModel)]="serviceName" required /></ui-field>
-    <div class="flex items-end"><ui-button type="submit" [loading]="saving()">Agregar servicio</ui-button></div>
-  </form>
-  @if (!services().length) {
-    <ui-empty message="Todavía no hay servicios cargados." />
+  @if (!total()) {
+    <ui-empty [message]="query() ? 'Ningún servicio coincide con esa búsqueda.' : 'Todavía no hay servicios cargados.'" />
   } @else {
-  <ui-table>
-    <thead><tr><th>Servicio</th></tr></thead>
-    <tbody>@for (service of services(); track service.id) { <tr><td>{{ service.name }}</td></tr> }</tbody>
-  </ui-table>
+    <ui-table>
+      <thead>
+        <tr>
+          <th><button type="button" sortCol [on]="sort().key === 'name'" [dir]="sort().dir" (click)="sortBy('name')">Servicio</button></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (service of services(); track service.id) { <tr><td>{{ service.name }}</td></tr> }
+      </tbody>
+    </ui-table>
+    <table-pager [total]="total()" [page]="page()" (pageChange)="go($event)" />
   }
+}
+
+@if (creating()) {
+  <ui-modal [open]="true" title="Crear servicio" (closed)="creating.set(false)">
+    <form class="flex flex-col gap-4" (ngSubmit)="createService()">
+      <ui-field label="Servicio"><input name="serviceName" [(ngModel)]="serviceName" required /></ui-field>
+      @if (error()) { <p class="text-sm text-pulse" role="alert">{{ error() }}</p> }
+      <div class="flex flex-wrap gap-3">
+        <ui-button type="submit" [loading]="saving()">Crear</ui-button>
+        <ui-button variant="outlined" [disabled]="saving()" (click)="creating.set(false)">Cancelar</ui-button>
+      </div>
+    </form>
+  </ui-modal>
 }

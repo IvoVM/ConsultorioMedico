@@ -1,4 +1,4 @@
-export function queryString(query?: Record<string, unknown>) {
+export function queryString(query?: object) {
   if (!query) return '';
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(query)) {

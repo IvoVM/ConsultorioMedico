@@ -5,43 +5,51 @@
   skip="Si no lo cambiás, los [[TURNOS]] se siguen cobrando al precio que ya está vigente."
 />
 @if (error() && !editing()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
+
+<div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end">
+  <ui-field class="sm:w-80" label="Buscar">
+    <input type="search" name="query" [ngModel]="query()" (ngModelChange)="onSearch($event)" placeholder="Servicio" />
+  </ui-field>
+</div>
+
 @if (loading()) {
   <ui-skeleton label="Cargando aranceles" />
-} @else if (!rows().length) {
-  <ui-empty message="Todavía no hay servicios. Cargá un tipo de turno para poder ponerle precio." />
+} @else if (!total()) {
+  <ui-empty [message]="query() ? 'Ningún servicio coincide con esa búsqueda.' : 'Todavía no hay servicios. Cargá un tipo de turno para poder ponerle precio.'" />
 } @else {
 <ui-table>
   <thead>
     <tr>
-      <th>Servicio</th>
-      <th>Monto</th>
-      <th>Desde</th>
-      <th><span class="sr-only">Precio</span></th>
+      <th><button type="button" sortCol [on]="sort().key === 'name'" [dir]="sort().dir" (click)="sortBy('name')">Servicio</button></th>
+      <th><button type="button" sortCol [on]="sort().key === 'amount'" [dir]="sort().dir" (click)="sortBy('amount')">Monto</button></th>
+      <th><button type="button" sortCol [on]="sort().key === 'from'" [dir]="sort().dir" (click)="sortBy('from')">Desde</button></th>
+      <th class="w-px"></th>
     </tr>
   </thead>
   <tbody>
-    @for (row of rows(); track row.type.id) {
+    @for (row of rows(); track row.appointmentTypeId) {
       <tr>
-        <td>{{ row.type.name }}</td>
-        <td>{{ row.fee ? row.fee.amount : '—' }}</td>
-        <td>{{ row.fee ? (row.fee.effectiveFrom | fecha) : '—' }}</td>
-        <td class="w-44">
-          <ui-button variant="outlined" (click)="open(row)">{{ row.fee ? 'Editar precio' : 'Cargar precio' }}</ui-button>
+        <td>{{ row.service }}</td>
+        <td>{{ row.amount != null ? row.amount : '—' }}</td>
+        <td>{{ row.effectiveFrom ? (row.effectiveFrom | fecha) : '—' }}</td>
+        <td class="w-px whitespace-nowrap">
+          <ui-button variant="outlined" (click)="open(row)">{{ row.amount != null ? 'Editar' : 'Crear' }}</ui-button>
         </td>
       </tr>
     }
   </tbody>
 </ui-table>
+<table-pager [total]="total()" [page]="page()" (pageChange)="go($event)" />
 }
 
 @if (editing(); as row) {
-  <ui-modal [open]="true" [title]="row.fee ? 'Editar precio' : 'Cargar precio'" (closed)="close()">
+  <ui-modal [open]="true" [title]="row.amount != null ? 'Editar precio' : 'Cargar precio'" (closed)="close()">
     <form (ngSubmit)="save()">
       <p class="mb-4 text-sm leading-relaxed text-ink/80">
-        @if (row.fee) {
-          {{ row.type.name }} va a valer el monto nuevo a partir de ahora. Los servicios contratados antes de este cambio siguen con el valor original.
+        @if (row.amount != null) {
+          {{ row.service }} va a valer el monto nuevo a partir de ahora. Los servicios contratados antes de este cambio siguen con el valor original.
         } @else {
-          {{ row.type.name }} va a valer este monto a partir de ahora.
+          {{ row.service }} va a valer este monto a partir de ahora.
         }
       </p>
       <ui-field label="Monto">

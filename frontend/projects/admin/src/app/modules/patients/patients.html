@@ -5,82 +5,43 @@
   skip="Si no das de alta la ficha, esa persona no puede tener [[TURNOS]] ni [[HISTORIA CLÍNICA]]."
   others="El paciente, desde el portal en [[Registro]]."
 />
-@if (!altaOpen()) {
-  <div class="mb-8 flex justify-end">
-    <ui-button (click)="openAlta()">Dar de alta</ui-button>
-  </div>
-}
 
-@if (altaOpen()) {
-  <form class="mb-10 max-w-3xl border border-rule bg-white px-5" animate.enter="quick-in" (ngSubmit)="create()">
-    <fieldset class="record-section">
-      <legend>Alta</legend>
-      <div class="grid gap-4 sm:grid-cols-2">
-        <ui-field label="Nombre"><input id="alta-nombre" name="firstName" required maxlength="80" autocomplete="off" [(ngModel)]="firstName" /></ui-field>
-        <ui-field label="Apellido"><input name="lastName" required maxlength="80" autocomplete="off" [(ngModel)]="lastName" /></ui-field>
-        <ui-field label="Documento"><input name="documentNumber" required maxlength="20" inputmode="numeric" autocomplete="off" [(ngModel)]="documentNumber" /></ui-field>
-        <ui-field label="Fecha de nacimiento"><input name="birthDate" type="date" required [max]="today" [(ngModel)]="birthDate" /></ui-field>
-        <ui-field label="Teléfono"><input name="phone" type="tel" required maxlength="30" autocomplete="off" [(ngModel)]="phone" /></ui-field>
-        <ui-field label="Email de ingreso"><input name="email" type="email" required maxlength="120" autocomplete="off" [(ngModel)]="email" /></ui-field>
-      </div>
-      <p class="mt-2 text-sm text-ink/55">El email es el usuario del portal. La clave temporal aparece una sola vez, después del alta.</p>
-    </fieldset>
+@if (error() && !altaOpen()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
 
-    <fieldset class="record-section">
-      <legend>Obra social o prepaga</legend>
-      <div class="grid gap-4 sm:grid-cols-2">
-        <ui-field label="Cobertura"><input name="healthInsurance" maxlength="120" placeholder="Vacío si es particular" [(ngModel)]="healthInsurance" /></ui-field>
-        <ui-field label="N.º de afiliado"><input name="memberNumber" maxlength="40" [(ngModel)]="memberNumber" /></ui-field>
-      </div>
-    </fieldset>
-
-    <fieldset class="record-section">
-      <legend>Contacto de emergencia</legend>
-      <div class="grid gap-4 sm:grid-cols-2">
-        <ui-field label="Nombre y vínculo"><input name="emergencyContact" maxlength="120" placeholder="Ej.: Laura Gómez, hermana" [(ngModel)]="emergencyContact" /></ui-field>
-        <ui-field label="Teléfono"><input name="emergencyPhone" type="tel" maxlength="30" [(ngModel)]="emergencyPhone" /></ui-field>
-      </div>
-      <div class="mt-5 flex flex-wrap gap-3">
-        <ui-button type="submit" [loading]="saving()">Dar de alta</ui-button>
-        <ui-button variant="outlined" [disabled]="saving()" (click)="altaOpen.set(false)">Cancelar</ui-button>
-      </div>
-    </fieldset>
-  </form>
-}
-
-@if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
-
-<div class="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-  <ui-field class="sm:w-[28rem]" label="Buscar paciente">
+<div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+  <ui-field class="sm:w-[28rem]" label="Buscar">
     <input
       type="search"
       name="search"
       placeholder="Documento, nombre, teléfono o afiliado"
       autocomplete="off"
       [ngModel]="search()"
-      (ngModelChange)="search.set($event)"
+      (ngModelChange)="onSearch($event)"
     />
   </ui-field>
-  @if (!loading() && patients().length) {
-    <p class="text-sm tabular-nums text-ink/55">{{ visible().length }} de {{ patients().length }}</p>
-  }
+  <div class="flex items-center gap-4">
+    @if (!loading() && total()) {
+      <p class="text-sm tabular-nums text-ink/55">{{ total() }}</p>
+    }
+    <ui-button (click)="openAlta()">Crear</ui-button>
+  </div>
 </div>
 
 @if (loading()) {
   <ui-skeleton label="Cargando pacientes" />
-} @else if (visible().length) {
+} @else if (patients().length) {
   <ui-table>
     <thead>
       <tr>
-        <th>Paciente</th>
-        <th class="hidden md:table-cell">Teléfono</th>
-        <th>Cobertura</th>
-        <th class="hidden lg:table-cell">Emergencia</th>
-        <th><span class="sr-only">Abrir ficha</span></th>
+        <th><button type="button" sortCol [on]="sort().key === 'name'" [dir]="sort().dir" (click)="sortBy('name')">Paciente</button></th>
+        <th class="hidden md:table-cell"><button type="button" sortCol [on]="sort().key === 'phone'" [dir]="sort().dir" (click)="sortBy('phone')">Teléfono</button></th>
+        <th><button type="button" sortCol [on]="sort().key === 'coverage'" [dir]="sort().dir" (click)="sortBy('coverage')">Cobertura</button></th>
+        <th class="hidden lg:table-cell"><button type="button" sortCol [on]="sort().key === 'emergency'" [dir]="sort().dir" (click)="sortBy('emergency')">Emergencia</button></th>
+        <th class="w-px"></th>
       </tr>
     </thead>
     <tbody>
-      @for (patient of visible(); track patient.patientId; let i = $index) {
+      @for (patient of patients(); track patient.patientId; let i = $index) {
         <tr class="record-row" [style.--i]="i < 12 ? i : 12">
           <td>
             <p class="font-serif text-lg leading-tight">{{ patient.lastName }}, {{ patient.firstName }}</p>
@@ -104,23 +65,53 @@
             }
           </td>
           <td class="w-px whitespace-nowrap">
-            <a
-              class="row-action is-go"
-              [routerLink]="['/pacientes', patient.patientId]"
-              [attr.aria-label]="'Abrir ficha de ' + patient.firstName + ' ' + patient.lastName"
-              title="Abrir ficha"
-            >
-              <svg class="arrow" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
-                <path d="M4 10h11m-4.5-4.5L15 10l-4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
-            </a>
+            <a class="text-link" [routerLink]="['/pacientes', patient.patientId]">Editar</a>
           </td>
         </tr>
       }
     </tbody>
   </ui-table>
-} @else if (patients().length) {
+  <table-pager [total]="total()" [page]="page()" (pageChange)="go($event)" />
+} @else if (search()) {
   <ui-empty message="Ningún paciente coincide con esa búsqueda. Probá con el documento o el número de afiliado." />
 } @else if (!error()) {
-  <ui-empty message="Todavía no hay pacientes. Dar de alta crea la ficha con documento, cobertura y contacto de emergencia." />
+  <ui-empty message="Todavía no hay pacientes. Crear abre la ficha con documento, cobertura y contacto de emergencia." />
+}
+
+@if (altaOpen()) {
+  <ui-modal [open]="true" [wide]="true" title="Crear paciente" (closed)="altaOpen.set(false)">
+    <form (ngSubmit)="create()">
+      <fieldset class="record-section">
+        <legend>Alta</legend>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <ui-field label="Nombre"><input id="alta-nombre" name="firstName" required maxlength="80" autocomplete="off" [(ngModel)]="firstName" /></ui-field>
+          <ui-field label="Apellido"><input name="lastName" required maxlength="80" autocomplete="off" [(ngModel)]="lastName" /></ui-field>
+          <ui-field label="Documento"><input name="documentNumber" required maxlength="20" inputmode="numeric" autocomplete="off" [(ngModel)]="documentNumber" /></ui-field>
+          <ui-field label="Fecha de nacimiento"><input name="birthDate" type="date" required [max]="today" [(ngModel)]="birthDate" /></ui-field>
+          <ui-field label="Teléfono"><input name="phone" type="tel" required maxlength="30" autocomplete="off" [(ngModel)]="phone" /></ui-field>
+          <ui-field label="Email de ingreso"><input name="email" type="email" required maxlength="120" autocomplete="off" [(ngModel)]="email" /></ui-field>
+        </div>
+        <p class="mt-2 text-sm text-ink/55">El email es el usuario del portal. La clave temporal aparece una sola vez, después del alta.</p>
+      </fieldset>
+      <fieldset class="record-section">
+        <legend>Obra social o prepaga</legend>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <ui-field label="Cobertura"><input name="healthInsurance" maxlength="120" placeholder="Vacío si es particular" [(ngModel)]="healthInsurance" /></ui-field>
+          <ui-field label="N.º de afiliado"><input name="memberNumber" maxlength="40" [(ngModel)]="memberNumber" /></ui-field>
+        </div>
+      </fieldset>
+      <fieldset class="record-section">
+        <legend>Contacto de emergencia</legend>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <ui-field label="Nombre y vínculo"><input name="emergencyContact" maxlength="120" placeholder="Ej.: Laura Gómez, hermana" [(ngModel)]="emergencyContact" /></ui-field>
+          <ui-field label="Teléfono"><input name="emergencyPhone" type="tel" maxlength="30" [(ngModel)]="emergencyPhone" /></ui-field>
+        </div>
+        @if (error()) { <p class="mt-3 text-sm text-pulse" role="alert">{{ error() }}</p> }
+        <div class="mt-5 flex flex-wrap gap-3">
+          <ui-button type="submit" [loading]="saving()">Crear</ui-button>
+          <ui-button variant="outlined" [disabled]="saving()" (click)="altaOpen.set(false)">Cancelar</ui-button>
+        </div>
+      </fieldset>
+    </form>
+  </ui-modal>
 }

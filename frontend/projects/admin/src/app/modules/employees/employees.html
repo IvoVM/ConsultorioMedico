@@ -5,82 +5,55 @@
   skip="Si no los cargás, no aparecen [[TURNOS]] para reservar ni profesionales para asignar a una especialidad."
 />
 
-<div class="mb-6 flex flex-wrap gap-3">
-  <ui-button [variant]="panel() === 'cargar' ? 'primary' : 'outlined'" (click)="open('cargar')">Cargar</ui-button>
-  <ui-button [variant]="panel() === 'importar' ? 'primary' : 'outlined'" (click)="open('importar')">Importar</ui-button>
+<div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+  <ui-field class="sm:w-80" label="Buscar">
+    <input type="search" name="query" [ngModel]="query()" (ngModelChange)="onSearch($event)" placeholder="Nombre, email, rol o especialidad" />
+  </ui-field>
+  <div class="flex flex-wrap gap-3">
+    <ui-button (click)="open('cargar')">Crear</ui-button>
+    <ui-button variant="outlined" (click)="open('importar')">Importar</ui-button>
+  </div>
 </div>
 
-@if (panel() === 'cargar') {
-  <form class="mb-10 max-w-3xl border border-rule bg-white px-5" (ngSubmit)="create()">
-    <fieldset class="record-section">
-      <legend>Ficha</legend>
-      <p class="mb-4 text-sm text-ink/70">Una persona por vez. El email es el usuario para entrar. La clave temporal se muestra una sola vez.</p>
-      <div class="grid gap-4 sm:grid-cols-2">
-        <ui-field label="Nombre"><input name="firstName" required maxlength="80" autocomplete="off" [(ngModel)]="firstName" /></ui-field>
-        <ui-field label="Apellido"><input name="lastName" required maxlength="80" autocomplete="off" [(ngModel)]="lastName" /></ui-field>
-        <ui-field label="Email"><input name="email" type="email" required maxlength="120" autocomplete="off" [(ngModel)]="email" /></ui-field>
-        <ui-field label="Rol">
-          <ui-select name="role" [(ngModel)]="role" [options]="roleOptions" />
-        </ui-field>
-        <ui-field label="Matrícula"><input name="license" maxlength="40" placeholder="Solo si es médico" [(ngModel)]="licenseNumber" /></ui-field>
-        @if (role === 'Doctor') {
-          <ui-field label="Especialidad">
-            <ui-select name="specialtyId" [(ngModel)]="specialtyId" [options]="specialtyOptions()" placeholder="Elegir especialidad" />
-          </ui-field>
-        }
-      </div>
-      <div class="mt-5 flex flex-wrap gap-3">
-        <ui-button type="submit" [loading]="saving()">Cargar empleado</ui-button>
-        <ui-button variant="outlined" [disabled]="saving()" (click)="panel.set('')">Cancelar</ui-button>
-      </div>
-    </fieldset>
-  </form>
-}
-
-@if (panel() === 'importar') {
-  <section class="mb-10 max-w-3xl border border-rule bg-white px-5 py-5">
-    <h2 class="font-serif text-2xl tracking-tight">Importar varios</h2>
-    <p class="mt-3 text-sm leading-relaxed text-ink/75">
-      Cada fila es una persona. El orden es nombre, apellido, email, rol, matrícula y especialidad.
-      El rol se escribe Medico, Secretario o AdminTenant. La especialidad tiene que existir ya, con el mismo nombre.
-      Descargá el reporte de prueba, miralo y subilo tal cual: las tres primeras filas se cargan y la última no, porque el formato está mal.
-    </p>
-    <div class="mt-4 flex flex-wrap gap-3">
-      <ui-button variant="outlined" (click)="downloadSample()">Descargar reporte de prueba</ui-button>
-    </div>
-    <input class="mt-4" type="file" accept=".csv,text/csv" (change)="readFile($event)" />
-    @if (fileName()) { <p class="mt-2 text-sm text-ink/60">{{ fileName() }}</p> }
-    <div class="mt-4"><ui-button [disabled]="!csv()" [loading]="saving()" (click)="import()">Importar archivo</ui-button></div>
-
-    @if (preview().length && !created().length && !rejected().length) {
-      <h3 class="mb-3 mt-8 font-serif text-xl">Cómo se lee cada fila</h3>
-      <ui-table>
-        <thead><tr><th>Fila</th><th>Persona</th><th>Email</th><th>Rol</th><th>Resultado</th></tr></thead>
-        <tbody>
-          @for (item of preview(); track item.row) {
-            <tr [class.text-pulse]="!item.ok">
-              <td>{{ item.row }}</td>
-              <td>{{ item.name }}</td>
-              <td>{{ item.email }}</td>
-              <td>{{ item.role }}</td>
-              <td>{{ item.reason }}</td>
-            </tr>
-          }
-        </tbody>
-      </ui-table>
-    }
-  </section>
-}
-
-@if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
+@if (error() && !panel()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
 @if (password()) {
   <p class="mb-6 border border-ochre bg-ochre-wash px-4 py-3 text-sm" role="status">
     Empleado cargado. La clave temporal es <strong>{{ password() }}</strong>. No vuelve a mostrarse.
   </p>
 }
 
+@if (loading()) {
+  <ui-skeleton label="Cargando empleados" />
+} @else if (!total()) {
+  <ui-empty [message]="query() ? 'Ningún empleado coincide con esa búsqueda.' : 'Todavía no hay empleados. Crear carga una ficha. Importar lee un archivo.'" />
+} @else {
+  <ui-table>
+    <thead>
+      <tr>
+        <th><button type="button" sortCol [on]="sort().key === 'name'" [dir]="sort().dir" (click)="sortBy('name')">Persona</button></th>
+        <th><button type="button" sortCol [on]="sort().key === 'email'" [dir]="sort().dir" (click)="sortBy('email')">Email</button></th>
+        <th><button type="button" sortCol [on]="sort().key === 'role'" [dir]="sort().dir" (click)="sortBy('role')">Rol</button></th>
+        <th><button type="button" sortCol [on]="sort().key === 'license'" [dir]="sort().dir" (click)="sortBy('license')">Matrícula</button></th>
+        <th><button type="button" sortCol [on]="sort().key === 'specialty'" [dir]="sort().dir" (click)="sortBy('specialty')">Especialidad</button></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (person of people(); track person.id) {
+        <tr>
+          <td class="font-serif text-lg">{{ person.lastName }}, {{ person.firstName }}</td>
+          <td>{{ person.email }}</td>
+          <td>{{ roleLabels[person.role] }}</td>
+          <td>{{ person.licenseNumber || '—' }}</td>
+          <td>{{ person.specialty || '—' }}</td>
+        </tr>
+      }
+    </tbody>
+  </ui-table>
+  <table-pager [total]="total()" [page]="page()" (pageChange)="go($event)" />
+}
+
 @if (created().length) {
-  <h2 class="mb-4 font-serif text-2xl tracking-tight">Cargados</h2>
+  <h2 class="mb-4 mt-10 font-serif text-2xl tracking-tight">Cargados</h2>
   <ui-table>
     <thead><tr><th>Fila</th><th>Email</th><th>Rol</th><th>Clave</th></tr></thead>
     <tbody>
@@ -103,24 +76,67 @@
   </ui-table>
 }
 
-@if (loading()) {
-  <ui-skeleton label="Cargando empleados" />
-} @else if (!people().length) {
-  <ui-empty message="Todavía no hay empleados. Cargá uno con la ficha o importá el reporte de prueba." />
-} @else {
-  <h2 class="mb-4 font-serif text-2xl tracking-tight">Empleados</h2>
-  <ui-table>
-    <thead><tr><th>Persona</th><th>Email</th><th>Rol</th><th>Matrícula</th><th>Especialidad</th></tr></thead>
-    <tbody>
-      @for (person of people(); track person.id) {
-        <tr>
-          <td class="font-serif text-lg">{{ person.lastName }}, {{ person.firstName }}</td>
-          <td>{{ person.email }}</td>
-          <td>{{ roleLabels[person.role] }}</td>
-          <td>{{ person.licenseNumber || '—' }}</td>
-          <td>{{ person.specialty || '—' }}</td>
-        </tr>
-      }
-    </tbody>
-  </ui-table>
+@if (panel() === 'cargar') {
+  <ui-modal [open]="true" [wide]="true" title="Crear empleado" (closed)="panel.set('')">
+    <form class="flex flex-col gap-4" (ngSubmit)="create()">
+      <p class="text-sm text-ink/70">Una persona por vez. El email es el usuario para entrar. La clave temporal se muestra una sola vez.</p>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <ui-field label="Nombre"><input name="firstName" required maxlength="80" autocomplete="off" [(ngModel)]="firstName" /></ui-field>
+        <ui-field label="Apellido"><input name="lastName" required maxlength="80" autocomplete="off" [(ngModel)]="lastName" /></ui-field>
+        <ui-field label="Email"><input name="email" type="email" required maxlength="120" autocomplete="off" [(ngModel)]="email" /></ui-field>
+        <ui-field label="Rol">
+          <ui-select name="role" [(ngModel)]="role" [options]="roleOptions" />
+        </ui-field>
+        <ui-field label="Matrícula"><input name="license" maxlength="40" placeholder="Solo si es médico" [(ngModel)]="licenseNumber" /></ui-field>
+        @if (role === 'Doctor') {
+          <ui-field label="Especialidad">
+            <ui-select name="specialtyId" [(ngModel)]="specialtyId" [options]="specialtyOptions()" placeholder="Elegir especialidad" />
+          </ui-field>
+        }
+      </div>
+      @if (error()) { <p class="text-sm text-pulse" role="alert">{{ error() }}</p> }
+      <div class="flex flex-wrap gap-3">
+        <ui-button type="submit" [loading]="saving()">Crear</ui-button>
+        <ui-button variant="outlined" [disabled]="saving()" (click)="panel.set('')">Cancelar</ui-button>
+      </div>
+    </form>
+  </ui-modal>
+}
+
+@if (panel() === 'importar') {
+  <ui-modal [open]="true" [wide]="true" title="Importar empleados" (closed)="panel.set('')">
+    <p class="text-sm leading-relaxed text-ink/75">
+      Cada fila es una persona. El orden es nombre, apellido, email, rol, matrícula y especialidad.
+      El rol se escribe Medico, Secretario o AdminTenant. La especialidad tiene que existir ya, con el mismo nombre.
+      Descargá el reporte de prueba, miralo y subilo tal cual: las tres primeras filas se cargan y la última no, porque el formato está mal.
+    </p>
+    <div class="mt-4 flex flex-wrap gap-3">
+      <ui-button variant="outlined" (click)="downloadSample()">Descargar reporte de prueba</ui-button>
+    </div>
+    <input class="mt-4" type="file" accept=".csv,text/csv" (change)="readFile($event)" />
+    @if (fileName()) { <p class="mt-2 text-sm text-ink/60">{{ fileName() }}</p> }
+    @if (error()) { <p class="mt-3 text-sm text-pulse" role="alert">{{ error() }}</p> }
+    <div class="mt-4 flex flex-wrap gap-3">
+      <ui-button [disabled]="!csv()" [loading]="saving()" (click)="import()">Importar archivo</ui-button>
+      <ui-button variant="outlined" [disabled]="saving()" (click)="panel.set('')">Cancelar</ui-button>
+    </div>
+
+    @if (preview().length && !created().length && !rejected().length) {
+      <h3 class="mb-3 mt-8 font-serif text-xl">Cómo se lee cada fila</h3>
+      <ui-table>
+        <thead><tr><th>Fila</th><th>Persona</th><th>Email</th><th>Rol</th><th>Resultado</th></tr></thead>
+        <tbody>
+          @for (item of preview(); track item.row) {
+            <tr [class.text-pulse]="!item.ok">
+              <td>{{ item.row }}</td>
+              <td>{{ item.name }}</td>
+              <td>{{ item.email }}</td>
+              <td>{{ item.role }}</td>
+              <td>{{ item.reason }}</td>
+            </tr>
+          }
+        </tbody>
+      </ui-table>
+    }
+  </ui-modal>
 }

@@ -2,6 +2,7 @@
 import { Injectable } from '@angular/core';
 import { ApiClient } from '../../core/api-client';
 import { queryString } from '../../core/query-string';
+import type { ListParams, PageDto } from '../../core/page';
 import type { AssignSpecialtyCommand } from './models/assign-specialty-command';
 import type { CreateEmployeeCommand } from './models/create-employee-command';
 import type { CreatedEmployeeAccountDto } from './models/created-employee-account-dto';
@@ -22,6 +23,10 @@ export class EmployeesService extends ApiClient {
 
   employees() {
     return this.http.get<EmployeeDto[]>(`${this.base}/api/empleados`);
+  }
+
+  employeesPage(query: ListParams) {
+    return this.http.get<PageDto<EmployeeDto>>(`${this.base}/api/empleados${queryString(query)}`);
   }
 
   createEmployee(body: CreateEmployeeCommand) {

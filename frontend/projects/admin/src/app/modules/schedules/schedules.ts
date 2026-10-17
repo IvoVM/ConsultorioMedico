@@ -11,19 +11,23 @@ import {
   ScheduleService,
   errorMessage,
 } from 'sdk';
-import { FechaPipe, UiButton, UiEmpty, UiField, UiSelect, UiSkeleton, UiTable } from 'ui';
+import { FechaPipe, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable } from 'ui';
 import { ScreenNote } from '../../screen-note';
+import { TablePager, listParams, queueSearch } from '../../table-pager';
+import { SortCol, SortState, nextSort } from '../../table-sort';
 import { firstValueFrom } from 'rxjs';
 import { dayLabels } from './models/day-labels';
 
 @Component({
-  imports: [FormsModule, FechaPipe, ScreenNote, UiButton, UiEmpty, UiField, UiSelect, UiSkeleton, UiTable],
+  imports: [FormsModule, FechaPipe, ScreenNote, SortCol, TablePager, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable],
   templateUrl: './schedules.html',
 })
 export class SchedulesPage {
   private readonly employees = inject(EmployeesService);
   private readonly organization = inject(OrganizationService);
   private readonly schedule = inject(ScheduleService);
+  private readonly blockSearch: { timer?: ReturnType<typeof setTimeout> } = {};
+  private readonly blockoutSearch: { timer?: ReturnType<typeof setTimeout> } = {};
   readonly dayLabels = dayLabels;
   readonly days: DayOfWeek[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   readonly professionals = signal<ProfessionalDto[]>([]);
@@ -34,13 +38,25 @@ export class SchedulesPage {
   readonly dayOptions = this.days.map((day) => ({ value: day, label: dayLabels[day] }));
   readonly typeOptions = computed(() => this.appointmentTypes().map((type) => ({ value: type.id, label: type.name })));
   readonly blocks = signal<ScheduleBlockDto[]>([]);
+  readonly blockRows = signal<ScheduleBlockDto[]>([]);
+  readonly blockTotal = signal(0);
+  readonly blockPage = signal(1);
   readonly blockouts = signal<BlockoutDto[]>([]);
+  readonly blockoutRows = signal<BlockoutDto[]>([]);
+  readonly blockoutTotal = signal(0);
+  readonly blockoutPage = signal(1);
   readonly error = signal('');
   readonly loading = signal(true);
   readonly scheduleLoading = signal(false);
   readonly publishing = signal(false);
   readonly blocking = signal(false);
   readonly pending = signal('');
+  readonly addingBlock = signal(false);
+  readonly addingBlockout = signal(false);
+  readonly blockQuery = signal('');
+  readonly blockoutQuery = signal('');
+  readonly blockSort = signal<SortState>({ key: 'day', dir: 'asc' });
+  readonly blockoutSort = signal<SortState>({ key: 'start', dir: 'asc' });
   professionalId = '';
   day: DayOfWeek = 'Monday';
   from = '09:00';
@@ -79,12 +95,18 @@ export class SchedulesPage {
     if (!this.professionalId) return;
     if (!this.loading()) this.scheduleLoading.set(true);
     try {
-      const [blocks, blockouts] = await Promise.all([
+      const [blocks, blockPage, blockoutPage] = await Promise.all([
         firstValueFrom(this.schedule.getSchedule({ professionalId: this.professionalId })),
-        firstValueFrom(this.schedule.blockouts({ professionalId: this.professionalId })),
+        firstValueFrom(this.schedule.schedulePage({ professionalId: this.professionalId, ...listParams(this.blockPage(), this.blockSort(), this.blockQuery()) })),
+        firstValueFrom(this.schedule.blockoutsPage({ professionalId: this.professionalId, ...listParams(this.blockoutPage(), this.blockoutSort(), this.blockoutQuery()) })),
       ]);
       this.blocks.set(blocks);
-      this.blockouts.set(blockouts);
+      this.blockRows.set(blockPage.items);
+      this.blockTotal.set(blockPage.total);
+      this.blockPage.set(blockPage.page);
+      this.blockoutRows.set(blockoutPage.items);
+      this.blockoutTotal.set(blockoutPage.total);
+      this.blockoutPage.set(blockoutPage.page);
     } catch (error) {
       this.error.set(errorMessage(error));
     } finally {
@@ -92,7 +114,47 @@ export class SchedulesPage {
     }
   }
 
-  addBlock() {
+  sortBlocks(key: string) {
+    this.blockSort.update((current) => nextSort(current, key));
+    this.blockPage.set(1);
+    void this.loadSchedule();
+  }
+
+  sortBlockouts(key: string) {
+    this.blockoutSort.update((current) => nextSort(current, key));
+    this.blockoutPage.set(1);
+    void this.loadSchedule();
+  }
+
+  onBlockSearch(value: string) {
+    this.blockQuery.set(value);
+    this.blockPage.set(1);
+    queueSearch(this.blockSearch, () => void this.loadSchedule());
+  }
+
+  onBlockoutSearch(value: string) {
+    this.blockoutQuery.set(value);
+    this.blockoutPage.set(1);
+    queueSearch(this.blockoutSearch, () => void this.loadSchedule());
+  }
+
+  goBlocks(page: number) {
+    this.blockPage.set(page);
+    void this.loadSchedule();
+  }
+
+  goBlockouts(page: number) {
+    this.blockoutPage.set(page);
+    void this.loadSchedule();
+  }
+
+  pickProfessional() {
+    this.blockPage.set(1);
+    this.blockoutPage.set(1);
+    void this.loadSchedule();
+  }
+
+  async addBlock() {
     this.blocks.update((list) => [
       ...list,
       {
@@ -104,10 +166,13 @@ export class SchedulesPage {
         appointmentTypeId: this.appointmentTypeId,
       },
     ]);
+    this.addingBlock.set(false);
+    await this.save();
   }
 
-  removeBlock(index: number) {
-    this.blocks.update((list) => list.filter((_, i) => i !== index));
+  async removeBlock(id: string) {
+    this.blocks.update((list) => list.filter((block) => block.id !== id));
+    await this.save();
   }
 
   async save() {
@@ -116,6 +181,7 @@ export class SchedulesPage {
     try {
       const blocks = await firstValueFrom(this.schedule.saveSchedule({ professionalId: this.professionalId, blocks: this.blocks() }));
       this.blocks.set(blocks);
+      await this.loadSchedule();
     } catch (error) {
       this.error.set(errorMessage(error));
     } finally {
@@ -136,6 +202,7 @@ export class SchedulesPage {
         }),
       );
       this.reason = '';
+      this.addingBlockout.set(false);
       await this.loadSchedule();
     } catch (error) {
       this.error.set(errorMessage(error));

@@ -1,33 +1,30 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { AppointmentTypeDto, BillingService, FeeDto, OrganizationService, errorMessage } from 'sdk';
+import { BillingService, FeeRowDto, errorMessage } from 'sdk';
 import { FechaPipe, UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable } from 'ui';
 import { ScreenNote } from '../../screen-note';
+import { TablePager, listParams, queueSearch } from '../../table-pager';
+import { SortCol, SortState, nextSort } from '../../table-sort';
 import { firstValueFrom } from 'rxjs';
 
-type FeeRow = { type: AppointmentTypeDto; fee: FeeDto | null };
-
 @Component({
-  imports: [FormsModule, FechaPipe, ScreenNote, UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable],
+  imports: [FormsModule, FechaPipe, ScreenNote, SortCol, TablePager, UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable],
   templateUrl: './fees.html',
 })
 export class FeesPage {
-  private readonly organization = inject(OrganizationService);
   private readonly billing = inject(BillingService);
-  readonly appointmentTypes = signal<AppointmentTypeDto[]>([]);
-  readonly fees = signal<FeeDto[]>([]);
-  readonly rows = computed(() => {
-    const current = new Map(this.fees().map((fee) => [fee.appointmentTypeId, fee]));
-    return this.appointmentTypes()
-      .map((type) => ({ type, fee: current.get(type.id) ?? null }))
-      .sort((a, b) => a.type.name.localeCompare(b.type.name, 'es'));
-  });
+  private readonly searchHost: { timer?: ReturnType<typeof setTimeout> } = {};
+  readonly rows = signal<FeeRowDto[]>([]);
+  readonly total = signal(0);
+  readonly page = signal(1);
+  readonly query = signal('');
+  readonly sort = signal<SortState>({ key: 'name', dir: 'asc' });
   readonly error = signal('');
   readonly loading = signal(true);
   readonly saving = signal(false);
-  readonly editing = signal<FeeRow | null>(null);
+  readonly editing = signal<FeeRowDto | null>(null);
   readonly draft = signal<number | null>(null);
-  readonly priceError = computed(() => priceError(this.draft(), this.editing()?.fee?.amount ?? null));
+  readonly priceError = computed(() => priceError(this.draft(), this.editing()?.amount ?? null));
 
   constructor() {
     void this.load();
@@ -35,12 +32,10 @@ export class FeesPage {
 
   async load() {
     try {
-      const [appointmentTypes, fees] = await Promise.all([
-        firstValueFrom(this.organization.appointmentTypes()),
-        firstValueFrom(this.billing.fees()),
-      ]);
-      this.appointmentTypes.set(appointmentTypes);
-      this.fees.set(fees);
+      const result = await firstValueFrom(this.billing.feesPage(listParams(this.page(), this.sort(), this.query())));
+      this.rows.set(result.items);
+      this.total.set(result.total);
+      this.page.set(result.page);
     } catch (error) {
       this.error.set(errorMessage(error));
     } finally {
@@ -48,9 +43,26 @@ export class FeesPage {
     }
   }
 
-  open(row: FeeRow) {
+  sortBy(key: string) {
+    this.sort.update((current) => nextSort(current, key));
+    this.page.set(1);
+    void this.load();
+  }
+
+  onSearch(value: string) {
+    this.query.set(value);
+    this.page.set(1);
+    queueSearch(this.searchHost, () => void this.load());
+  }
+
+  go(page: number) {
+    this.page.set(page);
+    void this.load();
+  }
+
+  open(row: FeeRowDto) {
     this.error.set('');
-    this.draft.set(row.fee?.amount ?? null);
+    this.draft.set(row.amount ?? null);
     this.editing.set(row);
   }
 
@@ -72,7 +84,7 @@ export class FeesPage {
   async save() {
     const row = this.editing();
     const amount = this.draft();
-    const message = priceError(amount, row?.fee?.amount ?? null);
+    const message = priceError(amount, row?.amount ?? null);
     if (!row || amount === null || message) {
       this.error.set(message);
       return;
@@ -82,7 +94,7 @@ export class FeesPage {
     try {
       await firstValueFrom(
         this.billing.createFee({
-          appointmentTypeId: row.type.id,
+          appointmentTypeId: row.appointmentTypeId,
           amount,
           effectiveFrom: new Date().toISOString().slice(0, 10),
         }),

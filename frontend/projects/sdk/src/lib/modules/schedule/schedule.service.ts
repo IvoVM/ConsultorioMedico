@@ -2,6 +2,7 @@
 import { Injectable } from '@angular/core';
 import { ApiClient } from '../../core/api-client';
 import { queryString } from '../../core/query-string';
+import type { ListParams, PageDto } from '../../core/page';
 import type { BlockoutDto } from './models/blockout-dto';
 import type { CreateBlockoutCommand } from './models/create-blockout-command';
 import type { SaveScheduleCommand } from './models/save-schedule-command';
@@ -14,12 +15,20 @@ export class ScheduleService extends ApiClient {
     return this.http.get<ScheduleBlockDto[]>(`${this.base}/api/agendas${queryString(query)}`);
   }
 
+  schedulePage(query: { professionalId: string } & ListParams) {
+    return this.http.get<PageDto<ScheduleBlockDto>>(`${this.base}/api/agendas${queryString(query)}`);
+  }
+
   saveSchedule(body: SaveScheduleCommand) {
     return this.http.put<ScheduleBlockDto[]>(`${this.base}/api/agendas`, body);
   }
 
   blockouts(query: { professionalId: string }) {
     return this.http.get<BlockoutDto[]>(`${this.base}/api/bloqueos${queryString(query)}`);
+  }
+
+  blockoutsPage(query: { professionalId: string } & ListParams) {
+    return this.http.get<PageDto<BlockoutDto>>(`${this.base}/api/bloqueos${queryString(query)}`);
   }
 
   createBlockout(body: CreateBlockoutCommand) {

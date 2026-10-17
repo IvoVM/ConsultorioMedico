@@ -12,7 +12,8 @@ public class BillingController(BillingService billing) : ApiController
 {
     [Authorize(Roles = AppRoles.TenantAdmin)]
     [HttpGet("aranceles")]
-    public Task<IActionResult> Fees(CancellationToken ct) => Run(() => billing.FeesAsync(ct));
+    public Task<IActionResult> Fees([FromQuery] ListQuery query, CancellationToken ct) =>
+        Run(() => billing.FeesResultAsync(query, ct));
 
     [Authorize(Roles = AppRoles.TenantAdmin)]
     [HttpPost("aranceles")]
@@ -20,7 +21,8 @@ public class BillingController(BillingService billing) : ApiController
         Run(() => billing.CreateFeeAsync(command, ct));
 
     [HttpGet("comprobantes")]
-    public Task<IActionResult> Invoices(CancellationToken ct) => Run(() => billing.InvoicesAsync(ct));
+    public Task<IActionResult> Invoices([FromQuery] ListQuery query, CancellationToken ct) =>
+        Run(() => billing.InvoicesResultAsync(query, ct));
 
     [HttpPost("comprobantes/{id:guid}/pagar")]
     public Task<IActionResult> Pay(Guid id, PayInvoiceCommand command, CancellationToken ct) =>

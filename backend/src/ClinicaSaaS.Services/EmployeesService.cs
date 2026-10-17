@@ -22,6 +22,34 @@ public class EmployeesService(ITenantUserStore users, IEmployeeStore employees, 
             .ToEmployeeDtos()
             .ToListAsync(ct);
 
+    public async Task<object> ListResultAsync(ListQuery query, CancellationToken ct)
+    {
+        if (!query.Paged) return await ListAsync(ct);
+        var source = employees.Employees.AsQueryable();
+        if (query.Term is string term)
+            source = source.Where(e =>
+                e.User.FirstName.ToLower().Contains(term) ||
+                e.User.LastName.ToLower().Contains(term) ||
+                (e.User.Email ?? "").ToLower().Contains(term) ||
+                (e.LicenseNumber ?? "").ToLower().Contains(term) ||
+                (e.Specialty != null && e.Specialty.Name.ToLower().Contains(term)) ||
+                (e.User.Role == TenantRole.Doctor ? "médico" : e.User.Role == TenantRole.Secretary ? "secretario" : "administrador").Contains(term));
+        var ordered = (query.Sort, query.Desc) switch
+        {
+            ("email", false) => source.OrderBy(e => e.User.Email).ThenBy(e => e.User.LastName),
+            ("email", true) => source.OrderByDescending(e => e.User.Email).ThenBy(e => e.User.LastName),
+            ("role", false) => source.OrderBy(e => e.User.Role == TenantRole.TenantAdmin ? "Administrador" : e.User.Role == TenantRole.Doctor ? "Médico" : "Secretario").ThenBy(e => e.User.LastName),
+            ("role", true) => source.OrderByDescending(e => e.User.Role == TenantRole.TenantAdmin ? "Administrador" : e.User.Role == TenantRole.Doctor ? "Médico" : "Secretario").ThenBy(e => e.User.LastName),
+            ("license", false) => source.OrderBy(e => e.LicenseNumber ?? "").ThenBy(e => e.User.LastName),
+            ("license", true) => source.OrderByDescending(e => e.LicenseNumber ?? "").ThenBy(e => e.User.LastName),
+            ("specialty", false) => source.OrderBy(e => e.Specialty != null ? e.Specialty.Name : "").ThenBy(e => e.User.LastName),
+            ("specialty", true) => source.OrderByDescending(e => e.Specialty != null ? e.Specialty.Name : "").ThenBy(e => e.User.LastName),
+            ("name", true) => source.OrderByDescending(e => e.User.LastName).ThenByDescending(e => e.User.FirstName),
+            _ => source.OrderBy(e => e.User.LastName).ThenBy(e => e.User.FirstName)
+        };
+        return await Pages.Materialize(ordered.ToEmployeeDtos(), query, ct);
+    }
+
     public async Task<CreatedEmployeeAccountDto> CreateAsync(CreateEmployeeCommand command, CancellationToken ct)
     {
         var created = await CreateAccountAsync(

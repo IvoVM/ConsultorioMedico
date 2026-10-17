@@ -120,6 +120,51 @@ public class MedicalRecordsService(
     public async Task<IReadOnlyList<MedicalRecordDto>> ListAsync(CancellationToken ct) =>
         await clients.Clients.OrderBy(c => c.User.LastName).ThenBy(c => c.User.FirstName).ToMedicalRecordDtos().ToListAsync(ct);
 
+    public async Task<object> ListResultAsync(ListQuery query, CancellationToken ct)
+    {
+        if (!query.Paged) return await ListAsync(ct);
+        var source = clients.Clients.AsQueryable();
+        if (query.Filter == "allergies")
+            source = source.Where(c => c.Record != null && c.Record.Allergies != null && c.Record.Allergies != "");
+        else if (query.Filter == "incomplete")
+            source = source.Where(c => c.Record == null);
+        if (query.Term is string term)
+            source = source.Where(c =>
+                c.User.FirstName.ToLower().Contains(term) ||
+                c.User.LastName.ToLower().Contains(term) ||
+                c.DocumentNumber.ToLower().Contains(term) ||
+                (c.User.Email ?? "").ToLower().Contains(term) ||
+                c.Phone.ToLower().Contains(term) ||
+                (c.Record != null && c.Record.HealthInsurance != null && c.Record.HealthInsurance.ToLower().Contains(term)) ||
+                (c.Record != null && c.Record.MemberNumber != null && c.Record.MemberNumber.ToLower().Contains(term)) ||
+                (c.Record != null && c.Record.EmergencyContact != null && c.Record.EmergencyContact.ToLower().Contains(term)) ||
+                (c.Record != null && c.Record.EmergencyPhone != null && c.Record.EmergencyPhone.ToLower().Contains(term)) ||
+                (c.Record != null && c.Record.BloodType != null && c.Record.BloodType.ToLower().Contains(term)) ||
+                (c.Record != null && c.Record.Allergies != null && c.Record.Allergies.ToLower().Contains(term)));
+        var ordered = (query.Sort, query.Desc) switch
+        {
+            ("phone", false) => source.OrderBy(c => c.Phone).ThenBy(c => c.User.LastName),
+            ("phone", true) => source.OrderByDescending(c => c.Phone).ThenBy(c => c.User.LastName),
+            ("coverage", false) => source.OrderBy(c => c.Record != null ? c.Record.HealthInsurance ?? "Particular" : "Particular").ThenBy(c => c.User.LastName),
+            ("coverage", true) => source.OrderByDescending(c => c.Record != null ? c.Record.HealthInsurance ?? "Particular" : "Particular").ThenBy(c => c.User.LastName),
+            ("emergency", false) => source.OrderBy(c => c.Record != null ? c.Record.EmergencyContact ?? "" : "").ThenBy(c => c.User.LastName),
+            ("emergency", true) => source.OrderByDescending(c => c.Record != null ? c.Record.EmergencyContact ?? "" : "").ThenBy(c => c.User.LastName),
+            ("blood", false) => source.OrderBy(c => c.Record != null ? c.Record.BloodType ?? "" : "").ThenBy(c => c.User.LastName),
+            ("blood", true) => source.OrderByDescending(c => c.Record != null ? c.Record.BloodType ?? "" : "").ThenBy(c => c.User.LastName),
+            ("allergies", false) => source.OrderBy(c => c.Record != null ? c.Record.Allergies ?? "" : "").ThenBy(c => c.User.LastName),
+            ("allergies", true) => source.OrderByDescending(c => c.Record != null ? c.Record.Allergies ?? "" : "").ThenBy(c => c.User.LastName),
+            ("updated", false) => source.OrderBy(c => c.Record != null ? c.Record.UpdatedAt : DateTimeOffset.MinValue).ThenBy(c => c.User.LastName),
+            ("updated", true) => source.OrderByDescending(c => c.Record != null ? c.Record.UpdatedAt : DateTimeOffset.MinValue).ThenBy(c => c.User.LastName),
+            ("patient", true) or ("name", true) => source.OrderByDescending(c => c.User.LastName).ThenByDescending(c => c.User.FirstName),
+            _ => source.OrderBy(c => c.User.LastName).ThenBy(c => c.User.FirstName)
+        };
+        var page = await Pages.Materialize(ordered.ToMedicalRecordDtos(), query, ct);
+        var all = await clients.Clients.CountAsync(ct);
+        var allergies = await clients.Clients.CountAsync(c => c.Record != null && c.Record.Allergies != null && c.Record.Allergies != "", ct);
+        var incomplete = await clients.Clients.CountAsync(c => c.Record == null, ct);
+        return new MedicalRecordPageDto(page.Items, page.Total, page.Page, page.PageSize, all, allergies, incomplete);
+    }
+
     public async Task<MedicalRecordDto> GetAsync(Guid patientId, CancellationToken ct) =>
         await clients.Clients.Where(c => c.Id == patientId).ToMedicalRecordDtos().FirstOrDefaultAsync(ct)
         ?? throw new NotFoundException("Paciente no encontrado.");

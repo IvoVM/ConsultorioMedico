@@ -1,4 +1,4 @@
-import { Component, input, output } from '@angular/core';
+import { Component, booleanAttribute, input, output } from '@angular/core';
 
 @Component({
   selector: 'ui-modal',
@@ -25,5 +25,6 @@ import { Component, input, output } from '@angular/core';
 export class UiModal {
   readonly open = input(false);
   readonly title = input('');
+  readonly wide = input(false, { transform: booleanAttribute });
   readonly closed = output<void>();
 }

@@ -13,7 +13,7 @@
       name="search"
       placeholder="Nombre, documento o email"
       [ngModel]="search()"
-      (ngModelChange)="search.set($event)"
+      (ngModelChange)="onSearch($event)"
     />
   </ui-field>
   <div class="filter-group" role="group" aria-label="Filtrar historias">
@@ -23,7 +23,7 @@
         class="filter-chip"
         [class.is-on]="filter() === item.id"
         [attr.aria-pressed]="filter() === item.id"
-        (click)="filter.set(item.id)"
+        (click)="setFilter(item.id)"
       >
         {{ item.label }} <span class="filter-count">{{ counts()[item.id] }}</span>
       </button>
@@ -35,23 +35,22 @@
 
 @if (loading()) {
   <ui-skeleton label="Cargando historias" />
-} @else if (visible().length) {
+} @else if (records().length) {
   <ui-table>
     <thead>
       <tr>
-        <th>Paciente</th>
-        <th>Grupo</th>
-        <th class="hidden md:table-cell">Alergias</th>
-        <th class="hidden lg:table-cell">Cobertura</th>
-        <th class="hidden sm:table-cell">Última edición</th>
-        <th><span class="sr-only">Acciones</span></th>
+        <th><button type="button" sortCol [on]="sort().key === 'patient'" [dir]="sort().dir" (click)="sortBy('patient')">Paciente</button></th>
+        <th><button type="button" sortCol [on]="sort().key === 'blood'" [dir]="sort().dir" (click)="sortBy('blood')">Grupo</button></th>
+        <th class="hidden md:table-cell"><button type="button" sortCol [on]="sort().key === 'allergies'" [dir]="sort().dir" (click)="sortBy('allergies')">Alergias</button></th>
+        <th class="hidden lg:table-cell"><button type="button" sortCol [on]="sort().key === 'coverage'" [dir]="sort().dir" (click)="sortBy('coverage')">Cobertura</button></th>
+        <th class="hidden sm:table-cell"><button type="button" sortCol [on]="sort().key === 'updated'" [dir]="sort().dir" (click)="sortBy('updated')">Última edición</button></th>
+        <th class="w-px"></th>
       </tr>
     </thead>
     <tbody>
-      @for (r of visible(); track r.patientId; let i = $index) {
+      @for (r of records(); track r.patientId; let i = $index) {
         <tr
           class="record-row"
-          [class.is-open]="openId() === r.patientId"
           [class.is-saved]="justSaved() === r.patientId"
           [style.--i]="i < 12 ? i : 12"
         >
@@ -90,84 +89,14 @@
             }
           </td>
           <td class="w-px whitespace-nowrap">
-            <div class="flex items-center justify-end gap-1">
-              <button
-                type="button"
-                class="row-action"
-                [attr.aria-expanded]="openId() === r.patientId"
-                [attr.aria-controls]="'quick-' + r.patientId"
-                [attr.aria-label]="'Edición rápida de ' + r.firstName + ' ' + r.lastName"
-                title="Edición rápida"
-                (click)="toggle(r)"
-              >
-                <svg class="chevron" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
-                  <path d="M5 7.5l5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-              </button>
-              <a
-                class="row-action is-go"
-                [routerLink]="['/historias', r.patientId]"
-                [attr.aria-label]="'Abrir historia completa de ' + r.firstName + ' ' + r.lastName"
-                title="Abrir historia completa"
-              >
-                <svg class="arrow" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
-                  <path d="M4 10h11m-4.5-4.5L15 10l-4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-              </a>
-            </div>
+            <a class="text-link" [routerLink]="['/historias', r.patientId]">Editar</a>
           </td>
         </tr>
-        @if (openId() === r.patientId && draft) {
-          <tr class="quick-row">
-            <td colspan="6">
-              <form
-                [id]="'quick-' + r.patientId"
-                class="quick-panel"
-                animate.enter="quick-in"
-                animate.leave="quick-out"
-                (ngSubmit)="save(r.patientId)"
-              >
-                <fieldset class="md:col-span-2">
-                  <legend class="mb-2 text-sm text-ink/75">Grupo sanguíneo</legend>
-                  <div class="blood-picker">
-                    @for (b of bloodTypes; track b) {
-                      <label class="blood-option">
-                        <input type="radio" [name]="'blood-' + r.patientId" [value]="b" [(ngModel)]="draft.bloodType" />
-                        <span>{{ b }}</span>
-                      </label>
-                    }
-                    <label class="blood-option is-unknown">
-                      <input type="radio" [name]="'blood-' + r.patientId" value="" [(ngModel)]="draft.bloodType" />
-                      <span>No sabe</span>
-                    </label>
-                  </div>
-                </fieldset>
-                <ui-field label="Alergias">
-                  <textarea name="allergies" rows="2" maxlength="1000" placeholder="Ej.: penicilina, látex" [(ngModel)]="draft.allergies"></textarea>
-                </ui-field>
-                <ui-field label="Medicación habitual">
-                  <textarea name="currentMedication" rows="2" maxlength="1000" [(ngModel)]="draft.currentMedication"></textarea>
-                </ui-field>
-                <ui-field label="Teléfono">
-                  <input name="phone" type="tel" required maxlength="30" [(ngModel)]="draft.phone" />
-                </ui-field>
-                <div class="grid grid-cols-2 gap-3">
-                  <ui-field label="Obra social"><input name="healthInsurance" maxlength="120" [(ngModel)]="draft.healthInsurance" /></ui-field>
-                  <ui-field label="N.º de afiliado"><input name="memberNumber" maxlength="40" [(ngModel)]="draft.memberNumber" /></ui-field>
-                </div>
-                <div class="flex flex-wrap items-center gap-3 md:col-span-2">
-                  <ui-button type="submit" [loading]="saving()">Guardar historia</ui-button>
-                  <ui-button variant="outlined" [disabled]="saving()" (click)="toggle(r)">Cancelar</ui-button>
-                  <a class="text-link ml-auto" [routerLink]="['/historias', r.patientId]">Editar todos los datos</a>
-                </div>
-              </form>
-            </td>
-          </tr>
-        }
       }
     </tbody>
   </ui-table>
-} @else if (records().length) {
+  <table-pager [total]="total()" [page]="page()" (pageChange)="go($event)" />
+} @else if (search() || filter() !== 'all') {
   <ui-empty message="Ninguna historia coincide con esa búsqueda. Probá con el documento o quitá el filtro." />
 } @else {
   <ui-empty message="Todavía no hay historias. Aparecen acá cuando un paciente tiene ficha." />

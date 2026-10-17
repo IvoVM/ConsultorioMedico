@@ -11,7 +11,8 @@ namespace ClinicaSaaS.Api.Controllers;
 public class MedicalRecordsController(MedicalRecordsService records) : ApiController
 {
     [HttpGet]
-    public Task<IActionResult> List(CancellationToken ct) => Run(() => records.ListAsync(ct));
+    public Task<IActionResult> List([FromQuery] ListQuery query, CancellationToken ct) =>
+        Run(() => records.ListResultAsync(query, ct));
 
     [HttpGet("{patientId:guid}")]
     public Task<IActionResult> Get(Guid patientId, CancellationToken ct) =>

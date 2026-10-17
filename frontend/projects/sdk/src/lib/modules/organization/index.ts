@@ -7,4 +7,6 @@ export * from './models/save-medical-service-command';
 export * from './models/specialty-dto';
 export * from './models/save-specialty-command';
 export * from './models/appointment-type-dto';
+export * from './models/appointment-type-row-dto';
+export * from './models/specialty-row-dto';
 export * from './models/save-appointment-type-command';

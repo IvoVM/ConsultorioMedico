@@ -1,27 +1,33 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { MedicalRecordDto, MedicalRecordsService, PatientsService, errorMessage } from 'sdk';
-import { UiButton, UiEmpty, UiField, UiSkeleton, UiTable } from 'ui';
+import { UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable } from 'ui';
 import { ScreenNote } from '../../screen-note';
+import { TablePager, listParams, queueSearch } from '../../table-pager';
+import { SortCol, SortState, nextSort } from '../../table-sort';
 import { firstValueFrom } from 'rxjs';
 import { age } from '../medical-records/models/medical-record-form';
 
 @Component({
-  imports: [FormsModule, RouterLink, ScreenNote, UiButton, UiEmpty, UiField, UiSkeleton, UiTable],
+  imports: [FormsModule, RouterLink, ScreenNote, SortCol, TablePager, UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable],
   templateUrl: './patients.html',
 })
 export class PatientsPage {
   private readonly recordsApi = inject(MedicalRecordsService);
   private readonly patientsApi = inject(PatientsService);
   private readonly router = inject(Router);
+  private readonly searchHost: { timer?: ReturnType<typeof setTimeout> } = {};
   readonly age = age;
   readonly today = new Date().toISOString().slice(0, 10);
 
   readonly patients = signal<MedicalRecordDto[]>([]);
+  readonly total = signal(0);
+  readonly page = signal(1);
   readonly loading = signal(true);
   readonly error = signal('');
   readonly search = signal('');
+  readonly sort = signal<SortState>({ key: 'name', dir: 'asc' });
   readonly altaOpen = signal(false);
   readonly saving = signal(false);
 
@@ -36,21 +42,40 @@ export class PatientsPage {
   emergencyContact = '';
   emergencyPhone = '';
 
-  readonly visible = computed(() => {
-    const text = normalize(this.search());
-    if (!text) return this.patients();
-    return this.patients().filter((patient) =>
-      normalize(
-        `${patient.firstName} ${patient.lastName} ${patient.documentNumber} ${patient.phone} ${patient.healthInsurance ?? ''} ${patient.memberNumber ?? ''} ${patient.emergencyContact ?? ''} ${patient.emergencyPhone ?? ''}`,
-      ).includes(text),
-    );
-  });
-
   constructor() {
-    void firstValueFrom(this.recordsApi.medicalRecords())
-      .then((list) => this.patients.set(list))
-      .catch((error) => this.error.set(errorMessage(error)))
-      .finally(() => this.loading.set(false));
+    void this.load();
+  }
+
+  sortBy(key: string) {
+    this.sort.update((current) => nextSort(current, key));
+    this.page.set(1);
+    void this.load();
+  }
+
+  onSearch(value: string) {
+    this.search.set(value);
+    this.page.set(1);
+    queueSearch(this.searchHost, () => void this.load());
+  }
+
+  go(page: number) {
+    this.page.set(page);
+    void this.load();
+  }
+
+  private async load() {
+    try {
+      const result = await firstValueFrom(
+        this.recordsApi.medicalRecordsPage(listParams(this.page(), this.sort(), this.search())),
+      );
+      this.patients.set(result.items);
+      this.total.set(result.total);
+      this.page.set(result.page);
+    } catch (error) {
+      this.error.set(errorMessage(error));
+    } finally {
+      this.loading.set(false);
+    }
   }
 
   openAlta() {
@@ -86,12 +111,4 @@ export class PatientsPage {
       this.saving.set(false);
     }
   }
-}
-
-function normalize(value: string) {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '');
 }

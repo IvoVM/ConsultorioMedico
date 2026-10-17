@@ -203,3 +203,9 @@ public record InvoiceDto(
 public record PayInvoiceCommand(PaymentMethod Method);
 
 public record AuditEntryDto(Guid Id, Guid? UserId, string Action, string Entity, string? EntityId, string? Detail, DateTimeOffset Timestamp);
+
+public record PageDto<T>(IReadOnlyList<T> Items, int Total, int Page, int PageSize);
+public record SpecialtyRowDto(Guid Id, string Name, int Professionals);
+public record AppointmentTypeRowDto(Guid Id, string Name, int DurationMinutes, string Specialty, int Professionals);
+public record FeeRowDto(Guid AppointmentTypeId, string Service, decimal? Amount, DateOnly? EffectiveFrom);
+public record MedicalRecordPageDto(IReadOnlyList<MedicalRecordDto> Items, int Total, int Page, int PageSize, int All, int Allergies, int Incomplete);

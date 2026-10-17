@@ -26,6 +26,25 @@ public class ScheduleService(
             .ToScheduleBlockDtos()
             .ToListAsync(ct);
 
+    public async Task<object> ListScheduleAsync(Guid professionalId, ListQuery query, CancellationToken ct)
+    {
+        if (!query.Paged) return await GetScheduleAsync(professionalId, ct);
+        var source = schedules.Blocks.Where(b => b.ProfessionalId == professionalId);
+        if (query.Term is string term)
+            source = source.Where(b =>
+                (b.Day == DayOfWeek.Monday ? "lunes" : b.Day == DayOfWeek.Tuesday ? "martes" : b.Day == DayOfWeek.Wednesday ? "miércoles" : b.Day == DayOfWeek.Thursday ? "jueves" : b.Day == DayOfWeek.Friday ? "viernes" : b.Day == DayOfWeek.Saturday ? "sábado" : "domingo").Contains(term) ||
+                b.StartTime.ToString().Contains(term) ||
+                b.EndTime.ToString().Contains(term));
+        var ordered = (query.Sort, query.Desc) switch
+        {
+            ("time", false) => source.OrderBy(b => b.StartTime).ThenBy(b => b.Day == DayOfWeek.Monday ? 1 : b.Day == DayOfWeek.Tuesday ? 2 : b.Day == DayOfWeek.Wednesday ? 3 : b.Day == DayOfWeek.Thursday ? 4 : b.Day == DayOfWeek.Friday ? 5 : b.Day == DayOfWeek.Saturday ? 6 : 7),
+            ("time", true) => source.OrderByDescending(b => b.StartTime).ThenBy(b => b.Day == DayOfWeek.Monday ? 1 : b.Day == DayOfWeek.Tuesday ? 2 : b.Day == DayOfWeek.Wednesday ? 3 : b.Day == DayOfWeek.Thursday ? 4 : b.Day == DayOfWeek.Friday ? 5 : b.Day == DayOfWeek.Saturday ? 6 : 7),
+            ("day", true) => source.OrderByDescending(b => b.Day == DayOfWeek.Monday ? 1 : b.Day == DayOfWeek.Tuesday ? 2 : b.Day == DayOfWeek.Wednesday ? 3 : b.Day == DayOfWeek.Thursday ? 4 : b.Day == DayOfWeek.Friday ? 5 : b.Day == DayOfWeek.Saturday ? 6 : 7).ThenByDescending(b => b.StartTime),
+            _ => source.OrderBy(b => b.Day == DayOfWeek.Monday ? 1 : b.Day == DayOfWeek.Tuesday ? 2 : b.Day == DayOfWeek.Wednesday ? 3 : b.Day == DayOfWeek.Thursday ? 4 : b.Day == DayOfWeek.Friday ? 5 : b.Day == DayOfWeek.Saturday ? 6 : 7).ThenBy(b => b.StartTime)
+        };
+        return await Pages.Materialize(ordered.ToScheduleBlockDtos(), query, ct);
+    }
+
     public async Task<IReadOnlyList<ScheduleBlockDto>> SaveScheduleAsync(SaveScheduleCommand command, CancellationToken ct)
     {
         foreach (var block in command.Blocks)
@@ -57,6 +76,24 @@ public class ScheduleService(
             .OrderBy(b => b.Start)
             .ToBlockoutDtos()
             .ToListAsync(ct);
+
+    public async Task<object> ListBlockoutsAsync(Guid professionalId, ListQuery query, CancellationToken ct)
+    {
+        if (!query.Paged) return await BlockoutsAsync(professionalId, ct);
+        var source = schedules.Blockouts.Where(b => b.ProfessionalId == professionalId);
+        if (query.Term is string term)
+            source = source.Where(b => b.Reason.ToLower().Contains(term));
+        var ordered = (query.Sort, query.Desc) switch
+        {
+            ("end", false) => source.OrderBy(b => b.End).ThenBy(b => b.Start),
+            ("end", true) => source.OrderByDescending(b => b.End).ThenBy(b => b.Start),
+            ("reason", false) => source.OrderBy(b => b.Reason).ThenBy(b => b.Start),
+            ("reason", true) => source.OrderByDescending(b => b.Reason).ThenBy(b => b.Start),
+            ("start", true) => source.OrderByDescending(b => b.Start),
+            _ => source.OrderBy(b => b.Start)
+        };
+        return await Pages.Materialize(ordered.ToBlockoutDtos(), query, ct);
+    }
 
     public async Task<BlockoutDto> CreateBlockoutAsync(CreateBlockoutCommand command, CancellationToken ct)
     {

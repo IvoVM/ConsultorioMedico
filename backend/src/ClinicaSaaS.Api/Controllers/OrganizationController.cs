@@ -23,7 +23,8 @@ public class OrganizationController(OrganizationService organization) : ApiContr
         Run(() => organization.UpdateLocationAsync(id, command, ct));
 
     [HttpGet("servicios")]
-    public Task<IActionResult> MedicalServices(CancellationToken ct) => Run(() => organization.MedicalServicesAsync(ct));
+    public Task<IActionResult> MedicalServices([FromQuery] ListQuery query, CancellationToken ct) =>
+        Run(() => organization.ListMedicalServicesAsync(query, ct));
 
     [HttpPost("servicios")]
     public Task<IActionResult> CreateMedicalService(SaveMedicalServiceCommand command, CancellationToken ct) =>
@@ -35,8 +36,8 @@ public class OrganizationController(OrganizationService organization) : ApiContr
 
     [AllowAnonymous]
     [HttpGet("especialidades")]
-    public Task<IActionResult> Specialties(CancellationToken ct) =>
-        Run(() => organization.SpecialtiesAsync(ct));
+    public Task<IActionResult> Specialties([FromQuery] ListQuery query, CancellationToken ct) =>
+        Run(() => organization.ListSpecialtiesAsync(query, ct));
 
     [HttpPost("especialidades")]
     public Task<IActionResult> CreateSpecialty(SaveSpecialtyCommand command, CancellationToken ct) =>
@@ -48,7 +49,8 @@ public class OrganizationController(OrganizationService organization) : ApiContr
 
     [AllowAnonymous]
     [HttpGet("tipos-turno")]
-    public Task<IActionResult> AppointmentTypes(CancellationToken ct) => Run(() => organization.AppointmentTypesAsync(ct));
+    public Task<IActionResult> AppointmentTypes([FromQuery] ListQuery query, CancellationToken ct) =>
+        Run(() => organization.ListAppointmentTypesAsync(query, ct));
 
     [HttpPost("tipos-turno")]
     public Task<IActionResult> CreateAppointmentType(SaveAppointmentTypeCommand command, CancellationToken ct) =>

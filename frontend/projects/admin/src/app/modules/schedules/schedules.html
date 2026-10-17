@@ -15,67 +15,108 @@
 } @else {
 <div class="mb-8 grid max-w-xl gap-4">
   <ui-field label="Profesional">
-    <ui-select name="professionalId" [(ngModel)]="professionalId" (ngModelChange)="loadSchedule()" [options]="professionalOptions()" />
+    <ui-select name="professionalId" [(ngModel)]="professionalId" (ngModelChange)="pickProfessional()" [options]="professionalOptions()" />
   </ui-field>
 </div>
-@if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
-<h2 class="font-serif text-2xl tracking-tight">Semana</h2>
-<form class="mb-6 mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-5" (ngSubmit)="addBlock()">
-  <ui-field label="Día">
-    <ui-select name="day" [(ngModel)]="day" [options]="dayOptions" />
+@if (error() && !addingBlock() && !addingBlockout()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
+
+<div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+  <ui-field class="sm:w-80" label="Buscar en la semana">
+    <input type="search" name="blockQuery" [ngModel]="blockQuery()" (ngModelChange)="onBlockSearch($event)" placeholder="Día u horario" />
   </ui-field>
-  <ui-field label="Desde"><input name="from" type="time" [(ngModel)]="from" required /></ui-field>
-  <ui-field label="Hasta"><input name="to" type="time" [(ngModel)]="to" required /></ui-field>
-  <ui-field label="Tipo">
-    <ui-select name="appointmentTypeId" [(ngModel)]="appointmentTypeId" [options]="typeOptions()" />
-  </ui-field>
-  <div class="flex items-end"><ui-button type="submit">Sumar bloque</ui-button></div>
-</form>
+  <ui-button (click)="addingBlock.set(true)">Crear</ui-button>
+</div>
+
 @if (scheduleLoading()) {
   <ui-skeleton label="Cargando horarios" />
-} @else {
-@if (!blocks().length) {
-  <ui-empty message="Esta agenda todavía no tiene horarios. Sumá un bloque y publicala." />
+} @else if (!blockTotal()) {
+  <ui-empty [message]="blockQuery() ? 'Ningún horario coincide con esa búsqueda.' : 'Esta agenda todavía no tiene horarios. Crear suma un bloque; después hay que publicarla.'" />
 } @else {
 <ui-table>
-  <thead><tr><th>Día</th><th>Horario</th><th></th></tr></thead>
+  <thead>
+    <tr>
+      <th><button type="button" sortCol [on]="blockSort().key === 'day'" [dir]="blockSort().dir" (click)="sortBlocks('day')">Día</button></th>
+      <th><button type="button" sortCol [on]="blockSort().key === 'time'" [dir]="blockSort().dir" (click)="sortBlocks('time')">Horario</button></th>
+      <th class="w-px"></th>
+    </tr>
+  </thead>
   <tbody>
-    @for (block of blocks(); track block.id; let i = $index) {
+    @for (block of blockRows(); track block.id) {
       <tr>
         <td>{{ dayLabels[block.day] }}</td>
         <td>{{ block.startTime | fecha }} – {{ block.endTime | fecha }}</td>
-        <td><ui-button variant="ghost" (click)="removeBlock(i)">Quitar</ui-button></td>
+        <td><ui-button variant="ghost" (click)="removeBlock(block.id)">Quitar</ui-button></td>
       </tr>
     }
   </tbody>
 </ui-table>
+<table-pager [total]="blockTotal()" [page]="blockPage()" (pageChange)="goBlocks($event)" />
 }
 <div class="my-6"><ui-button [loading]="publishing()" (click)="save()">Publicar agenda</ui-button></div>
-<h2 class="font-serif text-2xl tracking-tight">Bloqueos</h2>
-<form class="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4" (ngSubmit)="createBlockout()">
-  <ui-field label="Inicio del bloqueo"><input name="blockoutStart" type="datetime-local" [(ngModel)]="blockoutStart" required /></ui-field>
-  <ui-field label="Fin"><input name="blockoutEnd" type="datetime-local" [(ngModel)]="blockoutEnd" required /></ui-field>
-  <ui-field label="Motivo"><input name="reason" [(ngModel)]="reason" required /></ui-field>
-  <div class="flex items-end"><ui-button type="submit" [loading]="blocking()">Bloquear</ui-button></div>
-</form>
-<div class="mt-6">
-  @if (!blockouts().length) {
-    <ui-empty message="No hay bloqueos en esta agenda." />
-  } @else {
-  <ui-table>
-    <thead><tr><th>Desde</th><th>Hasta</th><th>Motivo</th><th></th></tr></thead>
-    <tbody>
-      @for (blockout of blockouts(); track blockout.id) {
-        <tr>
-          <td>{{ blockout.start | fecha }}</td>
-          <td>{{ blockout.end | fecha }}</td>
-          <td>{{ blockout.reason }}</td>
-          <td><ui-button variant="danger" [loading]="pending() === blockout.id" (click)="deleteBlockout(blockout)">Quitar</ui-button></td>
-        </tr>
-      }
-    </tbody>
-  </ui-table>
-  }
+
+<div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+  <ui-field class="sm:w-80" label="Buscar bloqueos">
+    <input type="search" name="blockoutQuery" [ngModel]="blockoutQuery()" (ngModelChange)="onBlockoutSearch($event)" placeholder="Motivo" />
+  </ui-field>
+  <ui-button (click)="addingBlockout.set(true)">Crear</ui-button>
 </div>
+@if (!blockoutTotal()) {
+  <ui-empty [message]="blockoutQuery() ? 'Ningún bloqueo coincide con esa búsqueda.' : 'No hay bloqueos en esta agenda.'" />
+} @else {
+<ui-table>
+  <thead>
+    <tr>
+      <th><button type="button" sortCol [on]="blockoutSort().key === 'start'" [dir]="blockoutSort().dir" (click)="sortBlockouts('start')">Desde</button></th>
+      <th><button type="button" sortCol [on]="blockoutSort().key === 'end'" [dir]="blockoutSort().dir" (click)="sortBlockouts('end')">Hasta</button></th>
+      <th><button type="button" sortCol [on]="blockoutSort().key === 'reason'" [dir]="blockoutSort().dir" (click)="sortBlockouts('reason')">Motivo</button></th>
+      <th class="w-px"></th>
+    </tr>
+  </thead>
+  <tbody>
+    @for (blockout of blockoutRows(); track blockout.id) {
+      <tr>
+        <td>{{ blockout.start | fecha }}</td>
+        <td>{{ blockout.end | fecha }}</td>
+        <td>{{ blockout.reason }}</td>
+        <td><ui-button variant="danger" [loading]="pending() === blockout.id" (click)="deleteBlockout(blockout)">Quitar</ui-button></td>
+      </tr>
+    }
+  </tbody>
+</ui-table>
+<table-pager [total]="blockoutTotal()" [page]="blockoutPage()" (pageChange)="goBlockouts($event)" />
 }
+}
+
+@if (addingBlock()) {
+  <ui-modal [open]="true" title="Crear horario" (closed)="addingBlock.set(false)">
+    <form class="grid gap-4" (ngSubmit)="addBlock()">
+      <ui-field label="Día">
+        <ui-select name="day" [(ngModel)]="day" [options]="dayOptions" />
+      </ui-field>
+      <ui-field label="Desde"><input name="from" type="time" [(ngModel)]="from" required /></ui-field>
+      <ui-field label="Hasta"><input name="to" type="time" [(ngModel)]="to" required /></ui-field>
+      <ui-field label="Tipo">
+        <ui-select name="appointmentTypeId" [(ngModel)]="appointmentTypeId" [options]="typeOptions()" />
+      </ui-field>
+      <div class="flex flex-wrap gap-3">
+        <ui-button type="submit">Crear</ui-button>
+        <ui-button variant="outlined" (click)="addingBlock.set(false)">Cancelar</ui-button>
+      </div>
+    </form>
+  </ui-modal>
+}
+
+@if (addingBlockout()) {
+  <ui-modal [open]="true" title="Crear bloqueo" (closed)="addingBlockout.set(false)">
+    <form class="grid gap-4" (ngSubmit)="createBlockout()">
+      <ui-field label="Inicio del bloqueo"><input name="blockoutStart" type="datetime-local" [(ngModel)]="blockoutStart" required /></ui-field>
+      <ui-field label="Fin"><input name="blockoutEnd" type="datetime-local" [(ngModel)]="blockoutEnd" required /></ui-field>
+      <ui-field label="Motivo"><input name="reason" [(ngModel)]="reason" required /></ui-field>
+      @if (error()) { <p class="text-sm text-pulse" role="alert">{{ error() }}</p> }
+      <div class="flex flex-wrap gap-3">
+        <ui-button type="submit" [loading]="blocking()">Crear</ui-button>
+        <ui-button variant="outlined" [disabled]="blocking()" (click)="addingBlockout.set(false)">Cancelar</ui-button>
+      </div>
+    </form>
+  </ui-modal>
 }

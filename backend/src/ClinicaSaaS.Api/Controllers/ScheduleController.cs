@@ -11,16 +11,16 @@ namespace ClinicaSaaS.Api.Controllers;
 public class ScheduleController(ScheduleService schedule) : ApiController
 {
     [HttpGet("agendas")]
-    public Task<IActionResult> Get([FromQuery] Guid professionalId, CancellationToken ct) =>
-        Run(() => schedule.GetScheduleAsync(professionalId, ct));
+    public Task<IActionResult> Get([FromQuery] Guid professionalId, [FromQuery] ListQuery query, CancellationToken ct) =>
+        Run(() => schedule.ListScheduleAsync(professionalId, query, ct));
 
     [HttpPut("agendas")]
     public Task<IActionResult> Save(SaveScheduleCommand command, CancellationToken ct) =>
         Run(() => schedule.SaveScheduleAsync(command, ct));
 
     [HttpGet("bloqueos")]
-    public Task<IActionResult> Blockouts([FromQuery] Guid professionalId, CancellationToken ct) =>
-        Run(() => schedule.BlockoutsAsync(professionalId, ct));
+    public Task<IActionResult> Blockouts([FromQuery] Guid professionalId, [FromQuery] ListQuery query, CancellationToken ct) =>
+        Run(() => schedule.ListBlockoutsAsync(professionalId, query, ct));
 
     [HttpPost("bloqueos")]
     public Task<IActionResult> CreateBlockout(CreateBlockoutCommand command, CancellationToken ct) =>

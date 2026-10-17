@@ -6,26 +6,27 @@
   skip="Si no los cargás, no hay horarios para publicar ni un precio para cobrar."
 />
 
-<form class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end" (ngSubmit)="createTurno()">
-  <ui-field class="sm:w-80" label="Nuevo turno"><input name="typeName" [(ngModel)]="typeName" required /></ui-field>
-  <ui-field class="sm:w-28" label="Minutos"><input name="duration" type="number" min="5" max="240" [(ngModel)]="duration" required /></ui-field>
-  <div class="flex items-end"><ui-button type="submit" [loading]="saving()">Agregar turno</ui-button></div>
-</form>
+<div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+  <ui-field class="sm:w-80" label="Buscar">
+    <input type="search" name="query" [ngModel]="query()" (ngModelChange)="onSearch($event)" placeholder="Nombre, especialidad o minutos" />
+  </ui-field>
+  <ui-button (click)="creating.set(true)">Crear</ui-button>
+</div>
 
-@if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
+@if (error() && !creating()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
 
 @if (loading()) {
   <ui-skeleton label="Cargando turnos" />
-} @else if (!rows().length) {
-  <ui-empty message="Todavía no hay turnos. El que agregues abre su ficha: primero la especialidad, después los profesionales." />
+} @else if (!total()) {
+  <ui-empty [message]="query() ? 'Ningún turno coincide con esa búsqueda.' : 'Todavía no hay turnos. Crear abre un nombre y una duración; después se completa la ficha.'" />
 } @else {
   <ui-table>
     <thead>
       <tr>
-        <th>Turno</th>
-        <th>Duración</th>
-        <th>Especialidad</th>
-        <th>Profesionales</th>
+        <th><button type="button" sortCol [on]="sort().key === 'name'" [dir]="sort().dir" (click)="sortBy('name')">Turno</button></th>
+        <th><button type="button" sortCol [on]="sort().key === 'duration'" [dir]="sort().dir" (click)="sortBy('duration')">Duración</button></th>
+        <th><button type="button" sortCol [on]="sort().key === 'specialty'" [dir]="sort().dir" (click)="sortBy('specialty')">Especialidad</button></th>
+        <th><button type="button" sortCol [on]="sort().key === 'people'" [dir]="sort().dir" (click)="sortBy('people')">Profesionales</button></th>
         <th class="w-px"></th>
       </tr>
     </thead>
@@ -34,22 +35,28 @@
         <tr class="record-row" [style.--i]="i < 12 ? i : 12">
           <td><p class="font-serif text-lg leading-tight">{{ item.name }}</p></td>
           <td>{{ item.durationMinutes }} min</td>
-          <td>{{ item.specialtyName || 'Sin asignar' }}</td>
-          <td>{{ countLabel(item.people, 'profesional', 'profesionales') }}</td>
+          <td>{{ item.specialty || 'Sin asignar' }}</td>
+          <td>{{ countLabel(item.professionals, 'profesional', 'profesionales') }}</td>
           <td class="w-px whitespace-nowrap">
-            <a
-              class="row-action is-go"
-              [routerLink]="['/organizacion/turnos', item.id]"
-              [attr.aria-label]="'Abrir ' + item.name"
-              title="Abrir turno"
-            >
-              <svg class="arrow" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
-                <path d="M4 10h11m-4.5-4.5L15 10l-4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
-            </a>
+            <a class="text-link" [routerLink]="['/organizacion/turnos', item.id]">Editar</a>
           </td>
         </tr>
       }
     </tbody>
   </ui-table>
+  <table-pager [total]="total()" [page]="page()" (pageChange)="go($event)" />
+}
+
+@if (creating()) {
+  <ui-modal [open]="true" title="Crear turno" (closed)="creating.set(false)">
+    <form class="flex flex-col gap-4" (ngSubmit)="createTurno()">
+      <ui-field label="Turno"><input name="typeName" [(ngModel)]="typeName" required /></ui-field>
+      <ui-field label="Minutos"><input name="duration" type="number" min="5" max="240" [(ngModel)]="duration" required /></ui-field>
+      @if (error()) { <p class="text-sm text-pulse" role="alert">{{ error() }}</p> }
+      <div class="flex flex-wrap gap-3">
+        <ui-button type="submit" [loading]="saving()">Crear</ui-button>
+        <ui-button variant="outlined" [disabled]="saving()" (click)="creating.set(false)">Cancelar</ui-button>
+      </div>
+    </form>
+  </ui-modal>
 }

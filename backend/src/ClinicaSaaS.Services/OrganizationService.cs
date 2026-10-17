@@ -130,6 +130,65 @@ public class OrganizationService(IOrganizationStore store, ITenantUserStore user
         return await employees.Employees.Where(e => e.UserId == id).ToProfessionalDtos().FirstAsync(ct);
     }
 
+    public async Task<object> ListMedicalServicesAsync(ListQuery query, CancellationToken ct)
+    {
+        if (!query.Paged) return await MedicalServicesAsync(ct);
+        var source = store.MedicalServices.AsQueryable();
+        if (query.Term is string term)
+            source = source.Where(s => s.Name.ToLower().Contains(term));
+        source = query.Desc ? source.OrderByDescending(s => s.Name) : source.OrderBy(s => s.Name);
+        return await Pages.Materialize(source.ToMedicalServiceDtos(), query, ct);
+    }
+
+    public async Task<object> ListSpecialtiesAsync(ListQuery query, CancellationToken ct)
+    {
+        if (!query.Paged) return await SpecialtiesAsync(ct);
+        var source = store.Specialties.AsQueryable();
+        if (query.Term is string term)
+            source = source.Where(s => s.Name.ToLower().Contains(term));
+        source = (query.Sort, query.Desc) switch
+        {
+            ("people", false) => source.OrderBy(s => s.Employees.Count(e => e.User.Role == TenantRole.Doctor)).ThenBy(s => s.Name),
+            ("people", true) => source.OrderByDescending(s => s.Employees.Count(e => e.User.Role == TenantRole.Doctor)).ThenBy(s => s.Name),
+            ("name", true) => source.OrderByDescending(s => s.Name),
+            _ => source.OrderBy(s => s.Name)
+        };
+        var rows = source.Select(s => new SpecialtyRowDto(
+            s.Id,
+            s.Name,
+            s.Employees.Count(e => e.User.Role == TenantRole.Doctor)));
+        return await Pages.Materialize(rows, query, ct);
+    }
+
+    public async Task<object> ListAppointmentTypesAsync(ListQuery query, CancellationToken ct)
+    {
+        if (!query.Paged) return await AppointmentTypesAsync(ct);
+        var source = store.AppointmentTypes.AsQueryable();
+        if (query.Term is string term)
+            source = source.Where(t =>
+                t.Name.ToLower().Contains(term) ||
+                (t.Specialty != null && t.Specialty.Name.ToLower().Contains(term)) ||
+                t.DurationMinutes.ToString().Contains(term));
+        source = (query.Sort, query.Desc) switch
+        {
+            ("duration", false) => source.OrderBy(t => t.DurationMinutes).ThenBy(t => t.Name),
+            ("duration", true) => source.OrderByDescending(t => t.DurationMinutes).ThenBy(t => t.Name),
+            ("specialty", false) => source.OrderBy(t => t.Specialty != null ? t.Specialty.Name : "").ThenBy(t => t.Name),
+            ("specialty", true) => source.OrderByDescending(t => t.Specialty != null ? t.Specialty.Name : "").ThenBy(t => t.Name),
+            ("people", false) => source.OrderBy(t => t.ScheduleBlocks.Select(b => b.ProfessionalId).Distinct().Count()).ThenBy(t => t.Name),
+            ("people", true) => source.OrderByDescending(t => t.ScheduleBlocks.Select(b => b.ProfessionalId).Distinct().Count()).ThenBy(t => t.Name),
+            ("name", true) => source.OrderByDescending(t => t.Name),
+            _ => source.OrderBy(t => t.Name)
+        };
+        var rows = source.Select(t => new AppointmentTypeRowDto(
+            t.Id,
+            t.Name,
+            t.DurationMinutes,
+            t.Specialty != null ? t.Specialty.Name : "",
+            t.ScheduleBlocks.Select(b => b.ProfessionalId).Distinct().Count()));
+        return await Pages.Materialize(rows, query, ct);
+    }
+
     private async Task RecordAsync(string action, string entity, Guid id, string? detail, CancellationToken ct) =>
         await audit.RecordAsync(currentUser.Id, action, entity, id.ToString(), detail, ct);
 
