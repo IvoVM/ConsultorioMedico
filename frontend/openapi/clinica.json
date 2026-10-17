@@ -97,6 +97,17 @@
         "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ProfessionalDto" } } } } }
       }
     },
+    "/api/empleados": {
+      "get": {
+        "operationId": "employees",
+        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/EmployeeDto" } } } } } }
+      },
+      "post": {
+        "operationId": "createEmployee",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateEmployeeCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreatedEmployeeAccountDto" } } } } }
+      }
+    },
     "/api/empleados/importar": {
       "post": {
         "operationId": "importEmployees",
@@ -341,6 +352,9 @@
       "SaveAppointmentTypeCommand": { "type": "object", "required": ["name", "durationMinutes"], "properties": { "name": { "type": "string" }, "durationMinutes": { "type": "integer" }, "specialtyId": { "type": "string", "nullable": true } } },
       "ProfessionalDto": { "type": "object", "required": ["id", "firstName", "lastName", "email"], "properties": { "id": { "type": "string" }, "firstName": { "type": "string" }, "lastName": { "type": "string" }, "email": { "type": "string" }, "licenseNumber": { "type": "string", "nullable": true }, "specialtyId": { "type": "string", "nullable": true } } },
       "AssignSpecialtyCommand": { "type": "object", "properties": { "specialtyId": { "type": "string", "nullable": true } } },
+      "EmployeeDto": { "type": "object", "required": ["id", "firstName", "lastName", "email", "role"], "properties": { "id": { "type": "string" }, "firstName": { "type": "string" }, "lastName": { "type": "string" }, "email": { "type": "string" }, "role": { "$ref": "#/components/schemas/TenantRole" }, "licenseNumber": { "type": "string", "nullable": true }, "specialty": { "type": "string", "nullable": true } } },
+      "CreateEmployeeCommand": { "type": "object", "required": ["firstName", "lastName", "email", "role"], "properties": { "firstName": { "type": "string" }, "lastName": { "type": "string" }, "email": { "type": "string" }, "role": { "$ref": "#/components/schemas/TenantRole" }, "licenseNumber": { "type": "string", "nullable": true }, "specialtyId": { "type": "string", "nullable": true } } },
+      "CreatedEmployeeAccountDto": { "type": "object", "required": ["employee", "temporaryPassword"], "properties": { "employee": { "$ref": "#/components/schemas/EmployeeDto" }, "temporaryPassword": { "type": "string" } } },
       "ImportEmployeesCommand": { "type": "object", "required": ["csv"], "properties": { "csv": { "type": "string" } } },
       "CreatedEmployeeDto": { "type": "object", "required": ["row", "email", "temporaryPassword", "role"], "properties": { "row": { "type": "integer" }, "email": { "type": "string" }, "temporaryPassword": { "type": "string" }, "role": { "$ref": "#/components/schemas/TenantRole" } } },
       "RejectedRowDto": { "type": "object", "required": ["row", "reason"], "properties": { "row": { "type": "integer" }, "reason": { "type": "string" } } },

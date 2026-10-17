@@ -4,11 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MedicalServiceDto, OrganizationService, errorMessage } from 'sdk';
 import { UiButton, UiEmpty, UiField, UiSkeleton, UiTable } from 'ui';
+import { ScreenNote } from '../../screen-note';
 import { Observable, firstValueFrom } from 'rxjs';
 import { isOrganizationSection, organizationSections } from './models/section';
 
 @Component({
-  imports: [FormsModule, UiButton, UiEmpty, UiField, UiSkeleton, UiTable],
+  imports: [FormsModule, ScreenNote, UiButton, UiEmpty, UiField, UiSkeleton, UiTable],
   templateUrl: './organization.html',
 })
 export class OrganizationPage {

@@ -1,3 +1,8 @@
+<screen-note
+  loading="Estás cargando el precio de cada tipo de turno y desde qué fecha rige."
+  reason="Ese monto es el que se usa cuando se cobra la atención."
+  skip="Si no hay un arancel vigente, el comprobante de ese turno no tiene precio."
+/>
 <form class="mb-8 grid gap-4 border-b border-rule pb-8 sm:grid-cols-2 xl:grid-cols-4" (ngSubmit)="create()">
   <ui-field label="Tipo de turno">
     <ui-select name="appointmentTypeId" [(ngModel)]="appointmentTypeId" [options]="typeOptions()" />

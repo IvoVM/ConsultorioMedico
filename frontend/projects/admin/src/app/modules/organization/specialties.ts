@@ -3,10 +3,11 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { EmployeesService, OrganizationService, ProfessionalDto, SpecialtyDto, errorMessage } from 'sdk';
 import { UiButton, UiEmpty, UiField, UiSkeleton, UiTable } from 'ui';
+import { ScreenNote } from '../../screen-note';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
-  imports: [FormsModule, RouterLink, UiButton, UiEmpty, UiField, UiSkeleton, UiTable],
+  imports: [FormsModule, RouterLink, ScreenNote, UiButton, UiEmpty, UiField, UiSkeleton, UiTable],
   templateUrl: './specialties.html',
 })
 export class SpecialtiesPage {

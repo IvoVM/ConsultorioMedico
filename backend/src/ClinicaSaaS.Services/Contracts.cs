@@ -40,6 +40,9 @@ public record SaveAppointmentTypeCommand(string Name, int DurationMinutes, Guid?
 public record ProfessionalDto(Guid Id, string FirstName, string LastName, string Email, string? LicenseNumber, Guid? SpecialtyId);
 public record AssignSpecialtyCommand(Guid? SpecialtyId);
 
+public record EmployeeDto(Guid Id, string FirstName, string LastName, string Email, TenantRole Role, string? LicenseNumber, string? Specialty);
+public record CreateEmployeeCommand(string FirstName, string LastName, string Email, TenantRole Role, string? LicenseNumber, Guid? SpecialtyId);
+public record CreatedEmployeeAccountDto(EmployeeDto Employee, string TemporaryPassword);
 public record ImportEmployeesCommand(string Csv);
 public record CreatedEmployeeDto(int Row, string Email, string TemporaryPassword, TenantRole Role);
 public record RejectedRowDto(int Row, string Reason);

@@ -14,6 +14,7 @@ import {
   errorMessage,
 } from 'sdk';
 import { SelectOption, UiButton, UiEmpty, UiField, UiSelect, UiSkeleton } from 'ui';
+import { ScreenNote } from '../../screen-note';
 import { firstValueFrom } from 'rxjs';
 
 const dayLabels: Record<string, string> = {
@@ -26,7 +27,7 @@ const dayLabels: Record<string, string> = {
 };
 
 @Component({
-  imports: [FormsModule, RouterLink, UiButton, UiEmpty, UiField, UiSelect, UiSkeleton],
+  imports: [FormsModule, RouterLink, ScreenNote, UiButton, UiEmpty, UiField, UiSelect, UiSkeleton],
   templateUrl: './turno-detail.html',
   styleUrl: './turno-detail.css',
 })

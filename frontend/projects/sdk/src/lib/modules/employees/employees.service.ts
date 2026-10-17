@@ -3,6 +3,9 @@ import { Injectable } from '@angular/core';
 import { ApiClient } from '../../core/api-client';
 import { queryString } from '../../core/query-string';
 import type { AssignSpecialtyCommand } from './models/assign-specialty-command';
+import type { CreateEmployeeCommand } from './models/create-employee-command';
+import type { CreatedEmployeeAccountDto } from './models/created-employee-account-dto';
+import type { EmployeeDto } from './models/employee-dto';
 import type { EmployeeImportDto } from './models/employee-import-dto';
 import type { ImportEmployeesCommand } from './models/import-employees-command';
 import type { ProfessionalDto } from './models/professional-dto';
@@ -15,6 +18,14 @@ export class EmployeesService extends ApiClient {
 
   assignSpecialty(id: string, body: AssignSpecialtyCommand) {
     return this.http.put<ProfessionalDto>(`${this.base}/api/profesionales/${id}/especialidad`, body);
+  }
+
+  employees() {
+    return this.http.get<EmployeeDto[]>(`${this.base}/api/empleados`);
+  }
+
+  createEmployee(body: CreateEmployeeCommand) {
+    return this.http.post<CreatedEmployeeAccountDto>(`${this.base}/api/empleados`, body);
   }
 
   importEmployees(body: ImportEmployeesCommand) {

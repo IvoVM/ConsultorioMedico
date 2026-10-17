@@ -4,10 +4,11 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { EmployeesService, OrganizationService, ProfessionalDto, SpecialtyDto, errorMessage } from 'sdk';
 import { SelectOption, UiButton, UiEmpty, UiField, UiSelect, UiSkeleton } from 'ui';
+import { ScreenNote } from '../../screen-note';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
-  imports: [FormsModule, RouterLink, UiButton, UiEmpty, UiField, UiSelect, UiSkeleton],
+  imports: [FormsModule, RouterLink, ScreenNote, UiButton, UiEmpty, UiField, UiSelect, UiSkeleton],
   templateUrl: './specialty-detail.html',
   styleUrl: './specialty-detail.css',
 })

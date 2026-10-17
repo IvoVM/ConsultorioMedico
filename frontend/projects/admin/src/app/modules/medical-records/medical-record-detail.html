@@ -16,6 +16,12 @@
         @if (age() !== null) { <span>{{ age() }} años</span> }
         <span>{{ record()?.email }}</span>
       </p>
+      <screen-note
+        class="mt-4 block"
+        loading="Estás editando la historia completa de este paciente."
+        reason="Alergias, medicación y antecedentes quedan en la atención."
+        skip="Si no guardás, la historia sigue como estaba."
+      />
       @if (saved()) {
         <p class="saved-note mt-3" role="status">
           <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path class="check-draw" d="M4.5 10.5l3.5 3.5 7.5-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>

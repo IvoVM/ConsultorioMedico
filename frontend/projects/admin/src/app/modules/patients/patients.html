@@ -1,7 +1,9 @@
 <section class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-  <p class="max-w-prose leading-relaxed text-ink/75">
-    Secretaría ubica al paciente por documento, teléfono o afiliado. Desde acá también das de alta la ficha y corregís cualquier dato.
-  </p>
+  <screen-note
+    loading="Estás cargando la ficha del paciente: documento, contacto, cobertura y emergencia."
+    reason="Secretaría lo busca por documento, teléfono o afiliado, y el médico lo ve en la atención."
+    skip="Si no das de alta la ficha, esa persona no puede tener turnos ni historia clínica."
+  />
   @if (!altaOpen()) {
     <ui-button (click)="openAlta()">Dar de alta</ui-button>
   }

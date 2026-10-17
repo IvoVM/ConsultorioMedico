@@ -1,3 +1,8 @@
+<screen-note
+  loading="Estás cargando los días y horarios en los que atiende cada profesional, y los bloqueos."
+  reason="Esos bloques son los turnos que el paciente puede reservar."
+  skip="Si no publicás la agenda, ese médico no tiene horarios disponibles."
+/>
 @if (loading()) {
   <ui-skeleton label="Cargando agenda" />
 } @else if (!professionals().length) {

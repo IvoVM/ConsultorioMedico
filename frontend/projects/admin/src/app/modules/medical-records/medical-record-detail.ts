@@ -3,11 +3,12 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { MedicalRecordDto, MedicalRecordsService, errorMessage } from 'sdk';
 import { UiButton, UiField, UiSkeleton } from 'ui';
+import { ScreenNote } from '../../screen-note';
 import { firstValueFrom } from 'rxjs';
 import { BLOOD_TYPES, MedicalRecordForm, age, shortDate, toForm } from './models/medical-record-form';
 
 @Component({
-  imports: [FormsModule, RouterLink, UiButton, UiField, UiSkeleton],
+  imports: [FormsModule, RouterLink, ScreenNote, UiButton, UiField, UiSkeleton],
   templateUrl: './medical-record-detail.html',
 })
 export class MedicalRecordDetailPage {
