@@ -1,9 +1,9 @@
 <h2 class="mb-6 font-serif text-2xl tracking-tight">{{ sectionLabel() }}</h2>
 <screen-note
+  screen="Servicios"
   loading="Estás cargando los servicios que ofrece el consultorio, como consultorios externos, vacunatorio o imágenes."
   reason="Sirven para ver qué se atiende en cada sede y para ordenar la organización."
   skip="Si no los cargás, esta lista queda vacía y no queda registrado qué ofrece la clínica."
-  others="Nadie más. Los servicios se cargan desde Organización, en Servicios. La misma carga está en la app, en Organización."
 />
 @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
 @if (loading()) {

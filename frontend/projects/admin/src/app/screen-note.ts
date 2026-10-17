@@ -7,12 +7,14 @@ import { UiModal } from 'ui';
   host: { class: 'screen-help' },
   template: `
     <button type="button" class="screen-help-button font-serif" aria-label="Ayuda de esta pantalla" aria-haspopup="dialog" (click)="open.set(true)">?</button>
-    <ui-modal [open]="open()" title="Esta pantalla" (closed)="open.set(false)">
+    <ui-modal [open]="open()" [title]="screen()" (closed)="open.set(false)">
       <div class="screen-help-copy">
         <p>{{ loading() }}</p>
-        <p><span>Por qué lo editás.</span> {{ reason() }}</p>
-        <p><span>Si no lo cargás.</span> {{ skip() }}</p>
-        <p><span>Quién más puede cargarlo.</span> {{ others() }}</p>
+        <p><span>Por qué lo editás:</span> {{ reason() }}</p>
+        <p><span>Si no lo cargás:</span> {{ skip() }}</p>
+        @if (others()) {
+          <p><span>Quién más puede cargarlo:</span> {{ others() }}</p>
+        }
       </div>
     </ui-modal>
   `,
@@ -20,9 +22,8 @@ import { UiModal } from 'ui';
     :host {
       position: fixed;
       z-index: 40;
-      right: 1.25rem;
-      top: 50%;
-      margin-top: -1.625rem;
+      top: 0.7rem;
+      right: 1.5rem;
     }
 
     .screen-help-button {
@@ -47,8 +48,8 @@ import { UiModal } from 'ui';
       display: grid;
       gap: 0.85rem;
       color: rgb(23 51 44 / 0.82);
-      font-size: 0.95rem;
-      line-height: 1.5;
+      font-size: 1.25rem;
+      line-height: 1.45;
     }
 
     .screen-help-copy span {
@@ -62,10 +63,11 @@ import { UiModal } from 'ui';
   `,
 })
 export class ScreenNote {
+  readonly screen = input.required<string>();
   readonly loading = input.required<string>();
   readonly reason = input.required<string>();
   readonly skip = input.required<string>();
-  readonly others = input.required<string>();
+  readonly others = input('');
   readonly open = signal(false);
 
   @HostListener('document:keydown.escape')
