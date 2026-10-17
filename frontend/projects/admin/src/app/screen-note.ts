@@ -9,11 +9,11 @@ import { UiModal } from 'ui';
     <button type="button" class="screen-help-button font-serif" aria-label="Ayuda de esta pantalla" aria-haspopup="dialog" (click)="open.set(true)">?</button>
     <ui-modal [open]="open()" [title]="screen()" (closed)="open.set(false)">
       <div class="screen-help-copy">
-        <p>{{ loading() }}</p>
-        <p><span>Por qué lo editás:</span> {{ reason() }}</p>
-        <p><span>Si no lo cargás:</span> {{ skip() }}</p>
+        <p>@for (part of pieces(loading()); track $index) {@if (part.mark) {<em class="section-ref">{{ part.text }}</em>} @else {{{part.text}}}}</p>
+        <p><span>Por qué lo editás: </span>@for (part of pieces(reason()); track $index) {@if (part.mark) {<em class="section-ref">{{ part.text }}</em>} @else {{{part.text}}}}</p>
+        <p><span>Si no lo cargás: </span>@for (part of pieces(skip()); track $index) {@if (part.mark) {<em class="section-ref">{{ part.text }}</em>} @else {{{part.text}}}}</p>
         @if (others()) {
-          <p><span>Quién más puede cargarlo:</span> {{ others() }}</p>
+          <p><span>Quién más puede cargarlo: </span>@for (part of pieces(others()); track $index) {@if (part.mark) {<em class="section-ref">{{ part.text }}</em>} @else {{{part.text}}}}</p>
         }
       </div>
     </ui-modal>
@@ -60,6 +60,12 @@ import { UiModal } from 'ui';
     .screen-help-copy p {
       margin: 0;
     }
+
+    .section-ref {
+      color: var(--color-clinic);
+      font-style: normal;
+      font-weight: 500;
+    }
   `,
 })
 export class ScreenNote {
@@ -73,5 +79,9 @@ export class ScreenNote {
   @HostListener('document:keydown.escape')
   close() {
     this.open.set(false);
+  }
+
+  pieces(value: string) {
+    return value.split(/\[\[(.+?)\]\]/).map((text, index) => ({ text, mark: index % 2 === 1 }));
   }
 }
