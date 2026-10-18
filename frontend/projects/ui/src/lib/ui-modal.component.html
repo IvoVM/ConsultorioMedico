@@ -1,7 +1,8 @@
 @if (open()) {
-  <div class="backdrop-fade fixed inset-0 z-40 flex items-end justify-center bg-ink/45 p-4 sm:items-center" (click)="closed.emit()">
+  <div class="backdrop-fade fixed inset-0 z-40 overflow-y-auto bg-ink/45" (click)="closed.emit()">
+    <div class="flex min-h-full items-end justify-center p-4 sm:items-center" (click)="closed.emit()">
     <div
-      class="dialog-pop max-h-[90vh] w-full overflow-y-auto border border-rule bg-white p-5 sm:p-6"
+      class="dialog-pop w-full overflow-visible border border-rule bg-white p-5 sm:p-6"
       [class.max-w-3xl]="wide()"
       [class.max-w-lg]="!wide()"
       role="dialog"
@@ -13,6 +14,7 @@
         <button type="button" class="modal-close" aria-label="Cerrar" (click)="closed.emit()">×</button>
       </div>
       <ng-content />
+    </div>
     </div>
   </div>
 }

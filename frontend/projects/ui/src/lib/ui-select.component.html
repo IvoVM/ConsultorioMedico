@@ -22,11 +22,7 @@
       role="listbox"
       tabindex="-1"
       [id]="listId"
-      [style.left.px]="box().left"
-      [style.width.px]="box().width"
-      [style.max-height.px]="box().maxHeight"
-      [style.top]="box().top === null ? 'auto' : box().top + 'px'"
-      [style.bottom]="box().bottom === null ? 'auto' : box().bottom + 'px'"
+      [class.is-up]="up()"
       [attr.aria-activedescendant]="listId + '-' + active()"
       (keydown)="onListKey($event)"
     >

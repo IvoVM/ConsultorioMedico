@@ -1,4 +1,4 @@
-import { Component, DestroyRef, ElementRef, HostListener, computed, forwardRef, inject, input, signal, viewChild } from '@angular/core';
+import { Component, ElementRef, HostListener, computed, forwardRef, inject, input, signal, viewChild } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { UiIcon } from './ui-icon.component';
 
@@ -17,13 +17,6 @@ export interface SelectOption {
 export class UiSelect implements ControlValueAccessor {
   private readonly host = inject(ElementRef<HTMLElement>);
 
-  constructor() {
-    const reposition = () => {
-      if (this.open()) this.positionMenu();
-    };
-    document.addEventListener('scroll', reposition, true);
-    inject(DestroyRef).onDestroy(() => document.removeEventListener('scroll', reposition, true));
-  }
   private readonly list = viewChild<ElementRef<HTMLUListElement>>('list');
   private readonly trigger = viewChild<ElementRef<HTMLButtonElement>>('trigger');
   private typeBuffer = '';
@@ -40,7 +33,7 @@ export class UiSelect implements ControlValueAccessor {
   readonly disabled = signal(false);
   readonly label = computed(() => this.options().find((option) => option.value === this.current())?.label ?? '');
   readonly empty = computed(() => !this.label());
-  readonly box = signal({ left: 0, width: 0, maxHeight: 256, top: 0 as number | null, bottom: null as number | null });
+  readonly up = signal(false);
 
   writeValue(value: string | null) {
     this.current.set(value ?? '');
@@ -124,50 +117,21 @@ export class UiSelect implements ControlValueAccessor {
     this.close();
   }
 
-  @HostListener('window:resize')
-  @HostListener('window:scroll')
-  reposition() {
-    if (this.open()) this.positionMenu();
-  }
-
   private openPanel() {
     if (this.disabled()) return;
     const selected = this.options().findIndex((option) => option.value === this.current());
     this.active.set(selected >= 0 ? selected : 0);
-    this.positionMenu();
+    const trigger = this.trigger()?.nativeElement;
+    if (trigger) {
+      const rect = trigger.getBoundingClientRect();
+      const below = window.innerHeight - rect.bottom;
+      this.up.set(below < 160 && rect.top > below + 80);
+    }
     this.open.set(true);
     queueMicrotask(() => {
       this.list()?.nativeElement.focus();
       this.revealActive();
     });
-  }
-
-  private positionMenu() {
-    const trigger = this.trigger()?.nativeElement;
-    if (!trigger) return;
-    const rect = trigger.getBoundingClientRect();
-    const origin = this.containingRect(trigger);
-    const gap = 4;
-    const spaceBelow = window.innerHeight - rect.bottom - gap;
-    const spaceAbove = rect.top - gap;
-    const up = spaceBelow < 180 && spaceAbove > spaceBelow;
-    this.box.set({
-      left: rect.left - origin.left,
-      width: rect.width,
-      maxHeight: Math.min(256, Math.max(96, up ? spaceAbove : spaceBelow)),
-      top: up ? null : rect.bottom - origin.top + gap,
-      bottom: up ? origin.bottom - rect.top + gap : null,
-    });
-  }
-
-  private containingRect(trigger: HTMLElement) {
-    let el = trigger.parentElement;
-    while (el) {
-      const style = getComputedStyle(el);
-      if (style.transform !== 'none' || style.filter !== 'none' || style.perspective !== 'none') return el.getBoundingClientRect();
-      el = el.parentElement;
-    }
-    return new DOMRect(0, 0, window.innerWidth, window.innerHeight);
   }
 
   private revealActive() {
