@@ -10,3 +10,4 @@ export * from './models/appointment-type-dto';
 export * from './models/appointment-type-row-dto';
 export * from './models/specialty-row-dto';
 export * from './models/save-appointment-type-command';
+export * from './models/prestacion-dto';

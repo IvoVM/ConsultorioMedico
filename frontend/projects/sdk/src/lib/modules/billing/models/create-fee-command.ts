@@ -3,4 +3,5 @@ export interface CreateFeeCommand {
   appointmentTypeId: string;
   amount: number;
   effectiveFrom: string;
+  payer?: string | null;
 }

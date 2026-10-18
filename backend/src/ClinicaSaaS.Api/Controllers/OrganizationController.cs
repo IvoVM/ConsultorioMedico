@@ -47,6 +47,10 @@ public class OrganizationController(OrganizationService organization) : ApiContr
     public Task<IActionResult> UpdateSpecialty(Guid id, SaveSpecialtyCommand command, CancellationToken ct) =>
         Run(() => organization.UpdateSpecialtyAsync(id, command, ct));
 
+    [HttpGet("especialidades/{id:guid}/prestaciones")]
+    public Task<IActionResult> Prestaciones(Guid id, CancellationToken ct) =>
+        Run(() => organization.PrestacionesAsync(id, ct));
+
     [AllowAnonymous]
     [HttpGet("tipos-turno")]
     public Task<IActionResult> AppointmentTypes([FromQuery] ListQuery query, CancellationToken ct) =>

@@ -186,8 +186,11 @@ public record SaveMedicalRecordCommand(
     string? EmergencyPhone,
     string? Notes);
 
-public record FeeDto(Guid Id, Guid AppointmentTypeId, string AppointmentType, decimal Amount, DateOnly EffectiveFrom);
-public record CreateFeeCommand(Guid AppointmentTypeId, decimal Amount, DateOnly EffectiveFrom);
+public record FeeDto(Guid Id, Guid AppointmentTypeId, string AppointmentType, decimal Amount, DateOnly EffectiveFrom, string? Payer);
+public record CreateFeeCommand(Guid AppointmentTypeId, decimal Amount, DateOnly EffectiveFrom, string? Payer = null);
+public record InsurerPriceDto(string Payer, decimal Amount, DateOnly EffectiveFrom);
+public record PrestacionDto(Guid Id, string Name, int DurationMinutes, decimal? Particular, DateOnly? ParticularFrom, IReadOnlyList<InsurerPriceDto> Insurers);
+public record PrestacionesDto(IReadOnlyList<PrestacionDto> Items, IReadOnlyList<string> Insurers);
 public record InvoiceItemDto(string Description, decimal Amount);
 public record InvoiceDto(
     Guid Id,

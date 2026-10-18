@@ -107,7 +107,7 @@ export type MedicalRecord = {
   emergencyPhone?: string | null;
   notes?: string | null;
 };
-export type Fee = { id: string; appointmentTypeId: string; appointmentType: string; amount: number; effectiveFrom: string };
+export type Fee = { id: string; appointmentTypeId: string; appointmentType: string; amount: number; effectiveFrom: string; payer?: string | null };
 export type Invoice = {
   id: string;
   appointmentId: string;

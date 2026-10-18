@@ -76,6 +76,16 @@ public static class BillingRules
     public static decimal NormalizePrice(decimal amount) =>
         decimal.Round(amount, 2, MidpointRounding.AwayFromZero);
 
+    public static string? CanonicalPayer(string? payer)
+    {
+        if (string.IsNullOrWhiteSpace(payer))
+            return null;
+        var text = payer.Trim();
+        if (text.Equals("particular", StringComparison.OrdinalIgnoreCase))
+            return null;
+        return text.Length > 120 ? text[..120] : text;
+    }
+
     public static string? PriceChangeError(decimal amount, decimal? current)
     {
         var rounded = NormalizePrice(amount);

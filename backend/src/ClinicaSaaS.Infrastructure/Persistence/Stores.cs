@@ -281,20 +281,30 @@ public class BillingStore(TenantDbContext db) : IBillingStore
 {
     public IQueryable<Fee> Fees => db.Fees.AsNoTracking();
 
-    public Task<Fee?> GetCurrentFeeAsync(Guid appointmentTypeId, DateOnly today, CancellationToken ct) =>
-        db.Fees
-            .Where(f => f.AppointmentTypeId == appointmentTypeId && f.EffectiveFrom <= today)
-            .OrderByDescending(f => f.EffectiveFrom)
-            .ThenByDescending(f => f.Id)
-            .FirstOrDefaultAsync(ct);
+    public Task<Fee?> GetCurrentFeeAsync(Guid appointmentTypeId, DateOnly today, string? payer, CancellationToken ct)
+    {
+        var query = db.Fees.Where(f => f.AppointmentTypeId == appointmentTypeId && f.EffectiveFrom <= today);
+        query = ForPayer(query, payer);
+        return query.OrderByDescending(f => f.EffectiveFrom).ThenByDescending(f => f.Id).FirstOrDefaultAsync(ct);
+    }
 
-    public async Task RemoveFeesEffectiveFromAsync(Guid appointmentTypeId, DateOnly day, Guid? keepId, CancellationToken ct)
+    public async Task RemoveFeesEffectiveFromAsync(Guid appointmentTypeId, DateOnly day, string? payer, Guid? keepId, CancellationToken ct)
     {
         var query = db.Fees.Where(f => f.AppointmentTypeId == appointmentTypeId && f.EffectiveFrom >= day);
+        query = ForPayer(query, payer);
         if (keepId is Guid id)
             query = query.Where(f => f.Id != id);
         var rows = await query.ToListAsync(ct);
         db.Fees.RemoveRange(rows);
+    }
+
+    private static IQueryable<Fee> ForPayer(IQueryable<Fee> query, string? payer)
+    {
+        var canonical = BillingRules.CanonicalPayer(payer);
+        if (canonical is null)
+            return query.Where(f => f.Payer == null || f.Payer == "");
+        var key = canonical.ToLower();
+        return query.Where(f => f.Payer != null && f.Payer.ToLower() == key);
     }
 
     public async Task<Fee> AddFeeAsync(Fee fee, CancellationToken ct)

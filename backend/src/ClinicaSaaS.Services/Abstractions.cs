@@ -128,8 +128,8 @@ public interface IClinicalStore
 public interface IBillingStore
 {
     IQueryable<Fee> Fees { get; }
-    Task<Fee?> GetCurrentFeeAsync(Guid appointmentTypeId, DateOnly today, CancellationToken ct);
-    Task RemoveFeesEffectiveFromAsync(Guid appointmentTypeId, DateOnly day, Guid? keepId, CancellationToken ct);
+    Task<Fee?> GetCurrentFeeAsync(Guid appointmentTypeId, DateOnly today, string? payer, CancellationToken ct);
+    Task RemoveFeesEffectiveFromAsync(Guid appointmentTypeId, DateOnly day, string? payer, Guid? keepId, CancellationToken ct);
     Task<Fee> AddFeeAsync(Fee fee, CancellationToken ct);
     Task<Invoice> AddInvoiceAsync(Invoice invoice, CancellationToken ct);
     Task<Invoice?> GetInvoiceAsync(Guid id, CancellationToken ct);

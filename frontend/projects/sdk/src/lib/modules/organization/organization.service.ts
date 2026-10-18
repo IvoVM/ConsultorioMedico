@@ -12,6 +12,7 @@ import type { SaveLocationCommand } from './models/save-location-command';
 import type { SaveMedicalServiceCommand } from './models/save-medical-service-command';
 import type { SaveSpecialtyCommand } from './models/save-specialty-command';
 import type { SpecialtyDto } from './models/specialty-dto';
+import type { PrestacionesDto } from './models/prestacion-dto';
 import type { SpecialtyRowDto } from './models/specialty-row-dto';
 
 @Injectable({ providedIn: 'root' })
@@ -50,6 +51,10 @@ export class OrganizationService extends ApiClient {
 
   createSpecialty(body: SaveSpecialtyCommand) {
     return this.http.post<SpecialtyDto>(`${this.base}/api/especialidades`, body);
+  }
+
+  prestaciones(id: string) {
+    return this.http.get<PrestacionesDto>(`${this.base}/api/especialidades/${id}/prestaciones`);
   }
 
   appointmentTypes() {

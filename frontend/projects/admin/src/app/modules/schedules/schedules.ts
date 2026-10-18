@@ -36,7 +36,12 @@ export class SchedulesPage {
     this.professionals().map((pro) => ({ value: pro.id, label: `${pro.lastName}, ${pro.firstName}` })),
   );
   readonly dayOptions = this.days.map((day) => ({ value: day, label: dayLabels[day] }));
-  readonly typeOptions = computed(() => this.appointmentTypes().map((type) => ({ value: type.id, label: type.name })));
+  typeOptions() {
+    const specialtyId = this.professionals().find((pro) => pro.id === this.professionalId)?.specialtyId;
+    return this.appointmentTypes()
+      .filter((type) => type.specialtyId === specialtyId)
+      .map((type) => ({ value: type.id, label: type.name }));
+  }
   readonly blocks = signal<ScheduleBlockDto[]>([]);
   readonly blockRows = signal<ScheduleBlockDto[]>([]);
   readonly blockTotal = signal(0);
@@ -82,7 +87,7 @@ export class SchedulesPage {
       this.appointmentTypes.set(appointmentTypes);
       this.professionalId = professionals[0]?.id ?? '';
       this.locationId = locations[0]?.id ?? '';
-      this.appointmentTypeId = appointmentTypes[0]?.id ?? '';
+      this.appointmentTypeId = appointmentTypes.find((type) => type.specialtyId === professionals[0]?.specialtyId)?.id ?? '';
       if (this.professionalId) await this.loadSchedule();
     } catch (error) {
       this.error.set(errorMessage(error));
@@ -149,6 +154,9 @@ export class SchedulesPage {
   }
 
   pickProfessional() {
+    const options = this.typeOptions();
+    if (!options.some((option) => option.value === this.appointmentTypeId))
+      this.appointmentTypeId = options[0]?.value ?? '';
     this.blockPage.set(1);
     this.blockoutPage.set(1);
     void this.loadSchedule();

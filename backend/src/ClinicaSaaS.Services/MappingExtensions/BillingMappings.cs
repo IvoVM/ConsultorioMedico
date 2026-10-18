@@ -5,7 +5,7 @@ namespace ClinicaSaaS.Services.MappingExtensions;
 public static class BillingMappings
 {
     public static IQueryable<FeeDto> ToFeeDtos(this IQueryable<Fee> query) =>
-        query.Select(f => new FeeDto(f.Id, f.AppointmentTypeId, f.AppointmentType.Name, f.Amount, f.EffectiveFrom));
+        query.Select(f => new FeeDto(f.Id, f.AppointmentTypeId, f.AppointmentType.Name, f.Amount, f.EffectiveFrom, f.Payer));
 
     public static IQueryable<InvoiceDto> ToInvoiceDtos(this IQueryable<Invoice> query) =>
         query.Select(i => new InvoiceDto(

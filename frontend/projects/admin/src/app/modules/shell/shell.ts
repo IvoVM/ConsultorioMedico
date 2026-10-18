@@ -18,7 +18,6 @@ export class ShellPage {
         children: [
           { label: 'Servicios', path: '/organizacion/servicios' },
           { label: 'Especialidades', path: '/organizacion/especialidades' },
-          { label: 'Turnos', path: '/organizacion/turnos' },
         ],
       },
       {
@@ -30,13 +29,7 @@ export class ShellPage {
         ],
       },
       { label: 'Agendas', path: '/agendas' },
-      {
-        label: 'Cobros',
-        children: [
-          { label: 'Aranceles', path: '/aranceles' },
-          { label: 'Comprobantes', path: '/comprobantes' },
-        ],
-      },
+      { label: 'Comprobantes', path: '/comprobantes' },
       { label: 'Auditoría', path: '/auditoria' },
     ]);
 

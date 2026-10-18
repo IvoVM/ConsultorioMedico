@@ -173,6 +173,7 @@ public class TenantDbContext(DbContextOptions<TenantDbContext> options)
         builder.Entity<Fee>(e =>
         {
             e.Property(f => f.Amount).HasPrecision(12, 2);
+            e.Property(f => f.Payer).HasMaxLength(120);
             e.HasOne(f => f.AppointmentType).WithMany(t => t.Fees).HasForeignKey(f => f.AppointmentTypeId).OnDelete(DeleteBehavior.Restrict);
         });
         builder.Entity<Invoice>(e =>

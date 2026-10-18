@@ -5,4 +5,5 @@ export interface FeeDto {
   appointmentType: string;
   amount: number;
   effectiveFrom: string;
+  payer?: string | null;
 }

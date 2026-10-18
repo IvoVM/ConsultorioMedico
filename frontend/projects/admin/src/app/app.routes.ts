@@ -22,14 +22,9 @@ export const routes: Routes = [
               { path: ':specialtyId', loadComponent: () => import('./modules/organization/specialty-detail').then((m) => m.SpecialtyDetailPage) },
             ],
           },
-          { path: 'tipos-de-turno', redirectTo: 'turnos' },
-          {
-            path: 'turnos',
-            children: [
-              { path: '', loadComponent: () => import('./modules/organization/turnos').then((m) => m.TurnosPage) },
-              { path: ':turnoId', loadComponent: () => import('./modules/organization/turno-detail').then((m) => m.TurnoDetailPage) },
-            ],
-          },
+          { path: 'tipos-de-turno', redirectTo: 'especialidades' },
+          { path: 'turnos', redirectTo: 'especialidades' },
+          { path: 'turnos/:turnoId', redirectTo: 'especialidades' },
           {
             path: ':section',
             loadComponent: () => import('./modules/organization/organization').then((m) => m.OrganizationPage),
@@ -54,7 +49,7 @@ export const routes: Routes = [
         canActivate: [roleGuard('TenantAdmin')],
         loadComponent: () => import('./modules/medical-records/medical-record-detail').then((m) => m.MedicalRecordDetailPage),
       },
-      { path: 'aranceles', canActivate: [roleGuard('TenantAdmin')], loadComponent: () => import('./modules/fees/fees').then((m) => m.FeesPage) },
+      { path: 'aranceles', redirectTo: 'organizacion/especialidades' },
       { path: 'comprobantes', canActivate: [roleGuard('TenantAdmin')], loadComponent: () => import('./modules/invoices/invoices').then((m) => m.InvoicesPage) },
       { path: 'auditoria', canActivate: [roleGuard('TenantAdmin')], loadComponent: () => import('./modules/audit/audit-log').then((m) => m.AuditLogPage) },
     ],

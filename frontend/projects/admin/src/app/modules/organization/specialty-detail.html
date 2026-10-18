@@ -5,7 +5,7 @@
   Especialidades
 </a>
 
-@if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
+@if (error() && !dialog()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
 
 @if (loading() && !specialty()) {
   <ui-skeleton label="Cargando especialidad" />
@@ -17,11 +17,57 @@
     <p class="mt-3 text-sm text-ink/65">{{ people().length === 1 ? '1 profesional' : people().length + ' profesionales' }}</p>
     <screen-note
       screen="Especialidad"
-      loading="Estás editando quién atiende esta especialidad."
-      reason="Esos médicos son los que después se pueden elegir al reservar un turno de esta especialidad."
-      skip="Si no sumás a nadie, la especialidad existe pero no tiene quién atienda."
+      loading="Estás definiendo quién atiende, cuánto dura cada prestación y cuánto sale."
+      reason="La agenda es de cada médico. Al cobrar, se usa el precio de la obra social del paciente y, si no hay uno, el particular."
+      skip="Sin médicos no hay quién atienda. Sin precio, el turno se cobra en cero."
     />
   </header>
+
+  <section class="mb-10">
+    <div class="mb-4 flex flex-wrap items-end justify-between gap-3">
+      <h3>Prestaciones</h3>
+      <ui-button (click)="openService()">Otra prestación</ui-button>
+    </div>
+    @if (!prestaciones().length) {
+      <ui-empty message="Esta especialidad todavía no tiene consulta." />
+      <ui-button class="mt-4" [loading]="busy() === 'default'" (click)="createDefault()">Crear consulta</ui-button>
+    } @else {
+      <ui-table>
+        <thead>
+          <tr>
+            <th>Prestación</th>
+            <th>Duración</th>
+            <th>Particular</th>
+            <th>Obras sociales</th>
+            <th class="w-px"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of prestaciones(); track row.id) {
+            <tr>
+              <td class="font-serif text-lg leading-tight">{{ row.name }}</td>
+              <td>{{ row.durationMinutes }} min</td>
+              <td>{{ money(row.particular) }}</td>
+              <td>
+                @if (!row.insurers.length) {
+                  <span class="text-ink/60">Ninguna</span>
+                } @else {
+                  @for (price of row.insurers; track price.payer) {
+                    <button type="button" class="text-link mr-3" (click)="openPrice(row, price.payer)">{{ price.payer }} {{ money(price.amount) }}</button>
+                  }
+                }
+              </td>
+              <td class="w-px whitespace-nowrap">
+                <button type="button" class="text-link mr-3" (click)="openDuration(row)">Duración</button>
+                <button type="button" class="text-link mr-3" (click)="openPrice(row)">{{ row.particular != null ? 'Precio' : 'Cargar precio' }}</button>
+                <button type="button" class="text-link" (click)="openPrice(row, '', true)">Obra social</button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </ui-table>
+    }
+  </section>
 
   <section>
     <h3>Profesionales</h3>
@@ -47,4 +93,68 @@
       <p class="hint">Importá médicos desde Empleados para sumarlos acá.</p>
     }
   </section>
+}
+
+@if (dialog() === 'duration' && selected(); as row) {
+  <ui-modal [open]="true" title="Duración" (closed)="close()">
+    <form (ngSubmit)="saveDuration()">
+      <p class="mb-4 text-sm leading-relaxed text-ink/80">{{ row.name }} dura este tiempo. La agenda del médico parte los huecos con esa duración.</p>
+      <ui-field label="Minutos">
+        <input name="minutes" type="number" min="5" max="240" [ngModel]="durationDraft()" (ngModelChange)="durationDraft.set(+$event)" />
+      </ui-field>
+      @if (error()) { <p class="mt-3 text-sm text-pulse" role="alert">{{ error() }}</p> }
+      <div class="mt-5 flex flex-wrap gap-3">
+        <ui-button type="submit" [loading]="saving()">Guardar</ui-button>
+        <ui-button variant="outlined" [disabled]="saving()" (click)="close()">Cancelar</ui-button>
+      </div>
+    </form>
+  </ui-modal>
+}
+
+@if (dialog() === 'price' && selected(); as row) {
+  <ui-modal [open]="true" [title]="insurerMode() ? 'Precio de obra social' : 'Precio particular'" (closed)="close()">
+    <form (ngSubmit)="savePrice()">
+      <p class="mb-4 text-sm leading-relaxed text-ink/80">
+        {{ row.name }} pasa a valer el monto nuevo a partir de ahora.
+        @if (insurerMode()) { Este valor se usa cuando el paciente tiene esa obra social. }
+        @else { Si el paciente tiene una obra social con precio propio, se cobra ese. }
+      </p>
+      @if (insurerMode()) {
+        <ui-field label="Obra social">
+          <input name="payer" list="insurers" [ngModel]="payer()" (ngModelChange)="payer.set($event)" placeholder="Particular si lo dejás vacío" />
+          <datalist id="insurers">
+            @for (name of insurers(); track name) { <option [value]="name"></option> }
+          </datalist>
+        </ui-field>
+      }
+      <ui-field class="mt-4" label="Monto">
+        <input name="amount" type="number" step="0.01" inputmode="decimal" [ngModel]="amountDraft()" (ngModelChange)="onAmount($event)" />
+      </ui-field>
+      @if (priceError()) { <p class="mt-3 text-sm text-pulse" role="alert">{{ priceError() }}</p> }
+      @if (error()) { <p class="mt-3 text-sm text-pulse" role="alert">{{ error() }}</p> }
+      <div class="mt-5 flex flex-wrap gap-3">
+        <ui-button type="submit" [loading]="saving()" [disabled]="!!priceError()">Guardar</ui-button>
+        <ui-button variant="outlined" [disabled]="saving()" (click)="close()">Cancelar</ui-button>
+      </div>
+    </form>
+  </ui-modal>
+}
+
+@if (dialog() === 'service') {
+  <ui-modal [open]="true" title="Otra prestación" (closed)="close()">
+    <form (ngSubmit)="saveService()">
+      <p class="mb-4 text-sm leading-relaxed text-ink/80">Usala cuando esta especialidad cobra algo distinto de la consulta, como un estudio. Después le cargás el precio.</p>
+      <ui-field label="Nombre">
+        <input name="serviceName" [ngModel]="serviceName()" (ngModelChange)="serviceName.set($event)" required />
+      </ui-field>
+      <ui-field class="mt-4" label="Minutos">
+        <input name="serviceMinutes" type="number" min="5" max="240" [ngModel]="durationDraft()" (ngModelChange)="durationDraft.set(+$event)" />
+      </ui-field>
+      @if (error()) { <p class="mt-3 text-sm text-pulse" role="alert">{{ error() }}</p> }
+      <div class="mt-5 flex flex-wrap gap-3">
+        <ui-button type="submit" [loading]="saving()">Crear</ui-button>
+        <ui-button variant="outlined" [disabled]="saving()" (click)="close()">Cancelar</ui-button>
+      </div>
+    </form>
+  </ui-modal>
 }

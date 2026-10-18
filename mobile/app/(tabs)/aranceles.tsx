@@ -28,7 +28,7 @@ export default function Aranceles() {
       <ErrorText text={error} />
       {fees.map((item) => (
         <Card key={item.id}>
-          <Text style={{ fontFamily: type.sansBold, color: colors.deep }}>{item.appointmentType}</Text>
+          <Text style={{ fontFamily: type.sansBold, color: colors.deep }}>{item.appointmentType}{item.payer ? ` · ${item.payer}` : ' · Particular'}</Text>
           <Text style={{ fontFamily: type.sans, color: colors.ink }}>${item.amount} desde {item.effectiveFrom}</Text>
         </Card>
       ))}

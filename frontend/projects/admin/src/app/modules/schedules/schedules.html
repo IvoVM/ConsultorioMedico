@@ -95,9 +95,12 @@
       </ui-field>
       <ui-field label="Desde"><input name="from" type="time" [(ngModel)]="from" required /></ui-field>
       <ui-field label="Hasta"><input name="to" type="time" [(ngModel)]="to" required /></ui-field>
-      <ui-field label="Tipo">
+      <ui-field label="Prestación">
         <ui-select name="appointmentTypeId" [(ngModel)]="appointmentTypeId" [options]="typeOptions()" />
       </ui-field>
+      @if (!typeOptions().length) {
+        <p class="text-sm text-ink/70">Este médico no tiene prestaciones. Cargalas en su especialidad.</p>
+      }
       <div class="flex flex-wrap gap-3">
         <ui-button type="submit">Crear</ui-button>
         <ui-button variant="outlined" (click)="addingBlock.set(false)">Cancelar</ui-button>

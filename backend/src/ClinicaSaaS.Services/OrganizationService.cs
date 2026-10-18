@@ -4,7 +4,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ClinicaSaaS.Services;
 
-public class OrganizationService(IOrganizationStore store, ITenantUserStore users, IEmployeeStore employees, IAuditStore audit, ICurrentUser currentUser)
+public class OrganizationService(
+    IOrganizationStore store,
+    ITenantUserStore users,
+    IEmployeeStore employees,
+    IClientStore clients,
+    IAuditStore audit,
+    ICurrentUser currentUser,
+    TimeProvider clock)
 {
     public async Task<IReadOnlyList<LocationDto>> LocationsAsync(CancellationToken ct) =>
         await store.Locations.OrderBy(l => l.Name).ToLocationDtos().ToListAsync(ct);
@@ -67,6 +74,13 @@ public class OrganizationService(IOrganizationStore store, ITenantUserStore user
         if (string.IsNullOrWhiteSpace(command.Name))
             throw new BusinessRuleException("La especialidad necesita un nombre.");
         var specialty = await store.AddSpecialtyAsync(new Specialty { Id = Guid.NewGuid(), Name = command.Name.Trim() }, ct);
+        await store.AddAppointmentTypeAsync(new AppointmentType
+        {
+            Id = Guid.NewGuid(),
+            Name = specialty.Name,
+            DurationMinutes = 30,
+            SpecialtyId = specialty.Id
+        }, ct);
         await RecordAsync("alta", "Especialidad", specialty.Id, specialty.Name, ct);
         return new SpecialtyDto(specialty.Id, specialty.Name);
     }
@@ -74,9 +88,75 @@ public class OrganizationService(IOrganizationStore store, ITenantUserStore user
     public async Task<SpecialtyDto> UpdateSpecialtyAsync(Guid id, SaveSpecialtyCommand command, CancellationToken ct)
     {
         var specialty = await store.GetSpecialtyAsync(id, ct) ?? throw new NotFoundException("Especialidad no encontrada.");
+        if (string.IsNullOrWhiteSpace(command.Name))
+            throw new BusinessRuleException("La especialidad necesita un nombre.");
+        var previous = specialty.Name;
         specialty.Name = command.Name.Trim();
+        if (!string.Equals(previous, specialty.Name, StringComparison.Ordinal))
+        {
+            var match = await store.AppointmentTypes
+                .Where(t => t.SpecialtyId == id && t.Name == previous)
+                .Select(t => t.Id)
+                .ToListAsync(ct);
+            if (match.Count == 1)
+            {
+                var type = await store.GetAppointmentTypeAsync(match[0], ct);
+                if (type is not null)
+                    type.Name = specialty.Name;
+            }
+        }
         await store.SaveAsync(ct);
         return new SpecialtyDto(specialty.Id, specialty.Name);
+    }
+
+    public async Task<PrestacionesDto> PrestacionesAsync(Guid specialtyId, CancellationToken ct)
+    {
+        var specialty = await store.GetSpecialtyAsync(specialtyId, ct) ?? throw new NotFoundException("Especialidad no encontrada.");
+        var today = DateOnly.FromDateTime(clock.GetUtcNow().DateTime);
+        var rows = await store.AppointmentTypes
+            .Where(t => t.SpecialtyId == specialtyId)
+            .Select(t => new
+            {
+                t.Id,
+                t.Name,
+                t.DurationMinutes,
+                Fees = t.Fees
+                    .Where(f => f.EffectiveFrom <= today)
+                    .Select(f => new { f.Id, f.Payer, f.Amount, f.EffectiveFrom })
+                    .ToList()
+            })
+            .ToListAsync(ct);
+        var items = rows
+            .OrderBy(t => t.Name == specialty.Name ? 0 : 1)
+            .ThenBy(t => t.Name)
+            .Select(t =>
+            {
+                var current = t.Fees
+                    .GroupBy(f => BillingRules.CanonicalPayer(f.Payer)?.ToLowerInvariant() ?? "")
+                    .Select(g => g.OrderByDescending(f => f.EffectiveFrom).ThenByDescending(f => f.Id).First())
+                    .ToList();
+                var particular = current.FirstOrDefault(f => BillingRules.CanonicalPayer(f.Payer) is null);
+                var insurers = current
+                    .Where(f => BillingRules.CanonicalPayer(f.Payer) is string)
+                    .OrderBy(f => f.Payer)
+                    .Select(f => new InsurerPriceDto(f.Payer!, f.Amount, f.EffectiveFrom))
+                    .ToList();
+                return new PrestacionDto(t.Id, t.Name, t.DurationMinutes, particular?.Amount, particular?.EffectiveFrom, insurers);
+            })
+            .ToList();
+        var names = await clients.Clients
+            .Where(c => c.Record != null && c.Record.HealthInsurance != null && c.Record.HealthInsurance != "")
+            .Select(c => c.Record!.HealthInsurance!)
+            .Distinct()
+            .ToListAsync(ct);
+        var insurersKnown = names
+            .Select(BillingRules.CanonicalPayer)
+            .Where(name => name is not null)
+            .DistinctBy(name => name!.ToLowerInvariant())
+            .Cast<string>()
+            .OrderBy(name => name)
+            .ToList();
+        return new PrestacionesDto(items, insurersKnown);
     }
 
     public async Task<IReadOnlyList<AppointmentTypeDto>> AppointmentTypesAsync(CancellationToken ct) =>
@@ -195,7 +275,7 @@ public class OrganizationService(IOrganizationStore store, ITenantUserStore user
     private static void ValidateType(SaveAppointmentTypeCommand command)
     {
         if (string.IsNullOrWhiteSpace(command.Name))
-            throw new BusinessRuleException("El tipo de turno necesita un nombre.");
+            throw new BusinessRuleException("La prestación necesita un nombre.");
         if (command.DurationMinutes is < 5 or > 240)
             throw new BusinessRuleException("La duración debe estar entre 5 y 240 minutos.");
     }

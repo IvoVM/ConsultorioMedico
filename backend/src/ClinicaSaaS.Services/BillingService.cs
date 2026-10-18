@@ -21,9 +21,10 @@ public class BillingService(
             .ToFeeDtos()
             .ToListAsync(ct);
         return fees
-            .GroupBy(f => f.AppointmentTypeId)
+            .GroupBy(f => (f.AppointmentTypeId, BillingRules.CanonicalPayer(f.Payer)?.ToLowerInvariant() ?? ""))
             .Select(g => g.First())
             .OrderBy(f => f.AppointmentType)
+            .ThenBy(f => f.Payer)
             .ToList();
     }
 
@@ -36,27 +37,28 @@ public class BillingService(
             source = source.Where(t => t.Name.ToLower().Contains(term));
         source = (query.Sort, query.Desc) switch
         {
-            ("amount", false) => source.OrderBy(t => t.Fees.Where(f => f.EffectiveFrom <= today).OrderByDescending(f => f.EffectiveFrom).ThenByDescending(f => f.Id).Select(f => (decimal?)f.Amount).FirstOrDefault() ?? -1).ThenBy(t => t.Name),
-            ("amount", true) => source.OrderByDescending(t => t.Fees.Where(f => f.EffectiveFrom <= today).OrderByDescending(f => f.EffectiveFrom).ThenByDescending(f => f.Id).Select(f => (decimal?)f.Amount).FirstOrDefault() ?? -1).ThenBy(t => t.Name),
-            ("from", false) => source.OrderBy(t => t.Fees.Where(f => f.EffectiveFrom <= today).OrderByDescending(f => f.EffectiveFrom).ThenByDescending(f => f.Id).Select(f => (DateOnly?)f.EffectiveFrom).FirstOrDefault() ?? DateOnly.MinValue).ThenBy(t => t.Name),
-            ("from", true) => source.OrderByDescending(t => t.Fees.Where(f => f.EffectiveFrom <= today).OrderByDescending(f => f.EffectiveFrom).ThenByDescending(f => f.Id).Select(f => (DateOnly?)f.EffectiveFrom).FirstOrDefault() ?? DateOnly.MinValue).ThenBy(t => t.Name),
+            ("amount", false) => source.OrderBy(t => t.Fees.Where(f => f.Payer == null && f.EffectiveFrom <= today).OrderByDescending(f => f.EffectiveFrom).ThenByDescending(f => f.Id).Select(f => (decimal?)f.Amount).FirstOrDefault() ?? -1).ThenBy(t => t.Name),
+            ("amount", true) => source.OrderByDescending(t => t.Fees.Where(f => f.Payer == null && f.EffectiveFrom <= today).OrderByDescending(f => f.EffectiveFrom).ThenByDescending(f => f.Id).Select(f => (decimal?)f.Amount).FirstOrDefault() ?? -1).ThenBy(t => t.Name),
+            ("from", false) => source.OrderBy(t => t.Fees.Where(f => f.Payer == null && f.EffectiveFrom <= today).OrderByDescending(f => f.EffectiveFrom).ThenByDescending(f => f.Id).Select(f => (DateOnly?)f.EffectiveFrom).FirstOrDefault() ?? DateOnly.MinValue).ThenBy(t => t.Name),
+            ("from", true) => source.OrderByDescending(t => t.Fees.Where(f => f.Payer == null && f.EffectiveFrom <= today).OrderByDescending(f => f.EffectiveFrom).ThenByDescending(f => f.Id).Select(f => (DateOnly?)f.EffectiveFrom).FirstOrDefault() ?? DateOnly.MinValue).ThenBy(t => t.Name),
             ("name", true) => source.OrderByDescending(t => t.Name),
             _ => source.OrderBy(t => t.Name)
         };
         var rows = source.Select(t => new FeeRowDto(
             t.Id,
             t.Name,
-            t.Fees.Where(f => f.EffectiveFrom <= today).OrderByDescending(f => f.EffectiveFrom).ThenByDescending(f => f.Id).Select(f => (decimal?)f.Amount).FirstOrDefault(),
-            t.Fees.Where(f => f.EffectiveFrom <= today).OrderByDescending(f => f.EffectiveFrom).ThenByDescending(f => f.Id).Select(f => (DateOnly?)f.EffectiveFrom).FirstOrDefault()));
+            t.Fees.Where(f => f.Payer == null && f.EffectiveFrom <= today).OrderByDescending(f => f.EffectiveFrom).ThenByDescending(f => f.Id).Select(f => (decimal?)f.Amount).FirstOrDefault(),
+            t.Fees.Where(f => f.Payer == null && f.EffectiveFrom <= today).OrderByDescending(f => f.EffectiveFrom).ThenByDescending(f => f.Id).Select(f => (DateOnly?)f.EffectiveFrom).FirstOrDefault()));
         return await Pages.Materialize(rows, query, ct);
     }
 
     public async Task<FeeDto> CreateFeeAsync(CreateFeeCommand command, CancellationToken ct)
     {
         var type = await organization.GetAppointmentTypeAsync(command.AppointmentTypeId, ct)
-            ?? throw new NotFoundException("Tipo de turno no encontrado.");
+            ?? throw new NotFoundException("Prestación no encontrada.");
         var today = DateOnly.FromDateTime(clock.GetUtcNow().DateTime);
-        var current = await store.GetCurrentFeeAsync(command.AppointmentTypeId, today, ct);
+        var payer = BillingRules.CanonicalPayer(command.Payer);
+        var current = await store.GetCurrentFeeAsync(command.AppointmentTypeId, today, payer, ct);
         var error = BillingRules.PriceChangeError(command.Amount, current?.Amount);
         if (error is not null)
             throw new BusinessRuleException(error);
@@ -66,24 +68,26 @@ public class BillingService(
         if (current is not null && current.EffectiveFrom == today)
         {
             current.Amount = amount;
-            await store.RemoveFeesEffectiveFromAsync(command.AppointmentTypeId, today, current.Id, ct);
+            current.Payer = payer;
+            await store.RemoveFeesEffectiveFromAsync(command.AppointmentTypeId, today, payer, current.Id, ct);
             await store.SaveAsync(ct);
             fee = current;
         }
         else
         {
-            await store.RemoveFeesEffectiveFromAsync(command.AppointmentTypeId, today, null, ct);
+            await store.RemoveFeesEffectiveFromAsync(command.AppointmentTypeId, today, payer, null, ct);
             fee = await store.AddFeeAsync(new Fee
             {
                 Id = Guid.NewGuid(),
                 AppointmentTypeId = command.AppointmentTypeId,
+                Payer = payer,
                 Amount = amount,
                 EffectiveFrom = today
             }, ct);
         }
 
-        await audit.RecordAsync(currentUser.Id, "arancel", "Arancel", fee.Id.ToString(), fee.Amount.ToString("0.00"), ct);
-        return new FeeDto(fee.Id, fee.AppointmentTypeId, type.Name, fee.Amount, fee.EffectiveFrom);
+        await audit.RecordAsync(currentUser.Id, "arancel", "Arancel", fee.Id.ToString(), $"{fee.Payer ?? "Particular"} {fee.Amount:0.00}", ct);
+        return new FeeDto(fee.Id, fee.AppointmentTypeId, type.Name, fee.Amount, fee.EffectiveFrom, fee.Payer);
     }
 
     public async Task<IReadOnlyList<InvoiceDto>> InvoicesAsync(CancellationToken ct) =>

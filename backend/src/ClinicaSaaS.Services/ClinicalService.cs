@@ -165,12 +165,19 @@ public class ClinicalService(
         if (await billing.Invoices.AnyAsync(i => i.AppointmentId == appointment.Id, ct))
             return;
         var today = DateOnly.FromDateTime(clock.GetUtcNow().DateTime);
-        var amount = await billing.Fees
+        var insurance = await clients.Clients
+            .Where(c => c.Id == appointment.ClientId)
+            .Select(c => c.Record != null ? c.Record.HealthInsurance : null)
+            .FirstOrDefaultAsync(ct);
+        var fees = await billing.Fees
             .Where(f => f.AppointmentTypeId == appointment.AppointmentTypeId && f.EffectiveFrom <= today)
-            .OrderByDescending(f => f.EffectiveFrom)
-            .ThenByDescending(f => f.Id)
-            .Select(f => (decimal?)f.Amount)
-            .FirstOrDefaultAsync(ct) ?? 0;
+            .Select(f => new { f.Payer, f.Amount, f.EffectiveFrom, f.Id, f.AppointmentType.Name })
+            .ToListAsync(ct);
+        var covered = fees.Where(f => SamePayer(f.Payer, insurance)).ToList();
+        if (covered.Count == 0)
+            covered = fees.Where(f => BillingRules.CanonicalPayer(f.Payer) is null).ToList();
+        var chosen = covered.OrderByDescending(f => f.EffectiveFrom).ThenByDescending(f => f.Id).FirstOrDefault();
+        var amount = chosen?.Amount ?? 0;
         await billing.AddInvoiceAsync(new Invoice
         {
             Id = Guid.NewGuid(),
@@ -184,12 +191,15 @@ public class ClinicalService(
                 new InvoiceItem
                 {
                     Id = Guid.NewGuid(),
-                    Description = "Consulta",
+                    Description = chosen?.Name ?? "Consulta",
                     Amount = amount
                 }
             ]
         }, ct);
     }
+
+    private static bool SamePayer(string? feePayer, string? insurance) =>
+        string.Equals(BillingRules.CanonicalPayer(feePayer), BillingRules.CanonicalPayer(insurance), StringComparison.OrdinalIgnoreCase);
 
     private async Task EnsurePatientAccessAsync(Guid patientId, CancellationToken ct)
     {
