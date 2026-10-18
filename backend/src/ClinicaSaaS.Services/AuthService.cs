@@ -1,5 +1,6 @@
 using ClinicaSaaS.Domain;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 
 namespace ClinicaSaaS.Services;
 
@@ -10,7 +11,8 @@ public class AuthService(
     ICurrentTenant tenant,
     IRefreshSessionStore sessions,
     IValidator<RegisterPatientCommand> registrationValidator,
-    IAuditStore audit)
+    IAuditStore audit,
+    IEmployeeStore employees)
 {
     public async Task<IssuedSession> LoginTenantAsync(LoginCommand command, CancellationToken ct)
     {
@@ -18,6 +20,8 @@ public class AuthService(
             ?? throw new BusinessRuleException("Credenciales inválidas.");
         if (!await users.CheckPasswordAsync(user.Id, command.Password, ct))
             throw new BusinessRuleException("Credenciales inválidas.");
+        if (await IsInactiveEmployeeAsync(user.Id, ct))
+            throw new BusinessRuleException("Esta cuenta está dada de baja.");
         return await IssueAsync(user, ct);
     }
 
@@ -55,10 +59,18 @@ public class AuthService(
             ?? throw new UnauthorizedException("La sesión expiró. Volvé a ingresar.");
         var user = await users.FindByIdAsync(grant.UserId, ct)
             ?? throw new UnauthorizedException("La sesión expiró. Volvé a ingresar.");
+        if (await IsInactiveEmployeeAsync(user.Id, ct))
+            throw new UnauthorizedException("Esta cuenta está dada de baja.");
         return new IssuedSession(Access(user, user.Name), grant.RawToken, grant.Expires);
     }
 
     public Task LogoutAsync(string? rawToken, CancellationToken ct) => sessions.RevokeAsync(rawToken, ct);
+
+    private async Task<bool> IsInactiveEmployeeAsync(Guid userId, CancellationToken ct)
+    {
+        var active = await employees.Employees.Where(e => e.UserId == userId).Select(e => (bool?)e.IsActive).FirstOrDefaultAsync(ct);
+        return active == false;
+    }
 
     private async Task<IssuedSession> IssueAsync(TenantAccount user, CancellationToken ct)
     {

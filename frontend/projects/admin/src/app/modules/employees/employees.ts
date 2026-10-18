@@ -9,7 +9,7 @@ import {
   TenantRole,
   errorMessage,
 } from 'sdk';
-import { SelectOption, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable } from 'ui';
+import { SelectOption, UiBadge, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { ScreenNote } from '../../screen-note';
 import { TablePager, listParams, queueSearch } from '../../table-pager';
@@ -40,7 +40,7 @@ interface PreviewRow {
 }
 
 @Component({
-  imports: [FormsModule, ScreenNote, SortCol, TablePager, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable],
+  imports: [FormsModule, ScreenNote, SortCol, TablePager, UiBadge, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable],
   templateUrl: './employees.html',
 })
 export class EmployeesPage {
@@ -64,7 +64,9 @@ export class EmployeesPage {
   readonly password = signal('');
   readonly loading = signal(true);
   readonly saving = signal(false);
-  readonly panel = signal<'cargar' | 'importar' | ''>('');
+  readonly panel = signal<'cargar' | 'importar' | 'editar' | ''>('');
+  readonly editing = signal<EmployeeDto | null>(null);
+  readonly statusTarget = signal<EmployeeDto | null>(null);
   readonly query = signal('');
   readonly sort = signal<SortState>({ key: 'name', dir: 'asc' });
   private readonly searchHost: { timer?: ReturnType<typeof setTimeout> } = {};
@@ -119,7 +121,33 @@ export class EmployeesPage {
 
   open(panel: 'cargar' | 'importar') {
     this.error.set('');
+    this.editing.set(null);
+    if (panel === 'cargar') {
+      this.firstName = '';
+      this.lastName = '';
+      this.email = '';
+      this.role = 'Doctor';
+      this.licenseNumber = '';
+      this.specialtyId = this.specialties()[0]?.value ?? '';
+    }
     this.panel.set(panel);
+  }
+
+  edit(person: EmployeeDto) {
+    this.error.set('');
+    this.editing.set(person);
+    this.firstName = person.firstName;
+    this.lastName = person.lastName;
+    this.email = person.email;
+    this.role = person.role;
+    this.licenseNumber = person.licenseNumber ?? '';
+    this.specialtyId = person.specialtyId ?? this.specialties()[0]?.value ?? '';
+    this.panel.set('editar');
+  }
+
+  askStatus(person: EmployeeDto) {
+    this.error.set('');
+    this.statusTarget.set(person);
   }
 
   downloadSample() {
@@ -144,6 +172,17 @@ export class EmployeesPage {
     });
   }
 
+  formBody() {
+    return {
+      firstName: this.firstName.trim(),
+      lastName: this.lastName.trim(),
+      email: this.email.trim(),
+      role: this.role,
+      licenseNumber: this.role === 'Doctor' ? this.licenseNumber.trim() || null : null,
+      specialtyId: this.role === 'Doctor' ? this.specialtyId : null,
+    };
+  }
+
   async create() {
     this.error.set('');
     this.password.set('');
@@ -153,20 +192,35 @@ export class EmployeesPage {
     }
     this.saving.set(true);
     try {
-      const result = await firstValueFrom(this.employees.createEmployee({
-        firstName: this.firstName.trim(),
-        lastName: this.lastName.trim(),
-        email: this.email.trim(),
-        role: this.role,
-        licenseNumber: this.licenseNumber.trim() || null,
-        specialtyId: this.role === 'Doctor' ? this.specialtyId : null,
-      }));
-      this.password.set(result.temporaryPassword);
+      const current = this.editing();
+      if (current) {
+        await firstValueFrom(this.employees.updateEmployee(current.id, this.formBody()));
+        this.editing.set(null);
+      } else {
+        const result = await firstValueFrom(this.employees.createEmployee(this.formBody()));
+        this.password.set(result.temporaryPassword);
+      }
       this.panel.set('');
       this.firstName = '';
       this.lastName = '';
       this.email = '';
       this.licenseNumber = '';
+      await this.load();
+    } catch (error) {
+      this.error.set(errorMessage(error));
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  async confirmStatus() {
+    const person = this.statusTarget();
+    if (!person) return;
+    this.error.set('');
+    this.saving.set(true);
+    try {
+      await firstValueFrom(this.employees.setEmployeeActive(person.id, !person.active));
+      this.statusTarget.set(null);
       await this.load();
     } catch (error) {
       this.error.set(errorMessage(error));

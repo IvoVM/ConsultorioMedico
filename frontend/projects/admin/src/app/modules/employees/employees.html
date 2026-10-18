@@ -7,7 +7,7 @@
 
 <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
   <ui-field class="sm:w-80" label="Buscar">
-    <input type="search" name="query" [ngModel]="query()" (ngModelChange)="onSearch($event)" placeholder="Nombre, email, rol o especialidad" />
+    <input type="search" name="query" [ngModel]="query()" (ngModelChange)="onSearch($event)" placeholder="Nombre, email, rol, especialidad o estado" />
   </ui-field>
   <div class="flex flex-wrap gap-3">
     <ui-button (click)="open('cargar')">Crear</ui-button>
@@ -35,6 +35,8 @@
         <th><button type="button" sortCol [on]="sort().key === 'role'" [dir]="sort().dir" (click)="sortBy('role')">Rol</button></th>
         <th><button type="button" sortCol [on]="sort().key === 'license'" [dir]="sort().dir" (click)="sortBy('license')">Matrícula</button></th>
         <th><button type="button" sortCol [on]="sort().key === 'specialty'" [dir]="sort().dir" (click)="sortBy('specialty')">Especialidad</button></th>
+        <th><button type="button" sortCol [on]="sort().key === 'status'" [dir]="sort().dir" (click)="sortBy('status')">Estado</button></th>
+        <th class="w-px"></th>
       </tr>
     </thead>
     <tbody>
@@ -45,6 +47,11 @@
           <td>{{ roleLabels[person.role] }}</td>
           <td>{{ person.licenseNumber || '—' }}</td>
           <td>{{ person.specialty || '—' }}</td>
+          <td><ui-badge [tone]="person.active ? 'ok' : 'warn'">{{ person.active ? 'Activo' : 'De baja' }}</ui-badge></td>
+          <td class="w-px whitespace-nowrap">
+            <button type="button" class="text-link" (click)="edit(person)">Editar</button>
+            <button type="button" class="text-link ml-4" (click)="askStatus(person)">{{ person.active ? 'Dar de baja' : 'Dar de alta' }}</button>
+          </td>
         </tr>
       }
     </tbody>
@@ -76,10 +83,16 @@
   </ui-table>
 }
 
-@if (panel() === 'cargar') {
-  <ui-modal [open]="true" [wide]="true" title="Crear empleado" (closed)="panel.set('')">
+@if (panel() === 'cargar' || panel() === 'editar') {
+  <ui-modal [open]="true" [wide]="true" [title]="panel() === 'editar' ? 'Editar empleado' : 'Crear empleado'" (closed)="panel.set(''); editing.set(null)">
     <form class="flex flex-col gap-4" (ngSubmit)="create()">
-      <p class="text-sm text-ink/70">Una persona por vez. El email es el usuario para entrar. La clave temporal se muestra una sola vez.</p>
+      <p class="text-sm text-ink/70">
+        @if (panel() === 'editar') {
+          El email es el usuario para entrar. Dar de baja o de alta se hace desde la lista.
+        } @else {
+          Una persona por vez. Al crearla queda activa. El email es el usuario para entrar y la clave temporal se muestra una sola vez.
+        }
+      </p>
       <div class="grid gap-4 sm:grid-cols-2">
         <ui-field label="Nombre"><input name="firstName" required maxlength="80" autocomplete="off" [(ngModel)]="firstName" /></ui-field>
         <ui-field label="Apellido"><input name="lastName" required maxlength="80" autocomplete="off" [(ngModel)]="lastName" /></ui-field>
@@ -87,8 +100,8 @@
         <ui-field label="Rol">
           <ui-select name="role" [(ngModel)]="role" [options]="roleOptions" />
         </ui-field>
-        <ui-field label="Matrícula"><input name="license" maxlength="40" placeholder="Solo si es médico" [(ngModel)]="licenseNumber" /></ui-field>
         @if (role === 'Doctor') {
+          <ui-field label="Matrícula"><input name="license" maxlength="40" [(ngModel)]="licenseNumber" /></ui-field>
           <ui-field label="Especialidad">
             <ui-select name="specialtyId" [(ngModel)]="specialtyId" [options]="specialtyOptions()" placeholder="Elegir especialidad" />
           </ui-field>
@@ -96,8 +109,8 @@
       </div>
       @if (error()) { <p class="text-sm text-pulse" role="alert">{{ error() }}</p> }
       <div class="flex flex-wrap gap-3">
-        <ui-button type="submit" [loading]="saving()">Crear</ui-button>
-        <ui-button variant="outlined" [disabled]="saving()" (click)="panel.set('')">Cancelar</ui-button>
+        <ui-button type="submit" [loading]="saving()">{{ panel() === 'editar' ? 'Guardar' : 'Crear' }}</ui-button>
+        <ui-button variant="outlined" [disabled]="saving()" (click)="panel.set(''); editing.set(null)">Cancelar</ui-button>
       </div>
     </form>
   </ui-modal>
@@ -138,5 +151,22 @@
         </tbody>
       </ui-table>
     }
+  </ui-modal>
+}
+
+@if (statusTarget(); as person) {
+  <ui-modal [open]="true" [title]="person.active ? 'Dar de baja' : 'Dar de alta'" (closed)="statusTarget.set(null)">
+    <p class="text-sm leading-relaxed text-ink/75">
+      @if (person.active) {
+        {{ person.lastName }}, {{ person.firstName }} no va a poder entrar ni figurar en la agenda. Los turnos que ya tiene quedan.
+      } @else {
+        {{ person.lastName }}, {{ person.firstName }} vuelve a poder entrar y, si es médico, a aparecer en la agenda.
+      }
+    </p>
+    @if (error()) { <p class="mt-3 text-sm text-pulse" role="alert">{{ error() }}</p> }
+    <div class="mt-4 flex flex-wrap gap-3">
+      <ui-button [loading]="saving()" (click)="confirmStatus()">{{ person.active ? 'Dar de baja' : 'Dar de alta' }}</ui-button>
+      <ui-button variant="outlined" [disabled]="saving()" (click)="statusTarget.set(null)">Cancelar</ui-button>
+    </div>
   </ui-modal>
 }

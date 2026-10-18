@@ -188,6 +188,9 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("LicenseNumber")
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)");

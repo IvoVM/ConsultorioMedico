@@ -56,6 +56,20 @@ public class TenantUserStore(UserManager<TenantUser> users) : ITenantUserStore
             throw new BusinessRuleException(string.Join(' ', result.Errors.Select(e => e.Description)));
     }
 
+    public async Task UpdateProfileAsync(Guid id, string firstName, string lastName, string email, TenantRole role, CancellationToken ct)
+    {
+        var user = await users.FindByIdAsync(id.ToString()) ?? throw new NotFoundException("Usuario no encontrado.");
+        user.FirstName = firstName;
+        user.LastName = lastName;
+        user.Role = role;
+        var emailResult = await users.SetEmailAsync(user, email);
+        if (!emailResult.Succeeded)
+            throw new BusinessRuleException(string.Join(' ', emailResult.Errors.Select(e => e.Description)));
+        var nameResult = await users.SetUserNameAsync(user, email);
+        if (!nameResult.Succeeded)
+            throw new BusinessRuleException(string.Join(' ', nameResult.Errors.Select(e => e.Description)));
+    }
+
     private static TenantAccount Map(TenantUser user) =>
         new(user.Id, user.Email ?? "", user.FirstName, user.LastName, user.Role, user.MustChangePassword);
 }
@@ -79,6 +93,23 @@ public class EmployeeStore(TenantDbContext db) : IEmployeeStore
         var employee = await db.Employees.FirstOrDefaultAsync(e => e.UserId == userId, ct)
             ?? throw new NotFoundException("Empleado no encontrado.");
         employee.SpecialtyId = specialtyId;
+        await db.SaveChangesAsync(ct);
+    }
+
+    public async Task UpdateAsync(Guid userId, string? licenseNumber, Guid? specialtyId, CancellationToken ct)
+    {
+        var employee = await db.Employees.FirstOrDefaultAsync(e => e.UserId == userId, ct)
+            ?? throw new NotFoundException("Empleado no encontrado.");
+        employee.LicenseNumber = licenseNumber;
+        employee.SpecialtyId = specialtyId;
+        await db.SaveChangesAsync(ct);
+    }
+
+    public async Task SetActiveAsync(Guid userId, bool active, CancellationToken ct)
+    {
+        var employee = await db.Employees.FirstOrDefaultAsync(e => e.UserId == userId, ct)
+            ?? throw new NotFoundException("Empleado no encontrado.");
+        employee.IsActive = active;
         await db.SaveChangesAsync(ct);
     }
 }

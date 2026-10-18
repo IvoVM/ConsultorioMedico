@@ -12,5 +12,7 @@ public static class EmployeeMappings
             e.User.Email ?? "",
             e.User.Role,
             e.LicenseNumber,
-            e.Specialty != null ? e.Specialty.Name : null));
+            e.Specialty != null ? e.Specialty.Name : null,
+            e.SpecialtyId,
+            e.IsActive));
 }

@@ -9,4 +9,6 @@ export interface EmployeeDto {
   role: TenantRole;
   licenseNumber?: string | null;
   specialty?: string | null;
+  specialtyId?: string | null;
+  active: boolean;
 }

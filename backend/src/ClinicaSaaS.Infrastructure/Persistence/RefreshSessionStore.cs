@@ -29,7 +29,7 @@ public class RefreshSessionStore(TenantDbContext db, TimeProvider clock, JwtOpti
         var now = clock.GetUtcNow();
         if (session.RevokedAt is not null || !HashEquals(session.TokenHash, secret))
         {
-            await RevokeUserAsync(session.UserId, now, ct);
+            await RevokeOpenSessionsAsync(session.UserId, now, ct);
             return null;
         }
 
@@ -57,6 +57,9 @@ public class RefreshSessionStore(TenantDbContext db, TimeProvider clock, JwtOpti
         await db.SaveChangesAsync(ct);
     }
 
+    public Task RevokeUserAsync(Guid userId, CancellationToken ct) =>
+        RevokeOpenSessionsAsync(userId, clock.GetUtcNow(), ct);
+
     private RefreshGrant NewGrant(Guid userId)
     {
         var secret = RandomNumberGenerator.GetBytes(32);
@@ -78,7 +81,7 @@ public class RefreshSessionStore(TenantDbContext db, TimeProvider clock, JwtOpti
         };
     }
 
-    private async Task RevokeUserAsync(Guid userId, DateTimeOffset now, CancellationToken ct)
+    private async Task RevokeOpenSessionsAsync(Guid userId, DateTimeOffset now, CancellationToken ct)
     {
         var active = await db.RefreshSessions
             .Where(s => s.UserId == userId && s.RevokedAt == null)

@@ -189,7 +189,7 @@ public class OrganizationService(
 
     public async Task<IReadOnlyList<ProfessionalDto>> ProfessionalsAsync(Guid? specialtyId, CancellationToken ct)
     {
-        var query = employees.Employees.Where(e => e.User.Role == TenantRole.Doctor);
+        var query = employees.Employees.Where(e => e.User.Role == TenantRole.Doctor && e.IsActive);
         if (specialtyId is Guid id)
             query = query.Where(e => e.SpecialtyId == id);
         return await query.OrderBy(e => e.User.LastName).ThenBy(e => e.User.FirstName).ToProfessionalDtos().ToListAsync(ct);
@@ -228,15 +228,15 @@ public class OrganizationService(
             source = source.Where(s => s.Name.ToLower().Contains(term));
         source = (query.Sort, query.Desc) switch
         {
-            ("people", false) => source.OrderBy(s => s.Employees.Count(e => e.User.Role == TenantRole.Doctor)).ThenBy(s => s.Name),
-            ("people", true) => source.OrderByDescending(s => s.Employees.Count(e => e.User.Role == TenantRole.Doctor)).ThenBy(s => s.Name),
+            ("people", false) => source.OrderBy(s => s.Employees.Count(e => e.User.Role == TenantRole.Doctor && e.IsActive)).ThenBy(s => s.Name),
+            ("people", true) => source.OrderByDescending(s => s.Employees.Count(e => e.User.Role == TenantRole.Doctor && e.IsActive)).ThenBy(s => s.Name),
             ("name", true) => source.OrderByDescending(s => s.Name),
             _ => source.OrderBy(s => s.Name)
         };
         var rows = source.Select(s => new SpecialtyRowDto(
             s.Id,
             s.Name,
-            s.Employees.Count(e => e.User.Role == TenantRole.Doctor)));
+            s.Employees.Count(e => e.User.Role == TenantRole.Doctor && e.IsActive)));
         return await Pages.Materialize(rows, query, ct);
     }
 

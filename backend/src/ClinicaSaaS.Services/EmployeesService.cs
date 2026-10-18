@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ClinicaSaaS.Services;
 
-public class EmployeesService(ITenantUserStore users, IEmployeeStore employees, IOrganizationStore organization, IAuditStore audit, ICurrentUser currentUser)
+public class EmployeesService(ITenantUserStore users, IEmployeeStore employees, IOrganizationStore organization, IAuditStore audit, IRefreshSessionStore sessions, ICurrentUser currentUser)
 {
     private static readonly Dictionary<string, TenantRole> CsvRoles = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -33,7 +33,8 @@ public class EmployeesService(ITenantUserStore users, IEmployeeStore employees, 
                 (e.User.Email ?? "").ToLower().Contains(term) ||
                 (e.LicenseNumber ?? "").ToLower().Contains(term) ||
                 (e.Specialty != null && e.Specialty.Name.ToLower().Contains(term)) ||
-                (e.User.Role == TenantRole.Doctor ? "médico" : e.User.Role == TenantRole.Secretary ? "secretario" : "administrador").Contains(term));
+                (e.User.Role == TenantRole.Doctor ? "médico" : e.User.Role == TenantRole.Secretary ? "secretario" : "administrador").Contains(term) ||
+                (e.IsActive ? "activo" : "de baja").Contains(term));
         var ordered = (query.Sort, query.Desc) switch
         {
             ("email", false) => source.OrderBy(e => e.User.Email).ThenBy(e => e.User.LastName),
@@ -44,6 +45,8 @@ public class EmployeesService(ITenantUserStore users, IEmployeeStore employees, 
             ("license", true) => source.OrderByDescending(e => e.LicenseNumber ?? "").ThenBy(e => e.User.LastName),
             ("specialty", false) => source.OrderBy(e => e.Specialty != null ? e.Specialty.Name : "").ThenBy(e => e.User.LastName),
             ("specialty", true) => source.OrderByDescending(e => e.Specialty != null ? e.Specialty.Name : "").ThenBy(e => e.User.LastName),
+            ("status", false) => source.OrderBy(e => e.IsActive ? "activo" : "de baja").ThenBy(e => e.User.LastName),
+            ("status", true) => source.OrderByDescending(e => e.IsActive ? "activo" : "de baja").ThenBy(e => e.User.LastName),
             ("name", true) => source.OrderByDescending(e => e.User.LastName).ThenByDescending(e => e.User.FirstName),
             _ => source.OrderBy(e => e.User.LastName).ThenBy(e => e.User.FirstName)
         };
@@ -63,6 +66,83 @@ public class EmployeesService(ITenantUserStore users, IEmployeeStore employees, 
         await audit.RecordAsync(currentUser.Id, "alta", "Empleado", created.UserId.ToString(), created.Email, ct);
         var employee = await employees.Employees.Where(e => e.UserId == created.UserId).ToEmployeeDtos().FirstAsync(ct);
         return new CreatedEmployeeAccountDto(employee, created.Password);
+    }
+
+    public async Task<EmployeeDto> UpdateAsync(Guid id, UpdateEmployeeCommand command, CancellationToken ct)
+    {
+        var current = await employees.Employees.Where(e => e.UserId == id)
+            .Select(e => new { e.User.Role, e.IsActive })
+            .FirstOrDefaultAsync(ct) ?? throw new NotFoundException("Empleado no encontrado.");
+
+        var firstName = command.FirstName?.Trim() ?? "";
+        var lastName = command.LastName?.Trim() ?? "";
+        var email = command.Email?.Trim() ?? "";
+        var license = string.IsNullOrWhiteSpace(command.LicenseNumber) ? null : command.LicenseNumber.Trim();
+        if (firstName.Length == 0 || lastName.Length == 0 || email.Length == 0)
+            throw new BusinessRuleException("Nombre, apellido y email son obligatorios.");
+        if (firstName.Length > 80 || lastName.Length > 80)
+            throw new BusinessRuleException("El nombre y el apellido no pueden pasar de 80 caracteres.");
+        if (!email.Contains('@') || email.StartsWith('@') || email.EndsWith('@') || email.Length > 120)
+            throw new BusinessRuleException("El email no es válido.");
+        if (command.Role is not (TenantRole.Doctor or TenantRole.Secretary or TenantRole.TenantAdmin))
+            throw new BusinessRuleException("El rol tiene que ser médico, secretario o administrador.");
+        if (id == currentUser.Id && command.Role != current.Role)
+            throw new BusinessRuleException("No podés cambiar tu propio rol.");
+
+        var taken = await users.FindByEmailAsync(email, ct);
+        if (taken is not null && taken.Id != id)
+            throw new BusinessRuleException("Ese email ya está cargado.");
+
+        Guid? specialtyId = null;
+        if (command.Role == TenantRole.Doctor)
+        {
+            if (command.SpecialtyId is not Guid specialty)
+                throw new BusinessRuleException("Un médico necesita una especialidad.");
+            _ = await organization.GetSpecialtyAsync(specialty, ct)
+                ?? throw new BusinessRuleException("La especialidad elegida no está cargada.");
+            specialtyId = specialty;
+            if (license is not null && license.Length > 40)
+                throw new BusinessRuleException("La matrícula no puede pasar de 40 caracteres.");
+        }
+        else
+        {
+            license = null;
+        }
+
+        if (current.Role == TenantRole.TenantAdmin && current.IsActive && command.Role != TenantRole.TenantAdmin)
+            await EnsureAnotherAdminAsync(id, ct);
+
+        await users.UpdateProfileAsync(id, firstName, lastName, email, command.Role, ct);
+        await employees.UpdateAsync(id, license, specialtyId, ct);
+        await audit.RecordAsync(currentUser.Id, "edicion", "Empleado", id.ToString(), email, ct);
+        return await employees.Employees.Where(e => e.UserId == id).ToEmployeeDtos().FirstAsync(ct);
+    }
+
+    public async Task<EmployeeDto> SetActiveAsync(Guid id, bool active, CancellationToken ct)
+    {
+        var current = await employees.Employees.Where(e => e.UserId == id)
+            .Select(e => new { e.User.Role, e.User.Email, e.IsActive })
+            .FirstOrDefaultAsync(ct) ?? throw new NotFoundException("Empleado no encontrado.");
+        if (!active && id == currentUser.Id)
+            throw new BusinessRuleException("No podés darte de baja.");
+        if (!active && current.Role == TenantRole.TenantAdmin && current.IsActive)
+            await EnsureAnotherAdminAsync(id, ct);
+        if (current.IsActive != active)
+        {
+            await employees.SetActiveAsync(id, active, ct);
+            if (!active)
+                await sessions.RevokeUserAsync(id, ct);
+            await audit.RecordAsync(currentUser.Id, active ? "alta" : "baja", "Empleado", id.ToString(), current.Email, ct);
+        }
+        return await employees.Employees.Where(e => e.UserId == id).ToEmployeeDtos().FirstAsync(ct);
+    }
+
+    private async Task EnsureAnotherAdminAsync(Guid exceptId, CancellationToken ct)
+    {
+        var others = await employees.Employees.CountAsync(
+            e => e.IsActive && e.User.Role == TenantRole.TenantAdmin && e.UserId != exceptId, ct);
+        if (others == 0)
+            throw new BusinessRuleException("Tiene que quedar al menos un administrador activo.");
     }
 
     public async Task<EmployeeImportDto> ImportAsync(ImportEmployeesCommand command, CancellationToken ct)
@@ -149,7 +229,8 @@ public class EmployeesService(ITenantUserStore users, IEmployeeStore employees, 
             Id = Guid.NewGuid(),
             UserId = account.Id,
             LicenseNumber = licenseNumber,
-            SpecialtyId = specialtyId
+            SpecialtyId = specialtyId,
+            IsActive = true
         }, ct);
         return new NewAccount(account.Id, account.Email, password, role);
     }

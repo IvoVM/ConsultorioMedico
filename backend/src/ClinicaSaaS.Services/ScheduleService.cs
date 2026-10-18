@@ -116,7 +116,7 @@ public class ScheduleService(
     {
         var openingsQuery = schedules.Blocks
             .Where(b => b.Day == query.Date.DayOfWeek && b.LocationId == query.LocationId)
-            .Where(b => b.Professional.Role == TenantRole.Doctor && b.Professional.Employee != null);
+            .Where(b => b.Professional.Role == TenantRole.Doctor && b.Professional.Employee != null && b.Professional.Employee.IsActive);
         if (query.SpecialtyId != Guid.Empty)
             openingsQuery = openingsQuery.Where(b => b.Professional.Employee!.SpecialtyId == query.SpecialtyId);
         if (query.ProfessionalId is Guid professionalId)

@@ -34,6 +34,7 @@ public interface IRefreshSessionStore
     Task<RefreshGrant> IssueAsync(Guid userId, CancellationToken ct);
     Task<RefreshGrant?> RotateAsync(string? rawToken, CancellationToken ct);
     Task RevokeAsync(string? rawToken, CancellationToken ct);
+    Task RevokeUserAsync(Guid userId, CancellationToken ct);
 }
 
 public interface ITenantUserStore
@@ -44,6 +45,7 @@ public interface ITenantUserStore
     Task<bool> CheckPasswordAsync(Guid userId, string password, CancellationToken ct);
     Task<TenantAccount> CreateAsync(string email, string password, string firstName, string lastName, TenantRole role, bool mustChangePassword, CancellationToken ct);
     Task UpdateNameAsync(Guid id, string firstName, string lastName, CancellationToken ct);
+    Task UpdateProfileAsync(Guid id, string firstName, string lastName, string email, TenantRole role, CancellationToken ct);
 }
 
 public interface IEmployeeStore
@@ -52,6 +54,8 @@ public interface IEmployeeStore
     Task<Employee?> GetByUserAsync(Guid userId, CancellationToken ct);
     Task<Employee> AddAsync(Employee employee, CancellationToken ct);
     Task AssignSpecialtyAsync(Guid userId, Guid? specialtyId, CancellationToken ct);
+    Task UpdateAsync(Guid userId, string? licenseNumber, Guid? specialtyId, CancellationToken ct);
+    Task SetActiveAsync(Guid userId, bool active, CancellationToken ct);
 }
 
 public interface IOrganizationStore
