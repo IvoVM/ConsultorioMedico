@@ -1,39 +1,49 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { AppointmentDto, AppointmentsService, BillingService, InvoiceDto, PatientLookupDto, PatientsService, PaymentMethod, WaitlistEntryDto, errorMessage } from 'sdk';
-import { FechaPipe, UiActions, UiBadge, UiButton, UiCalendar, UiEmpty, UiField, UiSkeleton, UiTable } from 'ui';
+import { RouterLink } from '@angular/router';
+import { AppointmentDto, AppointmentsService, BillingService, InvoiceDto, PatientLookupDto, PatientsService, PaymentMethod, ScheduleService, SlotDto, WaitlistEntryDto, errorMessage } from 'sdk';
+import { FechaPipe, UiActions, UiBadge, UiButton, UiCalendar, UiEmpty, UiField, UiSkeleton, UiTable, formatFecha } from 'ui';
 import { Observable, firstValueFrom } from 'rxjs';
 import { appointmentStatusLabels } from '../appointments/models/appointment-status-labels';
 import { invoiceStatusLabels } from './models/invoice-labels';
 
+const paymentLabels: Record<PaymentMethod, string> = {
+  Cash: 'efectivo',
+  Transfer: 'transferencia',
+  Card: 'tarjeta',
+};
+
 @Component({
-  imports: [FormsModule, FechaPipe, UiActions, UiBadge, UiButton, UiCalendar, UiEmpty, UiField, UiSkeleton, UiTable],
+  imports: [FormsModule, RouterLink, FechaPipe, UiActions, UiBadge, UiButton, UiCalendar, UiEmpty, UiField, UiSkeleton, UiTable],
   templateUrl: './front-desk.html',
 })
 export class FrontDeskPage {
   private readonly appointmentsApi = inject(AppointmentsService);
   private readonly billing = inject(BillingService);
   private readonly patientsApi = inject(PatientsService);
+  private readonly schedule = inject(ScheduleService);
   private searchSeq = 0;
   private searchTimer = 0;
   readonly statusLabels = appointmentStatusLabels;
   readonly invoiceStatusLabels = invoiceStatusLabels;
+  readonly paymentLabels = paymentLabels;
   readonly appointments = signal<AppointmentDto[]>([]);
   readonly waitlist = signal<WaitlistEntryDto[]>([]);
   readonly invoices = signal<InvoiceDto[]>([]);
+  readonly slots = signal<SlotDto[]>([]);
+  readonly moving = signal<AppointmentDto | null>(null);
   readonly error = signal('');
+  readonly notice = signal('');
   readonly loading = signal(true);
   readonly refreshing = signal(false);
   readonly pending = signal('');
+  readonly slotsLoading = signal(false);
   readonly searchError = signal('');
   readonly searching = signal(false);
   readonly matches = signal<PatientLookupDto[]>([]);
   query = '';
   date = new Date().toISOString().slice(0, 10);
-  appointmentId = '';
-  newStart = '';
-  waitlistEntryId = '';
-  appointmentTypeId = '';
+  moveDate = this.date;
 
   constructor() {
     void this.load();
@@ -53,6 +63,18 @@ export class FrontDeskPage {
     const months = today.getMonth() - birth.getMonth();
     if (months < 0 || (months === 0 && today.getDate() < birth.getDate())) years--;
     return years;
+  }
+
+  charge(appointment: AppointmentDto) {
+    return this.invoices().find((item) => item.appointmentId === appointment.id) ?? null;
+  }
+
+  money(amount: number) {
+    return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(amount);
+  }
+
+  canMove(appointment: AppointmentDto) {
+    return appointment.status === 'Booked' || appointment.status === 'CheckedIn';
   }
 
   private async searchPatients() {
@@ -108,25 +130,69 @@ export class FrontDeskPage {
     await this.run(`checkin:${appointment.id}`, () => this.appointmentsApi.checkInAppointment(appointment.id));
   }
 
+  async absent(appointment: AppointmentDto) {
+    await this.run(`absent:${appointment.id}`, () => this.appointmentsApi.markNoShow(appointment.id));
+  }
+
   async cancel(appointment: AppointmentDto) {
     await this.run(`cancel:${appointment.id}`, () => this.appointmentsApi.cancelAppointment(appointment.id));
   }
 
-  async reschedule() {
-    await this.run('reschedule', () => this.appointmentsApi.rescheduleAppointment(this.appointmentId, { start: new Date(this.newStart).toISOString() }));
+  async startMove(appointment: AppointmentDto) {
+    this.moving.set(appointment);
+    this.moveDate = appointment.start.slice(0, 10);
+    this.slots.set([]);
+    await this.loadSlots();
   }
 
-  pickWaitlistEntry(item: WaitlistEntryDto) {
-    this.waitlistEntryId = item.id;
+  cancelMove() {
+    this.moving.set(null);
+    this.slots.set([]);
   }
 
-  async assign() {
-    await this.run('assign', () =>
-      this.appointmentsApi.assignWaitlistEntry(this.waitlistEntryId, {
-        start: new Date(this.newStart).toISOString(),
-        appointmentTypeId: this.appointmentTypeId,
-      }),
-    );
+  async loadSlots() {
+    const appointment = this.moving();
+    if (!appointment || !this.moveDate) return;
+    this.slotsLoading.set(true);
+    this.error.set('');
+    try {
+      const slots = await firstValueFrom(
+        this.schedule.availability({
+          locationId: appointment.locationId,
+          specialtyId: '00000000-0000-0000-0000-000000000000',
+          professionalId: appointment.professionalId,
+          date: this.moveDate,
+        }),
+      );
+      this.slots.set(slots.filter((slot) => slot.appointmentTypeId === appointment.appointmentTypeId));
+    } catch (error) {
+      this.slots.set([]);
+      this.error.set(errorMessage(error));
+    } finally {
+      this.slotsLoading.set(false);
+    }
+  }
+
+  async moveTo(slot: SlotDto) {
+    const appointment = this.moving();
+    if (!appointment) return;
+    await this.run(`move:${appointment.id}`, () => this.appointmentsApi.rescheduleAppointment(appointment.id, { start: slot.start }));
+    if (!this.error()) this.cancelMove();
+  }
+
+  async offer(item: WaitlistEntryDto) {
+    this.pending.set(`offer:${item.id}`);
+    this.error.set('');
+    this.notice.set('');
+    try {
+      const appointment = await firstValueFrom(this.appointmentsApi.offerWaitlist(item.id));
+      this.notice.set(`${item.patient} quedó el ${formatFecha(appointment.start)} con ${appointment.professional}.`);
+      await this.fetchDay();
+    } catch (error) {
+      this.error.set(errorMessage(error));
+    } finally {
+      this.pending.set('');
+    }
   }
 
   async pay(item: InvoiceDto, method: PaymentMethod) {

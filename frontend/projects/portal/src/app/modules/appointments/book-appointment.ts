@@ -1,8 +1,9 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   AppointmentsService,
+  ClinicalService,
   EmployeesService,
   InsurerDto,
   OrganizationService,
@@ -32,7 +33,10 @@ export class BookAppointmentPage {
   private readonly employees = inject(EmployeesService);
   private readonly schedule = inject(ScheduleService);
   private readonly appointmentsApi = inject(AppointmentsService);
+  private readonly clinical = inject(ClinicalService);
+  private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private chart: { insurance: string; member: string } | null = null;
   private readonly cache = new Map<string, DayOption[]>();
   readonly session = clinicaSession;
   readonly specialties = signal<SpecialtyDto[]>([]);
@@ -54,6 +58,8 @@ export class BookAppointmentPage {
   coverage: 'particular' | 'obra' = 'particular';
   insurerId = '';
   memberNumber = '';
+  readonly bookingFor = signal('');
+  private bookingPatientId: string | null = null;
 
   readonly nearestIso = computed(() => this.days()[0]?.iso ?? '');
   readonly specialtyOptions = computed(() => [
@@ -117,6 +123,7 @@ export class BookAppointmentPage {
       this.specialties.set(specialties);
       this.professionals.set(professionals);
       this.locationId.set(locations.find((location) => location.isActive)?.id ?? locations[0]?.id ?? '');
+      await this.loadChart();
       const pending = readPending();
       if (pending && !clinicaSession.token()) this.applyPending(pending, professionals);
       await this.loadDays(this.date() || undefined);
@@ -202,6 +209,7 @@ export class BookAppointmentPage {
     this.draft.set(slot);
     try {
       this.insurers.set(await firstValueFrom(this.organization.professionalInsurers(slot.professionalId)));
+      this.applyChart();
     } catch (error) {
       this.insurers.set([]);
       this.error.set(errorMessage(error));
@@ -236,6 +244,35 @@ export class BookAppointmentPage {
     } finally {
       this.joining.set(false);
     }
+  }
+
+  private async loadChart() {
+    const requested = this.route.snapshot.queryParamMap.get('paciente');
+    const staff = clinicaSession.role() === 'Secretary' || clinicaSession.role() === 'TenantAdmin';
+    const patientId = staff ? requested : null;
+    if (staff && !patientId) return;
+    if (!staff && clinicaSession.role() !== 'Patient') return;
+    this.bookingPatientId = patientId;
+    try {
+      const history = await firstValueFrom(this.clinical.clinicalHistory(patientId ? { patientId } : {}));
+      this.bookingFor.set(patientId ? history.patient.name : '');
+      this.chart = {
+        insurance: history.patient.healthInsurance?.trim() ?? '',
+        member: history.patient.memberNumber?.trim() ?? '',
+      };
+    } catch {
+      this.chart = null;
+    }
+  }
+
+  private applyChart() {
+    const insurance = this.chart?.insurance ?? '';
+    if (!insurance) return;
+    const match = this.insurers().find((item) => item.name.localeCompare(insurance, 'es', { sensitivity: 'accent' }) === 0);
+    if (!match || !this.chart?.member) return;
+    this.coverage = 'obra';
+    this.insurerId = match.id;
+    this.memberNumber = this.chart.member;
   }
 
   private specialtyIds() {
@@ -357,7 +394,7 @@ export class BookAppointmentPage {
       this.draft.set(null);
       return;
     }
-    if (clinicaSession.role() !== 'Patient') {
+    if (clinicaSession.role() !== 'Patient' && !this.bookingPatientId) {
       this.error.set('Los turnos se reservan con una cuenta de paciente.');
       return;
     }
@@ -388,7 +425,7 @@ export class BookAppointmentPage {
           locationId: slot.locationId,
           appointmentTypeId: slot.appointmentTypeId,
           start: slot.start,
-          patientId: null,
+          patientId: this.bookingPatientId,
           visitReason: null,
           insurerId: coverage.insurerId,
           memberNumber: coverage.memberNumber,
@@ -396,7 +433,7 @@ export class BookAppointmentPage {
       );
       clearPending();
       this.draft.set(null);
-      await this.router.navigateByUrl('/mis-turnos');
+      await this.router.navigateByUrl(this.bookingPatientId ? '/secretaria' : '/mis-turnos');
     } catch (error) {
       this.error.set(errorMessage(error));
     } finally {

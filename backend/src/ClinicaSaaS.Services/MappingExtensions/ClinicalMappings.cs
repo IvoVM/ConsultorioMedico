@@ -13,7 +13,9 @@ public static class ClinicalMappings
             (c.User.FirstName + " " + c.User.LastName).Trim(),
             c.DocumentNumber,
             c.BirthDate,
-            c.Phone));
+            c.Phone,
+            c.Record != null ? c.Record.HealthInsurance : null,
+            c.Record != null ? c.Record.MemberNumber : null));
 
     public static IQueryable<EncounterDto> ToEncounterDtos(this IQueryable<Encounter> query) =>
         query.Select(e => new EncounterDto(

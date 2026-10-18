@@ -91,7 +91,9 @@ public record WaitlistEntryDto(
     Guid SpecialtyId,
     WaitlistStatus Status,
     DateTimeOffset CreatedAt,
-    string? Notes);
+    string? Notes,
+    string? Professional,
+    string Specialty);
 public record CreateWaitlistEntryCommand(Guid? PatientId, Guid? ProfessionalId, Guid LocationId, Guid SpecialtyId, string? Notes);
 public record AssignWaitlistEntryCommand(DateTimeOffset Start, Guid AppointmentTypeId);
 
@@ -131,7 +133,7 @@ public record PrescriptionDto(
     IReadOnlyList<PrescriptionItemDto> Items);
 
 public record ClinicalHistoryDto(PatientSummaryDto Patient, IReadOnlyList<EncounterDto> Encounters, IReadOnlyList<PrescriptionDto> Prescriptions);
-public record PatientSummaryDto(Guid Id, string Name, string DocumentNumber, DateOnly BirthDate, string Phone);
+public record PatientSummaryDto(Guid Id, string Name, string DocumentNumber, DateOnly BirthDate, string Phone, string? HealthInsurance, string? MemberNumber);
 
 public record CreatePatientCommand(
     string Email,

@@ -34,6 +34,10 @@ public class AppointmentsController(ScheduleService schedule) : ApiController
         Run(() => schedule.ReviewCoverageAsync(id, command.Accepted, ct));
 
     [Authorize(Roles = $"{AppRoles.Secretary},{AppRoles.TenantAdmin}")]
+    [HttpPost("{id:guid}/ausente")]
+    public Task<IActionResult> NoShow(Guid id, CancellationToken ct) => Run(() => schedule.MarkNoShowAsync(id, ct));
+
+    [Authorize(Roles = $"{AppRoles.Secretary},{AppRoles.TenantAdmin}")]
     [HttpPost("{id:guid}/admitir")]
     public Task<IActionResult> CheckIn(Guid id, CancellationToken ct) => Run(() => schedule.CheckInAsync(id, ct));
 

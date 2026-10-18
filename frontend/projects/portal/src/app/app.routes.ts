@@ -25,7 +25,7 @@ export const routes: Routes = [
           },
           {
             path: 'historia',
-            canActivate: [roleGuard('Patient', 'Doctor', 'Secretary')],
+            canActivate: [roleGuard('Patient', 'Doctor', 'Secretary', 'TenantAdmin')],
             loadComponent: () => import('./modules/clinical/clinical-history').then((m) => m.ClinicalHistoryPage),
           },
           {

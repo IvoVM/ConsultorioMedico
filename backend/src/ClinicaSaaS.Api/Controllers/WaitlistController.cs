@@ -19,6 +19,10 @@ public class WaitlistController(ScheduleService schedule) : ApiController
     public Task<IActionResult> List(CancellationToken ct) => Run(() => schedule.WaitlistAsync(ct));
 
     [Authorize(Roles = $"{AppRoles.Secretary},{AppRoles.TenantAdmin}")]
+    [HttpPost("{id:guid}/ofrecer")]
+    public Task<IActionResult> Offer(Guid id, CancellationToken ct) => Run(() => schedule.OfferNextAsync(id, ct));
+
+    [Authorize(Roles = $"{AppRoles.Secretary},{AppRoles.TenantAdmin}")]
     [HttpPost("{id:guid}/asignar")]
     public Task<IActionResult> Assign(Guid id, AssignWaitlistEntryCommand command, CancellationToken ct) =>
         Run(() => schedule.AssignWaitlistEntryAsync(id, command, ct));

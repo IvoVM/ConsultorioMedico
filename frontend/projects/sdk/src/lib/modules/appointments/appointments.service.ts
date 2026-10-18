@@ -31,6 +31,10 @@ export class AppointmentsService extends ApiClient {
     return this.http.post<AppointmentDto>(`${this.base}/api/turnos/${id}/admitir`, {});
   }
 
+  markNoShow(id: string) {
+    return this.http.post<AppointmentDto>(`${this.base}/api/turnos/${id}/ausente`, {});
+  }
+
   reviewCoverage(id: string, accepted: boolean) {
     return this.http.post<AppointmentDto>(`${this.base}/api/turnos/${id}/cobertura`, { accepted });
   }
@@ -49,5 +53,9 @@ export class AppointmentsService extends ApiClient {
 
   assignWaitlistEntry(id: string, body: AssignWaitlistEntryCommand) {
     return this.http.post<AppointmentDto>(`${this.base}/api/lista-espera/${id}/asignar`, body);
+  }
+
+  offerWaitlist(id: string) {
+    return this.http.post<AppointmentDto>(`${this.base}/api/lista-espera/${id}/ofrecer`, {});
   }
 }

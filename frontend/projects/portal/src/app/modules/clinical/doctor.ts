@@ -20,7 +20,8 @@ export class DoctorPage {
   readonly refreshing = signal(false);
   readonly saving = signal(false);
   readonly closing = signal(false);
-  readonly prescribing = signal(false);
+  readonly notice = signal('');
+  readonly visit = signal<AppointmentDto | null>(null);
   date = new Date().toISOString().slice(0, 10);
   appointmentId = '';
   encounterId = '';
@@ -58,12 +59,51 @@ export class DoctorPage {
   }
 
   pick(appointment: AppointmentDto) {
+    this.visit.set(appointment);
     this.appointmentId = appointment.id;
     this.encounterId = '';
+    this.notice.set('');
+    this.error.set('');
+    this.note = '';
+    this.bloodPressure = '';
+    this.heartRate = null;
+    this.temperature = null;
+    this.weightKg = null;
+    this.diagnosisIds = [];
+    this.medication = '';
+    this.dose = '';
+    this.frequency = '';
+    this.duration = '';
+    this.instructions = '';
   }
 
   async save() {
+    if (await this.persist()) this.notice.set('Consulta guardada.');
+  }
+
+  async close() {
+    this.closing.set(true);
+    try {
+      if (!(await this.persist())) return;
+      await firstValueFrom(this.clinical.closeEncounter(this.encounterId));
+      this.notice.set('Consulta cerrada. El cobro quedó para secretaría.');
+      await this.load(true);
+    } catch (error) {
+      this.error.set(errorMessage(error));
+    } finally {
+      this.closing.set(false);
+    }
+  }
+
+  private async persist() {
+    if (!this.appointmentId) return false;
+    const medication = this.medication.trim();
+    if (medication && (!this.dose.trim() || !this.frequency.trim() || !this.duration.trim())) {
+      this.error.set('La receta necesita dosis, frecuencia y duración.');
+      return false;
+    }
     this.error.set('');
+    this.notice.set('');
     this.saving.set(true);
     try {
       const encounter = await firstValueFrom(
@@ -78,44 +118,27 @@ export class DoctorPage {
         }),
       );
       this.encounterId = encounter.id;
+      if (medication) {
+        await firstValueFrom(
+          this.clinical.createPrescription({
+            encounterId: encounter.id,
+            instructions: this.instructions,
+            items: [{ medication, dose: this.dose.trim(), frequency: this.frequency.trim(), duration: this.duration.trim() }],
+          }),
+        );
+        this.medication = '';
+        this.dose = '';
+        this.frequency = '';
+        this.duration = '';
+        this.instructions = '';
+      }
       await this.load(true);
+      return true;
     } catch (error) {
       this.error.set(errorMessage(error));
+      return false;
     } finally {
       this.saving.set(false);
-    }
-  }
-
-  async close() {
-    this.closing.set(true);
-    try {
-      if (!this.encounterId) await this.save();
-      if (!this.encounterId) return;
-      await firstValueFrom(this.clinical.closeEncounter(this.encounterId));
-      await this.load(true);
-    } catch (error) {
-      this.error.set(errorMessage(error));
-    } finally {
-      this.closing.set(false);
-    }
-  }
-
-  async prescribe() {
-    this.prescribing.set(true);
-    try {
-      await firstValueFrom(
-        this.clinical.createPrescription({
-          encounterId: this.encounterId,
-          instructions: this.instructions,
-          items: [{ medication: this.medication, dose: this.dose, frequency: this.frequency, duration: this.duration }],
-        }),
-      );
-      this.medication = '';
-      this.error.set('Receta emitida.');
-    } catch (error) {
-      this.error.set(errorMessage(error));
-    } finally {
-      this.prescribing.set(false);
     }
   }
 }

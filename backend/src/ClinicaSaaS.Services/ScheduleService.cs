@@ -13,6 +13,7 @@ public class ScheduleService(
     IEmployeeStore employees,
     IClientStore clients,
     IWaitlistStore waitlist,
+    IMedicalRecordStore records,
     ITimeZoneProvider timeZone,
     ICurrentUser currentUser,
     IAuditStore audit,
@@ -278,6 +279,17 @@ public class ScheduleService(
         return await LoadAppointmentAsync(appointment.Id, ct);
     }
 
+    public async Task<AppointmentDto> MarkNoShowAsync(Guid id, CancellationToken ct)
+    {
+        var appointment = await appointments.GetAsync(id, ct) ?? throw new NotFoundException("Turno no encontrado.");
+        if (appointment.Status is not (AppointmentStatus.Booked or AppointmentStatus.CheckedIn))
+            throw new BusinessRuleException("Solo se marca ausente un turno que todavía no se atendió.");
+        appointment.Status = AppointmentStatus.NoShow;
+        await appointments.SaveAsync(ct);
+        await audit.RecordAsync(currentUser.Id, "ausente", "Turno", appointment.Id.ToString(), null, ct);
+        return await LoadAppointmentAsync(appointment.Id, ct);
+    }
+
     public async Task<AppointmentDto> ReviewCoverageAsync(Guid id, bool accepted, CancellationToken ct)
     {
         var appointment = await appointments.GetAsync(id, ct) ?? throw new NotFoundException("Turno no encontrado.");
@@ -349,6 +361,54 @@ public class ScheduleService(
         entry.Status = WaitlistStatus.Accepted;
         await waitlist.SaveAsync(ct);
         return appointment;
+    }
+
+    public async Task<AppointmentDto> OfferNextAsync(Guid id, CancellationToken ct)
+    {
+        var entry = await waitlist.GetAsync(id, ct) ?? throw new NotFoundException("La entrada de lista de espera no existe.");
+        if (entry.Status is WaitlistStatus.Accepted or WaitlistStatus.Cancelled)
+            throw new BusinessRuleException("Esa espera ya fue resuelta.");
+
+        var localNow = TimeZoneInfo.ConvertTime(clock.GetUtcNow(), timeZone.Zone);
+        var date = DateOnly.FromDateTime(localNow.DateTime);
+        SlotDto? chosen = null;
+        for (var day = 0; day < 21 && chosen is null; day++)
+        {
+            var slots = await AvailabilityAsync(new AvailabilityQuery(entry.LocationId, entry.SpecialtyId, entry.ProfessionalId, date.AddDays(day)), ct);
+            chosen = slots.FirstOrDefault(slot => slot.Start > clock.GetUtcNow());
+        }
+
+        if (chosen is null)
+            throw new BusinessRuleException("No hay un hueco libre en las próximas tres semanas.");
+
+        var (insurerId, memberNumber) = await CoverageFromChartAsync(entry.ClientId, chosen.ProfessionalId, ct);
+        var appointment = await BookAsync(new BookAppointmentCommand(
+            entry.ClientId,
+            chosen.ProfessionalId,
+            chosen.LocationId,
+            chosen.AppointmentTypeId,
+            chosen.Start,
+            entry.Notes,
+            insurerId,
+            memberNumber), ct);
+        entry.Status = WaitlistStatus.Accepted;
+        await waitlist.SaveAsync(ct);
+        return appointment;
+    }
+
+    private async Task<(Guid? InsurerId, string? MemberNumber)> CoverageFromChartAsync(Guid clientId, Guid professionalId, CancellationToken ct)
+    {
+        var record = await records.GetByClientAsync(clientId, ct);
+        if (record is null || string.IsNullOrWhiteSpace(record.HealthInsurance) || string.IsNullOrWhiteSpace(record.MemberNumber))
+            return (null, null);
+        var name = record.HealthInsurance.Trim().ToLower();
+        var insurerId = await employees.Employees
+            .Where(employee => employee.UserId == professionalId && employee.IsActive && employee.User.Role == TenantRole.Doctor)
+            .SelectMany(employee => employee.Insurers)
+            .Where(insurer => insurer.Enabled && insurer.Name.ToLower() == name)
+            .Select(insurer => (Guid?)insurer.Id)
+            .FirstOrDefaultAsync(ct);
+        return insurerId is null ? (null, null) : (insurerId, record.MemberNumber.Trim());
     }
 
     private async Task<Client> ResolveClientAsync(Guid? patientId, CancellationToken ct)

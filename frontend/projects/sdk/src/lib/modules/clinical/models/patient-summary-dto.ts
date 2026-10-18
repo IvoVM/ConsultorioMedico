@@ -5,4 +5,6 @@ export interface PatientSummaryDto {
   documentNumber: string;
   birthDate: string;
   phone: string;
+  healthInsurance?: string | null;
+  memberNumber?: string | null;
 }

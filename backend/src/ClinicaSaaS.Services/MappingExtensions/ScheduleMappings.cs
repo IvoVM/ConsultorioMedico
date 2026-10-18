@@ -63,5 +63,7 @@ public static class ScheduleMappings
             w.SpecialtyId,
             w.Status,
             w.CreatedAt,
-            w.Notes));
+            w.Notes,
+            w.Professional != null ? (w.Professional.FirstName + " " + w.Professional.LastName).Trim() : null,
+            w.Specialty.Name));
 }

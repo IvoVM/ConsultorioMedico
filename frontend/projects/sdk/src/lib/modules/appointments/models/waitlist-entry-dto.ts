@@ -11,4 +11,6 @@ export interface WaitlistEntryDto {
   status: WaitlistStatus;
   createdAt: string;
   notes?: string | null;
+  professional?: string | null;
+  specialty: string;
 }

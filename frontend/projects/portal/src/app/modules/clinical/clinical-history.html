@@ -1,8 +1,5 @@
-@if (session.role() !== 'Patient') {
-  <form class="mb-8 flex flex-col gap-4 border-b border-rule pb-8 sm:flex-row sm:items-end" (ngSubmit)="load()">
-    <ui-field class="sm:w-80" label="Id del paciente"><input name="patientId" [(ngModel)]="patientId" required /></ui-field>
-    <ui-button type="submit" [loading]="loading()">Ver historia</ui-button>
-  </form>
+@if (session.role() !== 'Patient' && !patientId) {
+  <ui-empty message="Abrí la ficha desde la búsqueda de secretaría o desde el turno del médico." />
 }
 @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
 @if (loading() && !history()) {
@@ -12,6 +9,10 @@
     <h2 class="font-serif text-2xl tracking-tight">{{ data.patient.name }}</h2>
     <p class="mt-1 text-sm text-ink/70">Documento {{ data.patient.documentNumber }}</p>
     <p class="text-sm text-ink/70">{{ data.patient.phone }}</p>
+    <p class="text-sm text-ink/70">
+      {{ data.patient.healthInsurance || 'Particular' }}
+      @if (data.patient.memberNumber) { <span>· afiliado {{ data.patient.memberNumber }}</span> }
+    </p>
   </header>
   @for (encounter of data.encounters; track encounter.id) {
     <article class="border-t border-rule py-5">
