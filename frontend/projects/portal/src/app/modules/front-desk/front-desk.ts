@@ -186,7 +186,7 @@ export class FrontDeskPage {
     this.notice.set('');
     try {
       const appointment = await firstValueFrom(this.appointmentsApi.offerWaitlist(item.id));
-      this.notice.set(`${item.patient} quedó el ${formatFecha(appointment.start)} con ${appointment.professional}.`);
+      this.notice.set(`${item.patient} tiene turno el ${formatFecha(appointment.start)} con ${appointment.professional}.`);
       await this.fetchDay();
     } catch (error) {
       this.error.set(errorMessage(error));

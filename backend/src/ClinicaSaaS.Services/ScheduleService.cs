@@ -272,7 +272,7 @@ public class ScheduleService(
     {
         var appointment = await appointments.GetAsync(id, ct) ?? throw new NotFoundException("Turno no encontrado.");
         if (appointment.Status != AppointmentStatus.Booked)
-            throw new BusinessRuleException("Solo se admite un turno reservado.");
+            throw new BusinessRuleException("Solo se puede admitir un turno reservado.");
         appointment.Status = AppointmentStatus.CheckedIn;
         await appointments.SaveAsync(ct);
         await audit.RecordAsync(currentUser.Id, "admision", "Turno", appointment.Id.ToString(), null, ct);
@@ -283,7 +283,7 @@ public class ScheduleService(
     {
         var appointment = await appointments.GetAsync(id, ct) ?? throw new NotFoundException("Turno no encontrado.");
         if (appointment.Status is not (AppointmentStatus.Booked or AppointmentStatus.CheckedIn))
-            throw new BusinessRuleException("Solo se marca ausente un turno que todavía no se atendió.");
+            throw new BusinessRuleException("Solo se puede marcar ausente un turno que todavía no se atendió.");
         appointment.Status = AppointmentStatus.NoShow;
         await appointments.SaveAsync(ct);
         await audit.RecordAsync(currentUser.Id, "ausente", "Turno", appointment.Id.ToString(), null, ct);
@@ -296,7 +296,7 @@ public class ScheduleService(
         if (appointment.InsurerId is null)
             throw new BusinessRuleException("Este turno es particular. No hay un número de afiliado para revisar.");
         if (appointment.Status is AppointmentStatus.Cancelled or AppointmentStatus.NoShow)
-            throw new BusinessRuleException("Ese turno ya no se revisa.");
+            throw new BusinessRuleException("Ese turno ya no se puede revisar.");
         appointment.CoverageAccepted = accepted;
         await appointments.SaveAsync(ct);
         await audit.RecordAsync(currentUser.Id, accepted ? "alta" : "baja", "Afiliado", appointment.Id.ToString(), appointment.MemberNumber, ct);
@@ -345,7 +345,7 @@ public class ScheduleService(
 
     public async Task<AppointmentDto> AssignWaitlistEntryAsync(Guid id, AssignWaitlistEntryCommand command, CancellationToken ct)
     {
-        var entry = await waitlist.GetAsync(id, ct) ?? throw new NotFoundException("La entrada de lista de espera no existe.");
+        var entry = await waitlist.GetAsync(id, ct) ?? throw new NotFoundException("Esa espera no está en la lista.");
         if (entry.Status is WaitlistStatus.Accepted or WaitlistStatus.Cancelled)
             throw new BusinessRuleException("Esa espera ya fue resuelta.");
         if (entry.ProfessionalId is null)
@@ -365,7 +365,7 @@ public class ScheduleService(
 
     public async Task<AppointmentDto> OfferNextAsync(Guid id, CancellationToken ct)
     {
-        var entry = await waitlist.GetAsync(id, ct) ?? throw new NotFoundException("La entrada de lista de espera no existe.");
+        var entry = await waitlist.GetAsync(id, ct) ?? throw new NotFoundException("Esa espera no está en la lista.");
         if (entry.Status is WaitlistStatus.Accepted or WaitlistStatus.Cancelled)
             throw new BusinessRuleException("Esa espera ya fue resuelta.");
 

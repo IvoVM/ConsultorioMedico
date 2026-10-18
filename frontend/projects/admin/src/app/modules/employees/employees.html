@@ -1,7 +1,7 @@
 <screen-note
   screen="Empleados"
   loading="Estás cargando a las personas que trabajan en la clínica: médicos, secretaría y administradores."
-  reason="Sin empleados no hay quién atienda, arme la agenda ni ingrese al consultorio."
+  reason="Sin empleados no hay quien atienda, arme la agenda ni ingrese al consultorio."
   skip="Si no los cargás, no aparecen [[TURNOS]] para reservar ni profesionales para asignar a una especialidad."
 />
 
@@ -111,8 +111,8 @@
       </div>
       @if (role === 'Doctor') {
         <fieldset class="border border-rule p-4">
-          <legend class="px-2 text-sm font-bold">Afiliado como profesional</legend>
-          <p class="mb-3 text-sm text-ink/70">Solo las obras sociales permitidas. El paciente las ve al reservar un turno con este médico.</p>
+          <legend class="px-2 text-sm font-bold">Obras sociales que atiende</legend>
+          <p class="mb-3 text-sm text-ink/70">Solo las que la clínica permite. El paciente las ve al reservar un turno con este médico.</p>
           @if (!insurers().length) {
             <p class="text-sm text-ink/70">No hay obras sociales permitidas.</p>
           } @else {
@@ -141,10 +141,10 @@
     <p class="text-sm leading-relaxed text-ink/75">
       Cada fila es una persona. El orden es nombre, apellido, email, rol, matrícula y especialidad.
       El rol se escribe Medico, Secretario o AdminTenant. La especialidad tiene que existir ya, con el mismo nombre.
-      Descargá el reporte de prueba, miralo y subilo tal cual: las tres primeras filas se cargan y la última no, porque el formato está mal.
+      Descargá el archivo de ejemplo: las tres primeras filas están bien y la última no, porque le faltan datos.
     </p>
     <div class="mt-4 flex flex-wrap gap-3">
-      <ui-button variant="outlined" (click)="downloadSample()">Descargar reporte de prueba</ui-button>
+      <ui-button variant="outlined" (click)="downloadSample()">Descargar archivo de ejemplo</ui-button>
     </div>
     <input class="mt-4" type="file" accept=".csv,text/csv" (change)="readFile($event)" />
     @if (fileName()) { <p class="mt-2 text-sm text-ink/60">{{ fileName() }}</p> }
@@ -178,9 +178,9 @@
   <ui-modal [open]="true" [title]="person.active ? 'Dar de baja' : 'Dar de alta'" (closed)="statusTarget.set(null)">
     <p class="text-sm leading-relaxed text-ink/75">
       @if (person.active) {
-        {{ person.lastName }}, {{ person.firstName }} no va a poder entrar ni figurar en la agenda. Los turnos que ya tiene quedan.
+        {{ person.firstName }} {{ person.lastName }} no va a poder entrar ni figurar en la agenda. Los turnos que ya tiene siguen vigentes.
       } @else {
-        {{ person.lastName }}, {{ person.firstName }} vuelve a poder entrar y, si es médico, a aparecer en la agenda.
+        {{ person.firstName }} {{ person.lastName }} vuelve a poder entrar y, si es médico, a figurar en la agenda.
       }
     </p>
     @if (error()) { <p class="mt-3 text-sm text-pulse" role="alert">{{ error() }}</p> }

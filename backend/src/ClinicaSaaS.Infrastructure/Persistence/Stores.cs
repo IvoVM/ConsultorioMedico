@@ -42,7 +42,7 @@ public class TenantUserStore(UserManager<TenantUser> users) : ITenantUserStore
         };
         var result = await users.CreateAsync(user, password);
         if (!result.Succeeded)
-            throw new BusinessRuleException(string.Join(' ', result.Errors.Select(e => e.Description)));
+            throw new BusinessRuleException(string.Join(' ', result.Errors.Select(IdentityMessage)));
         return Map(user);
     }
 
@@ -53,7 +53,7 @@ public class TenantUserStore(UserManager<TenantUser> users) : ITenantUserStore
         user.LastName = lastName;
         var result = await users.UpdateAsync(user);
         if (!result.Succeeded)
-            throw new BusinessRuleException(string.Join(' ', result.Errors.Select(e => e.Description)));
+            throw new BusinessRuleException(string.Join(' ', result.Errors.Select(IdentityMessage)));
     }
 
     public async Task UpdateProfileAsync(Guid id, string firstName, string lastName, string email, TenantRole role, CancellationToken ct)
@@ -64,11 +64,23 @@ public class TenantUserStore(UserManager<TenantUser> users) : ITenantUserStore
         user.Role = role;
         var emailResult = await users.SetEmailAsync(user, email);
         if (!emailResult.Succeeded)
-            throw new BusinessRuleException(string.Join(' ', emailResult.Errors.Select(e => e.Description)));
+            throw new BusinessRuleException(string.Join(' ', emailResult.Errors.Select(IdentityMessage)));
         var nameResult = await users.SetUserNameAsync(user, email);
         if (!nameResult.Succeeded)
-            throw new BusinessRuleException(string.Join(' ', nameResult.Errors.Select(e => e.Description)));
+            throw new BusinessRuleException(string.Join(' ', nameResult.Errors.Select(IdentityMessage)));
     }
+
+    private static string IdentityMessage(IdentityError error) => error.Code switch
+    {
+        "PasswordTooShort" => "La contraseña tiene que tener al menos 8 caracteres.",
+        "PasswordRequiresDigit" => "La contraseña tiene que incluir un número.",
+        "PasswordRequiresUpper" => "La contraseña tiene que incluir una mayúscula.",
+        "PasswordRequiresLower" => "La contraseña tiene que incluir una minúscula.",
+        "PasswordRequiresNonAlphanumeric" => "La contraseña tiene que incluir un símbolo.",
+        "DuplicateUserName" or "DuplicateEmail" => "Ese email ya está cargado.",
+        "InvalidEmail" or "InvalidUserName" => "El email no es válido.",
+        _ => "No se pudo guardar la cuenta."
+    };
 
     private static TenantAccount Map(TenantUser user) =>
         new(user.Id, user.Email ?? "", user.FirstName, user.LastName, user.Role, user.MustChangePassword);

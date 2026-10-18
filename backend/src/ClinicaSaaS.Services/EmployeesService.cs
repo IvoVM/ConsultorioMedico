@@ -221,7 +221,7 @@ public class EmployeesService(ITenantUserStore users, IEmployeeStore employees, 
                 throw new BusinessRuleException("No tiene el formato correcto: un médico necesita una especialidad que ya esté cargada.");
             var specialty = await organization.GetSpecialtyByNameAsync(specialtyName, ct);
             if (specialty is null)
-                throw new BusinessRuleException($"No tiene el formato correcto: la especialidad «{specialtyName}» no está cargada. Creala en Especialidades y volvé a subir esta fila.");
+                throw new BusinessRuleException($"No tiene el formato correcto: la especialidad «{specialtyName}» no está cargada. Creála en Especialidades y volvé a subir esta fila.");
             specialtyId = specialty.Id;
         }
 

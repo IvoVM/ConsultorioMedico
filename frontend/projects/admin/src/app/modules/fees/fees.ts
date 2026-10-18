@@ -110,7 +110,7 @@ export class FeesPage {
 }
 
 function priceError(amount: number | null, current: number | null) {
-  if (amount === null || Number.isNaN(amount)) return 'El valor no puede ser 0.';
+  if (amount === null || Number.isNaN(amount)) return 'Escribí un importe.';
   const rounded = Math.round(amount * 100) / 100;
   if (rounded < 0) return 'El valor no puede ser negativo.';
   if (rounded === 0) return 'El valor no puede ser 0.';

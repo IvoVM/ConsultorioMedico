@@ -47,6 +47,7 @@ export class BookAppointmentPage {
   readonly draft = signal<SlotDto | null>(null);
   readonly insurers = signal<InsurerDto[]>([]);
   readonly error = signal('');
+  readonly notice = signal('');
   readonly loading = signal(true);
   readonly joining = signal(false);
   readonly booking = signal('');
@@ -238,8 +239,10 @@ export class BookAppointmentPage {
           notes: this.notes,
         }),
       );
-      this.error.set('Quedaste en la lista de espera.');
+      this.error.set('');
+      this.notice.set('Quedaste en la lista de espera.');
     } catch (error) {
+      this.notice.set('');
       this.error.set(errorMessage(error));
     } finally {
       this.joining.set(false);
@@ -364,7 +367,7 @@ export class BookAppointmentPage {
 
   private forgetHeld() {
     this.held.set(null);
-    if (this.error() === 'Quedaste en la lista de espera.') this.error.set('');
+    this.notice.set('');
     clearPending();
   }
 
@@ -395,7 +398,7 @@ export class BookAppointmentPage {
       return;
     }
     if (clinicaSession.role() !== 'Patient' && !this.bookingPatientId) {
-      this.error.set('Los turnos se reservan con una cuenta de paciente.');
+      this.error.set('Para reservar este turno, elegí al paciente desde secretaría.');
       return;
     }
     await this.confirm(slot, coverage);

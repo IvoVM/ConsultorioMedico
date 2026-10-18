@@ -28,9 +28,9 @@ public class ClinicalService(
 
         var appointment = await appointments.GetAsync(command.AppointmentId, ct) ?? throw new NotFoundException("Turno no encontrado.");
         if (currentUser.Role == TenantRole.Doctor.ToString() && appointment.ProfessionalId != currentUser.Id)
-            throw new BusinessRuleException("Solo el profesional del turno puede cargar el encuentro.");
+            throw new BusinessRuleException("Solo el profesional del turno puede cargar la consulta.");
         if (appointment.Status is AppointmentStatus.Cancelled or AppointmentStatus.NoShow or AppointmentStatus.Completed)
-            throw new BusinessRuleException("Ese turno no admite un encuentro.");
+            throw new BusinessRuleException("Ese turno ya no se puede atender.");
 
         var encounter = await clinical.GetEncounterByAppointmentAsync(appointment.Id, ct);
         if (encounter is null)
@@ -47,7 +47,7 @@ public class ClinicalService(
         }
         else if (encounter.IsClosed)
         {
-            throw new BusinessRuleException("El encuentro ya está cerrado.");
+            throw new BusinessRuleException("Esta consulta ya está cerrada.");
         }
 
         encounter.Note = command.Note?.Trim();
@@ -66,9 +66,9 @@ public class ClinicalService(
 
     public async Task<EncounterDto> CloseEncounterAsync(Guid id, CancellationToken ct)
     {
-        var encounter = await clinical.GetEncounterAsync(id, ct) ?? throw new NotFoundException("Encuentro no encontrado.");
+        var encounter = await clinical.GetEncounterAsync(id, ct) ?? throw new NotFoundException("Consulta no encontrada.");
         if (!EncounterRules.CanClose(encounter.Note))
-            throw new BusinessRuleException("Para cerrar el encuentro hace falta una nota clínica.");
+            throw new BusinessRuleException("Para cerrar la consulta hace falta una nota clínica.");
         if (encounter.IsClosed)
             return await LoadEncounterAsync(encounter.Id, ct);
 
@@ -87,9 +87,9 @@ public class ClinicalService(
         var result = await prescriptionValidator.ValidateAsync(command, ct);
         if (!result.IsValid)
             throw new ValidationException(result.Errors);
-        var encounter = await clinical.GetEncounterAsync(command.EncounterId, ct) ?? throw new NotFoundException("Encuentro no encontrado.");
+        var encounter = await clinical.GetEncounterAsync(command.EncounterId, ct) ?? throw new NotFoundException("Consulta no encontrada.");
         if (currentUser.Role == TenantRole.Doctor.ToString() && encounter.ProfessionalId != currentUser.Id)
-            throw new BusinessRuleException("Solo el profesional del encuentro puede emitir la receta.");
+            throw new BusinessRuleException("Solo el profesional de la consulta puede emitir la receta.");
 
         var prescription = await clinical.AddPrescriptionAsync(new Prescription
         {

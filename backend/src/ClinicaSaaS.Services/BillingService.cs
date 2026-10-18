@@ -121,7 +121,7 @@ public class BillingService(
     {
         var invoice = await store.GetInvoiceAsync(id, ct) ?? throw new NotFoundException("Comprobante no encontrado.");
         if (!BillingRules.CanPay(invoice.Status))
-            throw new BusinessRuleException("Ese comprobante no admite un pago.");
+            throw new BusinessRuleException("Ese comprobante ya no se puede cobrar.");
         var amounts = await store.Invoices.Where(i => i.Id == invoice.Id).SelectMany(i => i.Items).Select(i => i.Amount).ToListAsync(ct);
         invoice.Status = InvoiceStatus.Paid;
         invoice.PaymentMethod = command.Method;
