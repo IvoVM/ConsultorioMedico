@@ -4,6 +4,7 @@ import {
   CreatedEmployeeDto,
   EmployeeDto,
   EmployeesService,
+  InsurerDto,
   OrganizationService,
   RejectedRowDto,
   TenantRole,
@@ -56,6 +57,8 @@ export class EmployeesPage {
   readonly total = signal(0);
   readonly page = signal(1);
   readonly specialties = signal<SelectOption[]>([]);
+  readonly insurers = signal<InsurerDto[]>([]);
+  readonly insurerIds = signal<string[]>([]);
   readonly created = signal<CreatedEmployeeDto[]>([]);
   readonly rejected = signal<RejectedRowDto[]>([]);
   readonly preview = signal<PreviewRow[]>([]);
@@ -86,13 +89,15 @@ export class EmployeesPage {
 
   async load() {
     try {
-      const [people, specialties] = await Promise.all([
+      const [people, specialties, insurers] = await Promise.all([
         firstValueFrom(this.employees.employeesPage(listParams(this.page(), this.sort(), this.query()))),
         firstValueFrom(this.organization.specialties()),
+        firstValueFrom(this.organization.enabledInsurers()),
       ]);
       this.people.set(people.items);
       this.total.set(people.total);
       this.page.set(people.page);
+      this.insurers.set(insurers);
       this.specialties.set(specialties.map((item) => ({ value: item.id, label: item.name })));
       this.specialtyId ||= specialties[0]?.id ?? '';
     } catch (error) {
@@ -129,8 +134,16 @@ export class EmployeesPage {
       this.role = 'Doctor';
       this.licenseNumber = '';
       this.specialtyId = this.specialties()[0]?.value ?? '';
+      this.insurerIds.set([]);
     }
     this.panel.set(panel);
+  }
+
+  toggleInsurer(id: string, checked: boolean) {
+    this.insurerIds.update((current) => {
+      if (checked) return current.includes(id) ? current : [...current, id];
+      return current.filter((item) => item !== id);
+    });
   }
 
   edit(person: EmployeeDto) {
@@ -142,6 +155,7 @@ export class EmployeesPage {
     this.role = person.role;
     this.licenseNumber = person.licenseNumber ?? '';
     this.specialtyId = person.specialtyId ?? this.specialties()[0]?.value ?? '';
+    this.insurerIds.set([...(person.insurerIds ?? [])]);
     this.panel.set('editar');
   }
 
@@ -180,6 +194,7 @@ export class EmployeesPage {
       role: this.role,
       licenseNumber: this.role === 'Doctor' ? this.licenseNumber.trim() || null : null,
       specialtyId: this.role === 'Doctor' ? this.specialtyId : null,
+      insurerIds: this.role === 'Doctor' ? this.insurerIds() : [],
     };
   }
 

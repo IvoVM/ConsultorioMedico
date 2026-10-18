@@ -33,7 +33,7 @@ export class EmployeesService extends ApiClient {
     return this.http.post<CreatedEmployeeAccountDto>(`${this.base}/api/empleados`, body);
   }
 
-  updateEmployee(id: string, body: CreateEmployeeCommand) {
+  updateEmployee(id: string, body: CreateEmployeeCommand & { insurerIds?: string[] }) {
     return this.http.put<EmployeeDto>(`${this.base}/api/empleados/${id}`, body);
   }
 

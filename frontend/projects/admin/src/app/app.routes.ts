@@ -22,6 +22,7 @@ export const routes: Routes = [
               { path: ':specialtyId', loadComponent: () => import('./modules/organization/specialty-detail').then((m) => m.SpecialtyDetailPage) },
             ],
           },
+          { path: 'obras-sociales', loadComponent: () => import('./modules/organization/insurers').then((m) => m.InsurersPage) },
           { path: 'tipos-de-turno', redirectTo: 'especialidades' },
           { path: 'turnos', redirectTo: 'especialidades' },
           { path: 'turnos/:turnoId', redirectTo: 'especialidades' },

@@ -31,6 +31,10 @@ export class AppointmentsService extends ApiClient {
     return this.http.post<AppointmentDto>(`${this.base}/api/turnos/${id}/admitir`, {});
   }
 
+  reviewCoverage(id: string, accepted: boolean) {
+    return this.http.post<AppointmentDto>(`${this.base}/api/turnos/${id}/cobertura`, { accepted });
+  }
+
   rescheduleAppointment(id: string, body: RescheduleAppointmentCommand) {
     return this.http.post<AppointmentDto>(`${this.base}/api/turnos/${id}/reprogramar`, body);
   }

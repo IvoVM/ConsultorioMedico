@@ -107,6 +107,24 @@
           </ui-field>
         }
       </div>
+      @if (role === 'Doctor') {
+        <fieldset class="border border-rule p-4">
+          <legend class="px-2 text-sm font-bold">Afiliado como profesional</legend>
+          <p class="mb-3 text-sm text-ink/70">Solo las obras sociales permitidas. El paciente las ve al reservar un turno con este médico.</p>
+          @if (!insurers().length) {
+            <p class="text-sm text-ink/70">No hay obras sociales permitidas.</p>
+          } @else {
+            <div class="grid max-h-52 gap-2 overflow-y-auto sm:grid-cols-2">
+              @for (insurer of insurers(); track insurer.id) {
+                <label class="flex items-center gap-2 text-sm">
+                  <input type="checkbox" [checked]="insurerIds().includes(insurer.id)" (change)="toggleInsurer(insurer.id, $any($event.target).checked)" />
+                  {{ insurer.name }}
+                </label>
+              }
+            </div>
+          }
+        </fieldset>
+      }
       @if (error()) { <p class="text-sm text-pulse" role="alert">{{ error() }}</p> }
       <div class="flex flex-wrap gap-3">
         <ui-button type="submit" [loading]="saving()">{{ panel() === 'editar' ? 'Guardar' : 'Crear' }}</ui-button>

@@ -15,4 +15,7 @@ export interface AppointmentDto {
   end: string;
   status: AppointmentStatus;
   visitReason?: string | null;
+  insurer?: string | null;
+  memberNumber?: string | null;
+  coverageAccepted?: boolean | null;
 }

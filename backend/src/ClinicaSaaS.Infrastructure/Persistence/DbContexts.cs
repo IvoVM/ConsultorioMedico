@@ -17,6 +17,7 @@ public class TenantDbContext(DbContextOptions<TenantDbContext> options)
     public DbSet<ScheduleBlock> ScheduleBlocks => Set<ScheduleBlock>();
     public DbSet<ScheduleBlockout> ScheduleBlockouts => Set<ScheduleBlockout>();
     public DbSet<Employee> Employees => Set<Employee>();
+    public DbSet<Insurer> Insurers => Set<Insurer>();
     public DbSet<Client> Clients => Set<Client>();
     public DbSet<MedicalRecord> MedicalRecords => Set<MedicalRecord>();
     public DbSet<Appointment> Appointments => Set<Appointment>();
@@ -91,6 +92,12 @@ public class TenantDbContext(DbContextOptions<TenantDbContext> options)
             e.Property(x => x.LicenseNumber).HasMaxLength(40);
             e.HasIndex(x => x.UserId).IsUnique();
             e.HasOne(x => x.Specialty).WithMany(s => s.Employees).HasForeignKey(x => x.SpecialtyId).OnDelete(DeleteBehavior.SetNull);
+            e.HasMany(x => x.Insurers).WithMany().UsingEntity(join => join.ToTable("EmployeeInsurers"));
+        });
+        builder.Entity<Insurer>(e =>
+        {
+            e.Property(i => i.Name).HasMaxLength(120);
+            e.HasIndex(i => i.Name).IsUnique();
         });
         builder.Entity<Client>(e =>
         {
@@ -118,6 +125,8 @@ public class TenantDbContext(DbContextOptions<TenantDbContext> options)
         {
             e.Property(a => a.Status).HasConversion<string>().HasMaxLength(20);
             e.Property(a => a.VisitReason).HasMaxLength(500);
+            e.Property(a => a.MemberNumber).HasMaxLength(40);
+            e.HasOne(a => a.Insurer).WithMany().HasForeignKey(a => a.InsurerId).OnDelete(DeleteBehavior.SetNull);
             e.HasIndex(a => new { a.ProfessionalId, a.Start });
             e.HasOne(a => a.Client).WithMany(c => c.Appointments).HasForeignKey(a => a.ClientId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(a => a.Professional).WithMany(u => u.Appointments).HasForeignKey(a => a.ProfessionalId).OnDelete(DeleteBehavior.Restrict);

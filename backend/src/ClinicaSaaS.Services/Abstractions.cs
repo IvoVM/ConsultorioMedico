@@ -56,6 +56,7 @@ public interface IEmployeeStore
     Task AssignSpecialtyAsync(Guid userId, Guid? specialtyId, CancellationToken ct);
     Task UpdateAsync(Guid userId, string? licenseNumber, Guid? specialtyId, CancellationToken ct);
     Task SetActiveAsync(Guid userId, bool active, CancellationToken ct);
+    Task SetInsurersAsync(Guid userId, IReadOnlyList<Guid> insurerIds, CancellationToken ct);
 }
 
 public interface IOrganizationStore
@@ -73,6 +74,9 @@ public interface IOrganizationStore
     IQueryable<AppointmentType> AppointmentTypes { get; }
     Task<AppointmentType?> GetAppointmentTypeAsync(Guid id, CancellationToken ct);
     Task<AppointmentType> AddAppointmentTypeAsync(AppointmentType type, CancellationToken ct);
+    IQueryable<Insurer> Insurers { get; }
+    Task<Insurer> AddInsurerAsync(Insurer insurer, CancellationToken ct);
+    Task<Insurer?> GetInsurerAsync(Guid id, CancellationToken ct);
     Task SaveAsync(CancellationToken ct);
 }
 

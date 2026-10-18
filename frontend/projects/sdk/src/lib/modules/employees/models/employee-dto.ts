@@ -11,4 +11,5 @@ export interface EmployeeDto {
   specialty?: string | null;
   specialtyId?: string | null;
   active: boolean;
+  insurerIds: string[];
 }

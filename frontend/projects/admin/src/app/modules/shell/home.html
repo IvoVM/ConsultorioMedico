@@ -20,7 +20,10 @@
         <tr>
           <td class="whitespace-nowrap tabular-nums">{{ timeLabel(appointment.start) }}</td>
           <td class="font-serif text-lg leading-tight">{{ appointment.patient }}</td>
-          <td>{{ appointment.professional }}</td>
+          <td>
+            {{ appointment.professional }}
+            <span class="mt-1 block text-sm text-ink/70">{{ appointment.insurer ? appointment.insurer + (appointment.memberNumber ? ' · afiliado ' + appointment.memberNumber : '') : 'Particular' }}</span>
+          </td>
           <td><ui-badge [tone]="appointment.status === 'Cancelled' || appointment.status === 'NoShow' ? 'warn' : appointment.status === 'Completed' ? 'ok' : 'muted'">{{ statusLabels[appointment.status] }}</ui-badge></td>
           <td class="whitespace-nowrap"><a class="text-link" [routerLink]="['/pacientes', appointment.patientId]">Ficha</a></td>
         </tr>

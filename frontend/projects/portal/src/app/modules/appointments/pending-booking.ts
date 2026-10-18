@@ -8,15 +8,19 @@ export interface PendingBooking {
   locationId: string;
   appointmentTypeId: string;
   start: string;
+  insurerId?: string | null;
+  memberNumber?: string | null;
 }
 
-export function savePending(slot: SlotDto) {
+export function savePending(slot: SlotDto, coverage?: { insurerId?: string | null; memberNumber?: string | null }) {
   const pending: PendingBooking = {
     professionalId: slot.professionalId,
     professional: slot.professional,
     locationId: slot.locationId,
     appointmentTypeId: slot.appointmentTypeId,
     start: slot.start,
+    insurerId: coverage?.insurerId ?? null,
+    memberNumber: coverage?.memberNumber ?? null,
   };
   sessionStorage.setItem(key, JSON.stringify(pending));
 }

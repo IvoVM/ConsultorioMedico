@@ -13,9 +13,13 @@ public class Appointment
     public DateTimeOffset End { get; set; }
     public AppointmentStatus Status { get; set; } = AppointmentStatus.Booked;
     public string? VisitReason { get; set; }
+    public Guid? InsurerId { get; set; }
+    public string? MemberNumber { get; set; }
+    public bool? CoverageAccepted { get; set; }
 
 
     public virtual Client Client { get; set; } = null!;
+    public virtual Insurer? Insurer { get; set; }
     public virtual TenantUser Professional { get; set; } = null!;
     public virtual Location Location { get; set; } = null!;
     public virtual AppointmentType AppointmentType { get; set; } = null!;

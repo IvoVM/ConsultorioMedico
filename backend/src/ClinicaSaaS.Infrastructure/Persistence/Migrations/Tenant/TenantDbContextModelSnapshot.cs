@@ -34,11 +34,21 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                     b.Property<Guid>("ClientId")
                         .HasColumnType("uuid");
 
+                    b.Property<bool?>("CoverageAccepted")
+                        .HasColumnType("boolean");
+
                     b.Property<DateTimeOffset>("End")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("InsurerId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("LocationId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("MemberNumber")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
 
                     b.Property<Guid>("ProfessionalId")
                         .HasColumnType("uuid");
@@ -60,6 +70,8 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                     b.HasIndex("AppointmentTypeId");
 
                     b.HasIndex("ClientId");
+
+                    b.HasIndex("InsurerId");
 
                     b.HasIndex("LocationId");
 
@@ -303,6 +315,28 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                     b.HasIndex("AppointmentTypeId");
 
                     b.ToTable("Fees");
+                });
+
+            modelBuilder.Entity("ClinicaSaaS.Domain.Insurer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Insurers");
                 });
 
             modelBuilder.Entity("ClinicaSaaS.Domain.Invoice", b =>
@@ -792,6 +826,21 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                     b.ToTable("Users", (string)null);
                 });
 
+            modelBuilder.Entity("EmployeeInsurer", b =>
+                {
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("InsurersId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("EmployeeId", "InsurersId");
+
+                    b.HasIndex("InsurersId");
+
+                    b.ToTable("EmployeeInsurers", (string)null);
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", b =>
                 {
                     b.Property<Guid>("Id")
@@ -936,6 +985,11 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("ClinicaSaaS.Domain.Insurer", "Insurer")
+                        .WithMany()
+                        .HasForeignKey("InsurerId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("ClinicaSaaS.Domain.Location", "Location")
                         .WithMany("Appointments")
                         .HasForeignKey("LocationId")
@@ -951,6 +1005,8 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                     b.Navigation("AppointmentType");
 
                     b.Navigation("Client");
+
+                    b.Navigation("Insurer");
 
                     b.Navigation("Location");
 
@@ -1224,6 +1280,21 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("EmployeeInsurer", b =>
+                {
+                    b.HasOne("ClinicaSaaS.Domain.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ClinicaSaaS.Domain.Insurer", null)
+                        .WithMany()
+                        .HasForeignKey("InsurersId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>

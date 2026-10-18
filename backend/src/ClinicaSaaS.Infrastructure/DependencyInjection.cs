@@ -86,7 +86,10 @@ public class ClinicSeeder(TenantDbContext db, UserManager<TenantUser> users, ICo
         }
 
         if (slug != "demo")
+        {
+            await InsurerCatalog.EnsureAsync(db, ct);
             return;
+        }
 
         await EnsureUserAsync("secretaria@demo.local", password, "Laura", "Benítez", TenantRole.Secretary, null, ct);
         await EnsureUserAsync("medico@demo.local", password, "Martín", "Ríos", TenantRole.Doctor, "MN 12345", ct);
@@ -107,6 +110,7 @@ public class ClinicSeeder(TenantDbContext db, UserManager<TenantUser> users, ICo
         var zone = TimeZoneInfo.FindSystemTimeZoneById(configuration["TimeZone"] ?? "America/Argentina/Buenos_Aires");
         var admin = await users.FindByEmailAsync(adminEmail);
         await new DemoDataSeeder(db, users).SeedAsync(password, zone, admin?.Id, ct);
+        await InsurerCatalog.EnsureAsync(db, ct);
     }
 
     private async Task<TenantUser> EnsureUserAsync(

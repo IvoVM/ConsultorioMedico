@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import {
   AppointmentsService,
   EmployeesService,
+  InsurerDto,
   OrganizationService,
   ProfessionalDto,
   ScheduleService,
@@ -39,6 +40,8 @@ export class BookAppointmentPage {
   readonly days = signal<DayOption[]>([]);
   readonly slots = signal<SlotDto[]>([]);
   readonly held = signal<SlotDto | null>(null);
+  readonly draft = signal<SlotDto | null>(null);
+  readonly insurers = signal<InsurerDto[]>([]);
   readonly error = signal('');
   readonly loading = signal(true);
   readonly joining = signal(false);
@@ -48,6 +51,9 @@ export class BookAppointmentPage {
   readonly professionalId = signal('');
   readonly date = signal('');
   notes = '';
+  coverage: 'particular' | 'obra' = 'particular';
+  insurerId = '';
+  memberNumber = '';
 
   readonly nearestIso = computed(() => this.days()[0]?.iso ?? '');
   readonly specialtyOptions = computed(() => [
@@ -74,6 +80,10 @@ export class BookAppointmentPage {
 
   constructor() {
     void this.prepare();
+  }
+
+  insurerOptions() {
+    return this.insurers().map((item) => ({ value: item.id, label: item.name }));
   }
 
   specialtyName(id: string | null | undefined) {
@@ -118,6 +128,7 @@ export class BookAppointmentPage {
   }
 
   pickSpecialty(id: string) {
+    this.cancelDraft();
     this.forgetHeld();
     this.specialtyId.set(id);
     const selected = this.professionals().find((pro) => pro.id === this.professionalId());
@@ -126,6 +137,7 @@ export class BookAppointmentPage {
   }
 
   pickProfessional(id: string) {
+    this.cancelDraft();
     this.forgetHeld();
     this.professionalId.set(id);
     const specialtyId = this.professionals().find((pro) => pro.id === id)?.specialtyId;
@@ -134,6 +146,7 @@ export class BookAppointmentPage {
   }
 
   pickDay(iso: string) {
+    this.cancelDraft();
     this.forgetHeld();
     const day = this.days().find((item) => item.iso === iso);
     if (!day) return;
@@ -142,6 +155,7 @@ export class BookAppointmentPage {
   }
 
   chooseForMe() {
+    this.cancelDraft();
     this.forgetHeld();
     this.professionalId.set('');
     this.specialtyId.set('');
@@ -181,16 +195,22 @@ export class BookAppointmentPage {
   }
 
   async book(slot: SlotDto) {
-    if (!clinicaSession.token()) {
-      savePending(slot);
-      this.held.set(slot);
-      return;
+    this.error.set('');
+    this.coverage = 'particular';
+    this.insurerId = '';
+    this.memberNumber = '';
+    this.draft.set(slot);
+    try {
+      this.insurers.set(await firstValueFrom(this.organization.professionalInsurers(slot.professionalId)));
+    } catch (error) {
+      this.insurers.set([]);
+      this.error.set(errorMessage(error));
     }
-    if (clinicaSession.role() !== 'Patient') {
-      this.error.set('Los turnos se reservan con una cuenta de paciente.');
-      return;
-    }
-    await this.confirm(slot);
+  }
+
+  cancelDraft() {
+    this.draft.set(null);
+    this.insurers.set([]);
   }
 
   release() {
@@ -291,6 +311,8 @@ export class BookAppointmentPage {
           start: pending.start,
           patientId: null,
           visitReason: null,
+          insurerId: pending.insurerId || null,
+          memberNumber: pending.memberNumber || null,
         }),
       );
       clearPending();
@@ -324,7 +346,39 @@ export class BookAppointmentPage {
     if (specialtyId) this.specialtyId.set(specialtyId);
   }
 
-  private async confirm(slot: SlotDto) {
+  async confirmDraft() {
+    const slot = this.draft();
+    if (!slot) return;
+    const coverage = this.coverageChoice();
+    if (coverage === false) return;
+    if (!clinicaSession.token()) {
+      savePending(slot, coverage);
+      this.held.set(slot);
+      this.draft.set(null);
+      return;
+    }
+    if (clinicaSession.role() !== 'Patient') {
+      this.error.set('Los turnos se reservan con una cuenta de paciente.');
+      return;
+    }
+    await this.confirm(slot, coverage);
+  }
+
+  private coverageChoice(): { insurerId: string | null; memberNumber: string | null } | false {
+    if (this.coverage === 'particular') return { insurerId: null, memberNumber: null };
+    if (!this.insurerId) {
+      this.error.set('Elegí la obra social.');
+      return false;
+    }
+    const memberNumber = this.memberNumber.trim();
+    if (!memberNumber) {
+      this.error.set('El número de afiliado es obligatorio.');
+      return false;
+    }
+    return { insurerId: this.insurerId, memberNumber };
+  }
+
+  private async confirm(slot: SlotDto, coverage: { insurerId: string | null; memberNumber: string | null }) {
     this.booking.set(slot.start + slot.professionalId);
     this.error.set('');
     try {
@@ -336,9 +390,12 @@ export class BookAppointmentPage {
           start: slot.start,
           patientId: null,
           visitReason: null,
+          insurerId: coverage.insurerId,
+          memberNumber: coverage.memberNumber,
         }),
       );
       clearPending();
+      this.draft.set(null);
       await this.router.navigateByUrl('/mis-turnos');
     } catch (error) {
       this.error.set(errorMessage(error));

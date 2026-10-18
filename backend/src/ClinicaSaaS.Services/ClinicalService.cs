@@ -10,6 +10,7 @@ public class ClinicalService(
     IAppointmentStore appointments,
     IClientStore clients,
     IBillingStore billing,
+    IOrganizationStore organization,
     ICurrentUser currentUser,
     IAuditStore audit,
     IValidator<SaveEncounterCommand> encounterValidator,
@@ -165,10 +166,9 @@ public class ClinicalService(
         if (await billing.Invoices.AnyAsync(i => i.AppointmentId == appointment.Id, ct))
             return;
         var today = DateOnly.FromDateTime(clock.GetUtcNow().DateTime);
-        var insurance = await clients.Clients
-            .Where(c => c.Id == appointment.ClientId)
-            .Select(c => c.Record != null ? c.Record.HealthInsurance : null)
-            .FirstOrDefaultAsync(ct);
+        string? insurance = null;
+        if (appointment.InsurerId is Guid insurerId && appointment.CoverageAccepted != false)
+            insurance = await organization.Insurers.Where(i => i.Id == insurerId).Select(i => i.Name).FirstOrDefaultAsync(ct);
         var fees = await billing.Fees
             .Where(f => f.AppointmentTypeId == appointment.AppointmentTypeId && f.EffectiveFrom <= today)
             .Select(f => new { f.Payer, f.Amount, f.EffectiveFrom, f.Id, f.AppointmentType.Name })

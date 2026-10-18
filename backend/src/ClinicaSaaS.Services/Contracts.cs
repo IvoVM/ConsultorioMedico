@@ -40,9 +40,9 @@ public record SaveAppointmentTypeCommand(string Name, int DurationMinutes, Guid?
 public record ProfessionalDto(Guid Id, string FirstName, string LastName, string Email, string? LicenseNumber, Guid? SpecialtyId);
 public record AssignSpecialtyCommand(Guid? SpecialtyId);
 
-public record EmployeeDto(Guid Id, string FirstName, string LastName, string Email, TenantRole Role, string? LicenseNumber, string? Specialty, Guid? SpecialtyId, bool Active);
-public record CreateEmployeeCommand(string FirstName, string LastName, string Email, TenantRole Role, string? LicenseNumber, Guid? SpecialtyId);
-public record UpdateEmployeeCommand(string FirstName, string LastName, string Email, TenantRole Role, string? LicenseNumber, Guid? SpecialtyId);
+public record EmployeeDto(Guid Id, string FirstName, string LastName, string Email, TenantRole Role, string? LicenseNumber, string? Specialty, Guid? SpecialtyId, bool Active, IReadOnlyList<Guid> InsurerIds);
+public record CreateEmployeeCommand(string FirstName, string LastName, string Email, TenantRole Role, string? LicenseNumber, Guid? SpecialtyId, IReadOnlyList<Guid>? InsurerIds = null);
+public record UpdateEmployeeCommand(string FirstName, string LastName, string Email, TenantRole Role, string? LicenseNumber, Guid? SpecialtyId, IReadOnlyList<Guid>? InsurerIds = null);
 public record SetEmployeeActiveCommand(bool Active);
 public record CreatedEmployeeAccountDto(EmployeeDto Employee, string TemporaryPassword);
 public record ImportEmployeesCommand(string Csv);
@@ -58,7 +58,11 @@ public record CreateBlockoutCommand(Guid ProfessionalId, DateTimeOffset Start, D
 public record SlotDto(Guid ProfessionalId, string Professional, Guid LocationId, Guid AppointmentTypeId, string AppointmentType, DateTimeOffset Start, DateTimeOffset End);
 public record AvailabilityQuery(Guid LocationId, Guid SpecialtyId, Guid? ProfessionalId, DateOnly Date);
 
-public record BookAppointmentCommand(Guid? PatientId, Guid ProfessionalId, Guid LocationId, Guid AppointmentTypeId, DateTimeOffset Start, string? VisitReason);
+public record BookAppointmentCommand(Guid? PatientId, Guid ProfessionalId, Guid LocationId, Guid AppointmentTypeId, DateTimeOffset Start, string? VisitReason, Guid? InsurerId = null, string? MemberNumber = null);
+public record ReviewCoverageCommand(bool Accepted);
+public record InsurerDto(Guid Id, string Name, bool Enabled);
+public record SaveInsurerCommand(string Name);
+public record SetInsurerEnabledCommand(bool Enabled);
 public record AppointmentDto(
     Guid Id,
     Guid PatientId,
@@ -72,7 +76,10 @@ public record AppointmentDto(
     DateTimeOffset Start,
     DateTimeOffset End,
     AppointmentStatus Status,
-    string? VisitReason);
+    string? VisitReason,
+    string? Insurer,
+    string? MemberNumber,
+    bool? CoverageAccepted);
 public record RescheduleAppointmentCommand(DateTimeOffset Start);
 
 public record WaitlistEntryDto(

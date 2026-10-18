@@ -10,6 +10,7 @@ public class ScheduleService(
     IScheduleStore schedules,
     IOrganizationStore organization,
     IAppointmentStore appointments,
+    IEmployeeStore employees,
     IClientStore clients,
     IWaitlistStore waitlist,
     ITimeZoneProvider timeZone,
@@ -180,6 +181,26 @@ public class ScheduleService(
         var slot = slots.FirstOrDefault(s => s.ProfessionalId == command.ProfessionalId && s.AppointmentTypeId == command.AppointmentTypeId && s.Start.UtcDateTime == command.Start.UtcDateTime)
             ?? throw new ConflictException("Ese horario ya no está disponible.");
 
+        Guid? insurerId = null;
+        string? memberNumber = null;
+        if (command.InsurerId is Guid chosenInsurer)
+        {
+            memberNumber = command.MemberNumber?.Trim() ?? "";
+            if (memberNumber.Length == 0 || memberNumber.Length > 40)
+                throw new BusinessRuleException("Si usás obra social, el número de afiliado es obligatorio.");
+            var allowed = await employees.Employees
+                .Where(e => e.UserId == command.ProfessionalId && e.IsActive && e.User.Role == TenantRole.Doctor)
+                .SelectMany(e => e.Insurers)
+                .AnyAsync(i => i.Id == chosenInsurer && i.Enabled, ct);
+            if (!allowed)
+                throw new BusinessRuleException("Ese profesional no atiende por esa obra social.");
+            insurerId = chosenInsurer;
+        }
+        else if (!string.IsNullOrWhiteSpace(command.MemberNumber))
+        {
+            throw new BusinessRuleException("El número de afiliado es para cuando elegís obra social.");
+        }
+
         var appointment = await appointments.BookAsync(new Appointment
         {
             Id = Guid.NewGuid(),
@@ -190,7 +211,9 @@ public class ScheduleService(
             Start = slot.Start,
             End = slot.End,
             Status = AppointmentStatus.Booked,
-            VisitReason = command.VisitReason?.Trim()
+            VisitReason = command.VisitReason?.Trim(),
+            InsurerId = insurerId,
+            MemberNumber = memberNumber
         }, ct);
         await audit.RecordAsync(currentUser.Id, "reserva", "Turno", appointment.Id.ToString(), appointment.Start.ToString("O"), ct);
         return await LoadAppointmentAsync(appointment.Id, ct);
@@ -252,6 +275,19 @@ public class ScheduleService(
         appointment.Status = AppointmentStatus.CheckedIn;
         await appointments.SaveAsync(ct);
         await audit.RecordAsync(currentUser.Id, "admision", "Turno", appointment.Id.ToString(), null, ct);
+        return await LoadAppointmentAsync(appointment.Id, ct);
+    }
+
+    public async Task<AppointmentDto> ReviewCoverageAsync(Guid id, bool accepted, CancellationToken ct)
+    {
+        var appointment = await appointments.GetAsync(id, ct) ?? throw new NotFoundException("Turno no encontrado.");
+        if (appointment.InsurerId is null)
+            throw new BusinessRuleException("Este turno es particular. No hay un número de afiliado para revisar.");
+        if (appointment.Status is AppointmentStatus.Cancelled or AppointmentStatus.NoShow)
+            throw new BusinessRuleException("Ese turno ya no se revisa.");
+        appointment.CoverageAccepted = accepted;
+        await appointments.SaveAsync(ct);
+        await audit.RecordAsync(currentUser.Id, accepted ? "alta" : "baja", "Afiliado", appointment.Id.ToString(), appointment.MemberNumber, ct);
         return await LoadAppointmentAsync(appointment.Id, ct);
     }
 

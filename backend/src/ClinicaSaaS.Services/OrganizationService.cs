@@ -269,6 +269,55 @@ public class OrganizationService(
         return await Pages.Materialize(rows, query, ct);
     }
 
+    public async Task<IReadOnlyList<InsurerDto>> EnabledInsurersAsync(CancellationToken ct) =>
+        await store.Insurers.Where(i => i.Enabled).OrderBy(i => i.Name).Select(i => new InsurerDto(i.Id, i.Name, i.Enabled)).ToListAsync(ct);
+
+    public async Task<object> ListInsurersAsync(ListQuery query, CancellationToken ct)
+    {
+        if (!query.Paged) return await store.Insurers.OrderBy(i => i.Name).Select(i => new InsurerDto(i.Id, i.Name, i.Enabled)).ToListAsync(ct);
+        var source = store.Insurers.AsQueryable();
+        if (query.Term is string term)
+            source = source.Where(i => i.Name.ToLower().Contains(term) || (i.Enabled ? "permitida" : "no permitida").Contains(term));
+        source = (query.Sort, query.Desc) switch
+        {
+            ("status", false) => source.OrderBy(i => i.Enabled).ThenBy(i => i.Name),
+            ("status", true) => source.OrderByDescending(i => i.Enabled).ThenBy(i => i.Name),
+            ("name", true) => source.OrderByDescending(i => i.Name),
+            _ => source.OrderBy(i => i.Name)
+        };
+        return await Pages.Materialize(source.Select(i => new InsurerDto(i.Id, i.Name, i.Enabled)), query, ct);
+    }
+
+    public async Task<InsurerDto> CreateInsurerAsync(SaveInsurerCommand command, CancellationToken ct)
+    {
+        var name = command.Name?.Trim() ?? "";
+        if (name.Length == 0 || name.Length > 120)
+            throw new BusinessRuleException("La obra social necesita un nombre de hasta 120 caracteres.");
+        if (await store.Insurers.AnyAsync(i => i.Name.ToLower() == name.ToLower(), ct))
+            throw new BusinessRuleException("Esa obra social ya está cargada.");
+        var insurer = await store.AddInsurerAsync(new Insurer { Id = Guid.NewGuid(), Name = name, Enabled = true }, ct);
+        await RecordAsync("alta", "ObraSocial", insurer.Id, insurer.Name, ct);
+        return new InsurerDto(insurer.Id, insurer.Name, insurer.Enabled);
+    }
+
+    public async Task<InsurerDto> SetInsurerEnabledAsync(Guid id, bool enabled, CancellationToken ct)
+    {
+        var insurer = await store.GetInsurerAsync(id, ct) ?? throw new NotFoundException("Obra social no encontrada.");
+        insurer.Enabled = enabled;
+        await store.SaveAsync(ct);
+        await RecordAsync(enabled ? "alta" : "baja", "ObraSocial", insurer.Id, insurer.Name, ct);
+        return new InsurerDto(insurer.Id, insurer.Name, insurer.Enabled);
+    }
+
+    public async Task<IReadOnlyList<InsurerDto>> ProfessionalInsurersAsync(Guid professionalId, CancellationToken ct) =>
+        await employees.Employees
+            .Where(e => e.UserId == professionalId && e.IsActive && e.User.Role == TenantRole.Doctor)
+            .SelectMany(e => e.Insurers)
+            .Where(i => i.Enabled)
+            .OrderBy(i => i.Name)
+            .Select(i => new InsurerDto(i.Id, i.Name, i.Enabled))
+            .ToListAsync(ct);
+
     private async Task RecordAsync(string action, string entity, Guid id, string? detail, CancellationToken ct) =>
         await audit.RecordAsync(currentUser.Id, action, entity, id.ToString(), detail, ct);
 

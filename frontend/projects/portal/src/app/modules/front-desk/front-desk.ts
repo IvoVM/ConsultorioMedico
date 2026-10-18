@@ -92,6 +92,18 @@ export class FrontDeskPage {
     }
   }
 
+  coverageLabel(appointment: AppointmentDto) {
+    if (!appointment.insurer) return 'Particular';
+    const number = appointment.memberNumber ? ` · afiliado ${appointment.memberNumber}` : '';
+    if (appointment.coverageAccepted === true) return `${appointment.insurer}${number} · número correcto`;
+    if (appointment.coverageAccepted === false) return `${appointment.insurer}${number} · no coincide`;
+    return `${appointment.insurer}${number} · pendiente de revisión`;
+  }
+
+  async review(appointment: AppointmentDto, accepted: boolean) {
+    await this.run(`coverage:${appointment.id}:${accepted}`, () => this.appointmentsApi.reviewCoverage(appointment.id, accepted));
+  }
+
   async checkIn(appointment: AppointmentDto) {
     await this.run(`checkin:${appointment.id}`, () => this.appointmentsApi.checkInAppointment(appointment.id));
   }

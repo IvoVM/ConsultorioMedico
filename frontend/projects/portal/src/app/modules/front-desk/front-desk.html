@@ -47,11 +47,18 @@
         @for (appointment of appointments(); track appointment.id) {
           <tr>
             <td class="whitespace-nowrap tabular-nums">{{ appointment.start | fecha:'hora' }}</td>
-            <td>{{ appointment.patient }}</td>
+            <td>
+              {{ appointment.patient }}
+              <span class="mt-1 block text-sm text-ink/70">{{ coverageLabel(appointment) }}</span>
+            </td>
             <td>{{ appointment.professional }}</td>
             <td><ui-badge>{{ statusLabels[appointment.status] }}</ui-badge></td>
             <td>
               <div class="flex flex-wrap gap-2">
+                @if (appointment.insurer && appointment.coverageAccepted == null && appointment.status !== 'Cancelled' && appointment.status !== 'NoShow') {
+                  <ui-button [loading]="pending() === 'coverage:' + appointment.id + ':true'" (click)="review(appointment, true)">Es correcto</ui-button>
+                  <ui-button variant="outlined" [loading]="pending() === 'coverage:' + appointment.id + ':false'" (click)="review(appointment, false)">No coincide</ui-button>
+                }
                 @if (appointment.status === 'Booked') { <ui-button [loading]="pending() === 'checkin:' + appointment.id" (click)="checkIn(appointment)">Admitir</ui-button> }
                 @if (appointment.status === 'Booked' || appointment.status === 'CheckedIn') {
                   <ui-button variant="ghost" [loading]="pending() === 'cancel:' + appointment.id" (click)="cancel(appointment)">Cancelar</ui-button>

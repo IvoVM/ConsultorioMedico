@@ -63,6 +63,8 @@ public class EmployeesService(ITenantUserStore users, IEmployeeStore employees, 
             command.LicenseNumber,
             command.Role == TenantRole.Doctor ? await SpecialtyNameAsync(command.SpecialtyId, ct) : null,
             ct);
+        if (command.Role == TenantRole.Doctor && command.InsurerIds is { Count: > 0 })
+            await employees.SetInsurersAsync(created.UserId, command.InsurerIds, ct);
         await audit.RecordAsync(currentUser.Id, "alta", "Empleado", created.UserId.ToString(), created.Email, ct);
         var employee = await employees.Employees.Where(e => e.UserId == created.UserId).ToEmployeeDtos().FirstAsync(ct);
         return new CreatedEmployeeAccountDto(employee, created.Password);
@@ -114,6 +116,7 @@ public class EmployeesService(ITenantUserStore users, IEmployeeStore employees, 
 
         await users.UpdateProfileAsync(id, firstName, lastName, email, command.Role, ct);
         await employees.UpdateAsync(id, license, specialtyId, ct);
+        await employees.SetInsurersAsync(id, command.Role == TenantRole.Doctor ? command.InsurerIds ?? [] : [], ct);
         await audit.RecordAsync(currentUser.Id, "edicion", "Empleado", id.ToString(), email, ct);
         return await employees.Employees.Where(e => e.UserId == id).ToEmployeeDtos().FirstAsync(ct);
     }

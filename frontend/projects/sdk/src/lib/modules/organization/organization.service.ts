@@ -13,6 +13,7 @@ import type { SaveMedicalServiceCommand } from './models/save-medical-service-co
 import type { SaveSpecialtyCommand } from './models/save-specialty-command';
 import type { SpecialtyDto } from './models/specialty-dto';
 import type { PrestacionesDto } from './models/prestacion-dto';
+import type { InsurerDto } from './models/insurer-dto';
 import type { SpecialtyRowDto } from './models/specialty-row-dto';
 
 @Injectable({ providedIn: 'root' })
@@ -71,5 +72,25 @@ export class OrganizationService extends ApiClient {
 
   updateAppointmentType(id: string, body: SaveAppointmentTypeCommand) {
     return this.http.put<AppointmentTypeDto>(`${this.base}/api/tipos-turno/${id}`, body);
+  }
+
+  insurersPage(query: ListParams) {
+    return this.http.get<PageDto<InsurerDto>>(`${this.base}/api/obras-sociales${queryString(query)}`);
+  }
+
+  enabledInsurers() {
+    return this.http.get<InsurerDto[]>(`${this.base}/api/obras-sociales/permitidas`);
+  }
+
+  professionalInsurers(professionalId: string) {
+    return this.http.get<InsurerDto[]>(`${this.base}/api/profesionales/${professionalId}/obras-sociales`);
+  }
+
+  createInsurer(name: string) {
+    return this.http.post<InsurerDto>(`${this.base}/api/obras-sociales`, { name });
+  }
+
+  setInsurerEnabled(id: string, enabled: boolean) {
+    return this.http.put<InsurerDto>(`${this.base}/api/obras-sociales/${id}/estado`, { enabled });
   }
 }

@@ -112,6 +112,20 @@ public class EmployeeStore(TenantDbContext db) : IEmployeeStore
         employee.IsActive = active;
         await db.SaveChangesAsync(ct);
     }
+
+    public async Task SetInsurersAsync(Guid userId, IReadOnlyList<Guid> insurerIds, CancellationToken ct)
+    {
+        var employee = await db.Employees.Include(e => e.Insurers).FirstOrDefaultAsync(e => e.UserId == userId, ct)
+            ?? throw new NotFoundException("Empleado no encontrado.");
+        var wanted = insurerIds.Distinct().ToList();
+        var insurers = await db.Insurers.Where(i => wanted.Contains(i.Id) && i.Enabled).ToListAsync(ct);
+        if (insurers.Count != wanted.Count)
+            throw new BusinessRuleException("Alguna obra social no está permitida.");
+        employee.Insurers.Clear();
+        foreach (var insurer in insurers)
+            employee.Insurers.Add(insurer);
+        await db.SaveChangesAsync(ct);
+    }
 }
 
 public class OrganizationStore(TenantDbContext db) : IOrganizationStore
@@ -164,6 +178,18 @@ public class OrganizationStore(TenantDbContext db) : IOrganizationStore
         await db.SaveChangesAsync(ct);
         return type;
     }
+
+    public IQueryable<Insurer> Insurers => db.Insurers.AsNoTracking();
+
+    public async Task<Insurer> AddInsurerAsync(Insurer insurer, CancellationToken ct)
+    {
+        db.Insurers.Add(insurer);
+        await db.SaveChangesAsync(ct);
+        return insurer;
+    }
+
+    public Task<Insurer?> GetInsurerAsync(Guid id, CancellationToken ct) =>
+        db.Insurers.FirstOrDefaultAsync(i => i.Id == id, ct);
 
     public Task SaveAsync(CancellationToken ct) => db.SaveChangesAsync(ct);
 }

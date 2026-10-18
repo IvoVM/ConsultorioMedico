@@ -72,4 +72,25 @@ public class OrganizationController(OrganizationService organization) : ApiContr
     [HttpPut("profesionales/{id:guid}/especialidad")]
     public Task<IActionResult> AssignSpecialty(Guid id, AssignSpecialtyCommand command, CancellationToken ct) =>
         Run(() => organization.AssignSpecialtyAsync(id, command, ct));
+
+    [AllowAnonymous]
+    [HttpGet("profesionales/{id:guid}/obras-sociales")]
+    public Task<IActionResult> ProfessionalInsurers(Guid id, CancellationToken ct) =>
+        Run(() => organization.ProfessionalInsurersAsync(id, ct));
+
+    [HttpGet("obras-sociales")]
+    public Task<IActionResult> Insurers([FromQuery] ListQuery query, CancellationToken ct) =>
+        Run(() => organization.ListInsurersAsync(query, ct));
+
+    [HttpGet("obras-sociales/permitidas")]
+    public Task<IActionResult> EnabledInsurers(CancellationToken ct) =>
+        Run(() => organization.EnabledInsurersAsync(ct));
+
+    [HttpPost("obras-sociales")]
+    public Task<IActionResult> CreateInsurer(SaveInsurerCommand command, CancellationToken ct) =>
+        Run(() => organization.CreateInsurerAsync(command, ct));
+
+    [HttpPut("obras-sociales/{id:guid}/estado")]
+    public Task<IActionResult> SetInsurerEnabled(Guid id, SetInsurerEnabledCommand command, CancellationToken ct) =>
+        Run(() => organization.SetInsurerEnabledAsync(id, command.Enabled, ct));
 }

@@ -18,6 +18,7 @@ export class ShellPage {
         children: [
           { label: 'Servicios', path: '/organizacion/servicios' },
           { label: 'Especialidades', path: '/organizacion/especialidades' },
+          { label: 'Obras sociales', path: '/organizacion/obras-sociales' },
         ],
       },
       {

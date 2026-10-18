@@ -13,4 +13,5 @@ public class Employee
 
     public virtual TenantUser User { get; set; } = null!;
     public virtual Specialty? Specialty { get; set; }
+    public virtual ICollection<Insurer> Insurers { get; set; } = [];
 }

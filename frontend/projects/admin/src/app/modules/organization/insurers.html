@@ -1,0 +1,58 @@
+<h2 class="mb-6 font-serif text-2xl tracking-tight">Obras sociales</h2>
+<screen-note
+  screen="Obras sociales"
+  loading="Estás eligiendo qué obras sociales puede ofrecer la clínica."
+  reason="El paciente solo ve una obra social si está permitida acá y el médico está afiliado a ella."
+  skip="Si ninguna está permitida, los turnos se reservan como particular."
+/>
+
+<div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+  <ui-field class="sm:w-80" label="Buscar">
+    <input type="search" name="query" [ngModel]="query()" (ngModelChange)="onSearch($event)" placeholder="Nombre o estado" />
+  </ui-field>
+  <ui-button (click)="creating.set(true); error.set('')">Agregar</ui-button>
+</div>
+
+@if (error() && !creating()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
+
+@if (loading()) {
+  <ui-skeleton label="Cargando obras sociales" />
+} @else if (!total()) {
+  <ui-empty [message]="query() ? 'Ninguna obra social coincide con esa búsqueda.' : 'Todavía no hay obras sociales.'" />
+} @else {
+  <ui-table>
+    <thead>
+      <tr>
+        <th><button type="button" sortCol [on]="sort().key === 'name'" [dir]="sort().dir" (click)="sortBy('name')">Obra social</button></th>
+        <th><button type="button" sortCol [on]="sort().key === 'status'" [dir]="sort().dir" (click)="sortBy('status')">Estado</button></th>
+        <th class="w-px"></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (item of rows(); track item.id) {
+        <tr>
+          <td class="font-serif text-lg">{{ item.name }}</td>
+          <td><ui-badge [tone]="item.enabled ? 'ok' : 'muted'">{{ item.enabled ? 'Permitida' : 'No permitida' }}</ui-badge></td>
+          <td class="w-px whitespace-nowrap">
+            <ui-button variant="outlined" [loading]="pending() === item.id" (click)="toggle(item)">{{ item.enabled ? 'Quitar' : 'Permitir' }}</ui-button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </ui-table>
+  <table-pager [total]="total()" [page]="page()" (pageChange)="go($event)" />
+}
+
+@if (creating()) {
+  <ui-modal [open]="true" title="Agregar obra social" (closed)="creating.set(false)">
+    <form class="flex flex-col gap-4" (ngSubmit)="create()">
+      <p class="text-sm text-ink/70">Queda permitida. Después, en el empleado médico, se marca si está afiliado.</p>
+      <ui-field label="Nombre"><input name="name" required maxlength="120" [(ngModel)]="name" /></ui-field>
+      @if (error()) { <p class="text-sm text-pulse" role="alert">{{ error() }}</p> }
+      <div class="flex flex-wrap gap-3">
+        <ui-button type="submit" [loading]="saving()">Agregar</ui-button>
+        <ui-button variant="outlined" [disabled]="saving()" (click)="creating.set(false)">Cancelar</ui-button>
+      </div>
+    </form>
+  </ui-modal>
+}

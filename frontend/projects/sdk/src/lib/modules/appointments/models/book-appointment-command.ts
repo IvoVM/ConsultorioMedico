@@ -6,4 +6,6 @@ export interface BookAppointmentCommand {
   appointmentTypeId: string;
   start: string;
   visitReason?: string | null;
+  insurerId?: string | null;
+  memberNumber?: string | null;
 }

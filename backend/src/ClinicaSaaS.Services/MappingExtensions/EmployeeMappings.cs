@@ -14,5 +14,6 @@ public static class EmployeeMappings
             e.LicenseNumber,
             e.Specialty != null ? e.Specialty.Name : null,
             e.SpecialtyId,
-            e.IsActive));
+            e.IsActive,
+            e.Insurers.Select(i => i.Id).ToArray()));
 }
