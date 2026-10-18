@@ -1,0 +1,7 @@
+<button type="button" class="trigger" #trigger [attr.popovertarget]="many() ? menuId : null" [attr.aria-expanded]="open()" aria-haspopup="menu">
+  Acciones
+  <ui-icon [name]="open() ? 'expand_less' : 'expand_more'" [size]="18" />
+</button>
+<div #panel class="panel" role="menu" (toggle)="onToggle($event)" (click)="close()">
+  <ng-content />
+</div>

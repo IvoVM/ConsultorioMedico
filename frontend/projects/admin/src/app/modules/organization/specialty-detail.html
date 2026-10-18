@@ -58,9 +58,11 @@
                 }
               </td>
               <td class="w-px whitespace-nowrap">
-                <button type="button" class="text-link mr-3" (click)="openDuration(row)">Duración</button>
-                <button type="button" class="text-link mr-3" (click)="openPrice(row)">{{ row.particular != null ? 'Precio' : 'Cargar precio' }}</button>
-                <button type="button" class="text-link" (click)="openPrice(row, '', true)">Obra social</button>
+                <ui-actions>
+                  <button type="button" class="text-link" (click)="openDuration(row)">Duración</button>
+                  <button type="button" class="text-link" (click)="openPrice(row)">{{ row.particular != null ? 'Precio' : 'Cargar precio' }}</button>
+                  <button type="button" class="text-link" (click)="openPrice(row, '', true)">Obra social</button>
+                </ui-actions>
               </td>
             </tr>
           }

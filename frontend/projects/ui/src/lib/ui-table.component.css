@@ -1,0 +1,60 @@
+:host {
+  display: block;
+}
+
+.frame {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.scroller {
+  min-width: 0;
+  flex: 1;
+  overflow-x: auto;
+  border: 1px solid var(--color-rule, #d3ddd7);
+  background: #fff;
+}
+
+.arrow {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2.5rem;
+  border: 1px solid var(--color-rule, #d3ddd7);
+  background: #fff;
+  color: var(--color-clinic-deep, #124a38);
+  cursor: pointer;
+}
+
+.arrow:disabled {
+  cursor: default;
+  opacity: 0.35;
+}
+
+.arrow:not(:disabled):hover {
+  background: var(--color-paper, #f3f6f4);
+}
+
+:host ::ng-deep th:first-child,
+:host ::ng-deep td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: #fff;
+}
+
+:host ::ng-deep thead th:first-child {
+  z-index: 2;
+}
+
+:host.is-scrolled ::ng-deep th:first-child,
+:host.is-scrolled ::ng-deep td:first-child {
+  box-shadow: 6px 0 8px -6px rgb(20 40 30 / 0.28);
+}
+
+:host ::ng-deep tbody tr:hover td:first-child {
+  background: var(--color-paper, #f3f6f4);
+}

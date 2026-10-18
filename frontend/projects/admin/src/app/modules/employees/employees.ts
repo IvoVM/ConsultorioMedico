@@ -10,7 +10,7 @@ import {
   TenantRole,
   errorMessage,
 } from 'sdk';
-import { SelectOption, UiBadge, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable } from 'ui';
+import { SelectOption, UiActions, UiBadge, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { ScreenNote } from '../../screen-note';
 import { TablePager, listParams, queueSearch } from '../../table-pager';
@@ -41,7 +41,7 @@ interface PreviewRow {
 }
 
 @Component({
-  imports: [FormsModule, ScreenNote, SortCol, TablePager, UiBadge, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable],
+  imports: [FormsModule, ScreenNote, SortCol, TablePager, UiActions, UiBadge, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable],
   templateUrl: './employees.html',
 })
 export class EmployeesPage {

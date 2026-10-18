@@ -53,8 +53,8 @@
             </td>
             <td>{{ appointment.professional }}</td>
             <td><ui-badge>{{ statusLabels[appointment.status] }}</ui-badge></td>
-            <td>
-              <div class="flex flex-wrap gap-2">
+            <td class="whitespace-nowrap">
+              <ui-actions>
                 @if (appointment.insurer && appointment.coverageAccepted == null && appointment.status !== 'Cancelled' && appointment.status !== 'NoShow') {
                   <ui-button [loading]="pending() === 'coverage:' + appointment.id + ':true'" (click)="review(appointment, true)">Es correcto</ui-button>
                   <ui-button variant="outlined" [loading]="pending() === 'coverage:' + appointment.id + ':false'" (click)="review(appointment, false)">No coincide</ui-button>
@@ -63,7 +63,7 @@
                 @if (appointment.status === 'Booked' || appointment.status === 'CheckedIn') {
                   <ui-button variant="ghost" [loading]="pending() === 'cancel:' + appointment.id" (click)="cancel(appointment)">Cancelar</ui-button>
                 }
-              </div>
+              </ui-actions>
             </td>
           </tr>
         }
@@ -124,13 +124,13 @@
             <td>{{ item.patient }}</td>
             <td class="tabular-nums">{{ item.total }}</td>
             <td>{{ invoiceStatusLabels[item.status] }}</td>
-            <td>
+            <td class="whitespace-nowrap">
               @if (item.status === 'Pending') {
-                <div class="flex flex-wrap gap-2">
+                <ui-actions>
                   <ui-button [loading]="pending() === 'pay:' + item.id + ':Cash'" (click)="pay(item, 'Cash')">Efectivo</ui-button>
                   <ui-button variant="ghost" [loading]="pending() === 'pay:' + item.id + ':Transfer'" (click)="pay(item, 'Transfer')">Transferencia</ui-button>
                   <ui-button variant="ghost" [loading]="pending() === 'pay:' + item.id + ':Card'" (click)="pay(item, 'Card')">Tarjeta</ui-button>
-                </div>
+                </ui-actions>
               }
             </td>
           </tr>

@@ -49,8 +49,10 @@
           <td>{{ person.specialty || '—' }}</td>
           <td><ui-badge [tone]="person.active ? 'ok' : 'warn'">{{ person.active ? 'Activo' : 'De baja' }}</ui-badge></td>
           <td class="w-px whitespace-nowrap">
-            <button type="button" class="text-link" (click)="edit(person)">Editar</button>
-            <button type="button" class="text-link ml-4" (click)="askStatus(person)">{{ person.active ? 'Dar de baja' : 'Dar de alta' }}</button>
+            <ui-actions>
+              <button type="button" class="text-link" (click)="edit(person)">Editar</button>
+              <button type="button" class="text-link" (click)="askStatus(person)">{{ person.active ? 'Dar de baja' : 'Dar de alta' }}</button>
+            </ui-actions>
           </td>
         </tr>
       }

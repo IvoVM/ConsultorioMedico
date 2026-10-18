@@ -1,0 +1,83 @@
+:host {
+  display: inline-flex;
+  align-items: center;
+}
+
+.trigger {
+  display: none;
+  align-items: center;
+  gap: 0.1rem;
+  color: var(--color-clinic-deep, #124a38);
+  font-size: 1.1875rem;
+  font-weight: 700;
+  line-height: 1.45;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--color-clinic, #1b6b52) 30%, transparent);
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+.trigger:hover {
+  text-decoration-color: var(--color-clinic, #1b6b52);
+}
+
+:host.is-many .trigger {
+  display: inline-flex;
+}
+
+.panel {
+  display: inline-flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+:host.is-many .panel {
+  display: none;
+  min-width: 11rem;
+  margin: 0;
+  padding: 0.25rem 0;
+  border: 1px solid var(--color-rule, #d3ddd7);
+  background: #fff;
+  box-shadow: 0 10px 24px rgb(20 40 30 / 0.12);
+}
+
+:host.is-many .panel:popover-open {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  inset: auto;
+  width: max-content;
+  height: auto;
+}
+
+:host.is-many ::ng-deep .panel > button,
+:host.is-many ::ng-deep .panel > a,
+:host.is-many ::ng-deep .panel > ui-button,
+:host.is-many ::ng-deep .panel > ui-button button {
+  display: flex;
+  width: 100%;
+  min-height: 2.4rem;
+  align-items: center;
+  justify-content: flex-start;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+  padding: 0.4rem 0.9rem;
+  color: var(--color-clinic-deep, #124a38);
+  font-size: 1.1875rem;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+:host.is-many ::ng-deep .panel > button:hover,
+:host.is-many ::ng-deep .panel > a:hover,
+:host.is-many ::ng-deep .panel > ui-button button:hover {
+  background: var(--color-paper, #f3f6f4);
+  transform: none;
+}
