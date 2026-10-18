@@ -1,6 +1,10 @@
 <header class="mb-6">
   <h2 class="font-serif text-3xl tracking-tight">Hoy en el consultorio</h2>
   <p class="mt-1 text-ink/70">{{ dayLabel }}@if (!loading()) { <span> · {{ appointments().length }} {{ appointments().length === 1 ? 'turno' : 'turnos' }}</span> }</p>
+  <p class="mt-2 max-w-prose text-sm leading-relaxed text-ink/70">
+    Cada fila es un turno de este día: la hora, el paciente, el profesional y el estado de esa reserva.
+    Debajo del profesional está la cobertura elegida al reservar: particular, o la obra social con el número de afiliado.
+  </p>
 </header>
 <nav class="mb-8 flex flex-wrap gap-x-6 gap-y-2">
   <a routerLink="/pacientes" class="text-link">Pacientes</a>
