@@ -26,6 +26,13 @@ public enum WaitlistStatus
     Cancelled
 }
 
+public enum BookingRequestStatus
+{
+    Pending,
+    Approved,
+    Rejected
+}
+
 public enum PaymentMethod
 {
     Cash,

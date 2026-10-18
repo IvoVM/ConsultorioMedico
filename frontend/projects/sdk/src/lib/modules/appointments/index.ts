@@ -8,3 +8,4 @@ export * from './models/reschedule-appointment-command';
 export * from './models/waitlist-entry-dto';
 export * from './models/create-waitlist-entry-command';
 export * from './models/assign-waitlist-entry-command';
+export * from './models/booking-request-dto';

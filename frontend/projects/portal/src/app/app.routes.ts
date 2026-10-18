@@ -11,7 +11,7 @@ export const routes: Routes = [
     path: '',
     loadComponent: () => import('./modules/shell/shell').then((m) => m.ShellPage),
     children: [
-      { path: 'reservar', loadComponent: () => import('./modules/appointments/book-appointment').then((m) => m.BookAppointmentPage) },
+      { path: 'reservar', loadComponent: () => import('./modules/appointments/request-appointment').then((m) => m.RequestAppointmentPage) },
       {
         path: '',
         canActivate: [authGuard],
@@ -32,6 +32,11 @@ export const routes: Routes = [
             path: 'recetas',
             canActivate: [roleGuard('Patient')],
             loadComponent: () => import('./modules/prescriptions/prescriptions').then((m) => m.PrescriptionsPage),
+          },
+          {
+            path: 'reservar/paciente',
+            canActivate: [roleGuard('Secretary', 'TenantAdmin')],
+            loadComponent: () => import('./modules/appointments/book-appointment').then((m) => m.BookAppointmentPage),
           },
           {
             path: 'secretaria',

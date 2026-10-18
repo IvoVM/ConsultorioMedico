@@ -1,0 +1,124 @@
+<section class="request">
+  @if (step() !== 'done') {
+    <p class="kicker">Paso {{ stepIndex() }} de {{ steps().length }}</p>
+  }
+  <h1>{{ question() }}</h1>
+  <p class="hint">{{ hint() }}</p>
+
+  @if (error()) { <p class="mt-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
+
+  @if (loading() && step() !== 'specialty') {
+    <ui-skeleton class="mt-8" label="Buscando horarios" />
+  } @else {
+    @switch (step()) {
+      @case ('specialty') {
+        @if (loading()) {
+          <ui-skeleton class="mt-8" label="Cargando especialidades" />
+        } @else if (!specialties().length) {
+          <ui-empty message="Todavía no hay especialidades para reservar." />
+        } @else {
+          <div class="choices">
+            @for (item of specialties(); track item.id) {
+              <button type="button" (click)="pickSpecialty(item.id)">{{ item.name }}</button>
+            }
+          </div>
+        }
+      }
+      @case ('day') {
+        <div class="month">
+          <div class="month-nav">
+            <button type="button" [disabled]="!canGoBackMonth()" (click)="shiftMonth(-1)" aria-label="Mes anterior">←</button>
+            <p>{{ monthTitle() }}</p>
+            <button type="button" (click)="shiftMonth(1)" aria-label="Mes siguiente">→</button>
+          </div>
+          <div class="weekdays" aria-hidden="true"><span>Lu</span><span>Ma</span><span>Mi</span><span>Ju</span><span>Vi</span><span>Sá</span><span>Do</span></div>
+          <div class="month-grid">
+            @for (cell of cells(); track $index) {
+              @if (cell) {
+                <button type="button" [disabled]="!cell.open" [class.is-open]="cell.open" (click)="pickDay(cell.iso)">{{ cell.day }}</button>
+              } @else {
+                <span></span>
+              }
+            }
+          </div>
+          @if (!openDays().length) {
+            <p class="mt-4 text-sm text-ink/70">Este mes no tiene horarios libres para {{ specialtyName() }}.</p>
+          }
+        </div>
+      }
+      @case ('time') {
+        @if (!slots().length) {
+          <ui-empty message="Ese día ya no tiene horarios libres." />
+        } @else {
+          <div class="times">
+            @for (item of slots(); track item.start + item.professionalId) {
+              <button type="button" (click)="pickSlot(item)">
+                <strong>{{ time(item.start) }}</strong>
+                <span>{{ item.professional }}</span>
+              </button>
+            }
+          </div>
+        }
+      }
+      @case ('name') {
+        <form class="ask" (ngSubmit)="continueName()">
+          <ui-field label="Nombre y apellido"><input name="name" [(ngModel)]="name" autocomplete="name" required /></ui-field>
+          <ui-button type="submit">Continuar</ui-button>
+        </form>
+      }
+      @case ('phone') {
+        <form class="ask" (ngSubmit)="continuePhone()">
+          <ui-field label="Teléfono"><input name="phone" [(ngModel)]="phone" autocomplete="tel" required /></ui-field>
+          <ui-button type="submit">Continuar</ui-button>
+        </form>
+      }
+      @case ('coverage') {
+        <div class="choices">
+          <button type="button" (click)="pickCoverage('particular')">No, voy como particular</button>
+          @if (insurers().length) {
+            <button type="button" (click)="pickCoverage('obra')">Sí, tengo obra social</button>
+          }
+        </div>
+      }
+      @case ('insurer') {
+        <div class="choices">
+          @for (item of insurers(); track item.id) {
+            <button type="button" (click)="pickInsurer(item.id)">{{ item.name }}</button>
+          }
+        </div>
+      }
+      @case ('member') {
+        <form class="ask" (ngSubmit)="continueMember()">
+          <ui-field label="Número de afiliado"><input name="memberNumber" [(ngModel)]="memberNumber" required maxlength="40" /></ui-field>
+          <ui-button type="submit">Continuar</ui-button>
+        </form>
+      }
+      @case ('review') {
+        @if (slot(); as chosen) {
+          <dl class="summary">
+            <div><dt>Especialidad</dt><dd>{{ specialtyName() }}</dd></div>
+            <div><dt>Cuándo</dt><dd>{{ when(chosen.start) }}</dd></div>
+            <div><dt>Profesional</dt><dd>{{ chosen.professional }}</dd></div>
+            <div><dt>Nombre</dt><dd>{{ name }}</dd></div>
+            <div><dt>Teléfono</dt><dd>{{ phone }}</dd></div>
+            <div><dt>Cobertura</dt><dd>{{ coverage === 'obra' ? insurerName() + ' · ' + memberNumber : 'Particular' }}</dd></div>
+          </dl>
+          <ui-button [loading]="sending()" (click)="send()">Enviar solicitud</ui-button>
+        }
+      }
+      @case ('done') {
+        <div class="mt-8 flex flex-wrap gap-4">
+          @if (session.token()) {
+            <a routerLink="/panel" class="action-link">Volver al inicio</a>
+          } @else {
+            <a routerLink="/ingreso" class="action-link">Volver</a>
+          }
+        </div>
+      }
+    }
+  }
+
+  @if (step() !== 'specialty' && step() !== 'done' && !loading()) {
+    <button type="button" class="back" (click)="back()">Atrás</button>
+  }
+</section>

@@ -42,4 +42,8 @@ export class ScheduleService extends ApiClient {
   availability(query: { locationId: string; specialtyId: string; professionalId?: string; date: string }) {
     return this.http.get<SlotDto[]>(`${this.base}/api/disponibilidad${queryString(query)}`);
   }
+
+  openDays(query: { specialtyId: string; year: number; month: number; locationId?: string }) {
+    return this.http.get<string[]>(`${this.base}/api/disponibilidad/dias${queryString(query)}`);
+  }
 }

@@ -7,6 +7,7 @@ import type { AssignWaitlistEntryCommand } from './models/assign-waitlist-entry-
 import type { BookAppointmentCommand } from './models/book-appointment-command';
 import type { CreateWaitlistEntryCommand } from './models/create-waitlist-entry-command';
 import type { RescheduleAppointmentCommand } from './models/reschedule-appointment-command';
+import type { BookingRequestDto, CreateBookingRequestCommand } from './models/booking-request-dto';
 import type { WaitlistEntryDto } from './models/waitlist-entry-dto';
 
 @Injectable({ providedIn: 'root' })
@@ -57,5 +58,21 @@ export class AppointmentsService extends ApiClient {
 
   offerWaitlist(id: string) {
     return this.http.post<AppointmentDto>(`${this.base}/api/lista-espera/${id}/ofrecer`, {});
+  }
+
+  createRequest(body: CreateBookingRequestCommand) {
+    return this.http.post<BookingRequestDto>(`${this.base}/api/solicitudes`, body);
+  }
+
+  pendingRequests() {
+    return this.http.get<BookingRequestDto[]>(`${this.base}/api/solicitudes`);
+  }
+
+  approveRequest(id: string) {
+    return this.http.post<AppointmentDto>(`${this.base}/api/solicitudes/${id}/aprobar`, {});
+  }
+
+  rejectRequest(id: string) {
+    return this.http.post<void>(`${this.base}/api/solicitudes/${id}/rechazar`, {});
   }
 }

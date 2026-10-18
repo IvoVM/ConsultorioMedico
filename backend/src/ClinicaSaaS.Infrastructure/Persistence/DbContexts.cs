@@ -21,6 +21,7 @@ public class TenantDbContext(DbContextOptions<TenantDbContext> options)
     public DbSet<Client> Clients => Set<Client>();
     public DbSet<MedicalRecord> MedicalRecords => Set<MedicalRecord>();
     public DbSet<Appointment> Appointments => Set<Appointment>();
+    public DbSet<BookingRequest> BookingRequests => Set<BookingRequest>();
     public DbSet<WaitlistEntry> WaitlistEntries => Set<WaitlistEntry>();
     public DbSet<Diagnosis> Diagnoses => Set<Diagnosis>();
     public DbSet<Encounter> Encounters => Set<Encounter>();
@@ -132,6 +133,21 @@ public class TenantDbContext(DbContextOptions<TenantDbContext> options)
             e.HasOne(a => a.Professional).WithMany(u => u.Appointments).HasForeignKey(a => a.ProfessionalId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(a => a.Location).WithMany(l => l.Appointments).HasForeignKey(a => a.LocationId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(a => a.AppointmentType).WithMany(t => t.Appointments).HasForeignKey(a => a.AppointmentTypeId).OnDelete(DeleteBehavior.Restrict);
+        });
+        builder.Entity<BookingRequest>(e =>
+        {
+            e.Property(r => r.Status).HasConversion<string>().HasMaxLength(20);
+            e.Property(r => r.Name).HasMaxLength(160);
+            e.Property(r => r.Phone).HasMaxLength(30);
+            e.Property(r => r.MemberNumber).HasMaxLength(40);
+            e.HasIndex(r => new { r.Status, r.Start });
+            e.HasOne(r => r.Specialty).WithMany().HasForeignKey(r => r.SpecialtyId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(r => r.Professional).WithMany().HasForeignKey(r => r.ProfessionalId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(r => r.Location).WithMany().HasForeignKey(r => r.LocationId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(r => r.AppointmentType).WithMany().HasForeignKey(r => r.AppointmentTypeId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(r => r.Insurer).WithMany().HasForeignKey(r => r.InsurerId).OnDelete(DeleteBehavior.SetNull);
+            e.HasOne(r => r.Client).WithMany().HasForeignKey(r => r.ClientId).OnDelete(DeleteBehavior.SetNull);
+            e.HasOne(r => r.Appointment).WithMany().HasForeignKey(r => r.AppointmentId).OnDelete(DeleteBehavior.SetNull);
         });
         builder.Entity<WaitlistEntry>(e =>
         {

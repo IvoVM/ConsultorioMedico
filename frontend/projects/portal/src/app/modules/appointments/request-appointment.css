@@ -1,0 +1,172 @@
+:host {
+  display: block;
+}
+
+.request {
+  max-width: 36rem;
+}
+
+.kicker {
+  font-size: 0.875rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgb(23 51 44 / 0.55);
+}
+
+h1 {
+  margin-top: 0.4rem;
+  max-width: 16ch;
+  font-family: var(--font-serif);
+  font-size: clamp(2.2rem, 5vw, 3.4rem);
+  font-weight: 500;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+
+.hint {
+  margin-top: 0.8rem;
+  max-width: 36ch;
+  color: rgb(23 51 44 / 0.72);
+}
+
+.choices,
+.times {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 1.75rem;
+}
+
+.choices button,
+.times button {
+  display: flex;
+  width: 100%;
+  cursor: pointer;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  background: white;
+  padding: 0.95rem 1rem;
+  text-align: left;
+  box-shadow: inset 0 0 0 1px var(--color-rule);
+}
+
+.choices button {
+  font-family: var(--font-serif);
+  font-size: 1.35rem;
+}
+
+.times button strong {
+  font-family: var(--font-serif);
+  font-size: 1.45rem;
+  font-weight: 500;
+}
+
+.times button span,
+.choices button:hover,
+.times button:hover {
+  color: rgb(23 51 44 / 0.72);
+}
+
+.choices button:hover,
+.times button:hover,
+.month-grid button.is-open:hover {
+  background: var(--color-clinic-wash);
+}
+
+.ask {
+  display: grid;
+  gap: 1rem;
+  max-width: 24rem;
+  margin-top: 1.75rem;
+}
+
+.month {
+  margin-top: 1.75rem;
+}
+
+.month-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.month-nav p {
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+}
+
+.month-nav button,
+.back {
+  cursor: pointer;
+  background: transparent;
+  color: var(--color-clinic);
+}
+
+.month-nav button:disabled {
+  cursor: default;
+  color: rgb(23 51 44 / 0.28);
+}
+
+.weekdays,
+.month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+
+.weekdays {
+  margin-top: 1rem;
+  color: rgb(23 51 44 / 0.5);
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.month-grid {
+  margin-top: 0.4rem;
+}
+
+.month-grid button {
+  aspect-ratio: 1;
+  background: white;
+  color: rgb(23 51 44 / 0.35);
+  box-shadow: inset 0 0 0 1px var(--color-rule);
+}
+
+.month-grid button.is-open {
+  cursor: pointer;
+  color: var(--color-ink);
+  font-weight: 650;
+  box-shadow: inset 0 0 0 1.5px var(--color-clinic);
+}
+
+.month-grid button:disabled {
+  cursor: default;
+}
+
+.summary {
+  display: grid;
+  gap: 0.8rem;
+  margin: 1.75rem 0;
+}
+
+.summary div {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.summary dt {
+  color: rgb(23 51 44 / 0.55);
+  font-size: 0.85rem;
+}
+
+.summary dd {
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+}
+
+.back {
+  margin-top: 1.5rem;
+  padding: 0;
+  font-size: 0.95rem;
+}

@@ -59,6 +59,8 @@ public record SlotDto(Guid ProfessionalId, string Professional, Guid LocationId,
 public record AvailabilityQuery(Guid LocationId, Guid SpecialtyId, Guid? ProfessionalId, DateOnly Date);
 
 public record BookAppointmentCommand(Guid? PatientId, Guid ProfessionalId, Guid LocationId, Guid AppointmentTypeId, DateTimeOffset Start, string? VisitReason, Guid? InsurerId = null, string? MemberNumber = null);
+public record CreateBookingRequestCommand(Guid SpecialtyId, Guid ProfessionalId, Guid LocationId, Guid AppointmentTypeId, DateTimeOffset Start, string Name, string Phone, Guid? InsurerId, string? MemberNumber);
+public record BookingRequestDto(Guid Id, string Name, string Phone, string Specialty, string Professional, string AppointmentType, DateTimeOffset Start, string? Insurer, string? MemberNumber);
 public record ReviewCoverageCommand(bool Accepted);
 public record InsurerDto(Guid Id, string Name, bool Enabled);
 public record SaveInsurerCommand(string Name);

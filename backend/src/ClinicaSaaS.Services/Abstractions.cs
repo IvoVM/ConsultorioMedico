@@ -112,6 +112,14 @@ public interface IMedicalRecordStore
     Task SaveAsync(CancellationToken ct);
 }
 
+public interface IBookingRequestStore
+{
+    IQueryable<BookingRequest> Entries { get; }
+    Task<BookingRequest> AddAsync(BookingRequest request, CancellationToken ct);
+    Task<BookingRequest?> GetAsync(Guid id, CancellationToken ct);
+    Task SaveAsync(CancellationToken ct);
+}
+
 public interface IWaitlistStore
 {
     IQueryable<WaitlistEntry> Entries { get; }

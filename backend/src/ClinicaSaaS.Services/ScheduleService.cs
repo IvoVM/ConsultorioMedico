@@ -13,6 +13,8 @@ public class ScheduleService(
     IEmployeeStore employees,
     IClientStore clients,
     IWaitlistStore waitlist,
+    IBookingRequestStore requests,
+    ITenantUserStore users,
     IMedicalRecordStore records,
     ITimeZoneProvider timeZone,
     ICurrentUser currentUser,
@@ -139,6 +141,10 @@ public class ScheduleService(
             .Where(b => ids.Contains(b.ProfessionalId) && b.Start < dayEnd && b.End > dayStart)
             .Select(b => new BusyInterval { ProfessionalId = b.ProfessionalId, Start = b.Start, End = b.End })
             .ToListAsync(ct);
+        var holds = await requests.Entries
+            .Where(r => r.Status == BookingRequestStatus.Pending && ids.Contains(r.ProfessionalId) && r.Start < dayEnd && r.End > dayStart)
+            .Select(r => new BusyInterval { ProfessionalId = r.ProfessionalId, Start = r.Start, End = r.End })
+            .ToListAsync(ct);
 
         var result = new List<SlotDto>();
         foreach (var group in openings.GroupBy(o => o.ProfessionalId))
@@ -147,6 +153,7 @@ public class ScheduleService(
                 .Where(b => b.ProfessionalId == group.Key && b.Status is AppointmentStatus status && SchedulingRules.CountsAsBusy(status))
                 .Select(b => new TimeRange(b.Start, b.End))
                 .Concat(offs.Where(b => b.ProfessionalId == group.Key).Select(b => new TimeRange(b.Start, b.End)))
+                .Concat(holds.Where(b => b.ProfessionalId == group.Key).Select(b => new TimeRange(b.Start, b.End)))
                 .ToList();
             foreach (var opening in group)
             {
@@ -410,6 +417,221 @@ public class ScheduleService(
             .FirstOrDefaultAsync(ct);
         return insurerId is null ? (null, null) : (insurerId, record.MemberNumber.Trim());
     }
+
+    public async Task<IReadOnlyList<DateOnly>> OpenDaysAsync(Guid? locationId, Guid specialtyId, int year, int month, CancellationToken ct)
+    {
+        if (specialtyId == Guid.Empty)
+            throw new BusinessRuleException("Elegí una especialidad.");
+        if (month is < 1 or > 12)
+            throw new BusinessRuleException("Ese mes no existe.");
+        var locations = locationId is Guid id && id != Guid.Empty
+            ? new List<Guid> { id }
+            : await organization.Locations.Where(location => location.IsActive).Select(location => location.Id).ToListAsync(ct);
+        var start = new DateOnly(year, month, 1);
+        var count = DateTime.DaysInMonth(year, month);
+        var open = new List<DateOnly>();
+        var now = clock.GetUtcNow();
+        for (var day = 0; day < count; day++)
+        {
+            var date = start.AddDays(day);
+            foreach (var location in locations)
+            {
+                var slots = await AvailabilityAsync(new AvailabilityQuery(location, specialtyId, null, date), ct);
+                if (slots.Any(slot => slot.Start > now))
+                {
+                    open.Add(date);
+                    break;
+                }
+            }
+        }
+        return open;
+    }
+
+    public async Task<BookingRequestDto> CreateRequestAsync(CreateBookingRequestCommand command, CancellationToken ct)
+    {
+        var name = command.Name?.Trim() ?? "";
+        var phone = command.Phone?.Trim() ?? "";
+        if (command.SpecialtyId == Guid.Empty)
+            throw new BusinessRuleException("Elegí una especialidad.");
+        if (name.Length < 3 || !name.Contains(' '))
+            throw new BusinessRuleException("Escribí tu nombre y tu apellido.");
+        if (name.Length > 160)
+            throw new BusinessRuleException("El nombre es demasiado largo.");
+        if (phone.Count(char.IsDigit) < 6 || phone.Length > 30)
+            throw new BusinessRuleException("El teléfono no es válido.");
+        if (command.Start <= clock.GetUtcNow())
+            throw new BusinessRuleException("Ese horario ya pasó.");
+
+        var slots = await AvailabilityAsync(new AvailabilityQuery(command.LocationId, command.SpecialtyId, command.ProfessionalId, DateOnly.FromDateTime(command.Start.DateTime)), ct);
+        var slot = slots.FirstOrDefault(item => item.ProfessionalId == command.ProfessionalId && item.AppointmentTypeId == command.AppointmentTypeId && item.Start.UtcDateTime == command.Start.UtcDateTime)
+            ?? throw new ConflictException("Ese horario ya no está disponible.");
+
+        Guid? insurerId = null;
+        string? memberNumber = null;
+        if (command.InsurerId is Guid chosen)
+        {
+            memberNumber = command.MemberNumber?.Trim() ?? "";
+            if (memberNumber.Length == 0 || memberNumber.Length > 40)
+                throw new BusinessRuleException("Si usás obra social, el número de afiliado es obligatorio.");
+            var allowed = await employees.Employees
+                .Where(employee => employee.UserId == command.ProfessionalId && employee.IsActive && employee.User.Role == TenantRole.Doctor)
+                .SelectMany(employee => employee.Insurers)
+                .AnyAsync(insurer => insurer.Id == chosen && insurer.Enabled, ct);
+            if (!allowed)
+                throw new BusinessRuleException("Ese profesional no atiende por esa obra social.");
+            insurerId = chosen;
+        }
+        else if (!string.IsNullOrWhiteSpace(command.MemberNumber))
+        {
+            throw new BusinessRuleException("El número de afiliado es para cuando elegís obra social.");
+        }
+
+        Guid? clientId = null;
+        if (currentUser.Role == TenantRole.Patient.ToString() && currentUser.Id is Guid userId)
+            clientId = await clients.Clients.Where(client => client.UserId == userId).Select(client => (Guid?)client.Id).FirstOrDefaultAsync(ct);
+
+        var request = await requests.AddAsync(new BookingRequest
+        {
+            Id = Guid.NewGuid(),
+            Name = name,
+            Phone = phone,
+            SpecialtyId = command.SpecialtyId,
+            ProfessionalId = slot.ProfessionalId,
+            LocationId = slot.LocationId,
+            AppointmentTypeId = slot.AppointmentTypeId,
+            Start = slot.Start,
+            End = slot.End,
+            InsurerId = insurerId,
+            MemberNumber = memberNumber,
+            ClientId = clientId,
+            Status = BookingRequestStatus.Pending,
+            CreatedAt = clock.GetUtcNow()
+        }, ct);
+        await audit.RecordAsync(currentUser.Id, "solicitud", "Turno", request.Id.ToString(), name, ct);
+        return await LoadRequestAsync(request.Id, ct);
+    }
+
+    public async Task<IReadOnlyList<BookingRequestDto>> PendingRequestsAsync(CancellationToken ct) =>
+        await requests.Entries
+            .Where(request => request.Status == BookingRequestStatus.Pending)
+            .OrderBy(request => request.Start)
+            .Select(request => new BookingRequestDto(
+                request.Id,
+                request.Name,
+                request.Phone,
+                request.Specialty.Name,
+                (request.Professional.FirstName + " " + request.Professional.LastName).Trim(),
+                request.AppointmentType.Name,
+                request.Start,
+                request.Insurer != null ? request.Insurer.Name : null,
+                request.MemberNumber))
+            .ToListAsync(ct);
+
+    public async Task<AppointmentDto> ApproveRequestAsync(Guid id, CancellationToken ct)
+    {
+        var request = await requests.GetAsync(id, ct) ?? throw new NotFoundException("Esa solicitud no está.");
+        if (request.Status != BookingRequestStatus.Pending)
+            throw new BusinessRuleException("Esa solicitud ya fue resuelta.");
+
+        var clientId = await EnsureClientAsync(request, ct);
+        var appointment = await appointments.BookAsync(new Appointment
+        {
+            Id = Guid.NewGuid(),
+            ClientId = clientId,
+            ProfessionalId = request.ProfessionalId,
+            LocationId = request.LocationId,
+            AppointmentTypeId = request.AppointmentTypeId,
+            Start = request.Start,
+            End = request.End,
+            Status = AppointmentStatus.Booked,
+            InsurerId = request.InsurerId,
+            MemberNumber = request.MemberNumber
+        }, ct);
+        request.Status = BookingRequestStatus.Approved;
+        request.ClientId = clientId;
+        request.AppointmentId = appointment.Id;
+        await requests.SaveAsync(ct);
+        await audit.RecordAsync(currentUser.Id, "alta", "Turno", appointment.Id.ToString(), request.Name, ct);
+        return await LoadAppointmentAsync(appointment.Id, ct);
+    }
+
+    public async Task RejectRequestAsync(Guid id, CancellationToken ct)
+    {
+        var request = await requests.GetAsync(id, ct) ?? throw new NotFoundException("Esa solicitud no está.");
+        if (request.Status != BookingRequestStatus.Pending)
+            throw new BusinessRuleException("Esa solicitud ya fue resuelta.");
+        request.Status = BookingRequestStatus.Rejected;
+        await requests.SaveAsync(ct);
+        await audit.RecordAsync(currentUser.Id, "baja", "Turno", request.Id.ToString(), request.Name, ct);
+    }
+
+    private async Task<Guid> EnsureClientAsync(BookingRequest request, CancellationToken ct)
+    {
+        if (request.ClientId is Guid linked && await clients.GetAsync(linked, ct) is not null)
+            return linked;
+
+        var phone = request.Phone.Trim();
+        var parts = request.Name.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
+        var first = parts[0];
+        var last = parts.Length > 1 ? parts[1] : parts[0];
+        var known = await clients.Clients
+            .Where(client => client.Phone == phone)
+            .Select(client => new { client.Id, client.User.FirstName, client.User.LastName })
+            .FirstOrDefaultAsync(ct);
+        if (known is not null && SamePerson(known.FirstName, known.LastName, first, last))
+            return known.Id;
+
+        var document = phone;
+        if (await clients.Clients.AnyAsync(client => client.DocumentNumber == document, ct))
+            document = "S" + Guid.NewGuid().ToString("N")[..8];
+        var account = await users.CreateAsync(
+            $"solicitud.{Guid.NewGuid():N}@pacientes.local",
+            "Aa1" + Utilities.TemporaryPassword.Generate(),
+            first.Length > 80 ? first[..80] : first,
+            last.Length > 80 ? last[..80] : last,
+            TenantRole.Patient,
+            true,
+            ct);
+        var client = await clients.AddAsync(new Client
+        {
+            Id = Guid.NewGuid(),
+            UserId = account.Id,
+            DocumentNumber = document,
+            BirthDate = default,
+            Phone = phone
+        }, ct);
+        string? insurerName = null;
+        if (request.InsurerId is Guid insurerId)
+            insurerName = (await organization.GetInsurerAsync(insurerId, ct))?.Name;
+        records.Add(new MedicalRecord
+        {
+            Id = Guid.NewGuid(),
+            ClientId = client.Id,
+            HealthInsurance = insurerName,
+            MemberNumber = request.MemberNumber,
+            UpdatedAt = clock.GetUtcNow(),
+            UpdatedBy = currentUser.Id
+        });
+        await records.SaveAsync(ct);
+        return client.Id;
+    }
+
+    private static bool SamePerson(string first, string last, string otherFirst, string otherLast) =>
+        string.Equals($"{first} {last}".Trim(), $"{otherFirst} {otherLast}".Trim(), StringComparison.OrdinalIgnoreCase);
+
+    private Task<BookingRequestDto> LoadRequestAsync(Guid id, CancellationToken ct) =>
+        requests.Entries.Where(request => request.Id == id)
+            .Select(request => new BookingRequestDto(
+                request.Id,
+                request.Name,
+                request.Phone,
+                request.Specialty.Name,
+                (request.Professional.FirstName + " " + request.Professional.LastName).Trim(),
+                request.AppointmentType.Name,
+                request.Start,
+                request.Insurer != null ? request.Insurer.Name : null,
+                request.MemberNumber))
+            .FirstAsync(ct);
 
     private async Task<Client> ResolveClientAsync(Guid? patientId, CancellationToken ct)
     {

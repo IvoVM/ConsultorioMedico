@@ -289,6 +289,23 @@ public class MedicalRecordStore(TenantDbContext db) : IMedicalRecordStore
     public Task SaveAsync(CancellationToken ct) => db.SaveChangesAsync(ct);
 }
 
+public class BookingRequestStore(TenantDbContext db) : IBookingRequestStore
+{
+    public IQueryable<BookingRequest> Entries => db.BookingRequests.AsNoTracking();
+
+    public async Task<BookingRequest> AddAsync(BookingRequest request, CancellationToken ct)
+    {
+        db.BookingRequests.Add(request);
+        await db.SaveChangesAsync(ct);
+        return request;
+    }
+
+    public Task<BookingRequest?> GetAsync(Guid id, CancellationToken ct) =>
+        db.BookingRequests.FirstOrDefaultAsync(r => r.Id == id, ct);
+
+    public Task SaveAsync(CancellationToken ct) => db.SaveChangesAsync(ct);
+}
+
 public class WaitlistStore(TenantDbContext db) : IWaitlistStore
 {
     public IQueryable<WaitlistEntry> Entries => db.WaitlistEntries.AsNoTracking();

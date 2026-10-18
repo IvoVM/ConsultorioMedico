@@ -23,7 +23,7 @@
           </div>
           <div class="flex gap-4">
             <a class="text-link" [routerLink]="['/historia']" [queryParams]="{ paciente: patient.patientId }">Ficha</a>
-            <a class="text-link" [routerLink]="['/reservar']" [queryParams]="{ paciente: patient.patientId }">Reservar</a>
+            <a class="text-link" [routerLink]="['/reservar/paciente']" [queryParams]="{ paciente: patient.patientId }">Reservar</a>
           </div>
         </li>
       }
@@ -31,6 +31,43 @@
   } @else if (!searching() && query.trim().length >= 2 && !searchError()) {
     <ui-empty message="Ningún paciente coincide con esa búsqueda." />
   }
+</section>
+<section class="mb-10">
+  <h2 class="font-serif text-2xl tracking-tight">Solicitudes</h2>
+  <p class="mt-2 max-w-prose text-sm text-ink/70">Alguien pidió un turno en línea. Aprobar lo deja en la agenda. Rechazar libera el horario.</p>
+  @if (notice()) { <p class="mt-3 text-sm text-ink/70" role="status">{{ notice() }}</p> }
+  <div class="mt-4">
+    @if (loading()) {
+      <ui-skeleton label="Cargando solicitudes" />
+    } @else if (!requests().length) {
+      <ui-empty message="No hay solicitudes para confirmar." />
+    } @else {
+      <ui-table>
+        <thead><tr><th>Cuándo</th><th>Persona</th><th>Para</th><th></th></tr></thead>
+        <tbody>
+          @for (item of requests(); track item.id) {
+            <tr>
+              <td class="whitespace-nowrap">{{ item.start | fecha }}</td>
+              <td>
+                <span class="font-serif text-lg leading-tight">{{ item.name }}</span>
+                <span class="mt-1 block text-sm text-ink/70">{{ item.phone }}</span>
+              </td>
+              <td>
+                {{ item.specialty }}
+                <span class="mt-1 block text-sm text-ink/70">{{ item.professional }} · {{ item.insurer || 'Particular' }}@if (item.memberNumber) { <span> · afiliado {{ item.memberNumber }}</span> }</span>
+              </td>
+              <td class="whitespace-nowrap">
+                <ui-actions>
+                  <ui-button [loading]="pending() === 'approve:' + item.id" (click)="decide(item, true)">Aprobar</ui-button>
+                  <ui-button variant="ghost" [loading]="pending() === 'reject:' + item.id" (click)="decide(item, false)">Rechazar</ui-button>
+                </ui-actions>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </ui-table>
+    }
+  </div>
 </section>
 <ui-calendar [date]="date" (dateChange)="date = $event; load()">
   <ui-button [loading]="loading() || refreshing()" (click)="load()">Actualizar</ui-button>
@@ -119,7 +156,6 @@
 </section>
 <section class="mt-12">
   <h2 class="font-serif text-2xl tracking-tight">Lista de espera</h2>
-  @if (notice()) { <p class="mt-3 text-sm text-ink/70" role="status">{{ notice() }}</p> }
   <div class="mt-4">
     @if (loading()) {
       <ui-skeleton label="Cargando lista de espera" />

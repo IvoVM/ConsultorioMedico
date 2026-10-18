@@ -10,7 +10,7 @@ export function toForm(record: MedicalRecordDto): MedicalRecordForm {
     firstName: record.firstName,
     lastName: record.lastName,
     documentNumber: record.documentNumber,
-    birthDate: record.birthDate,
+    birthDate: record.birthDate.startsWith('0001') ? '' : record.birthDate,
     phone: record.phone,
     bloodType: record.bloodType ?? '',
     allergies: record.allergies ?? '',
@@ -28,7 +28,7 @@ export function toForm(record: MedicalRecordDto): MedicalRecordForm {
 
 export function age(birthDate: string) {
   const birth = new Date(`${birthDate}T00:00:00`);
-  if (Number.isNaN(birth.getTime())) return null;
+  if (Number.isNaN(birth.getTime()) || birth.getFullYear() < 1901) return null;
   const today = new Date();
   let years = today.getFullYear() - birth.getFullYear();
   const months = today.getMonth() - birth.getMonth();

@@ -31,6 +31,11 @@ public class ScheduleController(ScheduleService schedule) : ApiController
         Run(() => schedule.DeleteBlockoutAsync(id, ct));
 
     [AllowAnonymous]
+    [HttpGet("disponibilidad/dias")]
+    public Task<IActionResult> OpenDays([FromQuery] Guid? locationId, [FromQuery] Guid specialtyId, [FromQuery] int year, [FromQuery] int month, CancellationToken ct) =>
+        Run(() => schedule.OpenDaysAsync(locationId, specialtyId, year, month, ct));
+
+    [AllowAnonymous]
     [HttpGet("disponibilidad")]
     public Task<IActionResult> Availability([FromQuery] Guid locationId, [FromQuery] Guid specialtyId, [FromQuery] Guid? professionalId, [FromQuery] DateOnly date, CancellationToken ct) =>
         Run(() => schedule.AvailabilityAsync(new AvailabilityQuery(locationId, specialtyId, professionalId, date), ct));

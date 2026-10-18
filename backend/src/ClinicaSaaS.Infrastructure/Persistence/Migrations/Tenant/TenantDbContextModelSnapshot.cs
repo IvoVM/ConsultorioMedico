@@ -140,6 +140,82 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                     b.ToTable("AuditEntries");
                 });
 
+            modelBuilder.Entity("ClinicaSaaS.Domain.BookingRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("AppointmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AppointmentTypeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ClientId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("End")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("InsurerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("LocationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("MemberNumber")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)");
+
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<Guid>("ProfessionalId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("SpecialtyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("Start")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppointmentId");
+
+                    b.HasIndex("AppointmentTypeId");
+
+                    b.HasIndex("ClientId");
+
+                    b.HasIndex("InsurerId");
+
+                    b.HasIndex("LocationId");
+
+                    b.HasIndex("ProfessionalId");
+
+                    b.HasIndex("SpecialtyId");
+
+                    b.HasIndex("Status", "Start");
+
+                    b.ToTable("BookingRequests");
+                });
+
             modelBuilder.Entity("ClinicaSaaS.Domain.Client", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1019,6 +1095,62 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                         .WithMany("AppointmentTypes")
                         .HasForeignKey("SpecialtyId")
                         .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Specialty");
+                });
+
+            modelBuilder.Entity("ClinicaSaaS.Domain.BookingRequest", b =>
+                {
+                    b.HasOne("ClinicaSaaS.Domain.Appointment", "Appointment")
+                        .WithMany()
+                        .HasForeignKey("AppointmentId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("ClinicaSaaS.Domain.AppointmentType", "AppointmentType")
+                        .WithMany()
+                        .HasForeignKey("AppointmentTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ClinicaSaaS.Domain.Client", "Client")
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("ClinicaSaaS.Domain.Insurer", "Insurer")
+                        .WithMany()
+                        .HasForeignKey("InsurerId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("ClinicaSaaS.Domain.Location", "Location")
+                        .WithMany()
+                        .HasForeignKey("LocationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ClinicaSaaS.Infrastructure.Identity.TenantUser", "Professional")
+                        .WithMany()
+                        .HasForeignKey("ProfessionalId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ClinicaSaaS.Domain.Specialty", "Specialty")
+                        .WithMany()
+                        .HasForeignKey("SpecialtyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Appointment");
+
+                    b.Navigation("AppointmentType");
+
+                    b.Navigation("Client");
+
+                    b.Navigation("Insurer");
+
+                    b.Navigation("Location");
+
+                    b.Navigation("Professional");
 
                     b.Navigation("Specialty");
                 });

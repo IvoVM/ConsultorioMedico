@@ -196,6 +196,7 @@ public static class DependencyInjection
         services.AddScoped<IAppointmentStore, AppointmentStore>();
         services.AddScoped<IClientStore, ClientStore>();
         services.AddScoped<IMedicalRecordStore, MedicalRecordStore>();
+        services.AddScoped<IBookingRequestStore, BookingRequestStore>();
         services.AddScoped<IWaitlistStore, WaitlistStore>();
         services.AddScoped<IClinicalStore, ClinicalStore>();
         services.AddScoped<IBillingStore, BillingStore>();
