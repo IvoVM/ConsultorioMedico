@@ -15,7 +15,7 @@ import {
 import { UiButton, UiEmpty, UiField, UiSkeleton, formatFecha } from 'ui';
 import { firstValueFrom } from 'rxjs';
 
-type Step = 'specialty' | 'day' | 'time' | 'name' | 'phone' | 'coverage' | 'insurer' | 'member' | 'review' | 'done';
+type Step = 'specialty' | 'day' | 'time' | 'name' | 'document' | 'phone' | 'coverage' | 'insurer' | 'member' | 'review' | 'done';
 
 @Component({
   imports: [FormsModule, RouterLink, UiButton, UiEmpty, UiField, UiSkeleton],
@@ -45,11 +45,12 @@ export class RequestAppointmentPage {
   insurerId = '';
   memberNumber = '';
   name = '';
+  documentNumber = '';
   phone = '';
 
   readonly specialtyName = computed(() => this.specialties().find((item) => item.id === this.specialtyId())?.name ?? '');
   readonly steps = computed(() => {
-    const list: Step[] = ['specialty', 'day', 'time', 'name', 'phone', 'coverage'];
+    const list: Step[] = ['specialty', 'day', 'time', 'name', 'document', 'phone', 'coverage'];
     if (this.coverage === 'obra' && this.insurers().length) list.push('insurer', 'member');
     list.push('review');
     return list;
@@ -86,6 +87,7 @@ export class RequestAppointmentPage {
       case 'day': return '¿Qué día te queda bien?';
       case 'time': return '¿A qué hora?';
       case 'name': return '¿Cómo te llamás?';
+      case 'document': return '¿Cuál es tu documento?';
       case 'phone': return '¿A qué número te llamamos?';
       case 'coverage': return '¿Tenés obra social?';
       case 'insurer': return '¿Cuál es tu obra social?';
@@ -101,12 +103,13 @@ export class RequestAppointmentPage {
       case 'day': return 'Los días marcados tienen un horario libre.';
       case 'time': return `${this.specialtyName()}. Elegí un horario.`;
       case 'name': return 'Nombre y apellido, como figuran en el documento.';
+      case 'document': return 'Con este número vas a entrar y vas a ver esta solicitud cuando crees tu cuenta.';
       case 'phone': return 'La secretaría te llama a este número si hace falta.';
       case 'coverage': return this.insurers().length ? 'Si no tenés, el turno queda como particular.' : 'Este profesional atiende como particular.';
       case 'insurer': return 'Solo las que atiende el profesional de ese horario.';
       case 'member': return 'La secretaría lo revisa antes de confirmar.';
       case 'review': return 'Al enviarla, la secretaría confirma el turno.';
-      default: return 'La secretaría va a revisar tu solicitud y confirmar el turno.';
+      default: return 'La secretaría va a revisar tu solicitud. Cuando crees tu cuenta con este documento, la vas a ver ahí.';
     }
   }
 
@@ -185,6 +188,17 @@ export class RequestAppointmentPage {
     }
     this.name = name;
     this.error.set('');
+    this.step.set('document');
+  }
+
+  continueDocument() {
+    const documentNumber = this.documentNumber.replace(/[.\-\s]/g, '');
+    if (documentNumber.length < 6 || documentNumber.length > 20) {
+      this.error.set('El documento no es válido.');
+      return;
+    }
+    this.documentNumber = documentNumber;
+    this.error.set('');
     this.step.set('phone');
   }
 
@@ -246,6 +260,7 @@ export class RequestAppointmentPage {
         start: slot.start,
         name: this.name.trim(),
         phone: this.phone.trim(),
+        documentNumber: this.documentNumber.trim(),
         insurerId: this.coverage === 'obra' ? this.insurerId : null,
         memberNumber: this.coverage === 'obra' ? this.memberNumber.trim() : null,
       }));
@@ -270,6 +285,7 @@ export class RequestAppointmentPage {
         if (history) {
           this.name = history.patient.name;
           this.phone = history.patient.phone;
+          this.documentNumber = history.patient.documentNumber;
         }
       }
     } catch (error) {

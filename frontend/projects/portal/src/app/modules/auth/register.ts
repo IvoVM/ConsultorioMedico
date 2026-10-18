@@ -45,7 +45,7 @@ export class RegisterPage {
         }),
       );
       clinicaSession.set(token.token, token.role, token.name);
-      await this.router.navigateByUrl('/reservar');
+      await this.router.navigateByUrl('/mis-turnos');
     } catch (error) {
       this.error.set(errorMessage(error));
     } finally {

@@ -1,4 +1,5 @@
 using ClinicaSaaS.Services.MappingExtensions;
+using ClinicaSaaS.Services.Utilities;
 using ClinicaSaaS.Domain;
 using ClinicaSaaS.Domain.QueryViews;
 using FluentValidation;
@@ -451,6 +452,7 @@ public class ScheduleService(
     {
         var name = command.Name?.Trim() ?? "";
         var phone = command.Phone?.Trim() ?? "";
+        var document = DocumentRules.Normalize(command.DocumentNumber);
         if (command.SpecialtyId == Guid.Empty)
             throw new BusinessRuleException("Elegí una especialidad.");
         if (name.Length < 3 || !name.Contains(' '))
@@ -459,6 +461,8 @@ public class ScheduleService(
             throw new BusinessRuleException("El nombre es demasiado largo.");
         if (phone.Count(char.IsDigit) < 6 || phone.Length > 30)
             throw new BusinessRuleException("El teléfono no es válido.");
+        if (!DocumentRules.IsValid(document))
+            throw new BusinessRuleException("El documento no es válido.");
         if (command.Start <= clock.GetUtcNow())
             throw new BusinessRuleException("Ese horario ya pasó.");
 
@@ -495,6 +499,7 @@ public class ScheduleService(
             Id = Guid.NewGuid(),
             Name = name,
             Phone = phone,
+            DocumentNumber = document,
             SpecialtyId = command.SpecialtyId,
             ProfessionalId = slot.ProfessionalId,
             LocationId = slot.LocationId,
@@ -519,13 +524,39 @@ public class ScheduleService(
                 request.Id,
                 request.Name,
                 request.Phone,
+                request.DocumentNumber,
                 request.Specialty.Name,
                 (request.Professional.FirstName + " " + request.Professional.LastName).Trim(),
                 request.AppointmentType.Name,
                 request.Start,
                 request.Insurer != null ? request.Insurer.Name : null,
-                request.MemberNumber))
+                request.MemberNumber,
+                request.Status))
             .ToListAsync(ct);
+
+    public async Task<IReadOnlyList<BookingRequestDto>> MyRequestsAsync(CancellationToken ct)
+    {
+        if (currentUser.Role != TenantRole.Patient.ToString() || currentUser.Id is not Guid userId)
+            throw new BusinessRuleException("Solo un paciente puede ver sus solicitudes.");
+        var client = await clients.GetByUserAsync(userId, ct)
+            ?? throw new NotFoundException("No hay un paciente asociado a esta cuenta.");
+        return await requests.Entries
+            .Where(request => request.ClientId == client.Id || request.DocumentNumber == client.DocumentNumber)
+            .OrderByDescending(request => request.Start)
+            .Select(request => new BookingRequestDto(
+                request.Id,
+                request.Name,
+                request.Phone,
+                request.DocumentNumber,
+                request.Specialty.Name,
+                (request.Professional.FirstName + " " + request.Professional.LastName).Trim(),
+                request.AppointmentType.Name,
+                request.Start,
+                request.Insurer != null ? request.Insurer.Name : null,
+                request.MemberNumber,
+                request.Status))
+            .ToListAsync(ct);
+    }
 
     public async Task<AppointmentDto> ApproveRequestAsync(Guid id, CancellationToken ct)
     {
@@ -570,20 +601,18 @@ public class ScheduleService(
         if (request.ClientId is Guid linked && await clients.GetAsync(linked, ct) is not null)
             return linked;
 
+        var document = request.DocumentNumber;
+        var known = await clients.Clients
+            .Where(client => client.DocumentNumber == document)
+            .Select(client => (Guid?)client.Id)
+            .FirstOrDefaultAsync(ct);
+        if (known is Guid found)
+            return found;
+
         var phone = request.Phone.Trim();
         var parts = request.Name.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
         var first = parts[0];
         var last = parts.Length > 1 ? parts[1] : parts[0];
-        var known = await clients.Clients
-            .Where(client => client.Phone == phone)
-            .Select(client => new { client.Id, client.User.FirstName, client.User.LastName })
-            .FirstOrDefaultAsync(ct);
-        if (known is not null && SamePerson(known.FirstName, known.LastName, first, last))
-            return known.Id;
-
-        var document = phone;
-        if (await clients.Clients.AnyAsync(client => client.DocumentNumber == document, ct))
-            document = "S" + Guid.NewGuid().ToString("N")[..8];
         var account = await users.CreateAsync(
             $"solicitud.{Guid.NewGuid():N}@pacientes.local",
             "Aa1" + Utilities.TemporaryPassword.Generate(),
@@ -616,21 +645,20 @@ public class ScheduleService(
         return client.Id;
     }
 
-    private static bool SamePerson(string first, string last, string otherFirst, string otherLast) =>
-        string.Equals($"{first} {last}".Trim(), $"{otherFirst} {otherLast}".Trim(), StringComparison.OrdinalIgnoreCase);
-
     private Task<BookingRequestDto> LoadRequestAsync(Guid id, CancellationToken ct) =>
         requests.Entries.Where(request => request.Id == id)
             .Select(request => new BookingRequestDto(
                 request.Id,
                 request.Name,
                 request.Phone,
+                request.DocumentNumber,
                 request.Specialty.Name,
                 (request.Professional.FirstName + " " + request.Professional.LastName).Trim(),
                 request.AppointmentType.Name,
                 request.Start,
                 request.Insurer != null ? request.Insurer.Name : null,
-                request.MemberNumber))
+                request.MemberNumber,
+                request.Status))
             .FirstAsync(ct);
 
     private async Task<Client> ResolveClientAsync(Guid? patientId, CancellationToken ct)

@@ -70,6 +70,19 @@ public class TenantUserStore(UserManager<TenantUser> users) : ITenantUserStore
             throw new BusinessRuleException(string.Join(' ', nameResult.Errors.Select(IdentityMessage)));
     }
 
+    public async Task SetPasswordAsync(Guid id, string password, CancellationToken ct)
+    {
+        var user = await users.FindByIdAsync(id.ToString()) ?? throw new NotFoundException("Usuario no encontrado.");
+        var token = await users.GeneratePasswordResetTokenAsync(user);
+        var result = await users.ResetPasswordAsync(user, token, password);
+        if (!result.Succeeded)
+            throw new BusinessRuleException(string.Join(' ', result.Errors.Select(IdentityMessage)));
+        user.MustChangePassword = false;
+        var update = await users.UpdateAsync(user);
+        if (!update.Succeeded)
+            throw new BusinessRuleException(string.Join(' ', update.Errors.Select(IdentityMessage)));
+    }
+
     private static string IdentityMessage(IdentityError error) => error.Code switch
     {
         "PasswordTooShort" => "La contraseña tiene que tener al menos 8 caracteres.",
@@ -277,6 +290,8 @@ public class ClientStore(TenantDbContext db) : IClientStore
         await db.SaveChangesAsync(ct);
         return client;
     }
+
+    public Task SaveAsync(CancellationToken ct) => db.SaveChangesAsync(ct);
 }
 
 public class MedicalRecordStore(TenantDbContext db) : IMedicalRecordStore
@@ -304,6 +319,17 @@ public class BookingRequestStore(TenantDbContext db) : IBookingRequestStore
         db.BookingRequests.FirstOrDefaultAsync(r => r.Id == id, ct);
 
     public Task SaveAsync(CancellationToken ct) => db.SaveChangesAsync(ct);
+
+    public async Task LinkDocumentAsync(string documentNumber, Guid clientId, CancellationToken ct)
+    {
+        var rows = await db.BookingRequests
+            .Where(request => request.DocumentNumber == documentNumber && request.ClientId == null)
+            .ToListAsync(ct);
+        foreach (var row in rows)
+            row.ClientId = clientId;
+        if (rows.Count > 0)
+            await db.SaveChangesAsync(ct);
+    }
 }
 
 public class WaitlistStore(TenantDbContext db) : IWaitlistStore

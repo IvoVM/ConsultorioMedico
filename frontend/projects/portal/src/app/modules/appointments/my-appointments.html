@@ -1,9 +1,34 @@
 @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
 @if (loading()) {
   <ui-skeleton label="Cargando turnos" />
-} @else if (appointments().length === 0) {
-  <ui-empty message="Todavía no tenés turnos. Cuando reserves uno, aparece acá." />
 } @else {
+  @if (requests().length) {
+    <h2 class="mb-3 font-serif text-2xl">Solicitudes</h2>
+    <p class="mb-4 max-w-[48ch] text-ink/75">Las que pediste con tu documento, también las de antes de crear la cuenta.</p>
+    <ui-table>
+      <thead><tr><th>Cuándo</th><th>Para</th><th>Estado</th></tr></thead>
+      <tbody>
+        @for (request of requests(); track request.id) {
+          <tr>
+            <td>{{ request.start | fecha }}</td>
+            <td>
+              {{ request.specialty }}
+              <span class="mt-1 block text-sm text-ink/70">{{ request.professional }}</span>
+            </td>
+            <td><ui-badge [tone]="request.status === 'Rejected' ? 'warn' : 'ok'">{{ requestStatus[request.status] }}</ui-badge></td>
+          </tr>
+        }
+      </tbody>
+    </ui-table>
+  }
+  @if (appointments().length) {
+    <h2 class="mt-10 mb-3 font-serif text-2xl">Turnos</h2>
+  }
+  @if (appointments().length === 0 && requests().length === 0) {
+    <ui-empty message="Todavía no tenés turnos. Cuando reserves uno, aparece acá." />
+  } @else if (appointments().length === 0) {
+    <p class="mt-8 text-ink/75">Cuando secretaría confirme una solicitud, el turno aparece acá.</p>
+  } @else {
   <ui-table>
     <thead><tr><th>Cuándo</th><th>Profesional</th><th>Estado</th><th></th></tr></thead>
     <tbody>
@@ -24,4 +49,5 @@
       }
     </tbody>
   </ui-table>
+  }
 }

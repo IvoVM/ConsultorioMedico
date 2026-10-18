@@ -158,6 +158,11 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("DocumentNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
                     b.Property<DateTimeOffset>("End")
                         .HasColumnType("timestamp with time zone");
 
@@ -202,6 +207,8 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                     b.HasIndex("AppointmentTypeId");
 
                     b.HasIndex("ClientId");
+
+                    b.HasIndex("DocumentNumber");
 
                     b.HasIndex("InsurerId");
 

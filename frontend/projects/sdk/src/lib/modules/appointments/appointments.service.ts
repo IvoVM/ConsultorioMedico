@@ -68,6 +68,10 @@ export class AppointmentsService extends ApiClient {
     return this.http.get<BookingRequestDto[]>(`${this.base}/api/solicitudes`);
   }
 
+  myRequests() {
+    return this.http.get<BookingRequestDto[]>(`${this.base}/api/solicitudes/mias`);
+  }
+
   approveRequest(id: string) {
     return this.http.post<AppointmentDto>(`${this.base}/api/solicitudes/${id}/aprobar`, {});
   }

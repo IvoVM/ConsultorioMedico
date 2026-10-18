@@ -2,6 +2,7 @@
 import { Injectable } from '@angular/core';
 import { ApiClient } from '../../core/api-client';
 import type { LoginCommand } from './models/login-command';
+import type { LoginPatientCommand } from './models/login-patient-command';
 import type { RegisterPatientCommand } from './models/register-patient-command';
 import type { TokenDto } from './models/token-dto';
 
@@ -9,6 +10,10 @@ import type { TokenDto } from './models/token-dto';
 export class AuthService extends ApiClient {
   login(body: LoginCommand) {
     return this.http.post<TokenDto>(`${this.base}/api/acceso/ingreso`, body);
+  }
+
+  loginPatient(body: LoginPatientCommand) {
+    return this.http.post<TokenDto>(`${this.base}/api/acceso/ingreso-paciente`, body);
   }
 
   registerPatient(body: RegisterPatientCommand) {

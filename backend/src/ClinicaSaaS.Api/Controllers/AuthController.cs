@@ -13,6 +13,10 @@ public class AuthController(AuthService auth) : ApiController
     public Task<IActionResult> Login(LoginCommand command, CancellationToken ct) =>
         Issue(() => auth.LoginTenantAsync(command, ct));
 
+    [HttpPost("ingreso-paciente")]
+    public Task<IActionResult> LoginPatient(LoginPatientCommand command, CancellationToken ct) =>
+        Issue(() => auth.LoginPatientAsync(command, ct));
+
     [HttpPost("registro")]
     public Task<IActionResult> Register(RegisterPatientCommand command, CancellationToken ct) =>
         Issue(() => auth.RegisterPatientAsync(command, ct));

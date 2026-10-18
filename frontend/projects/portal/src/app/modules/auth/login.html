@@ -6,11 +6,15 @@
     @if (staff) {
       Entrá con el email del consultorio.
     } @else {
-      Entrá para ver tus turnos, las recetas y el historial médico.
+      Entrá con el documento con el que pediste el turno. Ahí están tus solicitudes, los turnos y la historia.
     }
   </p>
   <form class="mt-10 max-w-md space-y-5" (ngSubmit)="submit()">
-    <ui-field label="Email"><input name="email" type="email" [(ngModel)]="email" required autocomplete="username" /></ui-field>
+    @if (staff) {
+      <ui-field label="Email"><input name="email" type="email" [(ngModel)]="email" required autocomplete="username" /></ui-field>
+    } @else {
+      <ui-field label="Documento"><input name="documentNumber" [(ngModel)]="documentNumber" required autocomplete="username" /></ui-field>
+    }
     <ui-field label="Contraseña"><input name="password" type="password" [(ngModel)]="password" required autocomplete="current-password" /></ui-field>
     @if (error()) { <p class="text-sm text-pulse" role="alert">{{ error() }}</p> }
     <ui-button type="submit" [loading]="loading()">Entrar</ui-button>

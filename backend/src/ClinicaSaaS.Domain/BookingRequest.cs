@@ -7,6 +7,7 @@ public class BookingRequest
     public Guid Id { get; set; }
     public string Name { get; set; } = "";
     public string Phone { get; set; } = "";
+    public string DocumentNumber { get; set; } = "";
     public Guid SpecialtyId { get; set; }
     public Guid ProfessionalId { get; set; }
     public Guid LocationId { get; set; }

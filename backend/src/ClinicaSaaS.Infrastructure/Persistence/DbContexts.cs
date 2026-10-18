@@ -139,7 +139,9 @@ public class TenantDbContext(DbContextOptions<TenantDbContext> options)
             e.Property(r => r.Status).HasConversion<string>().HasMaxLength(20);
             e.Property(r => r.Name).HasMaxLength(160);
             e.Property(r => r.Phone).HasMaxLength(30);
+            e.Property(r => r.DocumentNumber).HasMaxLength(20);
             e.Property(r => r.MemberNumber).HasMaxLength(40);
+            e.HasIndex(r => r.DocumentNumber);
             e.HasIndex(r => new { r.Status, r.Start });
             e.HasOne(r => r.Specialty).WithMany().HasForeignKey(r => r.SpecialtyId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(r => r.Professional).WithMany().HasForeignKey(r => r.ProfessionalId).OnDelete(DeleteBehavior.Restrict);

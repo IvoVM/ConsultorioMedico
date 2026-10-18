@@ -66,6 +66,12 @@
           <ui-button type="submit">Continuar</ui-button>
         </form>
       }
+      @case ('document') {
+        <form class="ask" (ngSubmit)="continueDocument()">
+          <ui-field label="Documento"><input name="documentNumber" [(ngModel)]="documentNumber" required maxlength="20" /></ui-field>
+          <ui-button type="submit">Continuar</ui-button>
+        </form>
+      }
       @case ('phone') {
         <form class="ask" (ngSubmit)="continuePhone()">
           <ui-field label="Teléfono"><input name="phone" [(ngModel)]="phone" autocomplete="tel" required /></ui-field>
@@ -100,6 +106,7 @@
             <div><dt>Cuándo</dt><dd>{{ when(chosen.start) }}</dd></div>
             <div><dt>Profesional</dt><dd>{{ chosen.professional }}</dd></div>
             <div><dt>Nombre</dt><dd>{{ name }}</dd></div>
+            <div><dt>Documento</dt><dd>{{ documentNumber }}</dd></div>
             <div><dt>Teléfono</dt><dd>{{ phone }}</dd></div>
             <div><dt>Cobertura</dt><dd>{{ coverage === 'obra' ? insurerName() + ' · ' + memberNumber : 'Particular' }}</dd></div>
           </dl>
@@ -111,7 +118,7 @@
           @if (session.token()) {
             <a routerLink="/panel" class="action-link">Volver al inicio</a>
           } @else {
-            <a routerLink="/ingreso" class="action-link">Volver</a>
+            <a routerLink="/registro" class="action-link">Crear cuenta con este documento</a>
           }
         </div>
       }

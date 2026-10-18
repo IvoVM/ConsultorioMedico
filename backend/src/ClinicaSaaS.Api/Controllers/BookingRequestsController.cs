@@ -19,6 +19,11 @@ public class BookingRequestsController(ScheduleService schedule) : ApiController
     public Task<IActionResult> Pending(CancellationToken ct) =>
         Run(() => schedule.PendingRequestsAsync(ct));
 
+    [Authorize(Roles = AppRoles.Patient)]
+    [HttpGet("mias")]
+    public Task<IActionResult> Mine(CancellationToken ct) =>
+        Run(() => schedule.MyRequestsAsync(ct));
+
     [Authorize(Roles = $"{AppRoles.Secretary},{AppRoles.TenantAdmin}")]
     [HttpPost("{id:guid}/aprobar")]
     public Task<IActionResult> Approve(Guid id, CancellationToken ct) =>

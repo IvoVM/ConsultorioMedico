@@ -46,6 +46,7 @@ public interface ITenantUserStore
     Task<TenantAccount> CreateAsync(string email, string password, string firstName, string lastName, TenantRole role, bool mustChangePassword, CancellationToken ct);
     Task UpdateNameAsync(Guid id, string firstName, string lastName, CancellationToken ct);
     Task UpdateProfileAsync(Guid id, string firstName, string lastName, string email, TenantRole role, CancellationToken ct);
+    Task SetPasswordAsync(Guid id, string password, CancellationToken ct);
 }
 
 public interface IEmployeeStore
@@ -103,6 +104,7 @@ public interface IClientStore
     Task<Client?> GetByUserAsync(Guid userId, CancellationToken ct);
     Task<Client?> GetAsync(Guid id, CancellationToken ct);
     Task<Client> AddAsync(Client client, CancellationToken ct);
+    Task SaveAsync(CancellationToken ct);
 }
 
 public interface IMedicalRecordStore
@@ -118,6 +120,7 @@ public interface IBookingRequestStore
     Task<BookingRequest> AddAsync(BookingRequest request, CancellationToken ct);
     Task<BookingRequest?> GetAsync(Guid id, CancellationToken ct);
     Task SaveAsync(CancellationToken ct);
+    Task LinkDocumentAsync(string documentNumber, Guid clientId, CancellationToken ct);
 }
 
 public interface IWaitlistStore

@@ -17,6 +17,7 @@ export class LoginPage {
   private readonly router = inject(Router);
   readonly staff = inject(ActivatedRoute).snapshot.data['audience'] === 'staff';
   email = '';
+  documentNumber = '';
   password = '';
   readonly clinicName = signal('Consultorio');
   readonly error = signal('');
@@ -30,9 +31,11 @@ export class LoginPage {
     this.error.set('');
     this.loading.set(true);
     try {
-      const token = await firstValueFrom(this.auth.login({ email: this.email, password: this.password }));
+      const token = this.staff
+        ? await firstValueFrom(this.auth.login({ email: this.email, password: this.password }))
+        : await firstValueFrom(this.auth.loginPatient({ documentNumber: this.documentNumber, password: this.password }));
       clinicaSession.set(token.token, token.role, token.name);
-      const next = token.role === 'Patient' && readPending() ? '/reservar' : '/panel';
+      const next = token.role === 'Patient' ? (readPending() ? '/reservar' : '/mis-turnos') : '/panel';
       await this.router.navigateByUrl(next);
     } catch (error) {
       this.error.set(errorMessage(error));
