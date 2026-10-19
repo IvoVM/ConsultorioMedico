@@ -50,6 +50,8 @@ export class RequestAppointmentPage {
 
   readonly specialtyName = computed(() => this.specialties().find((item) => item.id === this.specialtyId())?.name ?? '');
   readonly furthest = signal<Step>('specialty');
+  readonly direction = signal<1 | -1>(1);
+  readonly motion = signal(0);
   readonly steps = computed(() => {
     const list: Step[] = ['specialty', 'day', 'time', 'name', 'document', 'phone', 'coverage'];
     if (this.coverage === 'obra' && this.insurers().length) list.push('insurer', 'member');
@@ -142,14 +144,23 @@ export class RequestAppointmentPage {
   jump(step: Step) {
     if (this.steps().indexOf(step) > this.furthestIndex()) return;
     this.error.set('');
-    this.step.set(step);
+    this.show(step);
   }
 
   private go(next: Step) {
     const order = this.steps();
     if (order.indexOf(next) > order.indexOf(this.furthest())) this.furthest.set(next);
     this.error.set('');
+    this.show(next);
+  }
+
+  private show(next: Step) {
+    if (this.step() === next) return;
+    const from = this.steps().indexOf(this.step());
+    const to = next === 'done' ? from + 1 : this.steps().indexOf(next);
+    this.direction.set(to >= from ? 1 : -1);
     this.step.set(next);
+    this.motion.update((value) => value + 1);
   }
 
   async pickSpecialty(id: string) {
@@ -289,7 +300,7 @@ export class RequestAppointmentPage {
         insurerId: this.coverage === 'obra' ? this.insurerId : null,
         memberNumber: this.coverage === 'obra' ? this.memberNumber.trim() : null,
       }));
-      this.step.set('done');
+      this.show('done');
     } catch (error) {
       this.error.set(errorMessage(error));
     } finally {

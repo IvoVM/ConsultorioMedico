@@ -5,13 +5,15 @@
       @for (item of steps(); track item; let i = $index) {
         <li [class.is-done]="i < stepIndex()" [class.is-current]="item === step()">
           <button type="button" [disabled]="i > furthestIndex()" [attr.aria-current]="item === step() ? 'step' : null" (click)="jump(item)">
-            <span class="dot" aria-hidden="true"></span>
-            <span>{{ stepLabel(item) }}</span>
+            <span class="fill" aria-hidden="true"></span>
+            <span class="label">{{ stepLabel(item) }}</span>
           </button>
         </li>
       }
     </ol>
   }
+  @for (tick of [motion()]; track tick) {
+  <div class="stage" [class.is-back]="direction() < 0">
   <h2>{{ question() }}</h2>
   <p class="hint">{{ hint() }}</p>
 
@@ -134,5 +136,6 @@
       }
     }
   }
-
+  </div>
+  }
 </section>
