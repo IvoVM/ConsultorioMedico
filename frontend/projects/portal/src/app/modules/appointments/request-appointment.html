@@ -1,5 +1,18 @@
 <section class="request">
   <h1>Reservá tu turno</h1>
+  @if (!intent()) {
+    <h2>¿Qué necesitás?</h2>
+    <p class="hint">Una consulta es ver a un profesional. Un estudio es una práctica, como un electrocardiograma.</p>
+    @if (loading()) {
+      <ui-skeleton class="mt-8" label="Cargando servicios" />
+    } @else {
+      <div class="choices">
+        <button type="button" (click)="pickIntent('consulta')"><strong>Consulta médica</strong><span>Ver a un profesional</span></button>
+        <button type="button" (click)="pickIntent('estudio')"><strong>Estudio</strong><span>Hacerte una práctica o un estudio</span></button>
+      </div>
+    }
+  } @else {
+  <button type="button" class="switch-intent" (click)="backToIntent()">Cambiar entre consulta y estudio</button>
   @if (step() !== 'done') {
     <ol class="progress" aria-label="Pasos de la reserva">
       @for (item of steps(); track item; let i = $index) {
@@ -26,12 +39,12 @@
       @case ('specialty') {
         @if (loading()) {
           <ui-skeleton class="mt-8" label="Cargando servicios" />
-        } @else if (!specialties().length) {
-          <ui-empty message="Todavía no hay servicios para reservar." />
+        } @else if (!catalog().length) {
+          <ui-empty [message]="intent() === 'estudio' ? 'Todavía no hay estudios para reservar.' : 'Todavía no hay consultas para reservar.'" />
         } @else {
           <div class="choices">
-            @for (item of specialties(); track item.id) {
-              <button type="button" (click)="pickSpecialty(item.id)">{{ item.name }}</button>
+            @for (item of catalog(); track item.id) {
+              <button type="button" (click)="pickSpecialty(item)">{{ item.name }}</button>
             }
           </div>
         }
@@ -153,5 +166,6 @@
         </div>
       }
     </ui-modal>
+  }
   }
 </section>

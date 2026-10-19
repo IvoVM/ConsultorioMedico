@@ -7,6 +7,7 @@ import {
   InsurerDto,
   OrganizationService,
   ScheduleService,
+  AppointmentTypeDto,
   SlotDto,
   SpecialtyDto,
   clinicaSession,
@@ -16,6 +17,7 @@ import { UiButton, UiEmpty, UiField, UiModal, UiSkeleton, formatFecha } from 'ui
 import { firstValueFrom } from 'rxjs';
 
 type Step = 'specialty' | 'day' | 'time' | 'data' | 'coverage' | 'review' | 'done';
+type Intent = 'consulta' | 'estudio';
 
 @Component({
   imports: [FormsModule, RouterLink, UiButton, UiEmpty, UiField, UiModal, UiSkeleton],
@@ -29,7 +31,9 @@ export class RequestAppointmentPage {
   private readonly clinical = inject(ClinicalService);
   readonly session = clinicaSession;
   readonly step = signal<Step>('specialty');
+  readonly intent = signal<Intent | null>(null);
   readonly specialties = signal<SpecialtyDto[]>([]);
+  readonly types = signal<AppointmentTypeDto[]>([]);
   readonly insurers = signal<InsurerDto[]>([]);
   readonly openDays = signal<string[]>([]);
   readonly slots = signal<SlotDto[]>([]);
@@ -45,13 +49,32 @@ export class RequestAppointmentPage {
   readonly offer = signal<'choose' | 'confirm' | null>(null);
   readonly nearest = signal<SlotDto | null>(null);
   readonly seeking = signal(false);
+  readonly studyId = signal('');
+  readonly visitTypeIds = signal<string[]>([]);
   insurerId = '';
   memberNumber = '';
   name = '';
   documentNumber = '';
   phone = '';
 
-  readonly specialtyName = computed(() => this.specialties().find((item) => item.id === this.specialtyId())?.name ?? '');
+  readonly specialtyName = computed(() => {
+    if (this.intent() === 'estudio') return this.types().find((type) => type.id === this.studyId())?.name ?? '';
+    return this.specialties().find((item) => item.id === this.specialtyId())?.name ?? '';
+  });
+  readonly catalog = computed(() => {
+    const types = this.types();
+    if (this.intent() === 'estudio') {
+      return types
+        .filter((type) => type.specialtyId && !isVisit(type.name))
+        .map((type) => ({ id: type.id, name: type.name, specialtyId: type.specialtyId ?? '' }))
+        .sort((left, right) => left.name.localeCompare(right.name, 'es'));
+    }
+    const ids = new Set(types.filter((type) => type.specialtyId && isVisit(type.name)).map((type) => type.specialtyId));
+    return this.specialties()
+      .filter((item) => ids.has(item.id))
+      .map((item) => ({ id: item.id, name: item.name, specialtyId: item.id }))
+      .sort((left, right) => left.name.localeCompare(right.name, 'es'));
+  });
   readonly furthest = signal<Step>('specialty');
   readonly direction = signal<1 | -1>(1);
   readonly motion = signal(0);
@@ -85,10 +108,10 @@ export class RequestAppointmentPage {
 
   stepLabel(step: Step) {
     switch (step) {
-      case 'specialty': return 'Servicio';
+      case 'specialty': return this.intent() === 'estudio' ? 'Estudio' : 'Consulta';
       case 'day': return 'Día';
       case 'time': return 'Hora';
-      case 'data': return 'Datos';
+      case 'data': return 'Tus datos';
       case 'coverage': return 'Cobertura';
       case 'review': return 'Confirmar';
       default: return '';
@@ -97,10 +120,10 @@ export class RequestAppointmentPage {
 
   question() {
     switch (this.step()) {
-      case 'specialty': return '¿Qué servicio necesitás?';
+      case 'specialty': return this.intent() === 'estudio' ? '¿Qué estudio necesitás?' : '¿Qué consulta necesitás?';
       case 'day': return '¿Qué día te queda bien?';
       case 'time': return '¿A qué hora?';
-      case 'data': return '¿Cuáles son tus datos?';
+      case 'data': return 'Tus datos';
       case 'coverage': return '¿Tenés obra social?';
       case 'review': return 'Revisá la solicitud';
       default: return 'Listo';
@@ -109,7 +132,9 @@ export class RequestAppointmentPage {
 
   hint() {
     switch (this.step()) {
-      case 'specialty': return 'Elegí uno. Después podés tomar el turno más próximo o elegir el día.';
+      case 'specialty': return this.intent() === 'estudio'
+        ? 'Es una práctica. Después podés tomar el turno más próximo o elegir el día.'
+        : 'Es para ver a un profesional. Después podés tomar el turno más próximo o elegir el día.';
       case 'day': return 'Los días marcados tienen un horario libre.';
       case 'time': return `${this.specialtyName()}. Elegí un horario.`;
       case 'data': return 'Nombre, documento y teléfono. Con el documento vas a poder ver esta solicitud.';
@@ -163,8 +188,39 @@ export class RequestAppointmentPage {
     this.motion.update((value) => value + 1);
   }
 
-  pickSpecialty(id: string) {
-    this.specialtyId.set(id);
+  backToIntent() {
+    this.intent.set(null);
+    this.step.set('specialty');
+    this.furthest.set('specialty');
+    this.offer.set(null);
+    this.specialtyId.set('');
+    this.studyId.set('');
+    this.visitTypeIds.set([]);
+    this.slot.set(null);
+    this.error.set('');
+  }
+
+  pickIntent(kind: Intent) {
+    this.intent.set(kind);
+    this.step.set('specialty');
+    this.furthest.set('specialty');
+    this.offer.set(null);
+    this.specialtyId.set('');
+    this.studyId.set('');
+    this.visitTypeIds.set([]);
+    this.slot.set(null);
+    this.error.set('');
+  }
+
+  pickSpecialty(option: { id: string; specialtyId: string }) {
+    this.specialtyId.set(option.specialtyId);
+    if (this.intent() === 'estudio') {
+      this.studyId.set(option.id);
+      this.visitTypeIds.set([]);
+    } else {
+      this.studyId.set('');
+      this.visitTypeIds.set(this.types().filter((type) => type.specialtyId === option.specialtyId && isVisit(type.name)).map((type) => type.id));
+    }
     this.error.set('');
     this.nearest.set(null);
     this.offer.set('choose');
@@ -225,7 +281,7 @@ export class RequestAppointmentPage {
         date: iso,
       }))));
       const now = Date.now();
-      this.slots.set(lists.flat().filter((slot) => new Date(slot.start).getTime() > now).sort((left, right) => left.start.localeCompare(right.start)));
+      this.slots.set(lists.flat().filter((slot) => new Date(slot.start).getTime() > now && this.accepts(slot)).sort((left, right) => left.start.localeCompare(right.start)));
       this.go('time');
     } catch (error) {
       this.error.set(errorMessage(error));
@@ -324,11 +380,13 @@ export class RequestAppointmentPage {
 
   private async start() {
     try {
-      const [locations, specialties] = await Promise.all([
+      const [locations, specialties, types] = await Promise.all([
         firstValueFrom(this.organization.locations()),
         firstValueFrom(this.organization.specialties()),
+        firstValueFrom(this.organization.appointmentTypes()),
       ]);
       this.specialties.set(specialties);
+      this.types.set(types);
       this.locationIds.set(locations.filter((location) => location.isActive).map((location) => location.id));
       if (clinicaSession.role() === 'Patient') {
         const history = await firstValueFrom(this.clinical.clinicalHistory()).catch(() => null);
@@ -359,6 +417,11 @@ export class RequestAppointmentPage {
     this.go('data');
   }
 
+  private accepts(slot: SlotDto) {
+    if (this.intent() === 'estudio') return slot.appointmentTypeId === this.studyId();
+    return this.visitTypeIds().includes(slot.appointmentTypeId);
+  }
+
   private async findNearest() {
     const now = new Date();
     const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -377,7 +440,7 @@ export class RequestAppointmentPage {
           date: iso,
         }))));
         const slot = lists.flat()
-          .filter((item) => new Date(item.start).getTime() > Date.now())
+          .filter((item) => new Date(item.start).getTime() > Date.now() && this.accepts(item))
           .sort((left, right) => left.start.localeCompare(right.start))[0];
         if (slot) return slot;
       }
@@ -401,4 +464,9 @@ export class RequestAppointmentPage {
       this.loading.set(false);
     }
   }
+}
+
+function isVisit(name: string) {
+  const value = name.trim().toLowerCase();
+  return value.startsWith('consulta') || value === 'control';
 }
