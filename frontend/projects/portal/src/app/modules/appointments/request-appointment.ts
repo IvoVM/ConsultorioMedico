@@ -49,13 +49,15 @@ export class RequestAppointmentPage {
   phone = '';
 
   readonly specialtyName = computed(() => this.specialties().find((item) => item.id === this.specialtyId())?.name ?? '');
+  readonly furthest = signal<Step>('specialty');
   readonly steps = computed(() => {
     const list: Step[] = ['specialty', 'day', 'time', 'name', 'document', 'phone', 'coverage'];
     if (this.coverage === 'obra' && this.insurers().length) list.push('insurer', 'member');
     list.push('review');
     return list;
   });
-  readonly stepIndex = computed(() => this.steps().indexOf(this.step()) + 1);
+  readonly stepIndex = computed(() => this.steps().indexOf(this.step()));
+  readonly furthestIndex = computed(() => this.steps().indexOf(this.furthest()));
   readonly monthTitle = computed(() => {
     const label = new Date(this.year(), this.month() - 1, 1).toLocaleDateString('es-AR', { month: 'long' });
     return `${label.charAt(0).toUpperCase()}${label.slice(1)} ${this.year()}`;
@@ -81,9 +83,25 @@ export class RequestAppointmentPage {
     void this.start();
   }
 
+  stepLabel(step: Step) {
+    switch (step) {
+      case 'specialty': return 'Servicio';
+      case 'day': return 'Día';
+      case 'time': return 'Hora';
+      case 'name': return 'Nombre';
+      case 'document': return 'Documento';
+      case 'phone': return 'Teléfono';
+      case 'coverage': return 'Cobertura';
+      case 'insurer': return 'Obra social';
+      case 'member': return 'Afiliado';
+      case 'review': return 'Confirmar';
+      default: return '';
+    }
+  }
+
   question() {
     switch (this.step()) {
-      case 'specialty': return '¿Para qué especialidad?';
+      case 'specialty': return '¿Qué servicio necesitás?';
       case 'day': return '¿Qué día te queda bien?';
       case 'time': return '¿A qué hora?';
       case 'name': return '¿Cómo te llamás?';
@@ -99,7 +117,7 @@ export class RequestAppointmentPage {
 
   hint() {
     switch (this.step()) {
-      case 'specialty': return 'Es el primer dato. Después elegís el día.';
+      case 'specialty': return 'Elegí uno. Después ves los días con turno.';
       case 'day': return 'Los días marcados tienen un horario libre.';
       case 'time': return `${this.specialtyName()}. Elegí un horario.`;
       case 'name': return 'Nombre y apellido, como figuran en el documento.';
@@ -121,11 +139,17 @@ export class RequestAppointmentPage {
     return formatFecha(value, 'hora');
   }
 
-  back() {
-    const list = this.steps();
-    const index = list.indexOf(this.step());
-    if (index > 0) this.step.set(list[index - 1]);
+  jump(step: Step) {
+    if (this.steps().indexOf(step) > this.furthestIndex()) return;
     this.error.set('');
+    this.step.set(step);
+  }
+
+  private go(next: Step) {
+    const order = this.steps();
+    if (order.indexOf(next) > order.indexOf(this.furthest())) this.furthest.set(next);
+    this.error.set('');
+    this.step.set(next);
   }
 
   async pickSpecialty(id: string) {
@@ -134,7 +158,7 @@ export class RequestAppointmentPage {
     const today = new Date();
     this.year.set(today.getFullYear());
     this.month.set(today.getMonth() + 1);
-    this.step.set('day');
+    this.go('day');
     await this.loadMonth();
   }
 
@@ -158,7 +182,7 @@ export class RequestAppointmentPage {
       }))));
       const now = Date.now();
       this.slots.set(lists.flat().filter((slot) => new Date(slot.start).getTime() > now).sort((left, right) => left.start.localeCompare(right.start)));
-      this.step.set('time');
+      this.go('time');
     } catch (error) {
       this.error.set(errorMessage(error));
     } finally {
@@ -177,7 +201,7 @@ export class RequestAppointmentPage {
     } catch {
       this.insurers.set([]);
     }
-    this.step.set('name');
+    this.go('name');
   }
 
   continueName() {
@@ -188,7 +212,7 @@ export class RequestAppointmentPage {
     }
     this.name = name;
     this.error.set('');
-    this.step.set('document');
+    this.go('document');
   }
 
   continueDocument() {
@@ -199,7 +223,7 @@ export class RequestAppointmentPage {
     }
     this.documentNumber = documentNumber;
     this.error.set('');
-    this.step.set('phone');
+    this.go('phone');
   }
 
   continuePhone() {
@@ -210,7 +234,7 @@ export class RequestAppointmentPage {
     }
     this.phone = phone;
     this.error.set('');
-    this.step.set('coverage');
+    this.go('coverage');
   }
 
   pickCoverage(kind: 'particular' | 'obra') {
@@ -220,16 +244,17 @@ export class RequestAppointmentPage {
       this.coverage = 'particular';
       this.insurerId = '';
       this.memberNumber = '';
-      this.step.set('review');
+      this.go('review');
       return;
     }
-    this.step.set('insurer');
+    if (this.furthest() === 'review') this.furthest.set('coverage');
+    this.go('insurer');
   }
 
   pickInsurer(id: string) {
     this.insurerId = id;
     this.error.set('');
-    this.step.set('member');
+    this.go('member');
   }
 
   continueMember() {
@@ -239,7 +264,7 @@ export class RequestAppointmentPage {
     }
     this.memberNumber = this.memberNumber.trim();
     this.error.set('');
-    this.step.set('review');
+    this.go('review');
   }
 
   insurerName() {

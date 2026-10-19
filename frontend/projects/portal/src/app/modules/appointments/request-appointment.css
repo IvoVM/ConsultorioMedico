@@ -3,24 +3,100 @@
 }
 
 .request {
-  max-width: 36rem;
-}
-
-.kicker {
-  font-size: 0.875rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: rgb(23 51 44 / 0.55);
+  max-width: 46rem;
 }
 
 h1 {
-  margin-top: 0.4rem;
   max-width: 16ch;
   font-family: var(--font-serif);
-  font-size: clamp(2.2rem, 5vw, 3.4rem);
+  font-size: clamp(2.2rem, 5vw, 3.2rem);
   font-weight: 500;
   line-height: 1.05;
   letter-spacing: -0.03em;
+}
+
+h2 {
+  margin-top: 1.6rem;
+  font-family: var(--font-serif);
+  font-size: 1.7rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+.progress {
+  display: flex;
+  margin: 1.6rem 0 0;
+  padding: 0;
+  list-style: none;
+  overflow-x: auto;
+}
+
+.progress li {
+  position: relative;
+  flex: 1 0 4.6rem;
+  text-align: center;
+}
+
+.progress li::before {
+  content: "";
+  position: absolute;
+  top: 0.42rem;
+  right: 50%;
+  left: -50%;
+  height: 2px;
+  background: var(--color-rule);
+}
+
+.progress li:first-child::before {
+  display: none;
+}
+
+.progress li.is-done::before,
+.progress li.is-current::before {
+  background: var(--color-clinic);
+}
+
+.progress button {
+  position: relative;
+  display: grid;
+  width: 100%;
+  justify-items: center;
+  gap: 0.4rem;
+  background: transparent;
+  color: rgb(23 51 44 / 0.45);
+  font-size: 0.75rem;
+  line-height: 1.15;
+}
+
+.progress button:not(:disabled) {
+  cursor: pointer;
+}
+
+.progress button:disabled {
+  cursor: default;
+}
+
+.progress .dot {
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 999px;
+  background: white;
+  box-shadow: inset 0 0 0 2px var(--color-rule);
+}
+
+.progress li.is-done .dot,
+.progress li.is-current .dot {
+  background: var(--color-clinic);
+  box-shadow: none;
+}
+
+.progress li.is-done button,
+.progress li.is-current button {
+  color: var(--color-ink);
+}
+
+.progress li.is-current button {
+  font-weight: 650;
 }
 
 .hint {
@@ -96,8 +172,7 @@ h1 {
   font-size: 1.5rem;
 }
 
-.month-nav button,
-.back {
+.month-nav button {
   cursor: pointer;
   background: transparent;
   color: var(--color-clinic);
@@ -163,10 +238,4 @@ h1 {
 .summary dd {
   font-family: var(--font-serif);
   font-size: 1.25rem;
-}
-
-.back {
-  margin-top: 1.5rem;
-  padding: 0;
-  font-size: 0.95rem;
 }

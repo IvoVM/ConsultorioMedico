@@ -1,8 +1,18 @@
 <section class="request">
+  <h1>Reservá tu turno</h1>
   @if (step() !== 'done') {
-    <p class="kicker">Paso {{ stepIndex() }} de {{ steps().length }}</p>
+    <ol class="progress" aria-label="Pasos de la reserva">
+      @for (item of steps(); track item; let i = $index) {
+        <li [class.is-done]="i < stepIndex()" [class.is-current]="item === step()">
+          <button type="button" [disabled]="i > furthestIndex()" [attr.aria-current]="item === step() ? 'step' : null" (click)="jump(item)">
+            <span class="dot" aria-hidden="true"></span>
+            <span>{{ stepLabel(item) }}</span>
+          </button>
+        </li>
+      }
+    </ol>
   }
-  <h1>{{ question() }}</h1>
+  <h2>{{ question() }}</h2>
   <p class="hint">{{ hint() }}</p>
 
   @if (error()) { <p class="mt-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
@@ -13,9 +23,9 @@
     @switch (step()) {
       @case ('specialty') {
         @if (loading()) {
-          <ui-skeleton class="mt-8" label="Cargando especialidades" />
+          <ui-skeleton class="mt-8" label="Cargando servicios" />
         } @else if (!specialties().length) {
-          <ui-empty message="Todavía no hay especialidades para reservar." />
+          <ui-empty message="Todavía no hay servicios para reservar." />
         } @else {
           <div class="choices">
             @for (item of specialties(); track item.id) {
@@ -102,7 +112,7 @@
       @case ('review') {
         @if (slot(); as chosen) {
           <dl class="summary">
-            <div><dt>Especialidad</dt><dd>{{ specialtyName() }}</dd></div>
+            <div><dt>Servicio</dt><dd>{{ specialtyName() }}</dd></div>
             <div><dt>Cuándo</dt><dd>{{ when(chosen.start) }}</dd></div>
             <div><dt>Profesional</dt><dd>{{ chosen.professional }}</dd></div>
             <div><dt>Nombre</dt><dd>{{ name }}</dd></div>
@@ -125,7 +135,4 @@
     }
   }
 
-  @if (step() !== 'specialty' && step() !== 'done' && !loading()) {
-    <button type="button" class="back" (click)="back()">Atrás</button>
-  }
 </section>
