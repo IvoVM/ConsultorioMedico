@@ -72,20 +72,10 @@
           </div>
         }
       }
-      @case ('name') {
-        <form class="ask" (ngSubmit)="continueName()">
+      @case ('data') {
+        <form class="ask" (ngSubmit)="continueData()">
           <ui-field label="Nombre y apellido"><input name="name" [(ngModel)]="name" autocomplete="name" required /></ui-field>
-          <ui-button type="submit">Continuar</ui-button>
-        </form>
-      }
-      @case ('document') {
-        <form class="ask" (ngSubmit)="continueDocument()">
           <ui-field label="Documento"><input name="documentNumber" [(ngModel)]="documentNumber" required maxlength="20" /></ui-field>
-          <ui-button type="submit">Continuar</ui-button>
-        </form>
-      }
-      @case ('phone') {
-        <form class="ask" (ngSubmit)="continuePhone()">
           <ui-field label="Teléfono"><input name="phone" [(ngModel)]="phone" autocomplete="tel" required /></ui-field>
           <ui-button type="submit">Continuar</ui-button>
         </form>
@@ -140,5 +130,28 @@
     }
   }
   </div>
+  }
+
+  @if (offer(); as mode) {
+    <ui-modal [open]="true" [title]="mode === 'choose' ? '¿Cómo querés el turno?' : 'El turno más próximo'" (closed)="offer.set(null)">
+      @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
+      @if (mode === 'choose') {
+        <p class="text-ink/75">Podés tomar el primero que haya, o elegir el día y la hora.</p>
+        @if (seeking()) {
+          <ui-skeleton class="mt-6" label="Buscando el turno más próximo" />
+        } @else {
+          <div class="choices">
+            <button type="button" (click)="chooseNearest()">El más próximo</button>
+            <button type="button" (click)="chooseManual()">Elegir día y horario</button>
+          </div>
+        }
+      } @else if (nearest(); as next) {
+        <p class="text-ink/75">El más próximo es el {{ when(next.start) }} con {{ next.professional }}. ¿Te parece bien?</p>
+        <div class="choices">
+          <button type="button" (click)="acceptNearest()">Sí, me parece bien</button>
+          <button type="button" (click)="chooseManual()">No, elijo el día y la hora</button>
+        </div>
+      }
+    </ui-modal>
   }
 </section>

@@ -15,7 +15,7 @@ h1 {
   letter-spacing: -0.03em;
 }
 
-h2 {
+.stage h2 {
   margin-top: 1.6rem;
   font-family: var(--font-serif);
   font-size: 1.7rem;
