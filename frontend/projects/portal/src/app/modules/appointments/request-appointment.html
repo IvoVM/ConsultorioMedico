@@ -133,7 +133,7 @@
           @if (session.token()) {
             <a routerLink="/panel" class="action-link">Volver al inicio</a>
           } @else {
-            <a routerLink="/registro" class="action-link">Crear cuenta con este documento</a>
+            <a routerLink="/registro" [queryParams]="accountDraft()" class="action-link">Crear cuenta y ver el turno</a>
           }
         </div>
       }

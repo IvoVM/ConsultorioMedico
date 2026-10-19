@@ -118,8 +118,20 @@ export class RequestAppointmentPage {
       case 'phone': return 'La secretaría te llama a este número si hace falta.';
       case 'coverage': return this.insurers().length ? 'Si no tenés, el turno queda como particular.' : 'Este profesional atiende como particular.';
       case 'review': return 'Al enviarla, la secretaría confirma el turno.';
-      default: return 'La secretaría va a revisar tu solicitud. Cuando crees tu cuenta con este documento, la vas a ver ahí.';
+      default: return this.session.token()
+        ? 'La secretaría puede llamarte para confirmar el turno. También lo vas a ver en Mis turnos.'
+        : 'La secretaría puede llamarte para confirmar el turno. Si querés verlo en el momento, creá una cuenta.';
     }
+  }
+
+  accountDraft() {
+    const parts = this.name.trim().split(/\s+/);
+    return {
+      documento: this.documentNumber,
+      nombre: parts[0] ?? '',
+      apellido: parts.slice(1).join(' '),
+      telefono: this.phone,
+    };
   }
 
   when(value: string) {

@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService, ClinicService, clinicaSession, errorMessage } from 'sdk';
 import { UiButton, UiField } from 'ui';
 import { firstValueFrom } from 'rxjs';
@@ -14,11 +14,13 @@ export class RegisterPage {
   private readonly auth = inject(AuthService);
   private readonly clinic = inject(ClinicService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   documentNumber = '';
   firstName = '';
   lastName = '';
   birthDate = '';
   phone = '';
+  readonly fromRequest = signal(false);
   email = '';
   password = '';
   readonly clinicName = signal('Consultorio');
@@ -26,6 +28,12 @@ export class RegisterPage {
   readonly loading = signal(false);
 
   constructor() {
+    const query = this.route.snapshot.queryParamMap;
+    this.documentNumber = query.get('documento') ?? '';
+    this.firstName = query.get('nombre') ?? '';
+    this.lastName = query.get('apellido') ?? '';
+    this.phone = query.get('telefono') ?? '';
+    this.fromRequest.set(!!(this.documentNumber || this.firstName || this.phone));
     void readClinicName(this.clinic).then((name) => this.clinicName.set(name));
   }
 
