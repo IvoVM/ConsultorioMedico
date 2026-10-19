@@ -2,13 +2,13 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService, ClinicService, TenantRole, clinicaSession, errorMessage } from 'sdk';
-import { UiButton, UiField, passwordIssue } from 'ui';
+import { UiButton, UiField, UiPassword, passwordIssue } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { readClinicName } from './clinic-name';
 import { AppRoute } from '../../app.routes.enum';
 
 @Component({
-  imports: [FormsModule, UiButton, UiField],
+  imports: [FormsModule, UiButton, UiField, UiPassword],
   templateUrl: './change-password.html',
 })
 export class ChangePasswordPage {

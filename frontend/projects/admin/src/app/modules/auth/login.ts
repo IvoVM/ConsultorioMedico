@@ -2,11 +2,11 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService, ClinicService, clinicaSession, errorMessage } from 'sdk';
-import { UiButton, UiField } from 'ui';
+import { UiButton, UiField, UiPassword } from 'ui';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
-  imports: [FormsModule, UiButton, UiField],
+  imports: [FormsModule, UiButton, UiField, UiPassword],
   templateUrl: './login.html',
 })
 export class LoginPage {

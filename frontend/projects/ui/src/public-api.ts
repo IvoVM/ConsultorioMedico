@@ -1,2 +1,2 @@
-export { FechaPipe, UiActions, UiBadge, UiButton, UiCalendar, UiEmpty, UiField, UiIcon, UiModal, UiNav, UiPage, UiSelect, UiSkeleton, UiSpinner, UiTable, formatFecha, formatPhone, passwordIssue } from './lib/ui';
+export { FechaPipe, UiActions, UiBadge, UiButton, UiCalendar, UiEmpty, UiField, UiIcon, UiModal, UiNav, UiPage, UiPassword, UiSelect, UiSkeleton, UiSpinner, UiTable, formatFecha, formatPhone, passwordIssue } from './lib/ui';
 export type { NavLink, NavNode, SelectOption } from './lib/ui';

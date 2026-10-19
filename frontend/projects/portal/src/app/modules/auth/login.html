@@ -10,8 +10,8 @@
     </section>
     <section class="flex items-center border-rule px-6 py-12 sm:px-12 lg:border-l lg:px-16">
       <form class="flex w-full max-w-md flex-col gap-5" (ngSubmit)="submit()">
-        <ui-field label="Documento"><input name="documentNumber" [(ngModel)]="documentNumber" required autocomplete="username" /></ui-field>
-        <ui-field label="Contraseña"><input name="password" type="password" [(ngModel)]="password" required autocomplete="current-password" /></ui-field>
+        <ui-field label="Documento"><input name="username" [(ngModel)]="documentNumber" required autocomplete="username" inputmode="numeric" autocapitalize="none" spellcheck="false" /></ui-field>
+        <ui-field label="Contraseña"><ui-password><input name="password" type="password" [(ngModel)]="password" required autocomplete="current-password" /></ui-password></ui-field>
         @if (error()) { <p class="text-sm text-pulse" role="alert">{{ error() }}</p> }
         <ui-button type="submit" [loading]="loading()">Entrar</ui-button>
       </form>
@@ -29,8 +29,8 @@
     </section>
     <section class="flex items-center border-rule px-6 py-12 sm:px-12 lg:border-l lg:px-16">
       <form class="flex w-full max-w-md flex-col gap-5" (ngSubmit)="submit()">
-        <ui-field label="Documento"><input name="documentNumber" [(ngModel)]="documentNumber" required autocomplete="username" /></ui-field>
-        <ui-field label="Contraseña"><input name="password" type="password" [(ngModel)]="password" required autocomplete="current-password" /></ui-field>
+        <ui-field label="Documento"><input name="username" [(ngModel)]="documentNumber" required autocomplete="username" inputmode="numeric" autocapitalize="none" spellcheck="false" /></ui-field>
+        <ui-field label="Contraseña"><ui-password><input name="password" type="password" [(ngModel)]="password" required autocomplete="current-password" /></ui-password></ui-field>
         @if (error()) { <p class="text-sm text-pulse" role="alert">{{ error() }}</p> }
         <ui-button type="submit" [loading]="loading()">Entrar</ui-button>
       </form>

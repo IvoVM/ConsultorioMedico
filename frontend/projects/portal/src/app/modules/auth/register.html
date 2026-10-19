@@ -13,15 +13,15 @@
   </section>
   <section class="flex items-center border-rule px-6 py-12 sm:px-12 lg:border-l lg:px-16">
     <form class="flex w-full max-w-md flex-col gap-5" (ngSubmit)="submit()">
-      <ui-field label="Documento"><input name="documentNumber" [(ngModel)]="documentNumber" required /></ui-field>
       <ui-field label="Nombre"><input name="firstName" [(ngModel)]="firstName" required autocomplete="given-name" /></ui-field>
       <ui-field label="Apellido"><input name="lastName" [(ngModel)]="lastName" required autocomplete="family-name" /></ui-field>
       <ui-field label="Teléfono"><input name="phone" type="tel" inputmode="tel" [(ngModel)]="phone" (blur)="normalizePhone()" required maxlength="30" placeholder="+54 11 00000000" autocomplete="tel" /></ui-field>
+      <ui-field label="Documento"><input name="username" [(ngModel)]="documentNumber" required autocomplete="username" inputmode="numeric" autocapitalize="none" spellcheck="false" /></ui-field>
       <ui-field label="Contraseña">
-        <input name="password" type="password" [(ngModel)]="password" required minlength="8" autocomplete="new-password" />
+        <ui-password><input name="password" type="password" [(ngModel)]="password" required minlength="8" autocomplete="new-password" /></ui-password>
       </ui-field>
       <ui-field label="Confirmar contraseña">
-        <input name="confirm" type="password" [(ngModel)]="confirm" required minlength="8" autocomplete="new-password" />
+        <ui-password><input name="confirm" type="password" [(ngModel)]="confirm" required minlength="8" autocomplete="new-password" /></ui-password>
       </ui-field>
       <p class="text-sm text-ink/65">Al menos 8 caracteres, con una mayúscula, una minúscula y un número.</p>
       @if (error()) { <p class="text-sm text-pulse" role="alert">{{ error() }}</p> }

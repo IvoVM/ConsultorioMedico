@@ -2,14 +2,14 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService, ClinicService, TenantRole, clinicaSession, errorMessage } from 'sdk';
-import { UiButton, UiField } from 'ui';
+import { UiButton, UiField, UiPassword } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { readPending } from '../appointments/pending-booking';
 import { readClinicName } from './clinic-name';
 import { AppRoute } from '../../app.routes.enum';
 
 @Component({
-  imports: [FormsModule, UiButton, UiField],
+  imports: [FormsModule, UiButton, UiField, UiPassword],
   templateUrl: './login.html',
 })
 export class LoginPage {

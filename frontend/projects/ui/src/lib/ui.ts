@@ -12,6 +12,7 @@ export { UiModal } from './ui-modal.component';
 export { UiNav } from './ui-nav.component';
 export type { NavLink, NavNode } from './ui-nav.component';
 export { UiPage } from './ui-page.component';
+export { UiPassword } from './ui-password.component';
 export { UiSelect } from './ui-select.component';
 export type { SelectOption } from './ui-select.component';
 export { UiSkeleton } from './ui-skeleton.component';

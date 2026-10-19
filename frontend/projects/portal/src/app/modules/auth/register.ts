@@ -2,13 +2,13 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService, ClinicService, clinicaSession, errorMessage } from 'sdk';
-import { UiButton, UiField, formatPhone, passwordIssue } from 'ui';
+import { UiButton, UiField, UiPassword, formatPhone, passwordIssue } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { readClinicName } from './clinic-name';
 import { AppRoute } from '../../app.routes.enum';
 
 @Component({
-  imports: [FormsModule, UiButton, UiField],
+  imports: [FormsModule, UiButton, UiField, UiPassword],
   templateUrl: './register.html',
 })
 export class RegisterPage {
