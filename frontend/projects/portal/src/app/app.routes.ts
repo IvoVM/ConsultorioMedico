@@ -4,7 +4,6 @@ import { authGuard, roleGuard } from './auth.guard';
 export const routes: Routes = [
   { path: 'ingreso', loadComponent: () => import('./modules/auth/welcome').then((m) => m.WelcomePage) },
   { path: 'ingreso/empleado', loadComponent: () => import('./modules/auth/login').then((m) => m.LoginPage), data: { audience: 'staff' } },
-  { path: 'ingreso/cuenta', loadComponent: () => import('./modules/auth/login').then((m) => m.LoginPage), data: { audience: 'patient' } },
   { path: 'paciente', redirectTo: 'reservar' },
   {
     path: '',
@@ -12,6 +11,7 @@ export const routes: Routes = [
     children: [
       { path: 'reservar', loadComponent: () => import('./modules/appointments/request-appointment').then((m) => m.RequestAppointmentPage) },
       { path: 'registro', loadComponent: () => import('./modules/auth/register').then((m) => m.RegisterPage) },
+      { path: 'ingreso/cuenta', loadComponent: () => import('./modules/auth/login').then((m) => m.LoginPage), data: { audience: 'patient' } },
       {
         path: '',
         canActivate: [authGuard],

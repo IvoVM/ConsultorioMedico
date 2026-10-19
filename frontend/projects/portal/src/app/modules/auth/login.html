@@ -1,22 +1,25 @@
-<main class="min-h-screen bg-paper px-6 py-10 text-ink sm:px-10 sm:py-14">
-  <a [routerLink]="staff ? '/ingreso' : '/reservar'" class="text-link">Volver</a>
-  <p class="mt-10 font-serif text-2xl text-clinic-deep">{{ clinicName() }}</p>
-  <h1 class="mt-3 max-w-[16ch] font-serif text-4xl leading-tight font-medium tracking-tight sm:text-5xl">{{ staff ? 'Quiero acceder al sistema administrativo' : 'Tu cuenta' }}</h1>
-  <p class="mt-4 max-w-[40ch] text-lg text-ink/75">
-    @if (staff) {
-      Entrá con el email del consultorio.
-    } @else {
-      Entrá con el documento con el que pediste el turno. Ahí están tus solicitudes, los turnos y la historia.
-    }
-  </p>
-  <form class="mt-10 max-w-md space-y-5" (ngSubmit)="submit()">
-    @if (staff) {
+@if (staff) {
+  <main class="min-h-screen bg-paper px-6 py-10 text-ink sm:px-10 sm:py-14">
+    <a routerLink="/ingreso" class="text-link">Volver</a>
+    <p class="mt-10 font-serif text-2xl text-clinic-deep">{{ clinicName() }}</p>
+    <h1 class="mt-3 max-w-[16ch] font-serif text-4xl leading-tight font-medium tracking-tight sm:text-5xl">Quiero acceder al sistema administrativo</h1>
+    <p class="mt-4 max-w-[40ch] text-lg text-ink/75">Entrá con el email del consultorio.</p>
+    <form class="mt-10 max-w-md space-y-5" (ngSubmit)="submit()">
       <ui-field label="Email"><input name="email" type="email" [(ngModel)]="email" required autocomplete="username" /></ui-field>
-    } @else {
+      <ui-field label="Contraseña"><input name="password" type="password" [(ngModel)]="password" required autocomplete="current-password" /></ui-field>
+      @if (error()) { <p class="text-sm text-pulse" role="alert">{{ error() }}</p> }
+      <ui-button type="submit" [loading]="loading()">Entrar</ui-button>
+    </form>
+  </main>
+} @else {
+  <section>
+    <h1 class="font-serif text-5xl leading-tight font-medium tracking-tight">Tu cuenta</h1>
+    <p class="mt-4 max-w-[46ch] text-lg leading-relaxed text-ink/75">Recordá que los turnos creados están asociados a tu número de documento.</p>
+    <form class="mt-10 max-w-md space-y-5" (ngSubmit)="submit()">
       <ui-field label="Documento"><input name="documentNumber" [(ngModel)]="documentNumber" required autocomplete="username" /></ui-field>
-    }
-    <ui-field label="Contraseña"><input name="password" type="password" [(ngModel)]="password" required autocomplete="current-password" /></ui-field>
-    @if (error()) { <p class="text-sm text-pulse" role="alert">{{ error() }}</p> }
-    <ui-button type="submit" [loading]="loading()">Entrar</ui-button>
-  </form>
-</main>
+      <ui-field label="Contraseña"><input name="password" type="password" [(ngModel)]="password" required autocomplete="current-password" /></ui-field>
+      @if (error()) { <p class="text-sm text-pulse" role="alert">{{ error() }}</p> }
+      <ui-button type="submit" [loading]="loading()">Entrar</ui-button>
+    </form>
+  </section>
+}
