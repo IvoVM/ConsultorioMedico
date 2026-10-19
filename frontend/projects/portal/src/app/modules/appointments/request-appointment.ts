@@ -146,14 +146,14 @@ export class RequestAppointmentPage {
       case Step.Specialty: return this.intent() === Intent.Estudio
         ? 'Es una práctica. Después podés tomar el turno más próximo o elegir el día.'
         : 'Es para ver a un profesional. Después podés tomar el turno más próximo o elegir el día.';
-      case Step.Day: return 'Los días marcados tienen un horario libre.';
+      case Step.Day: return 'Solo aparecen los días con un horario libre.';
       case Step.Time: return `${this.specialtyName()}. Elegí un horario.`;
       case Step.Data: return 'Nombre, apellido, documento y teléfono. Con el documento vas a poder ver esta solicitud.';
       case Step.Coverage: return this.insurers().length ? 'Si no tenés, el turno queda como particular.' : 'Este profesional atiende como particular.';
       case Step.Review: return 'Al enviarla, la secretaría confirma el turno.';
       default: return this.session.token()
-        ? 'La secretaría puede llamarte para confirmar el turno. También lo vas a ver en Mis turnos.'
-        : 'La secretaría puede llamarte para confirmar el turno. Si querés verlo en el momento, creá una cuenta.';
+        ? 'La secretaría puede contactarte para confirmar el turno. También lo vas a ver en Mis turnos.'
+        : 'La secretaría puede contactarte para confirmar el turno. Si querés ver el estado del turno y tu información personal, podés crear una cuenta.';
     }
   }
 
@@ -500,6 +500,10 @@ export class RequestAppointmentPage {
     }
   }
 
+  private typeIds() {
+    return this.intent() === Intent.Estudio ? [this.studyId()].filter((id) => id.length > 0) : this.visitTypeIds();
+  }
+
   private accepts(slot: SlotDto) {
     if (this.intent() === Intent.Estudio) return slot.appointmentTypeId === this.studyId();
     return this.visitTypeIds().includes(slot.appointmentTypeId);
@@ -514,6 +518,7 @@ export class RequestAppointmentPage {
         specialtyId: this.specialtyId(),
         year: cursor.getFullYear(),
         month: cursor.getMonth() + 1,
+        appointmentTypeIds: this.typeIds(),
       }));
       const upcoming = days.map((day) => day.slice(0, 10)).filter((day) => day >= today).sort();
       for (const iso of upcoming) {
@@ -539,6 +544,7 @@ export class RequestAppointmentPage {
         specialtyId: this.specialtyId(),
         year: this.year(),
         month: this.month(),
+        appointmentTypeIds: this.typeIds(),
       }));
       this.openDays.set(days);
     } catch (error) {

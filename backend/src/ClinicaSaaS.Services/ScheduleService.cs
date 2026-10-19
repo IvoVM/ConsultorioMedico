@@ -419,12 +419,13 @@ public class ScheduleService(
         return insurerId is null ? (null, null) : (insurerId, record.MemberNumber.Trim());
     }
 
-    public async Task<IReadOnlyList<DateOnly>> OpenDaysAsync(Guid? locationId, Guid specialtyId, int year, int month, CancellationToken ct)
+    public async Task<IReadOnlyList<DateOnly>> OpenDaysAsync(Guid? locationId, Guid specialtyId, int year, int month, IReadOnlyCollection<Guid>? appointmentTypeIds, CancellationToken ct)
     {
         if (specialtyId == Guid.Empty)
             throw new BusinessRuleException("Elegí una especialidad.");
         if (month is < 1 or > 12)
             throw new BusinessRuleException("Ese mes no existe.");
+        var types = appointmentTypeIds?.Where(id => id != Guid.Empty).ToHashSet();
         var locations = locationId is Guid id && id != Guid.Empty
             ? new List<Guid> { id }
             : await organization.Locations.Where(location => location.IsActive).Select(location => location.Id).ToListAsync(ct);
@@ -438,7 +439,7 @@ public class ScheduleService(
             foreach (var location in locations)
             {
                 var slots = await AvailabilityAsync(new AvailabilityQuery(location, specialtyId, null, date), ct);
-                if (slots.Any(slot => slot.Start > now))
+                if (slots.Any(slot => slot.Start > now && (types is not { Count: > 0 } || types.Contains(slot.AppointmentTypeId))))
                 {
                     open.Add(date);
                     break;

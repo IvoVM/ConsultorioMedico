@@ -56,8 +56,8 @@
                 <div class="weekdays" aria-hidden="true"><span>Lu</span><span>Ma</span><span>Mi</span><span>Ju</span><span>Vi</span><span>Sá</span><span>Do</span></div>
                 <div class="month-grid">
                   @for (cell of cells(); track $index) {
-                    @if (cell) {
-                      <button type="button" [disabled]="!cell.open" [class.is-open]="cell.open" [class.is-selected]="cell.iso === dayIso()" (click)="pickDay(cell.iso)">{{ cell.day }}</button>
+                    @if (cell && cell.open) {
+                      <button type="button" class="is-open" [class.is-selected]="cell.iso === dayIso()" (click)="pickDay(cell.iso)">{{ cell.day }}</button>
                     } @else {
                       <span></span>
                     }
