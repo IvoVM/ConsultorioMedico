@@ -1,7 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { AppointmentDto, AppointmentsService, BillingService, BookingRequestDto, InvoiceDto, PatientLookupDto, PatientsService, PaymentMethod, ScheduleService, SlotDto, WaitlistEntryDto, errorMessage } from 'sdk';
+import { AppointmentDto, AppointmentStatus, AppointmentsService, BillingService, BookingRequestDto, InvoiceDto, InvoiceStatus, PatientLookupDto, PatientsService, PaymentMethod, ScheduleService, SlotDto, WaitlistEntryDto, errorMessage } from 'sdk';
 import { FechaPipe, UiActions, UiBadge, UiButton, UiCalendar, UiEmpty, UiField, UiSkeleton, UiTable, formatFecha } from 'ui';
 import { Observable, firstValueFrom } from 'rxjs';
 import { appointmentStatusLabels } from '../appointments/models/appointment-status-labels';
@@ -9,9 +9,9 @@ import { invoiceStatusLabels } from './models/invoice-labels';
 import { AppRoute } from '../../app.routes.enum';
 
 const paymentLabels: Record<PaymentMethod, string> = {
-  Cash: 'efectivo',
-  Transfer: 'transferencia',
-  Card: 'tarjeta',
+  [PaymentMethod.Cash]: 'efectivo',
+  [PaymentMethod.Transfer]: 'transferencia',
+  [PaymentMethod.Card]: 'tarjeta',
 };
 
 @Component({
@@ -20,6 +20,9 @@ const paymentLabels: Record<PaymentMethod, string> = {
 })
 export class FrontDeskPage {
   readonly route = AppRoute;
+  readonly status = AppointmentStatus;
+  readonly invoice = InvoiceStatus;
+  readonly payment = PaymentMethod;
   private readonly appointmentsApi = inject(AppointmentsService);
   private readonly billing = inject(BillingService);
   private readonly patientsApi = inject(PatientsService);
@@ -77,7 +80,7 @@ export class FrontDeskPage {
   }
 
   canMove(appointment: AppointmentDto) {
-    return appointment.status === 'Booked' || appointment.status === 'CheckedIn';
+    return appointment.status === AppointmentStatus.Booked || appointment.status === AppointmentStatus.CheckedIn;
   }
 
   private async searchPatients() {

@@ -1,4 +1,4 @@
-@if (session.role() !== 'Patient' && !patientId) {
+@if (session.role() !== roles.Patient && !patientId) {
   <ui-empty message="Abrí la ficha desde la búsqueda de secretaría o desde el turno del médico." />
 }
 @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }

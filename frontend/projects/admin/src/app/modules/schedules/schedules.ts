@@ -29,7 +29,7 @@ export class SchedulesPage {
   private readonly blockSearch: { timer?: ReturnType<typeof setTimeout> } = {};
   private readonly blockoutSearch: { timer?: ReturnType<typeof setTimeout> } = {};
   readonly dayLabels = dayLabels;
-  readonly days: DayOfWeek[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  readonly days: DayOfWeek[] = [DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday, DayOfWeek.Saturday];
   readonly professionals = signal<ProfessionalDto[]>([]);
   readonly appointmentTypes = signal<AppointmentTypeDto[]>([]);
   readonly professionalOptions = computed(() =>
@@ -63,7 +63,7 @@ export class SchedulesPage {
   readonly blockSort = signal<SortState>({ key: 'day', dir: 'asc' });
   readonly blockoutSort = signal<SortState>({ key: 'start', dir: 'asc' });
   professionalId = '';
-  day: DayOfWeek = 'Monday';
+  day: DayOfWeek = DayOfWeek.Monday;
   from = '09:00';
   to = '13:00';
   locationId = '';

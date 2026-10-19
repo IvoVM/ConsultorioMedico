@@ -1,6 +1,6 @@
 @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
 
-@if (session.role() === 'Patient') {
+@if (session.role() === roles.Patient) {
   <div class="grid gap-8 border-b border-rule pb-8 md:grid-cols-2">
     <section>
       <h2 class="font-serif text-3xl tracking-tight">Reservar un turno</h2>
@@ -28,7 +28,7 @@
             <tr>
               <td class="whitespace-nowrap tabular-nums">{{ whenLabel(appointment.start) }}</td>
               <td>{{ appointment.professional }}</td>
-              <td><ui-badge [tone]="appointment.status === 'Completed' ? 'ok' : 'muted'">{{ statusLabels[appointment.status] }}</ui-badge></td>
+              <td><ui-badge [tone]="appointment.status === status.Completed ? 'ok' : 'muted'">{{ statusLabels[appointment.status] }}</ui-badge></td>
             </tr>
           }
         </tbody>
@@ -36,7 +36,7 @@
       </div>
     }
   </section>
-} @else if (session.role() === 'Doctor') {
+} @else if (session.role() === roles.Doctor) {
   <header class="mb-6">
     <h2 class="font-serif text-3xl tracking-tight">Pacientes de hoy</h2>
     <p class="mt-1 text-ink/70">{{ dayLabel }}@if (!loading()) { <span> · {{ appointments().length }} {{ appointments().length === 1 ? 'turno' : 'turnos' }}</span> }</p>
@@ -54,7 +54,7 @@
             <td class="whitespace-nowrap tabular-nums">{{ timeLabel(appointment.start) }}</td>
             <td class="font-serif text-lg leading-tight">{{ appointment.patient }}</td>
             <td>{{ appointment.visitReason || '—' }}</td>
-            <td><ui-badge [tone]="appointment.status === 'Cancelled' || appointment.status === 'NoShow' ? 'warn' : appointment.status === 'Completed' ? 'ok' : 'muted'">{{ statusLabels[appointment.status] }}</ui-badge></td>
+            <td><ui-badge [tone]="appointment.status === status.Cancelled || appointment.status === status.NoShow ? 'warn' : appointment.status === status.Completed ? 'ok' : 'muted'">{{ statusLabels[appointment.status] }}</ui-badge></td>
             <td class="whitespace-nowrap"><a class="text-link" [routerLink]="route.Historia" [queryParams]="{ paciente: appointment.patientId }">Historia</a></td>
           </tr>
         }
@@ -82,7 +82,7 @@
             <td class="whitespace-nowrap tabular-nums">{{ timeLabel(appointment.start) }}</td>
             <td class="font-serif text-lg leading-tight">{{ appointment.patient }}</td>
             <td>{{ appointment.professional }}</td>
-            <td><ui-badge [tone]="appointment.status === 'Cancelled' || appointment.status === 'NoShow' ? 'warn' : appointment.status === 'Completed' ? 'ok' : 'muted'">{{ statusLabels[appointment.status] }}</ui-badge></td>
+            <td><ui-badge [tone]="appointment.status === status.Cancelled || appointment.status === status.NoShow ? 'warn' : appointment.status === status.Completed ? 'ok' : 'muted'">{{ statusLabels[appointment.status] }}</ui-badge></td>
           </tr>
         }
       </tbody>

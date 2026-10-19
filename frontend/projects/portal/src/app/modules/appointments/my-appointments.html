@@ -15,7 +15,7 @@
               {{ request.specialty }}
               <span class="mt-1 block text-sm text-ink/70">{{ request.professional }}</span>
             </td>
-            <td><ui-badge [tone]="request.status === 'Rejected' ? 'warn' : 'ok'">{{ requestStatus[request.status] }}</ui-badge></td>
+            <td><ui-badge [tone]="request.status === booking.Rejected ? 'warn' : 'ok'">{{ requestStatus[request.status] }}</ui-badge></td>
           </tr>
         }
       </tbody>
@@ -39,9 +39,9 @@
             {{ appointment.professional }}
             <span class="mt-1 block text-sm text-ink/70">{{ appointment.insurer ? appointment.insurer + (appointment.memberNumber ? ' · ' + appointment.memberNumber : '') : 'Particular' }}</span>
           </td>
-          <td><ui-badge [tone]="appointment.status === 'Cancelled' ? 'warn' : 'ok'">{{ statusLabels[appointment.status] }}</ui-badge></td>
+          <td><ui-badge [tone]="appointment.status === status.Cancelled ? 'warn' : 'ok'">{{ statusLabels[appointment.status] }}</ui-badge></td>
           <td>
-            @if (appointment.status === 'Booked') {
+            @if (appointment.status === status.Booked) {
               <ui-button variant="ghost" [loading]="pending() === appointment.id" (click)="cancel(appointment)">Cancelar</ui-button>
             }
           </td>

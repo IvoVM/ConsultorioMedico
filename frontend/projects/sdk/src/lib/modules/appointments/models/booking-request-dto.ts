@@ -1,3 +1,5 @@
+import { BookingRequestStatus } from './booking-request-status';
+
 export interface BookingRequestDto {
   id: string;
   name: string;
@@ -9,7 +11,7 @@ export interface BookingRequestDto {
   start: string;
   insurer?: string | null;
   memberNumber?: string | null;
-  status: string;
+  status: BookingRequestStatus;
 }
 
 export interface CreateBookingRequestCommand {

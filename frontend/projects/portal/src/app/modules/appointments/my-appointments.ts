@@ -1,5 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
-import { AppointmentDto, AppointmentsService, BookingRequestDto, errorMessage } from 'sdk';
+import { AppointmentDto, AppointmentStatus, AppointmentsService, BookingRequestDto, BookingRequestStatus, errorMessage } from 'sdk';
 import { appointmentStatusLabels } from './models/appointment-status-labels';
 import { FechaPipe, UiBadge, UiButton, UiEmpty, UiSkeleton, UiTable } from 'ui';
 import { firstValueFrom } from 'rxjs';
@@ -11,9 +11,15 @@ import { firstValueFrom } from 'rxjs';
 export class MyAppointmentsPage {
   private readonly appointmentsApi = inject(AppointmentsService);
   readonly statusLabels = appointmentStatusLabels;
+  readonly status = AppointmentStatus;
+  readonly booking = BookingRequestStatus;
   readonly appointments = signal<AppointmentDto[]>([]);
   readonly requests = signal<BookingRequestDto[]>([]);
-  readonly requestStatus: Record<string, string> = { Pending: 'Pendiente', Approved: 'Confirmada', Rejected: 'Rechazada' };
+  readonly requestStatus: Record<BookingRequestStatus, string> = {
+    [BookingRequestStatus.Pending]: 'Pendiente',
+    [BookingRequestStatus.Approved]: 'Confirmada',
+    [BookingRequestStatus.Rejected]: 'Rechazada',
+  };
   readonly error = signal('');
   readonly loading = signal(true);
   readonly pending = signal('');

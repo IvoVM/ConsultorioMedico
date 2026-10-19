@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Text } from 'react-native';
 import { api, fechaCorta, hora, statusLabel, type Appointment } from '../../src/api';
+import { AppointmentStatus } from '../../src/status';
 import { colors, type } from '../../src/theme';
 import { Button, Card, Empty, ErrorText, Screen } from '../../src/ui';
 
@@ -35,7 +36,7 @@ export default function Turnos() {
           <Text style={{ fontFamily: type.sansBold, color: colors.deep }}>{fechaCorta(item.start)} {hora(item.start)}</Text>
           <Text style={{ fontFamily: type.sans, color: colors.ink }}>{item.professional} · {item.appointmentType}</Text>
           <Text style={{ fontFamily: type.sans, color: colors.ink }}>{statusLabel[item.status] ?? item.status}</Text>
-          {item.status === 'Booked' ? <Button label="Cancelar" tone="pulse" onPress={() => void cancel(item.id)} /> : null}
+          {item.status === AppointmentStatus.Booked ? <Button label="Cancelar" tone="pulse" onPress={() => void cancel(item.id)} /> : null}
         </Card>
       ))}
     </Screen>

@@ -103,14 +103,14 @@
         <ui-field label="Rol">
           <ui-select name="role" [(ngModel)]="role" [options]="roleOptions" />
         </ui-field>
-        @if (role === 'Doctor') {
+        @if (role === roles.Doctor) {
           <ui-field label="Matrícula"><input name="license" maxlength="40" [(ngModel)]="licenseNumber" /></ui-field>
           <ui-field label="Especialidad">
             <ui-select name="specialtyId" [(ngModel)]="specialtyId" [options]="specialtyOptions()" placeholder="Elegir especialidad" />
           </ui-field>
         }
       </div>
-      @if (role === 'Doctor') {
+      @if (role === roles.Doctor) {
         <fieldset class="border border-rule p-4">
           <legend class="px-2 text-sm font-bold">Obras sociales que atiende</legend>
           <p class="mb-3 text-sm text-ink/70">Solo las que la clínica permite. El paciente las ve al reservar un turno con este médico.</p>

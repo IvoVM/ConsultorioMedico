@@ -117,7 +117,10 @@ function modelImport(moduleId, typeName) {
 
 function emitModel(moduleId, name, schema) {
   if (schema.enum) {
-    return `${header}export type ${name} = ${schema.enum.map((value) => JSON.stringify(value)).join(' | ')};\n`;
+    const members = schema.enum
+      .map((value) => `  ${/^[A-Za-z_][A-Za-z0-9_]*$/.test(value) ? value : JSON.stringify(value)} = ${JSON.stringify(value)},`)
+      .join('\n');
+    return `${header}export enum ${name} {\n${members}\n}\n`;
   }
   const required = new Set(schema.required ?? []);
   const refs = [...collectRefs(schema)].filter((ref) => ref !== name);

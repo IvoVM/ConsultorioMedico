@@ -8,6 +8,7 @@ import {
   OrganizationService,
   ScheduleService,
   AppointmentKind,
+  TenantRole,
   AppointmentTypeDto,
   SlotDto,
   SpecialtyDto,
@@ -432,7 +433,7 @@ export class RequestAppointmentPage {
       this.specialties.set(specialties);
       this.types.set(types);
       this.locationIds.set(locations.filter((location) => location.isActive).map((location) => location.id));
-      if (clinicaSession.role() === 'Patient') {
+      if (clinicaSession.role() === TenantRole.Patient) {
         const history = await firstValueFrom(this.clinical.clinicalHistory()).catch(() => null);
         if (history) {
           const parts = history.patient.name.trim().split(/\s+/);

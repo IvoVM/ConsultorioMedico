@@ -48,10 +48,11 @@ export class EmployeesPage {
   private readonly employees = inject(EmployeesService);
   private readonly organization = inject(OrganizationService);
   readonly roleLabels = roleLabels;
+  readonly roles = TenantRole;
   readonly roleOptions: SelectOption[] = [
-    { value: 'Doctor', label: 'Médico' },
-    { value: 'Secretary', label: 'Secretario' },
-    { value: 'TenantAdmin', label: 'Administrador' },
+    { value: TenantRole.Doctor, label: 'Médico' },
+    { value: TenantRole.Secretary, label: 'Secretario' },
+    { value: TenantRole.TenantAdmin, label: 'Administrador' },
   ];
   readonly people = signal<EmployeeDto[]>([]);
   readonly total = signal(0);
@@ -78,7 +79,7 @@ export class EmployeesPage {
   lastName = '';
   email = '';
   documentNumber = '';
-  role: TenantRole = 'Doctor';
+  role: TenantRole = TenantRole.Doctor;
   licenseNumber = '';
   specialtyId = '';
 
@@ -133,7 +134,7 @@ export class EmployeesPage {
       this.lastName = '';
       this.email = '';
       this.documentNumber = '';
-      this.role = 'Doctor';
+      this.role = TenantRole.Doctor;
       this.licenseNumber = '';
       this.specialtyId = this.specialties()[0]?.value ?? '';
       this.insurerIds.set([]);
@@ -196,16 +197,16 @@ export class EmployeesPage {
       email: this.email.trim(),
       documentNumber: this.documentNumber.trim(),
       role: this.role,
-      licenseNumber: this.role === 'Doctor' ? this.licenseNumber.trim() || null : null,
-      specialtyId: this.role === 'Doctor' ? this.specialtyId : null,
-      insurerIds: this.role === 'Doctor' ? this.insurerIds() : [],
+      licenseNumber: this.role === TenantRole.Doctor ? this.licenseNumber.trim() || null : null,
+      specialtyId: this.role === TenantRole.Doctor ? this.specialtyId : null,
+      insurerIds: this.role === TenantRole.Doctor ? this.insurerIds() : [],
     };
   }
 
   async create() {
     this.error.set('');
     this.password.set('');
-    if (this.role === 'Doctor' && !this.specialtyId) {
+    if (this.role === TenantRole.Doctor && !this.specialtyId) {
       this.error.set('Un médico necesita una especialidad. Cargala en Especialidades antes de esta ficha.');
       return;
     }

@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { clinicaSession } from 'sdk';
+import { TenantRole, clinicaSession } from 'sdk';
 import { AppRoute } from './app.routes.enum';
 
 export const signedInGuard: CanActivateFn = () =>
@@ -13,7 +13,7 @@ export const authGuard: CanActivateFn = () => {
   return true;
 };
 
-export function roleGuard(...roles: string[]): CanActivateFn {
+export function roleGuard(...roles: TenantRole[]): CanActivateFn {
   return () => {
     const router = inject(Router);
     if (clinicaSession.mustChangePassword()) return router.createUrlTree([AppRoute.Clave]);

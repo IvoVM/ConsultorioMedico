@@ -33,7 +33,7 @@
       <tr>
         <td>{{ item.patient }}</td>
         <td>{{ item.total }}</td>
-        <td><ui-badge [tone]="item.status === 'Paid' ? 'ok' : 'warn'">{{ statusLabels[item.status] }}</ui-badge></td>
+        <td><ui-badge [tone]="item.status === invoice.Paid ? 'ok' : 'warn'">{{ statusLabels[item.status] }}</ui-badge></td>
         <td>{{ item.paymentMethod ? methodLabels[item.paymentMethod] : '—' }}</td>
       </tr>
     }

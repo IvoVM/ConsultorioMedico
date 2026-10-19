@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { TenantRole } from 'sdk';
 import { authGuard, roleGuard, signedInGuard } from './auth.guard';
 import { AppRoute, routePath } from './app.routes.enum';
 
@@ -22,30 +23,30 @@ export const routes: Routes = [
           { path: routePath(AppRoute.Panel), loadComponent: () => import('./modules/shell/dashboard').then((m) => m.DashboardPage) },
           {
             path: routePath(AppRoute.MisTurnos),
-            canActivate: [roleGuard('Patient')],
+            canActivate: [roleGuard(TenantRole.Patient)],
             loadComponent: () => import('./modules/appointments/my-appointments').then((m) => m.MyAppointmentsPage),
           },
           {
             path: routePath(AppRoute.Historia),
-            canActivate: [roleGuard('Patient', 'Doctor', 'Secretary', 'TenantAdmin')],
+            canActivate: [roleGuard(TenantRole.Patient, TenantRole.Doctor, TenantRole.Secretary, TenantRole.TenantAdmin)],
             loadComponent: () => import('./modules/clinical/clinical-history').then((m) => m.ClinicalHistoryPage),
           },
           {
             path: routePath(AppRoute.Recetas),
-            canActivate: [roleGuard('Patient')],
+            canActivate: [roleGuard(TenantRole.Patient)],
             loadComponent: () => import('./modules/prescriptions/prescriptions').then((m) => m.PrescriptionsPage),
           },
           {
             path: routePath(AppRoute.ReservarPaciente),
-            canActivate: [roleGuard('Secretary', 'TenantAdmin')],
+            canActivate: [roleGuard(TenantRole.Secretary, TenantRole.TenantAdmin)],
             loadComponent: () => import('./modules/appointments/book-appointment').then((m) => m.BookAppointmentPage),
           },
           {
             path: routePath(AppRoute.Secretaria),
-            canActivate: [roleGuard('Secretary', 'TenantAdmin')],
+            canActivate: [roleGuard(TenantRole.Secretary, TenantRole.TenantAdmin)],
             loadComponent: () => import('./modules/front-desk/front-desk').then((m) => m.FrontDeskPage),
           },
-          { path: routePath(AppRoute.Medico), canActivate: [roleGuard('Doctor')], loadComponent: () => import('./modules/clinical/doctor').then((m) => m.DoctorPage) },
+          { path: routePath(AppRoute.Medico), canActivate: [roleGuard(TenantRole.Doctor)], loadComponent: () => import('./modules/clinical/doctor').then((m) => m.DoctorPage) },
         ],
       },
     ],

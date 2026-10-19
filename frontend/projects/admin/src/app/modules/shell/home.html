@@ -28,7 +28,7 @@
             {{ appointment.professional }}
             <span class="mt-1 block text-sm text-ink/70">{{ appointment.insurer ? appointment.insurer + (appointment.memberNumber ? ' · afiliado ' + appointment.memberNumber : '') : 'Particular' }}</span>
           </td>
-          <td><ui-badge [tone]="appointment.status === 'Cancelled' || appointment.status === 'NoShow' ? 'warn' : appointment.status === 'Completed' ? 'ok' : 'muted'">{{ statusLabels[appointment.status] }}</ui-badge></td>
+          <td><ui-badge [tone]="appointment.status === status.Cancelled || appointment.status === status.NoShow ? 'warn' : appointment.status === status.Completed ? 'ok' : 'muted'">{{ statusLabels[appointment.status] }}</ui-badge></td>
           <td class="whitespace-nowrap"><a class="text-link" [routerLink]="['/pacientes', appointment.patientId]">Ficha</a></td>
         </tr>
       }

@@ -11,6 +11,7 @@ import {
   ScheduleService,
   SlotDto,
   SpecialtyDto,
+  TenantRole,
   clinicaSession,
   errorMessage,
 } from 'sdk';
@@ -41,6 +42,7 @@ export class BookAppointmentPage {
   private readonly cache = new Map<string, DayOption[]>();
   readonly session = clinicaSession;
   readonly paths = AppRoute;
+  readonly roles = TenantRole;
   readonly specialties = signal<SpecialtyDto[]>([]);
   readonly professionals = signal<ProfessionalDto[]>([]);
   readonly days = signal<DayOption[]>([]);
@@ -253,10 +255,10 @@ export class BookAppointmentPage {
 
   private async loadChart() {
     const requested = this.route.snapshot.queryParamMap.get('paciente');
-    const staff = clinicaSession.role() === 'Secretary' || clinicaSession.role() === 'TenantAdmin';
+    const staff = clinicaSession.role() === TenantRole.Secretary || clinicaSession.role() === TenantRole.TenantAdmin;
     const patientId = staff ? requested : null;
     if (staff && !patientId) return;
-    if (!staff && clinicaSession.role() !== 'Patient') return;
+    if (!staff && clinicaSession.role() !== TenantRole.Patient) return;
     this.bookingPatientId = patientId;
     try {
       const history = await firstValueFrom(this.clinical.clinicalHistory(patientId ? { patientId } : {}));
@@ -343,7 +345,7 @@ export class BookAppointmentPage {
 
   private async finishPending() {
     const pending = readPending();
-    if (!pending || clinicaSession.role() !== 'Patient') return false;
+    if (!pending || clinicaSession.role() !== TenantRole.Patient) return false;
     try {
       await firstValueFrom(
         this.appointmentsApi.bookAppointment({
@@ -399,7 +401,7 @@ export class BookAppointmentPage {
       this.draft.set(null);
       return;
     }
-    if (clinicaSession.role() !== 'Patient' && !this.bookingPatientId) {
+    if (clinicaSession.role() !== TenantRole.Patient && !this.bookingPatientId) {
       this.error.set('Para reservar este turno, elegí al paciente desde secretaría.');
       return;
     }

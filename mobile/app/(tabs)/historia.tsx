@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Text } from 'react-native';
 import { api, fechaCorta, type History } from '../../src/api';
+import { TenantRole } from '../../src/role';
 import { useSession } from '../../src/session';
 import { colors, type } from '../../src/theme';
 import { Button, Card, Empty, ErrorText, Field, Screen } from '../../src/ui';
@@ -11,7 +12,7 @@ export default function Historia() {
   const [matches, setMatches] = useState<{ patientId: string; firstName: string; lastName: string }[]>([]);
   const [history, setHistory] = useState<History | null>(null);
   const [error, setError] = useState('');
-  const staff = current && current.role !== 'Patient';
+  const staff = current && current.role !== TenantRole.Patient;
 
   async function open(patientId?: string) {
     setError('');

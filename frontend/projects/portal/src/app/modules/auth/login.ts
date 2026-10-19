@@ -1,7 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { AuthService, ClinicService, clinicaSession, errorMessage } from 'sdk';
+import { AuthService, ClinicService, TenantRole, clinicaSession, errorMessage } from 'sdk';
 import { UiButton, UiField } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { readPending } from '../appointments/pending-booking';
@@ -39,7 +39,7 @@ export class LoginPage {
         await this.router.navigateByUrl(AppRoute.Clave);
         return;
       }
-      const next = token.role === 'Patient' ? (readPending() ? AppRoute.Reservar : AppRoute.MisTurnos) : AppRoute.Panel;
+      const next = token.role === TenantRole.Patient ? (readPending() ? AppRoute.Reservar : AppRoute.MisTurnos) : AppRoute.Panel;
       await this.router.navigateByUrl(next);
     } catch (error) {
       this.error.set(errorMessage(error));

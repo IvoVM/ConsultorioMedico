@@ -2,19 +2,20 @@ import { HttpBackend, HttpClient, HttpErrorResponse, HttpInterceptorFn, provideH
 import { inject, provideAppInitializer, signal } from '@angular/core';
 import { Observable, catchError, finalize, firstValueFrom, map, shareReplay, switchMap, throwError } from 'rxjs';
 import type { TokenDto } from '../modules/auth/models/token-dto';
+import { TenantRole } from '../modules/employees/models/tenant-role';
 import { CLINICA_API_URL } from './tokens';
 
 const LEGACY_KEYS = ['clinica.token', 'clinica.tenant', 'clinica.role', 'clinica.name'];
 
 export const clinicaSession = {
   token: signal<string | null>(null),
-  role: signal<string | null>(null),
+  role: signal<TenantRole | null>(null),
   name: signal<string | null>(null),
   mustChangePassword: signal(false),
   set(token: string, role: string, name: string, mustChangePassword = false) {
     for (const key of LEGACY_KEYS) localStorage.removeItem(key);
     this.token.set(token);
-    this.role.set(role);
+    this.role.set(Object.values(TenantRole).includes(role as TenantRole) ? (role as TenantRole) : null);
     this.name.set(name);
     this.mustChangePassword.set(mustChangePassword);
   },

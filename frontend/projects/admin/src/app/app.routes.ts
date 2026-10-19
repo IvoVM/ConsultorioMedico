@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { TenantRole } from 'sdk';
 import { authGuard, roleGuard, signedInGuard } from './auth.guard';
 
 export const routes: Routes = [
@@ -13,7 +14,7 @@ export const routes: Routes = [
       { path: 'inicio', loadComponent: () => import('./modules/shell/home').then((m) => m.HomePage) },
       {
         path: 'organizacion',
-        canActivate: [roleGuard('TenantAdmin')],
+        canActivate: [roleGuard(TenantRole.TenantAdmin)],
         children: [
           { path: '', pathMatch: 'full', redirectTo: 'servicios' },
           {
@@ -33,28 +34,28 @@ export const routes: Routes = [
           },
         ],
       },
-      { path: 'empleados', canActivate: [roleGuard('TenantAdmin')], loadComponent: () => import('./modules/employees/employees').then((m) => m.EmployeesPage) },
-      { path: 'pacientes', canActivate: [roleGuard('TenantAdmin')], loadComponent: () => import('./modules/patients/patients').then((m) => m.PatientsPage) },
+      { path: 'empleados', canActivate: [roleGuard(TenantRole.TenantAdmin)], loadComponent: () => import('./modules/employees/employees').then((m) => m.EmployeesPage) },
+      { path: 'pacientes', canActivate: [roleGuard(TenantRole.TenantAdmin)], loadComponent: () => import('./modules/patients/patients').then((m) => m.PatientsPage) },
       {
         path: 'pacientes/:patientId',
-        canActivate: [roleGuard('TenantAdmin')],
+        canActivate: [roleGuard(TenantRole.TenantAdmin)],
         loadComponent: () => import('./modules/patients/patient-file').then((m) => m.PatientFilePage),
       },
-      { path: 'agendas', canActivate: [roleGuard('TenantAdmin')], loadComponent: () => import('./modules/schedules/schedules').then((m) => m.SchedulesPage) },
+      { path: 'agendas', canActivate: [roleGuard(TenantRole.TenantAdmin)], loadComponent: () => import('./modules/schedules/schedules').then((m) => m.SchedulesPage) },
       {
         path: 'historias',
-        canActivate: [roleGuard('TenantAdmin')],
+        canActivate: [roleGuard(TenantRole.TenantAdmin)],
         loadComponent: () => import('./modules/medical-records/medical-records').then((m) => m.MedicalRecordsPage),
       },
       {
         path: 'historias/:patientId',
-        canActivate: [roleGuard('TenantAdmin')],
+        canActivate: [roleGuard(TenantRole.TenantAdmin)],
         loadComponent: () => import('./modules/medical-records/medical-record-detail').then((m) => m.MedicalRecordDetailPage),
       },
       { path: 'aranceles', redirectTo: 'organizacion/especialidades' },
-      { path: 'comprobantes', canActivate: [roleGuard('TenantAdmin')], loadComponent: () => import('./modules/invoices/invoices').then((m) => m.InvoicesPage) },
-      { path: 'auditoria', canActivate: [roleGuard('TenantAdmin')], loadComponent: () => import('./modules/audit/audit-log').then((m) => m.AuditLogPage) },
-      { path: 'configuracion/usuarios', canActivate: [roleGuard('TenantAdmin')], loadComponent: () => import('./modules/users/users').then((m) => m.UsersPage) },
+      { path: 'comprobantes', canActivate: [roleGuard(TenantRole.TenantAdmin)], loadComponent: () => import('./modules/invoices/invoices').then((m) => m.InvoicesPage) },
+      { path: 'auditoria', canActivate: [roleGuard(TenantRole.TenantAdmin)], loadComponent: () => import('./modules/audit/audit-log').then((m) => m.AuditLogPage) },
+      { path: 'configuracion/usuarios', canActivate: [roleGuard(TenantRole.TenantAdmin)], loadComponent: () => import('./modules/users/users').then((m) => m.UsersPage) },
     ],
   },
 ];

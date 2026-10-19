@@ -38,12 +38,12 @@ export class TurnoDetailPage {
   private readonly params = toSignal(inject(ActivatedRoute).paramMap);
   private request = 0;
   readonly dayOptions: SelectOption[] = [
-    { value: 'Monday', label: 'Lunes' },
-    { value: 'Tuesday', label: 'Martes' },
-    { value: 'Wednesday', label: 'Miércoles' },
-    { value: 'Thursday', label: 'Jueves' },
-    { value: 'Friday', label: 'Viernes' },
-    { value: 'Saturday', label: 'Sábado' },
+    { value: DayOfWeek.Monday, label: 'Lunes' },
+    { value: DayOfWeek.Tuesday, label: 'Martes' },
+    { value: DayOfWeek.Wednesday, label: 'Miércoles' },
+    { value: DayOfWeek.Thursday, label: 'Jueves' },
+    { value: DayOfWeek.Friday, label: 'Viernes' },
+    { value: DayOfWeek.Saturday, label: 'Sábado' },
   ];
   readonly turno = signal<AppointmentTypeDto | null>(null);
   readonly specialties = signal<SpecialtyDto[]>([]);
@@ -56,7 +56,7 @@ export class TurnoDetailPage {
   readonly specialtyPick = signal('');
   readonly personId = signal('');
   private locationId = '';
-  day: DayOfWeek = 'Monday';
+  day: DayOfWeek = DayOfWeek.Monday;
   from = '09:00';
   to = '13:00';
 

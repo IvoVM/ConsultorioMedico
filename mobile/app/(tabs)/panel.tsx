@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import { Text } from 'react-native';
 import { api, diaLargo, fechaCorta, hora, statusLabel, todayIso, type Appointment } from '../../src/api';
 import { logout } from '../../src/api';
+import { TenantRole } from '../../src/role';
+import { AppointmentStatus } from '../../src/status';
 import { useSession } from '../../src/session';
 import { colors, type } from '../../src/theme';
 import { Button, Card, Empty, ErrorText, Screen } from '../../src/ui';
@@ -15,11 +17,11 @@ export default function Panel() {
 
   useEffect(() => {
     if (!current) return;
-    const load = current.role === 'Patient' ? api.mine() : api.day(todayIso());
+    const load = current.role === TenantRole.Patient ? api.mine() : api.day(todayIso());
     load
       .then((list) => {
-        const upcoming = current.role === 'Patient'
-          ? list.filter((item) => item.status !== 'Cancelled' && item.status !== 'NoShow' && new Date(item.start) >= new Date(new Date().setHours(0, 0, 0, 0)))
+        const upcoming = current.role === TenantRole.Patient
+          ? list.filter((item) => item.status !== AppointmentStatus.Cancelled && item.status !== AppointmentStatus.NoShow && new Date(item.start) >= new Date(new Date().setHours(0, 0, 0, 0)))
           : list;
         setItems(upcoming.sort((a, b) => a.start.localeCompare(b.start)));
       })
@@ -33,7 +35,7 @@ export default function Panel() {
       {items.map((item) => (
         <Card key={item.id}>
           <Text style={{ fontFamily: type.sansBold, color: colors.deep }}>{hora(item.start)} · {statusLabel[item.status] ?? item.status}</Text>
-          <Text style={{ fontFamily: type.sans, color: colors.ink }}>{current?.role === 'Patient' ? item.professional : item.patient}</Text>
+          <Text style={{ fontFamily: type.sans, color: colors.ink }}>{current?.role === TenantRole.Patient ? item.professional : item.patient}</Text>
           <Text style={{ fontFamily: type.sans, color: colors.ink }}>{item.appointmentType} · {fechaCorta(item.start)}</Text>
         </Card>
       ))}

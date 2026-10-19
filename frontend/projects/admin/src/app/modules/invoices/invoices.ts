@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { BillingService, InvoiceDto, errorMessage } from 'sdk';
+import { BillingService, InvoiceDto, InvoiceStatus, errorMessage } from 'sdk';
 import { invoiceStatusLabels, paymentMethodLabels } from './models/invoice-labels';
 import { UiBadge, UiEmpty, UiField, UiSkeleton, UiTable } from 'ui';
 import { TablePager, listParams, queueSearch } from '../../table-pager';
@@ -15,6 +15,7 @@ export class InvoicesPage {
   private readonly billing = inject(BillingService);
   private readonly searchHost: { timer?: ReturnType<typeof setTimeout> } = {};
   readonly statusLabels = invoiceStatusLabels;
+  readonly invoice = InvoiceStatus;
   readonly methodLabels = paymentMethodLabels;
   readonly invoices = signal<InvoiceDto[]>([]);
   readonly total = signal(0);

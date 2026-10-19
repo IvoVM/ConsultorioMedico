@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { AppointmentDto, AppointmentsService, clinicaSession, errorMessage } from 'sdk';
+import { AppointmentDto, AppointmentStatus, AppointmentsService, TenantRole, clinicaSession, errorMessage } from 'sdk';
 import { UiBadge, UiEmpty, UiSkeleton, UiTable, formatFecha } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { appointmentStatusLabels } from '../appointments/models/appointment-status-labels';
@@ -13,6 +13,8 @@ import { AppRoute } from '../../app.routes.enum';
 export class DashboardPage {
   private readonly appointmentsApi = inject(AppointmentsService);
   readonly session = clinicaSession;
+  readonly roles = TenantRole;
+  readonly status = AppointmentStatus;
   readonly route = AppRoute;
   readonly statusLabels = appointmentStatusLabels;
   readonly appointments = signal<AppointmentDto[]>([]);
@@ -42,17 +44,17 @@ export class DashboardPage {
   private async load() {
     const role = this.session.role();
     try {
-      if (role === 'Patient') {
+      if (role === TenantRole.Patient) {
         const all = await firstValueFrom(this.appointmentsApi.myAppointments());
         const start = new Date();
         start.setHours(0, 0, 0, 0);
         this.appointments.set(
           all
-            .filter((item) => item.status !== 'Cancelled' && item.status !== 'NoShow' && new Date(item.start) >= start)
+            .filter((item) => item.status !== AppointmentStatus.Cancelled && item.status !== AppointmentStatus.NoShow && new Date(item.start) >= start)
             .sort((a, b) => a.start.localeCompare(b.start))
             .slice(0, 5),
         );
-      } else if (role === 'Doctor' || role === 'Secretary' || role === 'TenantAdmin') {
+      } else if (role === TenantRole.Doctor || role === TenantRole.Secretary || role === TenantRole.TenantAdmin) {
         const list = await firstValueFrom(this.appointmentsApi.appointmentsForDay({ date: this.today() }));
         this.appointments.set([...list].sort((a, b) => a.start.localeCompare(b.start)));
       }

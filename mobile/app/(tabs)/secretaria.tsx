@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Text } from 'react-native';
 import { api, hora, statusLabel, todayIso, type Appointment, type WaitlistEntry } from '../../src/api';
+import { AppointmentStatus } from '../../src/status';
 import { colors, type } from '../../src/theme';
 import { Button, Card, Empty, ErrorText, Screen } from '../../src/ui';
 
@@ -38,8 +39,8 @@ export default function Secretaria() {
         <Card key={item.id}>
           <Text style={{ fontFamily: type.sansBold, color: colors.deep }}>{hora(item.start)} {item.patient}</Text>
           <Text style={{ fontFamily: type.sans, color: colors.ink }}>{item.professional} · {statusLabel[item.status] ?? item.status}</Text>
-          {item.status === 'Booked' ? <Button label="Admitir" onPress={() => void run(() => api.checkIn(item.id))} /> : null}
-          {item.status === 'Booked' || item.status === 'CheckedIn' ? <Button label="Cancelar" tone="ghost" onPress={() => void run(() => api.cancel(item.id))} /> : null}
+          {item.status === AppointmentStatus.Booked ? <Button label="Admitir" onPress={() => void run(() => api.checkIn(item.id))} /> : null}
+          {item.status === AppointmentStatus.Booked || item.status === AppointmentStatus.CheckedIn ? <Button label="Cancelar" tone="ghost" onPress={() => void run(() => api.cancel(item.id))} /> : null}
         </Card>
       ))}
       {waiting.map((item) => (

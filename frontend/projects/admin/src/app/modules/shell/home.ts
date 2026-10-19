@@ -1,16 +1,16 @@
 import { Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { AppointmentDto, AppointmentsService, errorMessage } from 'sdk';
+import { AppointmentDto, AppointmentStatus, AppointmentsService, errorMessage } from 'sdk';
 import { UiBadge, UiEmpty, UiSkeleton, UiTable } from 'ui';
 import { firstValueFrom } from 'rxjs';
 
-const statusLabels: Record<string, string> = {
-  Booked: 'Reservado',
-  CheckedIn: 'Admitido',
-  InProgress: 'En atención',
-  Completed: 'Atendido',
-  Cancelled: 'Cancelado',
-  NoShow: 'Ausente',
+const statusLabels: Record<AppointmentStatus, string> = {
+  [AppointmentStatus.Booked]: 'Reservado',
+  [AppointmentStatus.CheckedIn]: 'Admitido',
+  [AppointmentStatus.InProgress]: 'En atención',
+  [AppointmentStatus.Completed]: 'Atendido',
+  [AppointmentStatus.Cancelled]: 'Cancelado',
+  [AppointmentStatus.NoShow]: 'Ausente',
 };
 
 @Component({
@@ -20,6 +20,7 @@ const statusLabels: Record<string, string> = {
 export class HomePage {
   private readonly appointmentsApi = inject(AppointmentsService);
   readonly statusLabels = statusLabels;
+  readonly status = AppointmentStatus;
   readonly appointments = signal<AppointmentDto[]>([]);
   readonly error = signal('');
   readonly loading = signal(true);

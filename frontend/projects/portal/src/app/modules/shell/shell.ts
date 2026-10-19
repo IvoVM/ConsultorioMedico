@@ -1,6 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
-import { AuthService, ClinicService, clinicaSession } from 'sdk';
+import { AuthService, ClinicService, TenantRole, clinicaSession } from 'sdk';
 import { firstValueFrom } from 'rxjs';
 import { NavNode, UiButton, UiIcon, UiNav, UiPage } from 'ui';
 import { readClinicName } from '../auth/clinic-name';
@@ -21,7 +21,7 @@ export class ShellPage {
     const role = this.session.role();
     const nodes: NavNode[] = [];
     if (this.session.token()) nodes.push({ label: 'Inicio', path: AppRoute.Panel, exact: true });
-    if (role === 'Patient') {
+    if (role === TenantRole.Patient) {
       nodes.push({
         label: 'Turnos',
         children: [
@@ -39,7 +39,7 @@ export class ShellPage {
     } else if (this.session.token()) {
       nodes.push({ label: 'Reservar', path: AppRoute.Reservar });
     }
-    if (role === 'Doctor') {
+    if (role === TenantRole.Doctor) {
       nodes.push({
         label: 'Consultorio',
         children: [
@@ -48,7 +48,7 @@ export class ShellPage {
         ],
       });
     }
-    if (role === 'Secretary' || role === 'TenantAdmin') nodes.push({ label: 'Secretaría', path: AppRoute.Secretaria });
+    if (role === TenantRole.Secretary || role === TenantRole.TenantAdmin) nodes.push({ label: 'Secretaría', path: AppRoute.Secretaria });
     return nodes;
   });
 

@@ -4,6 +4,7 @@ import { Text, View } from 'react-native';
 import Animated, { LinearTransition } from 'react-native-reanimated';
 import { api, hora, todayIso, type Location, type Professional, type Slot, type Specialty } from './api';
 import { hold } from './hold';
+import { TenantRole } from './role';
 import { useSession } from './session';
 import { colors, type } from './theme';
 import { Button, Choice, Empty, ErrorText, Field, Screen } from './ui';
@@ -26,7 +27,7 @@ export function BookScreen() {
   const [reason, setReason] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
-  const staff = current && current.role !== 'Patient';
+  const staff = current && current.role !== TenantRole.Patient;
 
   useEffect(() => {
     Promise.all([api.locations(), api.specialties(), api.professionals()])
@@ -75,7 +76,7 @@ export function BookScreen() {
       });
       hold.set(null);
       setSelected(null);
-      router.replace(current.role === 'Patient' ? '/(tabs)/turnos' : '/(tabs)/panel');
+      router.replace(current.role === TenantRole.Patient ? '/(tabs)/turnos' : '/(tabs)/panel');
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'No se pudo reservar.');
     }

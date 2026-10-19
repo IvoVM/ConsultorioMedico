@@ -93,7 +93,7 @@
               @if (charge(appointment); as bill) {
                 <span class="mt-1 block text-sm text-ink/70">
                   {{ money(bill.total) }}
-                  @if (bill.status === 'Paid' && bill.paymentMethod) {
+                  @if (bill.status === invoice.Paid && bill.paymentMethod) {
                     · cobrado en {{ paymentLabels[bill.paymentMethod] }}
                   } @else {
                     · {{ invoiceStatusLabels[bill.status] }}
@@ -105,23 +105,23 @@
             <td><ui-badge>{{ statusLabels[appointment.status] }}</ui-badge></td>
             <td class="whitespace-nowrap">
               <ui-actions>
-                @if (appointment.insurer && appointment.coverageAccepted == null && appointment.status !== 'Cancelled' && appointment.status !== 'NoShow') {
+                @if (appointment.insurer && appointment.coverageAccepted == null && appointment.status !== status.Cancelled && appointment.status !== status.NoShow) {
                   <ui-button [loading]="pending() === 'coverage:' + appointment.id + ':true'" (click)="review(appointment, true)">Es correcto</ui-button>
                   <ui-button variant="outlined" [loading]="pending() === 'coverage:' + appointment.id + ':false'" (click)="review(appointment, false)">No coincide</ui-button>
                 }
-                @if (appointment.status === 'Booked') { <ui-button [loading]="pending() === 'checkin:' + appointment.id" (click)="checkIn(appointment)">Admitir</ui-button> }
+                @if (appointment.status === status.Booked) { <ui-button [loading]="pending() === 'checkin:' + appointment.id" (click)="checkIn(appointment)">Admitir</ui-button> }
                 @if (canMove(appointment)) {
                   <ui-button variant="ghost" (click)="startMove(appointment)">Reprogramar</ui-button>
                   <ui-button variant="ghost" [loading]="pending() === 'absent:' + appointment.id" (click)="absent(appointment)">No se presentó</ui-button>
                 }
-                @if (appointment.status === 'Booked' || appointment.status === 'CheckedIn') {
+                @if (appointment.status === status.Booked || appointment.status === status.CheckedIn) {
                   <ui-button variant="ghost" [loading]="pending() === 'cancel:' + appointment.id" (click)="cancel(appointment)">Cancelar</ui-button>
                 }
                 @if (charge(appointment); as bill) {
-                  @if (bill.status === 'Pending') {
-                    <ui-button [loading]="pending() === 'pay:' + bill.id + ':Cash'" (click)="pay(bill, 'Cash')">Efectivo</ui-button>
-                    <ui-button variant="ghost" [loading]="pending() === 'pay:' + bill.id + ':Transfer'" (click)="pay(bill, 'Transfer')">Transferencia</ui-button>
-                    <ui-button variant="ghost" [loading]="pending() === 'pay:' + bill.id + ':Card'" (click)="pay(bill, 'Card')">Tarjeta</ui-button>
+                  @if (bill.status === invoice.Pending) {
+                    <ui-button [loading]="pending() === 'pay:' + bill.id + ':' + payment.Cash" (click)="pay(bill, payment.Cash)">Efectivo</ui-button>
+                    <ui-button variant="ghost" [loading]="pending() === 'pay:' + bill.id + ':' + payment.Transfer" (click)="pay(bill, payment.Transfer)">Transferencia</ui-button>
+                    <ui-button variant="ghost" [loading]="pending() === 'pay:' + bill.id + ':' + payment.Card" (click)="pay(bill, payment.Card)">Tarjeta</ui-button>
                   }
                 }
               </ui-actions>
