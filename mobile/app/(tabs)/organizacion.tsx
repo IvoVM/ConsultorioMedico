@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Text } from 'react-native';
-import { api, type AppointmentType, type Location, type Professional, type Service, type Specialty } from '../../src/api';
+import { api, AppointmentKind, type AppointmentType, type Location, type Professional, type Service, type Specialty } from '../../src/api';
 import { colors, type } from '../../src/theme';
 import { Button, Card, ErrorText, Field, Screen } from '../../src/ui';
 
@@ -63,7 +63,8 @@ export default function Organizacion() {
       ))}
       <Field label="Tipo de turno" value={typeName} onChangeText={setTypeName} />
       <Field label="Minutos" keyboardType="number-pad" value={minutes} onChangeText={setMinutes} />
-      <Button label="Agregar tipo" onPress={() => void run(() => api.saveType({ name: typeName, durationMinutes: Number(minutes), specialtyId: specialties[0]?.id ?? null }))} />
+      <Button label="Agregar consulta" onPress={() => void run(() => api.saveType({ name: typeName, durationMinutes: Number(minutes), specialtyId: specialties[0]?.id ?? null, kind: AppointmentKind.Consulta }))} />
+      <Button label="Agregar estudio" onPress={() => void run(() => api.saveType({ name: typeName, durationMinutes: Number(minutes), specialtyId: specialties[0]?.id ?? null, kind: AppointmentKind.Estudio }))} />
       {types.map((item) => (
         <Card key={item.id}><Text style={{ fontFamily: type.sans, color: colors.ink }}>{item.name} · {item.durationMinutes} min</Text></Card>
       ))}

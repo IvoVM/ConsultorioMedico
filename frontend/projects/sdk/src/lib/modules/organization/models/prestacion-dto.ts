@@ -4,6 +4,8 @@ export interface InsurerPriceDto {
   effectiveFrom: string;
 }
 
+import type { AppointmentKind } from './appointment-kind';
+
 export interface PrestacionDto {
   id: string;
   name: string;
@@ -11,6 +13,7 @@ export interface PrestacionDto {
   particular: number | null;
   particularFrom: string | null;
   insurers: InsurerPriceDto[];
+  kind: AppointmentKind;
 }
 
 export interface PrestacionesDto {

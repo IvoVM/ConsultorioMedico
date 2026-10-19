@@ -3,6 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import {
+  AppointmentKind,
   BillingService,
   EmployeesService,
   OrganizationService,
@@ -156,6 +157,7 @@ export class SpecialtyDetailPage {
           name: specialty.name,
           durationMinutes: 30,
           specialtyId: specialty.id,
+          kind: AppointmentKind.Consulta,
         }),
       );
     });
@@ -176,6 +178,7 @@ export class SpecialtyDetailPage {
           name: item.name,
           durationMinutes: minutes,
           specialtyId: specialty.id,
+          kind: item.kind,
         }),
       );
     });
@@ -220,6 +223,7 @@ export class SpecialtyDetailPage {
           name,
           durationMinutes: minutes,
           specialtyId: specialty.id,
+          kind: AppointmentKind.Estudio,
         }),
       );
     });

@@ -1,15 +1,15 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { AppointmentTypeRowDto, OrganizationService, errorMessage } from 'sdk';
-import { UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable } from 'ui';
+import { AppointmentKind, AppointmentTypeRowDto, OrganizationService, errorMessage } from 'sdk';
+import { UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable } from 'ui';
 import { ScreenNote } from '../../screen-note';
 import { TablePager, listParams, queueSearch } from '../../table-pager';
 import { SortCol, SortState, nextSort } from '../../table-sort';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
-  imports: [FormsModule, RouterLink, ScreenNote, SortCol, TablePager, UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable],
+  imports: [FormsModule, RouterLink, ScreenNote, SortCol, TablePager, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable],
   templateUrl: './turnos.html',
 })
 export class TurnosPage {
@@ -25,8 +25,13 @@ export class TurnosPage {
   readonly creating = signal(false);
   readonly query = signal('');
   readonly sort = signal<SortState>({ key: 'name', dir: 'asc' });
+  readonly kindOptions = [
+    { value: AppointmentKind.Consulta, label: 'Consulta médica' },
+    { value: AppointmentKind.Estudio, label: 'Estudio' },
+  ];
   typeName = '';
   duration = 30;
+  kind = AppointmentKind.Consulta;
 
   constructor() {
     void this.load();
@@ -60,7 +65,7 @@ export class TurnosPage {
     this.saving.set(true);
     try {
       const created = await firstValueFrom(
-        this.organization.createAppointmentType({ name, durationMinutes: Number(this.duration || 30), specialtyId: null }),
+        this.organization.createAppointmentType({ name, durationMinutes: Number(this.duration || 30), specialtyId: null, kind: this.kind }),
       );
       await this.router.navigate(['/organizacion/turnos', created.id]);
     } catch (error) {

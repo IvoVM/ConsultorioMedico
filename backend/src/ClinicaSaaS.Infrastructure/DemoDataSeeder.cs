@@ -64,11 +64,11 @@ public class DemoDataSeeder(TenantDbContext db, UserManager<TenantUser> users)
         var pediatria = AddSpecialty(pediatriaId, "Pediatría");
         var trauma = AddSpecialty(traumaId, "Traumatología");
         var cardio = AddSpecialty(cardioId, "Cardiología");
-        var consulta = AddType("Consulta clínica", 20, clinica.Id);
-        var control = AddType("Control", 15, clinica.Id);
-        var nino = AddType("Consulta pediátrica", 30, pediatria.Id);
-        var osteo = AddType("Consulta traumatológica", 30, trauma.Id);
-        var ecg = AddType("Electrocardiograma", 20, cardio.Id);
+        var consulta = AddType("Consulta clínica", 20, clinica.Id, AppointmentKind.Consulta);
+        var control = AddType("Control", 15, clinica.Id, AppointmentKind.Consulta);
+        var nino = AddType("Consulta pediátrica", 30, pediatria.Id, AppointmentKind.Consulta);
+        var osteo = AddType("Consulta traumatológica", 30, trauma.Id, AppointmentKind.Consulta);
+        var ecg = AddType("Electrocardiograma", 20, cardio.Id, AppointmentKind.Estudio);
         db.Fees.AddRange(
             NewFee(consulta.Id, 22000m, new DateOnly(2026, 1, 1)),
             NewFee(consulta.Id, 25000m, new DateOnly(today.Year, today.Month, 1)),
@@ -448,14 +448,15 @@ public class DemoDataSeeder(TenantDbContext db, UserManager<TenantUser> users)
         return specialty;
     }
 
-    private AppointmentType AddType(string name, int minutes, Guid specialtyId)
+    private AppointmentType AddType(string name, int minutes, Guid specialtyId, AppointmentKind kind)
     {
         var type = new AppointmentType
         {
             Id = Guid.NewGuid(),
             Name = name,
             DurationMinutes = minutes,
-            SpecialtyId = specialtyId
+            SpecialtyId = specialtyId,
+            Kind = kind
         };
         db.AppointmentTypes.Add(type);
         return type;

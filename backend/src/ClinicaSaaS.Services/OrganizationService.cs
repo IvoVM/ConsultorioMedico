@@ -79,7 +79,8 @@ public class OrganizationService(
             Id = Guid.NewGuid(),
             Name = specialty.Name,
             DurationMinutes = 30,
-            SpecialtyId = specialty.Id
+            SpecialtyId = specialty.Id,
+            Kind = AppointmentKind.Consulta
         }, ct);
         await RecordAsync("alta", "Especialidad", specialty.Id, specialty.Name, ct);
         return new SpecialtyDto(specialty.Id, specialty.Name);
@@ -120,6 +121,7 @@ public class OrganizationService(
                 t.Id,
                 t.Name,
                 t.DurationMinutes,
+                t.Kind,
                 Fees = t.Fees
                     .Where(f => f.EffectiveFrom <= today)
                     .Select(f => new { f.Id, f.Payer, f.Amount, f.EffectiveFrom })
@@ -141,7 +143,7 @@ public class OrganizationService(
                     .OrderBy(f => f.Payer)
                     .Select(f => new InsurerPriceDto(f.Payer!, f.Amount, f.EffectiveFrom))
                     .ToList();
-                return new PrestacionDto(t.Id, t.Name, t.DurationMinutes, particular?.Amount, particular?.EffectiveFrom, insurers);
+                return new PrestacionDto(t.Id, t.Name, t.DurationMinutes, particular?.Amount, particular?.EffectiveFrom, insurers, t.Kind);
             })
             .ToList();
         var names = await clients.Clients
@@ -170,10 +172,11 @@ public class OrganizationService(
             Id = Guid.NewGuid(),
             Name = command.Name.Trim(),
             DurationMinutes = command.DurationMinutes,
-            SpecialtyId = command.SpecialtyId
+            SpecialtyId = command.SpecialtyId,
+            Kind = command.Kind
         }, ct);
         await RecordAsync("alta", "TipoTurno", type.Id, type.Name, ct);
-        return new AppointmentTypeDto(type.Id, type.Name, type.DurationMinutes, type.SpecialtyId);
+        return new AppointmentTypeDto(type.Id, type.Name, type.DurationMinutes, type.SpecialtyId, type.Kind);
     }
 
     public async Task<AppointmentTypeDto> UpdateAppointmentTypeAsync(Guid id, SaveAppointmentTypeCommand command, CancellationToken ct)
@@ -183,8 +186,9 @@ public class OrganizationService(
         type.Name = command.Name.Trim();
         type.DurationMinutes = command.DurationMinutes;
         type.SpecialtyId = command.SpecialtyId;
+        type.Kind = command.Kind;
         await store.SaveAsync(ct);
-        return new AppointmentTypeDto(type.Id, type.Name, type.DurationMinutes, type.SpecialtyId);
+        return new AppointmentTypeDto(type.Id, type.Name, type.DurationMinutes, type.SpecialtyId, type.Kind);
     }
 
     public async Task<IReadOnlyList<ProfessionalDto>> ProfessionalsAsync(Guid? specialtyId, CancellationToken ct)
@@ -327,5 +331,7 @@ public class OrganizationService(
             throw new BusinessRuleException("La prestación necesita un nombre.");
         if (command.DurationMinutes is < 5 or > 240)
             throw new BusinessRuleException("La duración debe estar entre 5 y 240 minutos.");
+        if (!Enum.IsDefined(command.Kind))
+            throw new BusinessRuleException("El tipo de prestación no es válido.");
     }
 }

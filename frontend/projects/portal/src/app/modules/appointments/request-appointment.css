@@ -6,6 +6,60 @@
   max-width: none;
 }
 
+.booking.has-sheet {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 19rem;
+  gap: 2rem 2.75rem;
+  align-items: start;
+}
+
+.sheet {
+  position: sticky;
+  top: 1rem;
+  margin-top: 0.35rem;
+  padding: 1.25rem 1.3rem 1.4rem;
+  background: white;
+  box-shadow: inset 0 0 0 1px var(--color-rule);
+}
+
+.sheet > p {
+  font-family: var(--font-serif);
+  font-size: 1.55rem;
+  letter-spacing: -0.02em;
+}
+
+.sheet dl {
+  display: grid;
+  gap: 0.95rem;
+  margin-top: 1.1rem;
+}
+
+.sheet div {
+  display: grid;
+  gap: 0.12rem;
+}
+
+.sheet dt {
+  color: rgb(23 51 44 / 0.55);
+  font-size: 0.92rem;
+}
+
+.sheet dd {
+  font-family: var(--font-serif);
+  font-size: 1.28rem;
+  line-height: 1.2;
+}
+
+@media (max-width: 960px) {
+  .booking.has-sheet {
+    grid-template-columns: 1fr;
+  }
+
+  .sheet {
+    position: static;
+  }
+}
+
 h1 {
   max-width: 16ch;
   font-family: var(--font-serif);
@@ -227,20 +281,20 @@ h1 {
   font-weight: 500;
 }
 
-.times button span,
-.choices button:hover,
-.times button:hover {
+.times button span {
   color: rgb(23 51 44 / 0.72);
 }
 
 .choices button:hover,
 .times button:hover,
 .month-grid button.is-open:hover,
-.choices button.is-picked {
+.choices button.is-picked,
+.times button.is-picked {
   background: var(--color-clinic-wash);
 }
 
-.choices button.is-picked {
+.choices button.is-picked,
+.times button.is-picked {
   box-shadow: inset 0 0 0 1.5px var(--color-clinic);
 }
 
@@ -312,6 +366,13 @@ h1 {
   color: var(--color-ink);
   font-weight: 650;
   box-shadow: inset 0 0 0 1.5px var(--color-clinic);
+}
+
+.month-grid button.is-selected {
+  background: var(--color-clinic);
+  color: white;
+  font-weight: 650;
+  box-shadow: none;
 }
 
 .month-grid button:disabled {

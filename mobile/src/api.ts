@@ -17,7 +17,12 @@ export type Clinic = { slug: string; name: string };
 export type Location = { id: string; name: string; address: string; isActive: boolean };
 export type Specialty = { id: string; name: string };
 export type Service = { id: string; locationId: string; name: string };
-export type AppointmentType = { id: string; name: string; durationMinutes: number; specialtyId?: string | null };
+export enum AppointmentKind {
+  Consulta = 'Consulta',
+  Estudio = 'Estudio',
+}
+
+export type AppointmentType = { id: string; name: string; durationMinutes: number; specialtyId?: string | null; kind: AppointmentKind };
 export type Professional = { id: string; firstName: string; lastName: string; email: string; licenseNumber?: string | null; specialtyId?: string | null };
 export type Slot = {
   professionalId: string;
@@ -238,7 +243,7 @@ export const api = {
   saveSpecialty: (body: { name: string }, id?: string) =>
     request<Specialty>(id ? `/api/especialidades/${id}` : '/api/especialidades', { method: id ? 'PUT' : 'POST', body: JSON.stringify(body) }),
   types: () => request<AppointmentType[]>('/api/tipos-turno', {}, false),
-  saveType: (body: { name: string; durationMinutes: number; specialtyId?: string | null }, id?: string) =>
+  saveType: (body: { name: string; durationMinutes: number; specialtyId?: string | null; kind: AppointmentKind }, id?: string) =>
     request<AppointmentType>(id ? `/api/tipos-turno/${id}` : '/api/tipos-turno', { method: id ? 'PUT' : 'POST', body: JSON.stringify(body) }),
   professionals: (specialtyId?: string) => request<Professional[]>(`/api/profesionales${query({ specialtyId })}`, {}, false),
   assignSpecialty: (id: string, specialtyId: string | null) =>

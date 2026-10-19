@@ -35,8 +35,8 @@ public record MedicalServiceDto(Guid Id, Guid LocationId, string Name);
 public record SaveMedicalServiceCommand(Guid LocationId, string Name);
 public record SpecialtyDto(Guid Id, string Name);
 public record SaveSpecialtyCommand(string Name);
-public record AppointmentTypeDto(Guid Id, string Name, int DurationMinutes, Guid? SpecialtyId);
-public record SaveAppointmentTypeCommand(string Name, int DurationMinutes, Guid? SpecialtyId);
+public record AppointmentTypeDto(Guid Id, string Name, int DurationMinutes, Guid? SpecialtyId, AppointmentKind Kind);
+public record SaveAppointmentTypeCommand(string Name, int DurationMinutes, Guid? SpecialtyId, AppointmentKind Kind);
 public record ProfessionalDto(Guid Id, string FirstName, string LastName, string Email, string? LicenseNumber, Guid? SpecialtyId);
 public record AssignSpecialtyCommand(Guid? SpecialtyId);
 
@@ -203,7 +203,7 @@ public record SaveMedicalRecordCommand(
 public record FeeDto(Guid Id, Guid AppointmentTypeId, string AppointmentType, decimal Amount, DateOnly EffectiveFrom, string? Payer);
 public record CreateFeeCommand(Guid AppointmentTypeId, decimal Amount, DateOnly EffectiveFrom, string? Payer = null);
 public record InsurerPriceDto(string Payer, decimal Amount, DateOnly EffectiveFrom);
-public record PrestacionDto(Guid Id, string Name, int DurationMinutes, decimal? Particular, DateOnly? ParticularFrom, IReadOnlyList<InsurerPriceDto> Insurers);
+public record PrestacionDto(Guid Id, string Name, int DurationMinutes, decimal? Particular, DateOnly? ParticularFrom, IReadOnlyList<InsurerPriceDto> Insurers, AppointmentKind Kind);
 public record PrestacionesDto(IReadOnlyList<PrestacionDto> Items, IReadOnlyList<string> Insurers);
 public record InvoiceItemDto(string Description, decimal Amount);
 public record InvoiceDto(

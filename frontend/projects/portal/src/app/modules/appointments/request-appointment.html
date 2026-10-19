@@ -1,171 +1,178 @@
 <section class="request">
-  <h1>Reservá tu turno</h1>
-  @if (!intent()) {
-    <h2>¿Qué necesitás?</h2>
-    <p class="hint">Una consulta es ver a un profesional. Un estudio es una práctica, como un electrocardiograma.</p>
-    @if (loading()) {
-      <ui-skeleton class="mt-8" label="Cargando servicios" />
-    } @else {
-      <div class="choices">
-        <button type="button" (click)="pickIntent('consulta')"><strong>Consulta médica</strong><span>Ver a un profesional</span></button>
-        <button type="button" (click)="pickIntent('estudio')"><strong>Estudio</strong><span>Hacerte una práctica o un estudio</span></button>
-      </div>
-    }
-  } @else {
-  <button type="button" class="switch-intent" (click)="backToIntent()">Cambiar entre consulta y estudio</button>
-  @if (step() !== 'done') {
-    <ol class="progress" aria-label="Pasos de la reserva">
-      @for (item of steps(); track item; let i = $index) {
-        <li [class.is-done]="i < stepIndex()" [class.is-current]="item === step()">
-          <button type="button" [disabled]="i > furthestIndex()" [attr.aria-current]="item === step() ? 'step' : null" (click)="jump(item)">
-            <span class="fill" aria-hidden="true"></span>
-            <span class="label">{{ stepLabel(item) }}</span>
-          </button>
-        </li>
-      }
-    </ol>
-  }
-  @for (tick of [motion()]; track tick) {
-  <div class="stage" [class.is-back]="direction() < 0">
-  <h2>{{ question() }}</h2>
-  <p class="hint">{{ hint() }}</p>
-
-  @if (error()) { <p class="mt-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
-
-  @if (loading() && step() !== 'specialty') {
-    <ui-skeleton class="mt-8" label="Buscando horarios" />
-  } @else {
-    @switch (step()) {
-      @case ('specialty') {
+  <div class="booking" [class.has-sheet]="!!intent()">
+    <div class="wizard">
+      <h1>Reservá tu turno</h1>
+      @if (!intent()) {
+        <h2>¿Qué necesitás?</h2>
+        <p class="hint">Una consulta es ver a un profesional. Un estudio es una práctica, como un electrocardiograma.</p>
         @if (loading()) {
           <ui-skeleton class="mt-8" label="Cargando servicios" />
-        } @else if (!catalog().length) {
-          <ui-empty [message]="intent() === 'estudio' ? 'Todavía no hay estudios para reservar.' : 'Todavía no hay consultas para reservar.'" />
         } @else {
           <div class="choices">
-            @for (item of catalog(); track item.id) {
-              <button type="button" (click)="pickSpecialty(item)">{{ item.name }}</button>
-            }
+            <button type="button" (click)="pickIntent(Intent.Consulta)"><strong>Consulta médica</strong><span>Ver a un profesional</span></button>
+            <button type="button" (click)="pickIntent(Intent.Estudio)"><strong>Estudio</strong><span>Hacerte una práctica o un estudio</span></button>
           </div>
         }
-      }
-      @case ('day') {
-        <div class="month">
-          <div class="month-nav">
-            <button type="button" [disabled]="!canGoBackMonth()" (click)="shiftMonth(-1)" aria-label="Mes anterior">←</button>
-            <p>{{ monthTitle() }}</p>
-            <button type="button" (click)="shiftMonth(1)" aria-label="Mes siguiente">→</button>
-          </div>
-          <div class="weekdays" aria-hidden="true"><span>Lu</span><span>Ma</span><span>Mi</span><span>Ju</span><span>Vi</span><span>Sá</span><span>Do</span></div>
-          <div class="month-grid">
-            @for (cell of cells(); track $index) {
-              @if (cell) {
-                <button type="button" [disabled]="!cell.open" [class.is-open]="cell.open" (click)="pickDay(cell.iso)">{{ cell.day }}</button>
+      } @else {
+        <button type="button" class="switch-intent" (click)="backToIntent()">Cambiar entre consulta y estudio</button>
+        @if (step() !== Step.Done) {
+          <ol class="progress" aria-label="Pasos de la reserva">
+            @for (item of steps(); track item; let i = $index) {
+              <li [class.is-done]="i < stepIndex()" [class.is-current]="item === step()">
+                <button type="button" [disabled]="!canOpen(item)" [attr.aria-current]="item === step() ? 'step' : null" (click)="jump(item)">
+                  <span class="fill" aria-hidden="true"></span>
+                  <span class="label">{{ stepLabel(item) }}</span>
+                </button>
+              </li>
+            }
+          </ol>
+        }
+        @for (tick of [motion()]; track tick) {
+          <div class="stage" [class.is-back]="direction() < 0">
+            <h2>{{ question() }}</h2>
+            <p class="hint">{{ hint() }}</p>
+            @if (error()) { <p class="mt-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
+            @if (loading() && step() !== Step.Specialty) {
+              <ui-skeleton class="mt-8" label="Buscando horarios" />
+            } @else if (step() === Step.Specialty) {
+              @if (loading()) {
+                <ui-skeleton class="mt-8" label="Cargando servicios" />
+              } @else if (!catalog().length) {
+                <ui-empty [message]="intent() === Intent.Estudio ? 'Todavía no hay estudios para reservar.' : 'Todavía no hay consultas para reservar.'" />
               } @else {
-                <span></span>
+                <div class="choices">
+                  @for (item of catalog(); track item.id) {
+                    <button type="button" (click)="pickSpecialty(item)">{{ item.name }}</button>
+                  }
+                </div>
               }
-            }
-          </div>
-          @if (!openDays().length) {
-            <p class="mt-4 text-sm text-ink/70">Este mes no tiene horarios libres para {{ specialtyName() }}.</p>
-          }
-        </div>
-      }
-      @case ('time') {
-        @if (!slots().length) {
-          <ui-empty message="Ese día ya no tiene horarios libres." />
-        } @else {
-          <div class="times">
-            @for (item of slots(); track item.start + item.professionalId) {
-              <button type="button" (click)="pickSlot(item)">
-                <strong>{{ time(item.start) }}</strong>
-                <span>{{ item.professional }}</span>
-              </button>
-            }
-          </div>
-        }
-      }
-      @case ('data') {
-        <form class="ask" (ngSubmit)="continueData()">
-          <ui-field label="Nombre y apellido"><input name="name" [(ngModel)]="name" autocomplete="name" required /></ui-field>
-          <ui-field label="Documento"><input name="documentNumber" [(ngModel)]="documentNumber" required maxlength="20" /></ui-field>
-          <ui-field label="Teléfono"><input name="phone" [(ngModel)]="phone" autocomplete="tel" required /></ui-field>
-          <ui-button type="submit">Continuar</ui-button>
-        </form>
-      }
-      @case ('coverage') {
-        <div class="choices">
-          <button type="button" (click)="pickCoverage('particular')">No, voy como particular</button>
-          @if (insurers().length) {
-            <button type="button" [class.is-picked]="coverage() === 'obra'" (click)="pickCoverage('obra')">Sí, tengo obra social</button>
-          }
-        </div>
-        @if (coverage() === 'obra') {
-          <div class="coverage-more">
-            <p class="hint">Solo las que atiende el profesional de ese horario.</p>
-            <div class="choices">
-              @for (item of insurers(); track item.id) {
-                <button type="button" [class.is-picked]="insurerId === item.id" (click)="pickInsurer(item.id)">{{ item.name }}</button>
+            } @else if (step() === Step.Day) {
+              <div class="month">
+                <div class="month-nav">
+                  <button type="button" [disabled]="!canGoBackMonth()" (click)="shiftMonth(-1)" aria-label="Mes anterior">←</button>
+                  <p>{{ monthTitle() }}</p>
+                  <button type="button" (click)="shiftMonth(1)" aria-label="Mes siguiente">→</button>
+                </div>
+                <div class="weekdays" aria-hidden="true"><span>Lu</span><span>Ma</span><span>Mi</span><span>Ju</span><span>Vi</span><span>Sá</span><span>Do</span></div>
+                <div class="month-grid">
+                  @for (cell of cells(); track $index) {
+                    @if (cell) {
+                      <button type="button" [disabled]="!cell.open" [class.is-open]="cell.open" [class.is-selected]="cell.iso === dayIso()" (click)="pickDay(cell.iso)">{{ cell.day }}</button>
+                    } @else {
+                      <span></span>
+                    }
+                  }
+                </div>
+                @if (!openDays().length) {
+                  <p class="mt-4 text-sm text-ink/70">Este mes no tiene horarios libres para {{ specialtyName() }}.</p>
+                }
+              </div>
+            } @else if (step() === Step.Time) {
+              @if (!dayIso()) {
+                <ui-empty message="Elegí un día para ver los horarios." />
+              } @else if (!slots().length) {
+                <ui-empty message="Ese día ya no tiene horarios libres." />
+              } @else {
+                <div class="times">
+                  @for (item of slots(); track item.start + item.professionalId) {
+                    <button type="button" [class.is-picked]="slot()?.start === item.start && slot()?.professionalId === item.professionalId" (click)="pickSlot(item)">
+                      <strong>{{ time(item.start) }}</strong>
+                      <span>{{ item.professional }}</span>
+                    </button>
+                  }
+                </div>
               }
-            </div>
-            @if (insurerId) {
-              <form class="ask" (ngSubmit)="continueCoverage()">
-                <ui-field label="Número de afiliado"><input name="memberNumber" [(ngModel)]="memberNumber" required maxlength="40" /></ui-field>
+            } @else if (step() === Step.Data) {
+              <form class="ask" (ngSubmit)="continueData()">
+                <ui-field label="Nombre y apellido"><input name="name" [(ngModel)]="name" autocomplete="name" required /></ui-field>
+                <ui-field label="Documento"><input name="documentNumber" [(ngModel)]="documentNumber" required maxlength="20" /></ui-field>
+                <ui-field label="Teléfono"><input name="phone" [(ngModel)]="phone" autocomplete="tel" required /></ui-field>
                 <ui-button type="submit">Continuar</ui-button>
               </form>
+            } @else if (step() === Step.Coverage) {
+              <div class="choices">
+                <button type="button" (click)="pickCoverage(Coverage.Particular)">No, voy como particular</button>
+                @if (insurers().length) {
+                  <button type="button" [class.is-picked]="coverage() === Coverage.Obra" (click)="pickCoverage(Coverage.Obra)">Sí, tengo obra social</button>
+                }
+              </div>
+              @if (coverage() === Coverage.Obra) {
+                <div class="coverage-more">
+                  <p class="hint">Solo las que atiende el profesional de ese horario.</p>
+                  <div class="choices">
+                    @for (item of insurers(); track item.id) {
+                      <button type="button" [class.is-picked]="insurerId === item.id" (click)="pickInsurer(item.id)">{{ item.name }}</button>
+                    }
+                  </div>
+                  @if (insurerId) {
+                    <form class="ask" (ngSubmit)="continueCoverage()">
+                      <ui-field label="Número de afiliado"><input name="memberNumber" [(ngModel)]="memberNumber" required maxlength="40" /></ui-field>
+                      <ui-button type="submit">Continuar</ui-button>
+                    </form>
+                  }
+                </div>
+              }
+            } @else if (step() === Step.Review) {
+              @if (slot(); as chosen) {
+                <dl class="summary">
+                  <div><dt>Servicio</dt><dd>{{ specialtyName() }}</dd></div>
+                  <div><dt>Cuándo</dt><dd>{{ when(chosen.start) }}</dd></div>
+                  <div><dt>Profesional</dt><dd>{{ chosen.professional }}</dd></div>
+                  <div><dt>Nombre</dt><dd>{{ name }}</dd></div>
+                  <div><dt>Documento</dt><dd>{{ documentNumber }}</dd></div>
+                  <div><dt>Teléfono</dt><dd>{{ phone }}</dd></div>
+                  <div><dt>Cobertura</dt><dd>{{ coverage() === Coverage.Obra ? insurerName() + ' · ' + memberNumber : 'Particular' }}</dd></div>
+                </dl>
+                <ui-button [loading]="sending()" (click)="send()">Enviar solicitud</ui-button>
+              }
+            } @else if (step() === Step.Done) {
+              <div class="mt-8 flex flex-wrap gap-4">
+                @if (session.token()) {
+                  <a routerLink="/panel" class="action-link">Volver al inicio</a>
+                } @else {
+                  <a routerLink="/registro" [queryParams]="accountDraft()" class="action-link">Crear cuenta y ver el turno</a>
+                }
+              </div>
             }
           </div>
         }
-      }
-      @case ('review') {
-        @if (slot(); as chosen) {
-          <dl class="summary">
-            <div><dt>Servicio</dt><dd>{{ specialtyName() }}</dd></div>
-            <div><dt>Cuándo</dt><dd>{{ when(chosen.start) }}</dd></div>
-            <div><dt>Profesional</dt><dd>{{ chosen.professional }}</dd></div>
-            <div><dt>Nombre</dt><dd>{{ name }}</dd></div>
-            <div><dt>Documento</dt><dd>{{ documentNumber }}</dd></div>
-            <div><dt>Teléfono</dt><dd>{{ phone }}</dd></div>
-            <div><dt>Cobertura</dt><dd>{{ coverage() === 'obra' ? insurerName() + ' · ' + memberNumber : 'Particular' }}</dd></div>
-          </dl>
-          <ui-button [loading]="sending()" (click)="send()">Enviar solicitud</ui-button>
+        @if (offer() === Offer.Choose) {
+          <ui-modal [open]="true" title="¿Cómo querés el turno?" (closed)="offer.set(null)">
+            @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
+            <p class="text-ink/75">Podés tomar el primero que haya, o elegir el día y la hora.</p>
+            @if (seeking()) {
+              <ui-skeleton class="mt-6" label="Buscando el turno más próximo" />
+            } @else {
+              <div class="choices">
+                <button type="button" (click)="chooseNearest()">El más próximo</button>
+                <button type="button" (click)="chooseManual()">Elegir día y horario</button>
+              </div>
+            }
+          </ui-modal>
+        } @else if (offer() === Offer.Confirm) {
+          <ui-modal [open]="true" title="El turno más próximo" (closed)="offer.set(null)">
+            @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
+            @if (nearest(); as next) {
+              <p class="text-ink/75">El más próximo es el {{ when(next.start) }} con {{ next.professional }}. ¿Te parece bien?</p>
+              <div class="choices">
+                <button type="button" (click)="acceptNearest()">Sí, me parece bien</button>
+                <button type="button" (click)="chooseManual()">No, elijo el día y la hora</button>
+              </div>
+            }
+          </ui-modal>
         }
       }
-      @case ('done') {
-        <div class="mt-8 flex flex-wrap gap-4">
-          @if (session.token()) {
-            <a routerLink="/panel" class="action-link">Volver al inicio</a>
-          } @else {
-            <a routerLink="/registro" [queryParams]="accountDraft()" class="action-link">Crear cuenta y ver el turno</a>
+    </div>
+    @if (intent()) {
+      <aside class="sheet" aria-label="Ficha del turno">
+        <p>Tu turno</p>
+        <dl>
+          @for (row of sheetRows(); track row.label) {
+            <div><dt>{{ row.label }}</dt><dd>{{ row.value }}</dd></div>
           }
-        </div>
-      }
+        </dl>
+      </aside>
     }
-  }
   </div>
-  }
-
-  @if (offer(); as mode) {
-    <ui-modal [open]="true" [title]="mode === 'choose' ? '¿Cómo querés el turno?' : 'El turno más próximo'" (closed)="offer.set(null)">
-      @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
-      @if (mode === 'choose') {
-        <p class="text-ink/75">Podés tomar el primero que haya, o elegir el día y la hora.</p>
-        @if (seeking()) {
-          <ui-skeleton class="mt-6" label="Buscando el turno más próximo" />
-        } @else {
-          <div class="choices">
-            <button type="button" (click)="chooseNearest()">El más próximo</button>
-            <button type="button" (click)="chooseManual()">Elegir día y horario</button>
-          </div>
-        }
-      } @else if (nearest(); as next) {
-        <p class="text-ink/75">El más próximo es el {{ when(next.start) }} con {{ next.professional }}. ¿Te parece bien?</p>
-        <div class="choices">
-          <button type="button" (click)="acceptNearest()">Sí, me parece bien</button>
-          <button type="button" (click)="chooseManual()">No, elijo el día y la hora</button>
-        </div>
-      }
-    </ui-modal>
-  }
-  }
 </section>
+

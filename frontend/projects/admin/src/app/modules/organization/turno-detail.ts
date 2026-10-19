@@ -115,6 +115,7 @@ export class TurnoDetailPage {
           name: turno.name,
           durationMinutes: turno.durationMinutes,
           specialtyId,
+          kind: turno.kind,
         }),
       );
     });

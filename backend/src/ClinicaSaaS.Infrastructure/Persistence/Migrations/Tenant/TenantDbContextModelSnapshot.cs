@@ -89,6 +89,9 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                     b.Property<int>("DurationMinutes")
                         .HasColumnType("integer");
 
+                    b.Property<int>("Kind")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(120)

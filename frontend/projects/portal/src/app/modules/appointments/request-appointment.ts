@@ -7,6 +7,7 @@ import {
   InsurerDto,
   OrganizationService,
   ScheduleService,
+  AppointmentKind,
   AppointmentTypeDto,
   SlotDto,
   SpecialtyDto,
@@ -15,9 +16,8 @@ import {
 } from 'sdk';
 import { UiButton, UiEmpty, UiField, UiModal, UiSkeleton, formatFecha } from 'ui';
 import { firstValueFrom } from 'rxjs';
+import { Coverage, Intent, Offer, Step } from './request-appointment.enums';
 
-type Step = 'specialty' | 'day' | 'time' | 'data' | 'coverage' | 'review' | 'done';
-type Intent = 'consulta' | 'estudio';
 
 @Component({
   imports: [FormsModule, RouterLink, UiButton, UiEmpty, UiField, UiModal, UiSkeleton],
@@ -30,7 +30,11 @@ export class RequestAppointmentPage {
   private readonly appointments = inject(AppointmentsService);
   private readonly clinical = inject(ClinicalService);
   readonly session = clinicaSession;
-  readonly step = signal<Step>('specialty');
+  readonly Intent = Intent;
+  readonly Coverage = Coverage;
+  readonly Offer = Offer;
+  readonly Step = Step;
+  readonly step = signal<Step>(Step.Specialty);
   readonly intent = signal<Intent | null>(null);
   readonly specialties = signal<SpecialtyDto[]>([]);
   readonly types = signal<AppointmentTypeDto[]>([]);
@@ -45,12 +49,14 @@ export class RequestAppointmentPage {
   readonly specialtyId = signal('');
   readonly year = signal(new Date().getFullYear());
   readonly month = signal(new Date().getMonth() + 1);
-  readonly coverage = signal<'particular' | 'obra'>('particular');
-  readonly offer = signal<'choose' | 'confirm' | null>(null);
+  readonly coverage = signal<Coverage>(Coverage.Particular);
+  readonly offer = signal<Offer | null>(null);
   readonly nearest = signal<SlotDto | null>(null);
   readonly seeking = signal(false);
   readonly studyId = signal('');
   readonly visitTypeIds = signal<string[]>([]);
+  readonly dayIso = signal('');
+  private readonly slotsFor = signal('');
   insurerId = '';
   memberNumber = '';
   name = '';
@@ -58,27 +64,27 @@ export class RequestAppointmentPage {
   phone = '';
 
   readonly specialtyName = computed(() => {
-    if (this.intent() === 'estudio') return this.types().find((type) => type.id === this.studyId())?.name ?? '';
+    if (this.intent() === Intent.Estudio) return this.types().find((type) => type.id === this.studyId())?.name ?? '';
     return this.specialties().find((item) => item.id === this.specialtyId())?.name ?? '';
   });
   readonly catalog = computed(() => {
     const types = this.types();
-    if (this.intent() === 'estudio') {
+    if (this.intent() === Intent.Estudio) {
       return types
-        .filter((type) => type.specialtyId && !isVisit(type.name))
+        .filter((type) => type.specialtyId && type.kind === AppointmentKind.Estudio)
         .map((type) => ({ id: type.id, name: type.name, specialtyId: type.specialtyId ?? '' }))
         .sort((left, right) => left.name.localeCompare(right.name, 'es'));
     }
-    const ids = new Set(types.filter((type) => type.specialtyId && isVisit(type.name)).map((type) => type.specialtyId));
+    const ids = new Set(types.filter((type) => type.specialtyId && type.kind === AppointmentKind.Consulta).map((type) => type.specialtyId));
     return this.specialties()
       .filter((item) => ids.has(item.id))
       .map((item) => ({ id: item.id, name: item.name, specialtyId: item.id }))
       .sort((left, right) => left.name.localeCompare(right.name, 'es'));
   });
-  readonly furthest = signal<Step>('specialty');
+  readonly furthest = signal<Step>(Step.Specialty);
   readonly direction = signal<1 | -1>(1);
   readonly motion = signal(0);
-  readonly steps = computed((): Step[] => ['specialty', 'day', 'time', 'data', 'coverage', 'review']);
+  readonly steps = computed((): Step[] => [Step.Specialty, Step.Day, Step.Time, Step.Data, Step.Coverage, Step.Review]);
   readonly stepIndex = computed(() => this.steps().indexOf(this.step()));
   readonly furthestIndex = computed(() => this.steps().indexOf(this.furthest()));
   readonly monthTitle = computed(() => {
@@ -106,40 +112,41 @@ export class RequestAppointmentPage {
     void this.start();
   }
 
+
   stepLabel(step: Step) {
     switch (step) {
-      case 'specialty': return this.intent() === 'estudio' ? 'Estudio' : 'Consulta';
-      case 'day': return 'Día';
-      case 'time': return 'Hora';
-      case 'data': return 'Tus datos';
-      case 'coverage': return 'Cobertura';
-      case 'review': return 'Confirmar';
+      case Step.Specialty: return this.intent() === Intent.Estudio ? 'Estudio' : 'Consulta';
+      case Step.Day: return 'Día';
+      case Step.Time: return 'Hora';
+      case Step.Data: return 'Tus datos';
+      case Step.Coverage: return 'Cobertura';
+      case Step.Review: return 'Confirmar';
       default: return '';
     }
   }
 
   question() {
     switch (this.step()) {
-      case 'specialty': return this.intent() === 'estudio' ? '¿Qué estudio necesitás?' : '¿Qué consulta necesitás?';
-      case 'day': return '¿Qué día te queda bien?';
-      case 'time': return '¿A qué hora?';
-      case 'data': return 'Tus datos';
-      case 'coverage': return '¿Tenés obra social?';
-      case 'review': return 'Revisá la solicitud';
+      case Step.Specialty: return this.intent() === Intent.Estudio ? '¿Qué estudio necesitás?' : '¿Qué consulta necesitás?';
+      case Step.Day: return '¿Qué día te queda bien?';
+      case Step.Time: return '¿A qué hora?';
+      case Step.Data: return 'Tus datos';
+      case Step.Coverage: return '¿Tenés obra social?';
+      case Step.Review: return 'Revisá la solicitud';
       default: return 'Listo';
     }
   }
 
   hint() {
     switch (this.step()) {
-      case 'specialty': return this.intent() === 'estudio'
+      case Step.Specialty: return this.intent() === Intent.Estudio
         ? 'Es una práctica. Después podés tomar el turno más próximo o elegir el día.'
         : 'Es para ver a un profesional. Después podés tomar el turno más próximo o elegir el día.';
-      case 'day': return 'Los días marcados tienen un horario libre.';
-      case 'time': return `${this.specialtyName()}. Elegí un horario.`;
-      case 'data': return 'Nombre, documento y teléfono. Con el documento vas a poder ver esta solicitud.';
-      case 'coverage': return this.insurers().length ? 'Si no tenés, el turno queda como particular.' : 'Este profesional atiende como particular.';
-      case 'review': return 'Al enviarla, la secretaría confirma el turno.';
+      case Step.Day: return 'Los días marcados tienen un horario libre.';
+      case Step.Time: return `${this.specialtyName()}. Elegí un horario.`;
+      case Step.Data: return 'Nombre, documento y teléfono. Con el documento vas a poder ver esta solicitud.';
+      case Step.Coverage: return this.insurers().length ? 'Si no tenés, el turno queda como particular.' : 'Este profesional atiende como particular.';
+      case Step.Review: return 'Al enviarla, la secretaría confirma el turno.';
       default: return this.session.token()
         ? 'La secretaría puede llamarte para confirmar el turno. También lo vas a ver en Mis turnos.'
         : 'La secretaría puede llamarte para confirmar el turno. Si querés verlo en el momento, creá una cuenta.';
@@ -164,12 +171,50 @@ export class RequestAppointmentPage {
     return formatFecha(value, 'hora');
   }
 
-  jump(step: Step) {
-    if (this.steps().indexOf(step) > this.furthestIndex()) return;
+  canOpen(step: Step) {
+    if (this.steps().indexOf(step) > this.furthestIndex()) return false;
+    if (step === Step.Time) return this.dayIso() !== '';
+    return true;
+  }
+
+  async jump(step: Step) {
+    if (!this.canOpen(step)) return;
     this.offer.set(null);
     this.error.set('');
+    if (step === Step.Time && this.slotsFor() !== this.dayIso()) await this.loadSlots(this.dayIso(), true);
     this.show(step);
-    if (step === 'day') void this.loadMonth();
+    if (step === Step.Day) void this.loadMonth();
+  }
+
+  sheetRows() {
+    const rows: Array<{ label: string; value: string }> = [];
+    const kind = this.intent();
+    if (!kind) return rows;
+    rows.push({ label: 'Servicio elegido', value: kind === Intent.Estudio ? 'Estudio' : 'Consulta médica' });
+    const service = this.specialtyName();
+    if (service) rows.push({ label: kind === Intent.Estudio ? 'Estudio' : 'Consulta', value: service });
+    if (this.dayIso()) rows.push({ label: 'Día', value: this.dayLabel(this.dayIso()) });
+    const chosen = this.slot();
+    if (chosen) {
+      rows.push({ label: 'Hora', value: this.time(chosen.start) });
+      rows.push({ label: 'Profesional', value: chosen.professional });
+    }
+    if (this.name.trim()) rows.push({ label: 'Nombre', value: this.name.trim() });
+    if (this.documentNumber.trim()) rows.push({ label: 'Documento', value: this.documentNumber.trim() });
+    if (this.phone.trim()) rows.push({ label: 'Teléfono', value: this.phone.trim() });
+    if (this.steps().indexOf(this.furthest()) >= this.steps().indexOf(Step.Review)) {
+      rows.push({
+        label: 'Cobertura',
+        value: this.coverage() === Coverage.Obra ? `${this.insurerName()} · ${this.memberNumber}` : 'Particular',
+      });
+    }
+    return rows;
+  }
+
+  private dayLabel(iso: string) {
+    const [year, month, day] = iso.split('-').map(Number);
+    const label = new Date(year, month - 1, day).toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' });
+    return `${label.charAt(0).toUpperCase()}${label.slice(1)}`;
   }
 
   private go(next: Step) {
@@ -182,7 +227,7 @@ export class RequestAppointmentPage {
   private show(next: Step) {
     if (this.step() === next) return;
     const from = this.steps().indexOf(this.step());
-    const to = next === 'done' ? from + 1 : this.steps().indexOf(next);
+    const to = next === Step.Done ? from + 1 : this.steps().indexOf(next);
     this.direction.set(to >= from ? 1 : -1);
     this.step.set(next);
     this.motion.update((value) => value + 1);
@@ -190,40 +235,42 @@ export class RequestAppointmentPage {
 
   backToIntent() {
     this.intent.set(null);
-    this.step.set('specialty');
-    this.furthest.set('specialty');
+    this.step.set(Step.Specialty);
+    this.furthest.set(Step.Specialty);
     this.offer.set(null);
     this.specialtyId.set('');
     this.studyId.set('');
     this.visitTypeIds.set([]);
-    this.slot.set(null);
+    this.clearSchedule();
     this.error.set('');
   }
 
   pickIntent(kind: Intent) {
     this.intent.set(kind);
-    this.step.set('specialty');
-    this.furthest.set('specialty');
+    this.step.set(Step.Specialty);
+    this.furthest.set(Step.Specialty);
     this.offer.set(null);
     this.specialtyId.set('');
     this.studyId.set('');
     this.visitTypeIds.set([]);
-    this.slot.set(null);
+    this.clearSchedule();
     this.error.set('');
   }
 
   pickSpecialty(option: { id: string; specialtyId: string }) {
     this.specialtyId.set(option.specialtyId);
-    if (this.intent() === 'estudio') {
+    if (this.intent() === Intent.Estudio) {
       this.studyId.set(option.id);
       this.visitTypeIds.set([]);
     } else {
       this.studyId.set('');
-      this.visitTypeIds.set(this.types().filter((type) => type.specialtyId === option.specialtyId && isVisit(type.name)).map((type) => type.id));
+      this.visitTypeIds.set(this.types().filter((type) => type.specialtyId === option.specialtyId && type.kind === AppointmentKind.Consulta).map((type) => type.id));
     }
+    this.clearSchedule();
+    this.furthest.set(Step.Specialty);
     this.error.set('');
     this.nearest.set(null);
-    this.offer.set('choose');
+    this.offer.set(Offer.Choose);
   }
 
   async chooseNearest() {
@@ -238,7 +285,7 @@ export class RequestAppointmentPage {
         return;
       }
       this.nearest.set(slot);
-      this.offer.set('confirm');
+      this.offer.set(Offer.Confirm);
     } catch (error) {
       this.error.set(errorMessage(error));
     } finally {
@@ -251,7 +298,7 @@ export class RequestAppointmentPage {
     const today = new Date();
     this.year.set(today.getFullYear());
     this.month.set(today.getMonth() + 1);
-    this.go('day');
+    this.go(Step.Day);
     await this.loadMonth();
   }
 
@@ -273,21 +320,8 @@ export class RequestAppointmentPage {
 
   async pickDay(iso: string) {
     this.error.set('');
-    this.loading.set(true);
-    try {
-      const lists = await Promise.all(this.locationIds().map((locationId) => firstValueFrom(this.schedule.availability({
-        locationId,
-        specialtyId: this.specialtyId(),
-        date: iso,
-      }))));
-      const now = Date.now();
-      this.slots.set(lists.flat().filter((slot) => new Date(slot.start).getTime() > now && this.accepts(slot)).sort((left, right) => left.start.localeCompare(right.start)));
-      this.go('time');
-    } catch (error) {
-      this.error.set(errorMessage(error));
-    } finally {
-      this.loading.set(false);
-    }
+    await this.loadSlots(iso, true);
+    if (!this.error()) this.go(Step.Time);
   }
 
   pickSlot(slot: SlotDto) {
@@ -314,19 +348,19 @@ export class RequestAppointmentPage {
     this.documentNumber = documentNumber;
     this.phone = phone;
     this.error.set('');
-    this.go('coverage');
+    this.go(Step.Coverage);
   }
 
-  pickCoverage(kind: 'particular' | 'obra') {
+  pickCoverage(kind: Coverage) {
     this.error.set('');
-    if (kind === 'particular' || !this.insurers().length) {
-      this.coverage.set('particular');
+    if (kind === Coverage.Particular || !this.insurers().length) {
+      this.coverage.set(Coverage.Particular);
       this.insurerId = '';
       this.memberNumber = '';
-      this.go('review');
+      this.go(Step.Review);
       return;
     }
-    this.coverage.set('obra');
+    this.coverage.set(Coverage.Obra);
   }
 
   pickInsurer(id: string) {
@@ -345,7 +379,7 @@ export class RequestAppointmentPage {
     }
     this.memberNumber = this.memberNumber.trim();
     this.error.set('');
-    this.go('review');
+    this.go(Step.Review);
   }
 
   insurerName() {
@@ -367,10 +401,10 @@ export class RequestAppointmentPage {
         name: this.name.trim(),
         phone: this.phone.trim(),
         documentNumber: this.documentNumber.trim(),
-        insurerId: this.coverage() === 'obra' ? this.insurerId : null,
-        memberNumber: this.coverage() === 'obra' ? this.memberNumber.trim() : null,
+        insurerId: this.coverage() === Coverage.Obra ? this.insurerId : null,
+        memberNumber: this.coverage() === Coverage.Obra ? this.memberNumber.trim() : null,
       }));
-      this.show('done');
+      this.show(Step.Done);
     } catch (error) {
       this.error.set(errorMessage(error));
     } finally {
@@ -404,8 +438,14 @@ export class RequestAppointmentPage {
   }
 
   private async applySlot(slot: SlotDto) {
+    const iso = slot.start.slice(0, 10);
+    const [year, month] = iso.split('-').map(Number);
+    this.dayIso.set(iso);
+    this.year.set(year);
+    this.month.set(month);
     this.slot.set(slot);
-    this.coverage.set('particular');
+    void this.loadSlots(iso);
+    this.coverage.set(Coverage.Particular);
     this.insurerId = '';
     this.memberNumber = '';
     this.error.set('');
@@ -414,11 +454,41 @@ export class RequestAppointmentPage {
     } catch {
       this.insurers.set([]);
     }
-    this.go('data');
+    this.go(Step.Data);
+  }
+
+  private clearSchedule() {
+    this.slot.set(null);
+    this.dayIso.set('');
+    this.slots.set([]);
+    this.slotsFor.set('');
+    this.nearest.set(null);
+  }
+
+  private async loadSlots(iso: string, spin = false) {
+    if (spin) this.loading.set(true);
+    this.error.set('');
+    try {
+      const lists = await Promise.all(this.locationIds().map((locationId) => firstValueFrom(this.schedule.availability({
+        locationId,
+        specialtyId: this.specialtyId(),
+        date: iso,
+      }))));
+      const now = Date.now();
+      this.dayIso.set(iso);
+      this.slotsFor.set(iso);
+      this.slots.set(lists.flat().filter((slot) => new Date(slot.start).getTime() > now && this.accepts(slot)).sort((left, right) => left.start.localeCompare(right.start)));
+    } catch (error) {
+      this.slots.set([]);
+      this.slotsFor.set('');
+      if (spin) this.error.set(errorMessage(error));
+    } finally {
+      if (spin) this.loading.set(false);
+    }
   }
 
   private accepts(slot: SlotDto) {
-    if (this.intent() === 'estudio') return slot.appointmentTypeId === this.studyId();
+    if (this.intent() === Intent.Estudio) return slot.appointmentTypeId === this.studyId();
     return this.visitTypeIds().includes(slot.appointmentTypeId);
   }
 
@@ -464,9 +534,4 @@ export class RequestAppointmentPage {
       this.loading.set(false);
     }
   }
-}
-
-function isVisit(name: string) {
-  const value = name.trim().toLowerCase();
-  return value.startsWith('consulta') || value === 'control';
 }

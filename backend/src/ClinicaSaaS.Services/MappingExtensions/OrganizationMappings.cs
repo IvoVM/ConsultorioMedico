@@ -14,7 +14,7 @@ public static class OrganizationMappings
         query.Select(s => new SpecialtyDto(s.Id, s.Name));
 
     public static IQueryable<AppointmentTypeDto> ToAppointmentTypeDtos(this IQueryable<AppointmentType> query) =>
-        query.Select(t => new AppointmentTypeDto(t.Id, t.Name, t.DurationMinutes, t.SpecialtyId));
+        query.Select(t => new AppointmentTypeDto(t.Id, t.Name, t.DurationMinutes, t.SpecialtyId, t.Kind));
 
     public static IQueryable<ProfessionalDto> ToProfessionalDtos(this IQueryable<Employee> query) =>
         query.Select(e => new ProfessionalDto(

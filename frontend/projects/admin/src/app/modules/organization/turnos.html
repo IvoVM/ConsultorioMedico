@@ -51,6 +51,7 @@
   <ui-modal [open]="true" title="Crear turno" (closed)="creating.set(false)">
     <form class="flex flex-col gap-4" (ngSubmit)="createTurno()">
       <ui-field label="Turno"><input name="typeName" [(ngModel)]="typeName" required /></ui-field>
+      <ui-field label="Tipo"><ui-select name="kind" [(ngModel)]="kind" [options]="kindOptions" /></ui-field>
       <ui-field label="Minutos"><input name="duration" type="number" min="5" max="240" [(ngModel)]="duration" required /></ui-field>
       @if (error()) { <p class="text-sm text-pulse" role="alert">{{ error() }}</p> }
       <div class="flex flex-wrap gap-3">

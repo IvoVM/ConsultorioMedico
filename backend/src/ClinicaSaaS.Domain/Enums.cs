@@ -46,3 +46,9 @@ public enum InvoiceStatus
     Paid,
     Voided
 }
+
+public enum AppointmentKind
+{
+    Consulta,
+    Estudio
+}
