@@ -6,12 +6,12 @@ export const routes: Routes = [
   { path: 'ingreso/empleado', loadComponent: () => import('./modules/auth/login').then((m) => m.LoginPage), data: { audience: 'staff' } },
   { path: 'ingreso/cuenta', loadComponent: () => import('./modules/auth/login').then((m) => m.LoginPage), data: { audience: 'patient' } },
   { path: 'paciente', redirectTo: 'reservar' },
-  { path: 'registro', loadComponent: () => import('./modules/auth/register').then((m) => m.RegisterPage) },
   {
     path: '',
     loadComponent: () => import('./modules/shell/shell').then((m) => m.ShellPage),
     children: [
       { path: 'reservar', loadComponent: () => import('./modules/appointments/request-appointment').then((m) => m.RequestAppointmentPage) },
+      { path: 'registro', loadComponent: () => import('./modules/auth/register').then((m) => m.RegisterPage) },
       {
         path: '',
         canActivate: [authGuard],

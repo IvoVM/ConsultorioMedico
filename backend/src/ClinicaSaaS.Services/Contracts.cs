@@ -21,12 +21,10 @@ public record TokenDto(string Token, string Email, string Name, string Role, str
 public record IssuedSession(TokenDto Access, string RefreshToken, DateTimeOffset RefreshExpires);
 
 public record RegisterPatientCommand(
-    string Email,
     string Password,
     string FirstName,
     string LastName,
     string DocumentNumber,
-    DateOnly BirthDate,
     string Phone);
 
 public record LocationDto(Guid Id, string Name, string Address, bool IsActive);

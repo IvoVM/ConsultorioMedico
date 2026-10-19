@@ -1,29 +1,24 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { AuthService, ClinicService, clinicaSession, errorMessage } from 'sdk';
+import { ActivatedRoute, Router } from '@angular/router';
+import { AuthService, clinicaSession, errorMessage } from 'sdk';
 import { UiButton, UiField } from 'ui';
 import { firstValueFrom } from 'rxjs';
-import { readClinicName } from './clinic-name';
 
 @Component({
-  imports: [FormsModule, RouterLink, UiButton, UiField],
+  imports: [FormsModule, UiButton, UiField],
   templateUrl: './register.html',
 })
 export class RegisterPage {
   private readonly auth = inject(AuthService);
-  private readonly clinic = inject(ClinicService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   documentNumber = '';
   firstName = '';
   lastName = '';
-  birthDate = '';
   phone = '';
   readonly fromRequest = signal(false);
-  email = '';
   password = '';
-  readonly clinicName = signal('Consultorio');
   readonly error = signal('');
   readonly loading = signal(false);
 
@@ -34,7 +29,6 @@ export class RegisterPage {
     this.lastName = query.get('apellido') ?? '';
     this.phone = query.get('telefono') ?? '';
     this.fromRequest.set(!!(this.documentNumber || this.firstName || this.phone));
-    void readClinicName(this.clinic).then((name) => this.clinicName.set(name));
   }
 
   async submit() {
@@ -43,12 +37,10 @@ export class RegisterPage {
     try {
       const token = await firstValueFrom(
         this.auth.registerPatient({
-          email: this.email,
           password: this.password,
           firstName: this.firstName,
           lastName: this.lastName,
           documentNumber: this.documentNumber,
-          birthDate: this.birthDate,
           phone: this.phone,
         }),
       );

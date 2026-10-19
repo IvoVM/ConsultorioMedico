@@ -56,7 +56,7 @@ public class AuthService(
         var document = DocumentRules.Normalize(command.DocumentNumber);
         if (!DocumentRules.IsValid(document))
             throw new BusinessRuleException("El documento no es válido.");
-        var email = command.Email.Trim();
+        var email = AccountEmail(document);
         var existing = await clients.Clients
             .Where(client => client.DocumentNumber == document || client.DocumentNumber.ToLower() == document.ToLower())
             .Select(client => new { client.Id, client.UserId, client.User.Email })
@@ -64,7 +64,7 @@ public class AuthService(
         if (existing is not null && !IsPlaceholder(existing.Email))
             throw new ConflictException("Ya hay una cuenta con ese documento. Entrá con el documento y la contraseña.");
         if (await users.FindByEmailAsync(email, ct) is { } owner && (existing is null || owner.Id != existing.UserId))
-            throw new ConflictException("Ese email ya está registrado.");
+            throw new ConflictException("Ya hay una cuenta con ese documento. Entrá con el documento y la contraseña.");
 
         TenantAccount user;
         Guid clientId;
@@ -75,7 +75,6 @@ public class AuthService(
             var client = await clients.GetAsync(existing.Id, ct)
                 ?? throw new NotFoundException("Paciente no encontrado.");
             client.DocumentNumber = document;
-            client.BirthDate = command.BirthDate;
             client.Phone = command.Phone.Trim();
             await clients.SaveAsync(ct);
             user = await users.FindByIdAsync(existing.UserId, ct)
@@ -97,7 +96,6 @@ public class AuthService(
                 Id = Guid.NewGuid(),
                 UserId = user.Id,
                 DocumentNumber = document,
-                BirthDate = command.BirthDate,
                 Phone = command.Phone.Trim()
             }, ct);
             clientId = client.Id;
@@ -120,6 +118,12 @@ public class AuthService(
     }
 
     public Task LogoutAsync(string? rawToken, CancellationToken ct) => sessions.RevokeAsync(rawToken, ct);
+
+    private static string AccountEmail(string document)
+    {
+        var local = new string(document.Where(char.IsLetterOrDigit).ToArray());
+        return $"{local}@pacientes.local";
+    }
 
     private static bool IsPlaceholder(string? email) =>
         email is not null && email.StartsWith("solicitud.", StringComparison.OrdinalIgnoreCase) && email.EndsWith("@pacientes.local", StringComparison.OrdinalIgnoreCase);

@@ -7,8 +7,9 @@ public class RegisterPatientValidator : AbstractValidator<RegisterPatientCommand
 {
     public RegisterPatientValidator()
     {
-        RuleFor(x => x.Email).NotEmpty().EmailAddress();
-        RuleFor(x => x.Password).MinimumLength(8);
+        RuleFor(x => x.Password)
+            .MinimumLength(8)
+            .WithMessage("La contraseña tiene que tener al menos 8 caracteres.");
         RuleFor(x => x.FirstName).NotEmpty().MaximumLength(80);
         RuleFor(x => x.LastName).NotEmpty().MaximumLength(80);
         RuleFor(x => x.DocumentNumber).NotEmpty().MaximumLength(20);
