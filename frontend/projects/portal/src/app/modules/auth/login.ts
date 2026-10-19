@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService, ClinicService, clinicaSession, errorMessage } from 'sdk';
 import { UiButton, UiField } from 'ui';
 import { firstValueFrom } from 'rxjs';
@@ -8,7 +8,7 @@ import { readPending } from '../appointments/pending-booking';
 import { readClinicName } from './clinic-name';
 
 @Component({
-  imports: [FormsModule, RouterLink, UiButton, UiField],
+  imports: [FormsModule, UiButton, UiField],
   templateUrl: './login.html',
 })
 export class LoginPage {
