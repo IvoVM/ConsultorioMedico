@@ -30,6 +30,13 @@ export class ShellPage {
         ],
       },
       { label: 'Agendas', path: '/agendas' },
+      {
+        label: 'Turnos',
+        children: [
+          { label: 'Historial de turnos', path: '/turnos/historial' },
+          { label: 'Solicitudes de turnos', path: '/turnos/solicitudes' },
+        ],
+      },
       { label: 'Comprobantes', path: '/comprobantes' },
       { label: 'Auditoría', path: '/auditoria' },
       {

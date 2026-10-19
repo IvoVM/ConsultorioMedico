@@ -20,6 +20,11 @@ public class AppointmentsController(ScheduleService schedule) : ApiController
     public Task<IActionResult> ForDay([FromQuery] DateOnly date, [FromQuery] Guid? professionalId, CancellationToken ct) =>
         Run(() => schedule.ForDayAsync(date, professionalId, ct));
 
+    [Authorize(Roles = AppRoles.TenantAdmin)]
+    [HttpGet("historial")]
+    public Task<IActionResult> History([FromQuery] ListQuery query, CancellationToken ct) =>
+        Run(() => schedule.HistoryAsync(query, ct));
+
     [Authorize(Roles = AppRoles.Patient)]
     [HttpGet("mios")]
     public Task<IActionResult> Mine(CancellationToken ct) => Run(() => schedule.MineAsync(ct));

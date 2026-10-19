@@ -228,6 +228,35 @@ public class ScheduleService(
         return await LoadAppointmentAsync(appointment.Id, ct);
     }
 
+    public async Task<PageDto<AppointmentDto>> HistoryAsync(ListQuery query, CancellationToken ct)
+    {
+        var source = appointments.Appointments.AsQueryable();
+        if (query.Term is string term)
+            source = source.Where(a =>
+                (a.Client.User.FirstName + " " + a.Client.User.LastName).ToLower().Contains(term) ||
+                (a.Professional.FirstName + " " + a.Professional.LastName).ToLower().Contains(term) ||
+                a.AppointmentType.Name.ToLower().Contains(term) ||
+                a.Location.Name.ToLower().Contains(term) ||
+                (a.Status == AppointmentStatus.Booked ? "reservado"
+                    : a.Status == AppointmentStatus.CheckedIn ? "admitido"
+                    : a.Status == AppointmentStatus.InProgress ? "en atención"
+                    : a.Status == AppointmentStatus.Completed ? "atendido"
+                    : a.Status == AppointmentStatus.Cancelled ? "cancelado"
+                    : "ausente").Contains(term));
+        var ordered = (query.Sort, query.Desc) switch
+        {
+            ("patient", true) => source.OrderByDescending(a => a.Client.User.LastName).ThenByDescending(a => a.Client.User.FirstName).ThenByDescending(a => a.Start),
+            ("patient", false) => source.OrderBy(a => a.Client.User.LastName).ThenBy(a => a.Client.User.FirstName).ThenByDescending(a => a.Start),
+            ("professional", true) => source.OrderByDescending(a => a.Professional.LastName).ThenByDescending(a => a.Professional.FirstName).ThenByDescending(a => a.Start),
+            ("professional", false) => source.OrderBy(a => a.Professional.LastName).ThenBy(a => a.Professional.FirstName).ThenByDescending(a => a.Start),
+            ("status", true) => source.OrderByDescending(a => a.Status).ThenByDescending(a => a.Start),
+            ("status", false) => source.OrderBy(a => a.Status).ThenByDescending(a => a.Start),
+            ("start", false) => source.OrderBy(a => a.Start),
+            _ => source.OrderByDescending(a => a.Start),
+        };
+        return await Pages.Materialize(ordered.ToAppointmentDtos(), query, ct);
+    }
+
     public async Task<IReadOnlyList<AppointmentDto>> ForDayAsync(DateOnly date, Guid? professionalId, CancellationToken ct)
     {
         if (currentUser.Role == TenantRole.Doctor.ToString())

@@ -43,6 +43,16 @@ export const routes: Routes = [
       },
       { path: 'agendas', canActivate: [roleGuard(TenantRole.TenantAdmin)], loadComponent: () => import('./modules/schedules/schedules').then((m) => m.SchedulesPage) },
       {
+        path: 'turnos',
+        canActivate: [roleGuard(TenantRole.TenantAdmin)],
+        loadComponent: () => import('./modules/appointments/turnos').then((m) => m.TurnosPage),
+        children: [
+          { path: '', pathMatch: 'full', redirectTo: 'historial' },
+          { path: 'historial', loadComponent: () => import('./modules/appointments/history').then((m) => m.AppointmentHistoryPage) },
+          { path: 'solicitudes', loadComponent: () => import('./modules/appointments/requests').then((m) => m.AppointmentRequestsPage) },
+        ],
+      },
+      {
         path: 'historias',
         canActivate: [roleGuard(TenantRole.TenantAdmin)],
         loadComponent: () => import('./modules/medical-records/medical-records').then((m) => m.MedicalRecordsPage),

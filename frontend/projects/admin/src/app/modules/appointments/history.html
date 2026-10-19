@@ -1,0 +1,47 @@
+<header class="mb-6">
+  <h2 class="font-serif text-2xl tracking-tight">Historial de turnos</h2>
+  <p class="mt-2 max-w-prose text-sm leading-relaxed text-ink/70">
+    Cada fila es un turno del consultorio, del más reciente al más antiguo. El estado dice si está reservado, admitido, atendido, cancelado o ausente.
+  </p>
+</header>
+
+@if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
+
+<div class="mb-6">
+  <ui-field class="sm:w-80" label="Buscar">
+    <input type="search" name="query" [ngModel]="query()" (ngModelChange)="onSearch($event)" placeholder="Paciente, profesional o estado" />
+  </ui-field>
+</div>
+
+@if (loading()) {
+  <ui-skeleton label="Cargando turnos" />
+} @else if (!total()) {
+  <ui-empty [message]="query() ? 'Ningún turno coincide con esa búsqueda.' : 'Todavía no hay turnos.'" />
+} @else {
+  <ui-table>
+    <thead>
+      <tr>
+        <th><button type="button" sortCol [on]="sort().key === 'start'" [dir]="sort().dir" (click)="sortBy('start')">Cuándo</button></th>
+        <th><button type="button" sortCol [on]="sort().key === 'patient'" [dir]="sort().dir" (click)="sortBy('patient')">Paciente</button></th>
+        <th><button type="button" sortCol [on]="sort().key === 'professional'" [dir]="sort().dir" (click)="sortBy('professional')">Profesional</button></th>
+        <th><button type="button" sortCol [on]="sort().key === 'status'" [dir]="sort().dir" (click)="sortBy('status')">Estado</button></th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (item of rows(); track item.id) {
+        <tr>
+          <td class="whitespace-nowrap">{{ item.start | fecha }}</td>
+          <td class="font-serif text-lg leading-tight">{{ item.patient }}</td>
+          <td>
+            {{ item.professional }}
+            <span class="mt-1 block text-sm text-ink/70">{{ item.appointmentType }} · {{ item.location }}</span>
+          </td>
+          <td><ui-badge [tone]="item.status === status.Cancelled || item.status === status.NoShow ? 'warn' : item.status === status.Completed ? 'ok' : 'muted'">{{ statusLabels[item.status] }}</ui-badge></td>
+          <td class="whitespace-nowrap"><a class="text-link" [routerLink]="['/pacientes', item.patientId]">Ficha</a></td>
+        </tr>
+      }
+    </tbody>
+  </ui-table>
+  <table-pager [total]="total()" [page]="page()" (pageChange)="go($event)" />
+}
