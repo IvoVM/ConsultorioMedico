@@ -17,11 +17,11 @@ import { TablePager, listParams, queueSearch } from '../../table-pager';
 import { SortCol, SortState, nextSort } from '../../table-sort';
 import { roleLabels } from './models/role-labels';
 
-export const sampleCsv = `nombre,apellido,email,rol,matricula,especialidad
-Camila,Suárez,camila.suarez@prueba.local,Medico,MN 55110,Clínica médica
-Pedro,Luna,pedro.luna@prueba.local,Secretario,,
-Inés,Molina,ines.molina@prueba.local,AdminTenant,,
-,soloapellido,correo-invalido,Ayudante,,
+export const sampleCsv = `nombre,apellido,documento,email,rol,matricula,especialidad
+Camila,Suárez,40111222,camila.suarez@prueba.local,Medico,MN 55110,Clínica médica
+Pedro,Luna,40222333,pedro.luna@prueba.local,Secretario,,
+Inés,Molina,40333444,ines.molina@prueba.local,AdminTenant,,
+,soloapellido,12,correo-invalido,Ayudante,,
 `;
 
 const csvRoles: Record<string, string> = {
@@ -77,6 +77,7 @@ export class EmployeesPage {
   firstName = '';
   lastName = '';
   email = '';
+  documentNumber = '';
   role: TenantRole = 'Doctor';
   licenseNumber = '';
   specialtyId = '';
@@ -131,6 +132,7 @@ export class EmployeesPage {
       this.firstName = '';
       this.lastName = '';
       this.email = '';
+      this.documentNumber = '';
       this.role = 'Doctor';
       this.licenseNumber = '';
       this.specialtyId = this.specialties()[0]?.value ?? '';
@@ -152,6 +154,7 @@ export class EmployeesPage {
     this.firstName = person.firstName;
     this.lastName = person.lastName;
     this.email = person.email;
+    this.documentNumber = person.documentNumber ?? '';
     this.role = person.role;
     this.licenseNumber = person.licenseNumber ?? '';
     this.specialtyId = person.specialtyId ?? this.specialties()[0]?.value ?? '';
@@ -191,6 +194,7 @@ export class EmployeesPage {
       firstName: this.firstName.trim(),
       lastName: this.lastName.trim(),
       email: this.email.trim(),
+      documentNumber: this.documentNumber.trim(),
       role: this.role,
       licenseNumber: this.role === 'Doctor' ? this.licenseNumber.trim() || null : null,
       specialtyId: this.role === 'Doctor' ? this.specialtyId : null,
@@ -219,6 +223,7 @@ export class EmployeesPage {
       this.firstName = '';
       this.lastName = '';
       this.email = '';
+      this.documentNumber = '';
       this.licenseNumber = '';
       await this.load();
     } catch (error) {
@@ -266,15 +271,20 @@ function previewCsv(text: string): PreviewRow[] {
   return lines.slice(1).map((line, index) => {
     const cols = line.split(',');
     const name = `${cols[0]?.trim() ?? ''} ${cols[1]?.trim() ?? ''}`.trim();
-    const email = cols[2]?.trim() ?? '';
-    const role = cols[3]?.trim() ?? '';
-    const specialty = cols[5]?.trim() ?? '';
+    const email = cols[3]?.trim() ?? '';
+    const documentNumber = cols[2]?.trim() ?? '';
+    const role = cols[4]?.trim() ?? '';
+    const specialty = cols[6]?.trim() ?? '';
     const row = index + 2;
-    if (cols.length < 4) {
+    if (cols.length < 5) {
       return bad(row, name, email, role, 'Faltan columnas.');
     }
     if (!cols[0]?.trim() || !cols[1]?.trim() || !email) {
       return bad(row, name, email, role, 'Nombre, apellido y email son obligatorios.');
+    }
+    const document = documentNumber.replace(/[.\-\s]/g, '');
+    if (document.length < 6 || document.length > 20) {
+      return bad(row, name, email, role, 'El documento tiene que tener entre 6 y 20 caracteres.');
     }
     if (!email.includes('@') || email.startsWith('@') || email.endsWith('@')) {
       return bad(row, name, email, role, 'El email no es válido.');

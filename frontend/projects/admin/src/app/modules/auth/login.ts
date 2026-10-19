@@ -37,8 +37,8 @@ export class LoginPage {
     this.loading.set(true);
     try {
       const token = await firstValueFrom(this.auth.login({ email: this.email, password: this.password }));
-      clinicaSession.set(token.token, token.role, token.name);
-      await this.router.navigateByUrl('/inicio');
+      clinicaSession.set(token.token, token.role, token.name, token.mustChangePassword);
+      await this.router.navigateByUrl(token.mustChangePassword ? '/clave' : '/inicio');
     } catch (error) {
       this.error.set(errorMessage(error));
     } finally {

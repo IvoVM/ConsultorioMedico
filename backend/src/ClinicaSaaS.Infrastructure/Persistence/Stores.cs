@@ -73,14 +73,29 @@ public class TenantUserStore(UserManager<TenantUser> users) : ITenantUserStore
     public async Task SetPasswordAsync(Guid id, string password, CancellationToken ct)
     {
         var user = await users.FindByIdAsync(id.ToString()) ?? throw new NotFoundException("Usuario no encontrado.");
-        var token = await users.GeneratePasswordResetTokenAsync(user);
-        var result = await users.ResetPasswordAsync(user, token, password);
-        if (!result.Succeeded)
-            throw new BusinessRuleException(string.Join(' ', result.Errors.Select(IdentityMessage)));
+        foreach (var validator in users.PasswordValidators)
+        {
+            var valid = await validator.ValidateAsync(users, user, password);
+            if (!valid.Succeeded)
+                throw new BusinessRuleException(string.Join(' ', valid.Errors.Select(IdentityMessage)));
+        }
+        user.PasswordHash = users.PasswordHasher.HashPassword(user, password);
         user.MustChangePassword = false;
         var update = await users.UpdateAsync(user);
         if (!update.Succeeded)
             throw new BusinessRuleException(string.Join(' ', update.Errors.Select(IdentityMessage)));
+        await users.UpdateSecurityStampAsync(user);
+    }
+
+    public async Task SetDocumentPasswordAsync(Guid id, string password, CancellationToken ct)
+    {
+        var user = await users.FindByIdAsync(id.ToString()) ?? throw new NotFoundException("Usuario no encontrado.");
+        user.PasswordHash = users.PasswordHasher.HashPassword(user, password);
+        user.MustChangePassword = true;
+        var update = await users.UpdateAsync(user);
+        if (!update.Succeeded)
+            throw new BusinessRuleException(string.Join(' ', update.Errors.Select(IdentityMessage)));
+        await users.UpdateSecurityStampAsync(user);
     }
 
     private static string IdentityMessage(IdentityError error) => error.Code switch
@@ -121,12 +136,13 @@ public class EmployeeStore(TenantDbContext db) : IEmployeeStore
         await db.SaveChangesAsync(ct);
     }
 
-    public async Task UpdateAsync(Guid userId, string? licenseNumber, Guid? specialtyId, CancellationToken ct)
+    public async Task UpdateAsync(Guid userId, string? licenseNumber, Guid? specialtyId, string documentNumber, CancellationToken ct)
     {
         var employee = await db.Employees.FirstOrDefaultAsync(e => e.UserId == userId, ct)
             ?? throw new NotFoundException("Empleado no encontrado.");
         employee.LicenseNumber = licenseNumber;
         employee.SpecialtyId = specialtyId;
+        employee.DocumentNumber = documentNumber;
         await db.SaveChangesAsync(ct);
     }
 

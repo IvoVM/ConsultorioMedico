@@ -1,8 +1,9 @@
 import { Routes } from '@angular/router';
-import { authGuard, roleGuard } from './auth.guard';
+import { authGuard, roleGuard, signedInGuard } from './auth.guard';
 
 export const routes: Routes = [
   { path: 'ingreso', loadComponent: () => import('./modules/auth/login').then((m) => m.LoginPage) },
+  { path: 'clave', canActivate: [signedInGuard], loadComponent: () => import('./modules/auth/change-password').then((m) => m.ChangePasswordPage) },
   {
     path: '',
     canActivate: [authGuard],
@@ -53,6 +54,7 @@ export const routes: Routes = [
       { path: 'aranceles', redirectTo: 'organizacion/especialidades' },
       { path: 'comprobantes', canActivate: [roleGuard('TenantAdmin')], loadComponent: () => import('./modules/invoices/invoices').then((m) => m.InvoicesPage) },
       { path: 'auditoria', canActivate: [roleGuard('TenantAdmin')], loadComponent: () => import('./modules/audit/audit-log').then((m) => m.AuditLogPage) },
+      { path: 'configuracion/usuarios', canActivate: [roleGuard('TenantAdmin')], loadComponent: () => import('./modules/users/users').then((m) => m.UsersPage) },
     ],
   },
 ];

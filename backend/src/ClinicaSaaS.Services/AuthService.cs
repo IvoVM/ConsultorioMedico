@@ -14,7 +14,8 @@ public class AuthService(
     IRefreshSessionStore sessions,
     IValidator<RegisterPatientCommand> registrationValidator,
     IAuditStore audit,
-    IEmployeeStore employees)
+    IEmployeeStore employees,
+    ICurrentUser currentUser)
 {
     public async Task<IssuedSession> LoginTenantAsync(LoginCommand command, CancellationToken ct)
     {
@@ -45,6 +46,38 @@ public class AuthService(
             throw new BusinessRuleException("El documento o la contraseña no coinciden.");
         if (!await users.CheckPasswordAsync(user.Id, command.Password, ct))
             throw new BusinessRuleException("El documento o la contraseña no coinciden.");
+        return await IssueAsync(user, ct);
+    }
+
+    public async Task<IssuedSession> LoginStaffAsync(LoginStaffCommand command, CancellationToken ct)
+    {
+        var document = DocumentRules.Normalize(command.DocumentNumber);
+        if (!DocumentRules.IsValid(document))
+            throw new BusinessRuleException("El documento no es válido.");
+        var match = await employees.Employees
+            .Where(employee => employee.DocumentNumber == document || (employee.DocumentNumber != null && employee.DocumentNumber.ToLower() == document.ToLower()))
+            .Select(employee => new { employee.UserId, employee.IsActive })
+            .FirstOrDefaultAsync(ct)
+            ?? throw new BusinessRuleException("No hay un empleado con ese documento.");
+        if (!match.IsActive)
+            throw new BusinessRuleException("Esta cuenta está dada de baja.");
+        var user = await users.FindByIdAsync(match.UserId, ct)
+            ?? throw new BusinessRuleException("No hay un empleado con ese documento.");
+        if (!await users.CheckPasswordAsync(user.Id, command.Password, ct))
+            throw new BusinessRuleException("El documento o la contraseña no coinciden.");
+        return await IssueAsync(user, ct);
+    }
+
+    public async Task<IssuedSession> ChangePasswordAsync(ChangePasswordCommand command, CancellationToken ct)
+    {
+        if (currentUser.Id is not Guid id)
+            throw new UnauthorizedException("La sesión expiró. Volvé a ingresar.");
+        var password = command.Password?.Trim() ?? "";
+        if (password.Length < 8)
+            throw new BusinessRuleException("La contraseña tiene que tener al menos 8 caracteres.");
+        await users.SetPasswordAsync(id, password, ct);
+        var user = await users.FindByIdAsync(id, ct)
+            ?? throw new NotFoundException("Usuario no encontrado.");
         return await IssueAsync(user, ct);
     }
 

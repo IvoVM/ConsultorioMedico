@@ -6,6 +6,7 @@ export interface EmployeeDto {
   firstName: string;
   lastName: string;
   email: string;
+  documentNumber?: string | null;
   role: TenantRole;
   licenseNumber?: string | null;
   specialty?: string | null;

@@ -32,6 +32,10 @@ export class ShellPage {
       { label: 'Agendas', path: '/agendas' },
       { label: 'Comprobantes', path: '/comprobantes' },
       { label: 'Auditoría', path: '/auditoria' },
+      {
+        label: 'Configuraciones',
+        children: [{ label: 'Usuarios', path: '/configuracion/usuarios' }],
+      },
     ]);
 
   logout() {

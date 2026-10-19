@@ -5,6 +5,7 @@ export interface CreateEmployeeCommand {
   firstName: string;
   lastName: string;
   email: string;
+  documentNumber: string;
   role: TenantRole;
   licenseNumber?: string | null;
   specialtyId?: string | null;

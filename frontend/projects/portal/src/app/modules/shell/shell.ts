@@ -1,5 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { RouterLink, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { AuthService, ClinicService, clinicaSession } from 'sdk';
 import { firstValueFrom } from 'rxjs';
 import { NavNode, UiButton, UiIcon, UiNav, UiPage } from 'ui';
@@ -12,6 +12,7 @@ import { readClinicName } from '../auth/clinic-name';
 export class ShellPage {
   private readonly auth = inject(AuthService);
   private readonly clinic = inject(ClinicService);
+  private readonly router = inject(Router);
   readonly session = clinicaSession;
   readonly clinicName = signal('Consultorio');
   readonly menu = computed((): NavNode[] => {
@@ -50,6 +51,7 @@ export class ShellPage {
   });
 
   constructor() {
+    if (this.session.token() && this.session.mustChangePassword()) void this.router.navigateByUrl('/clave');
     void readClinicName(this.clinic).then((name) => this.clinicName.set(name));
   }
 

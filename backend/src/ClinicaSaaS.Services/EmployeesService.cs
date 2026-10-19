@@ -31,6 +31,7 @@ public class EmployeesService(ITenantUserStore users, IEmployeeStore employees, 
                 e.User.FirstName.ToLower().Contains(term) ||
                 e.User.LastName.ToLower().Contains(term) ||
                 (e.User.Email ?? "").ToLower().Contains(term) ||
+                (e.DocumentNumber ?? "").ToLower().Contains(term) ||
                 (e.LicenseNumber ?? "").ToLower().Contains(term) ||
                 (e.Specialty != null && e.Specialty.Name.ToLower().Contains(term)) ||
                 (e.User.Role == TenantRole.Doctor ? "médico" : e.User.Role == TenantRole.Secretary ? "secretario" : "administrador").Contains(term) ||
@@ -39,6 +40,8 @@ public class EmployeesService(ITenantUserStore users, IEmployeeStore employees, 
         {
             ("email", false) => source.OrderBy(e => e.User.Email).ThenBy(e => e.User.LastName),
             ("email", true) => source.OrderByDescending(e => e.User.Email).ThenBy(e => e.User.LastName),
+            ("document", false) => source.OrderBy(e => e.DocumentNumber ?? "").ThenBy(e => e.User.LastName),
+            ("document", true) => source.OrderByDescending(e => e.DocumentNumber ?? "").ThenBy(e => e.User.LastName),
             ("role", false) => source.OrderBy(e => e.User.Role == TenantRole.TenantAdmin ? "Administrador" : e.User.Role == TenantRole.Doctor ? "Médico" : "Secretario").ThenBy(e => e.User.LastName),
             ("role", true) => source.OrderByDescending(e => e.User.Role == TenantRole.TenantAdmin ? "Administrador" : e.User.Role == TenantRole.Doctor ? "Médico" : "Secretario").ThenBy(e => e.User.LastName),
             ("license", false) => source.OrderBy(e => e.LicenseNumber ?? "").ThenBy(e => e.User.LastName),
@@ -58,6 +61,7 @@ public class EmployeesService(ITenantUserStore users, IEmployeeStore employees, 
         var created = await CreateAccountAsync(
             command.FirstName,
             command.LastName,
+            command.DocumentNumber,
             command.Email,
             RoleText(command.Role),
             command.LicenseNumber,
@@ -79,6 +83,7 @@ public class EmployeesService(ITenantUserStore users, IEmployeeStore employees, 
         var firstName = command.FirstName?.Trim() ?? "";
         var lastName = command.LastName?.Trim() ?? "";
         var email = command.Email?.Trim() ?? "";
+        var document = RequireDocument(command.DocumentNumber);
         var license = string.IsNullOrWhiteSpace(command.LicenseNumber) ? null : command.LicenseNumber.Trim();
         if (firstName.Length == 0 || lastName.Length == 0 || email.Length == 0)
             throw new BusinessRuleException("Nombre, apellido y email son obligatorios.");
@@ -94,6 +99,7 @@ public class EmployeesService(ITenantUserStore users, IEmployeeStore employees, 
         var taken = await users.FindByEmailAsync(email, ct);
         if (taken is not null && taken.Id != id)
             throw new BusinessRuleException("Ese email ya está cargado.");
+        await EnsureDocumentFreeAsync(document, id, ct);
 
         Guid? specialtyId = null;
         if (command.Role == TenantRole.Doctor)
@@ -115,7 +121,7 @@ public class EmployeesService(ITenantUserStore users, IEmployeeStore employees, 
             await EnsureAnotherAdminAsync(id, ct);
 
         await users.UpdateProfileAsync(id, firstName, lastName, email, command.Role, ct);
-        await employees.UpdateAsync(id, license, specialtyId, ct);
+        await employees.UpdateAsync(id, license, specialtyId, document, ct);
         await employees.SetInsurersAsync(id, command.Role == TenantRole.Doctor ? command.InsurerIds ?? [] : [], ct);
         await audit.RecordAsync(currentUser.Id, "edicion", "Empleado", id.ToString(), email, ct);
         return await employees.Employees.Where(e => e.UserId == id).ToEmployeeDtos().FirstAsync(ct);
@@ -160,9 +166,9 @@ public class EmployeesService(ITenantUserStore users, IEmployeeStore employees, 
         {
             var row = i + 1;
             var cols = lines[i].Split(',');
-            if (cols.Length < 4)
+            if (cols.Length < 5)
             {
-                rejected.Add(Skip(row, "No tiene el formato correcto: faltan columnas. Cada fila es nombre, apellido, email, rol, matrícula y especialidad."));
+                rejected.Add(Skip(row, "No tiene el formato correcto: faltan columnas. Cada fila es nombre, apellido, documento, email, rol, matrícula y especialidad."));
                 continue;
             }
 
@@ -173,8 +179,9 @@ public class EmployeesService(ITenantUserStore users, IEmployeeStore employees, 
                     cols[1],
                     cols[2],
                     cols[3],
-                    cols.Length > 4 ? cols[4] : null,
+                    cols[4],
                     cols.Length > 5 ? cols[5] : null,
+                    cols.Length > 6 ? cols[6] : null,
                     ct);
                 created.Add(new CreatedEmployeeDto(row, account.Email, account.Password, account.Role));
             }
@@ -191,6 +198,7 @@ public class EmployeesService(ITenantUserStore users, IEmployeeStore employees, 
     private async Task<NewAccount> CreateAccountAsync(
         string? firstName,
         string? lastName,
+        string? documentNumber,
         string? email,
         string? roleText,
         string? licenseNumber,
@@ -203,6 +211,7 @@ public class EmployeesService(ITenantUserStore users, IEmployeeStore employees, 
         roleText = roleText?.Trim() ?? "";
         licenseNumber = string.IsNullOrWhiteSpace(licenseNumber) ? null : licenseNumber.Trim();
         specialtyName = string.IsNullOrWhiteSpace(specialtyName) ? null : specialtyName.Trim();
+        var document = RequireDocument(documentNumber);
 
         if (firstName.Length == 0 || lastName.Length == 0 || email.Length == 0)
             throw new BusinessRuleException("No tiene el formato correcto: nombre, apellido y email son obligatorios.");
@@ -213,6 +222,7 @@ public class EmployeesService(ITenantUserStore users, IEmployeeStore employees, 
 
         if (await users.FindByEmailAsync(email, ct) is not null)
             throw new BusinessRuleException("Ese email ya está cargado, así que esta persona no se agrega.");
+        await EnsureDocumentFreeAsync(document, null, ct);
 
         Guid? specialtyId = null;
         if (role == TenantRole.Doctor)
@@ -225,17 +235,37 @@ public class EmployeesService(ITenantUserStore users, IEmployeeStore employees, 
             specialtyId = specialty.Id;
         }
 
-        var password = TemporaryPassword.Generate();
-        var account = await users.CreateAsync(email, password, firstName, lastName, role, true, ct);
+        var account = await users.CreateAsync(email, TemporaryPassword.Generate(), firstName, lastName, role, true, ct);
+        await users.SetDocumentPasswordAsync(account.Id, document, ct);
         await employees.AddAsync(new Employee
         {
             Id = Guid.NewGuid(),
             UserId = account.Id,
+            DocumentNumber = document,
             LicenseNumber = licenseNumber,
             SpecialtyId = specialtyId,
             IsActive = true
         }, ct);
-        return new NewAccount(account.Id, account.Email, password, role);
+        return new NewAccount(account.Id, account.Email, document, role);
+    }
+
+    private static string RequireDocument(string? value)
+    {
+        var document = DocumentRules.Normalize(value);
+        if (!DocumentRules.IsValid(document))
+            throw new BusinessRuleException("El documento no es válido.");
+        return document;
+    }
+
+    private async Task EnsureDocumentFreeAsync(string document, Guid? exceptUserId, CancellationToken ct)
+    {
+        var taken = await employees.Employees.AnyAsync(
+            e => e.DocumentNumber != null
+                && (e.DocumentNumber == document || e.DocumentNumber.ToLower() == document.ToLower())
+                && (exceptUserId == null || e.UserId != exceptUserId),
+            ct);
+        if (taken)
+            throw new BusinessRuleException("Ese documento ya está cargado.");
     }
 
     private async Task<string?> SpecialtyNameAsync(Guid? specialtyId, CancellationToken ct)

@@ -10,17 +10,20 @@ export const clinicaSession = {
   token: signal<string | null>(null),
   role: signal<string | null>(null),
   name: signal<string | null>(null),
-  set(token: string, role: string, name: string) {
+  mustChangePassword: signal(false),
+  set(token: string, role: string, name: string, mustChangePassword = false) {
     for (const key of LEGACY_KEYS) localStorage.removeItem(key);
     this.token.set(token);
     this.role.set(role);
     this.name.set(name);
+    this.mustChangePassword.set(mustChangePassword);
   },
   clear() {
     for (const key of LEGACY_KEYS) localStorage.removeItem(key);
     this.token.set(null);
     this.role.set(null);
     this.name.set(null);
+    this.mustChangePassword.set(false);
   },
 };
 
@@ -42,7 +45,7 @@ function refreshAccess(api: string, backend: HttpBackend) {
   if (!refresh$) {
     refresh$ = refreshRequest(api, backend).pipe(
       map((dto) => {
-        clinicaSession.set(dto.token, dto.role, dto.name);
+        clinicaSession.set(dto.token, dto.role, dto.name, dto.mustChangePassword);
         return dto.token;
       }),
       catchError((error: unknown) => {
@@ -93,7 +96,7 @@ function restoreSession() {
   const backend = inject(HttpBackend);
   const api = inject(CLINICA_API_URL);
   return firstValueFrom(refreshRequest(api, backend)).then(
-    (dto) => clinicaSession.set(dto.token, dto.role, dto.name),
+    (dto) => clinicaSession.set(dto.token, dto.role, dto.name, dto.mustChangePassword),
     () => clinicaSession.clear(),
   );
 }

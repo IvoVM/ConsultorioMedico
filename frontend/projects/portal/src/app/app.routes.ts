@@ -1,9 +1,10 @@
 import { Routes } from '@angular/router';
-import { authGuard, roleGuard } from './auth.guard';
+import { authGuard, roleGuard, signedInGuard } from './auth.guard';
 
 export const routes: Routes = [
   { path: 'ingreso', loadComponent: () => import('./modules/auth/welcome').then((m) => m.WelcomePage) },
   { path: 'ingreso/empleado', loadComponent: () => import('./modules/auth/login').then((m) => m.LoginPage), data: { audience: 'staff' } },
+  { path: 'clave', canActivate: [signedInGuard], loadComponent: () => import('./modules/auth/change-password').then((m) => m.ChangePasswordPage) },
   { path: 'paciente', redirectTo: 'reservar' },
   {
     path: '',

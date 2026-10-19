@@ -10,6 +10,7 @@ public static class EmployeeMappings
             e.User.FirstName,
             e.User.LastName,
             e.User.Email ?? "",
+            e.DocumentNumber,
             e.User.Role,
             e.LicenseNumber,
             e.Specialty != null ? e.Specialty.Name : null,

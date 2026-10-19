@@ -16,6 +16,8 @@ public record TenantAccount(
 public record ClinicDto(string Slug, string Name);
 
 public record LoginCommand(string Email, string Password);
+public record LoginStaffCommand(string DocumentNumber, string Password);
+public record ChangePasswordCommand(string Password);
 public record TokenDto(string Token, string Email, string Name, string Role, string? TenantSlug, bool MustChangePassword);
 
 public record IssuedSession(TokenDto Access, string RefreshToken, DateTimeOffset RefreshExpires);
@@ -38,9 +40,10 @@ public record SaveAppointmentTypeCommand(string Name, int DurationMinutes, Guid?
 public record ProfessionalDto(Guid Id, string FirstName, string LastName, string Email, string? LicenseNumber, Guid? SpecialtyId);
 public record AssignSpecialtyCommand(Guid? SpecialtyId);
 
-public record EmployeeDto(Guid Id, string FirstName, string LastName, string Email, TenantRole Role, string? LicenseNumber, string? Specialty, Guid? SpecialtyId, bool Active, IReadOnlyList<Guid> InsurerIds);
-public record CreateEmployeeCommand(string FirstName, string LastName, string Email, TenantRole Role, string? LicenseNumber, Guid? SpecialtyId, IReadOnlyList<Guid>? InsurerIds = null);
-public record UpdateEmployeeCommand(string FirstName, string LastName, string Email, TenantRole Role, string? LicenseNumber, Guid? SpecialtyId, IReadOnlyList<Guid>? InsurerIds = null);
+public record EmployeeDto(Guid Id, string FirstName, string LastName, string Email, string? DocumentNumber, TenantRole Role, string? LicenseNumber, string? Specialty, Guid? SpecialtyId, bool Active, IReadOnlyList<Guid> InsurerIds);
+public record CreateEmployeeCommand(string FirstName, string LastName, string Email, string DocumentNumber, TenantRole Role, string? LicenseNumber, Guid? SpecialtyId, IReadOnlyList<Guid>? InsurerIds = null);
+public record UpdateEmployeeCommand(string FirstName, string LastName, string Email, string DocumentNumber, TenantRole Role, string? LicenseNumber, Guid? SpecialtyId, IReadOnlyList<Guid>? InsurerIds = null);
+public record AccountUserDto(Guid Id, string FirstName, string LastName, string Email, TenantRole Role, string? DocumentNumber);
 public record SetEmployeeActiveCommand(bool Active);
 public record CreatedEmployeeAccountDto(EmployeeDto Employee, string TemporaryPassword);
 public record ImportEmployeesCommand(string Csv);

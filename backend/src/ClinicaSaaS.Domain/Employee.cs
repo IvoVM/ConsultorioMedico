@@ -6,6 +6,7 @@ public class Employee
 {
     public Guid Id { get; set; }
     public Guid UserId { get; set; }
+    public string? DocumentNumber { get; set; }
     public string? LicenseNumber { get; set; }
     public Guid? SpecialtyId { get; set; }
     public bool IsActive { get; set; } = true;

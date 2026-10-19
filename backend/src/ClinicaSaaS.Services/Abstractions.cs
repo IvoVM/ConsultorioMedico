@@ -47,6 +47,7 @@ public interface ITenantUserStore
     Task UpdateNameAsync(Guid id, string firstName, string lastName, CancellationToken ct);
     Task UpdateProfileAsync(Guid id, string firstName, string lastName, string email, TenantRole role, CancellationToken ct);
     Task SetPasswordAsync(Guid id, string password, CancellationToken ct);
+    Task SetDocumentPasswordAsync(Guid id, string password, CancellationToken ct);
 }
 
 public interface IEmployeeStore
@@ -55,7 +56,7 @@ public interface IEmployeeStore
     Task<Employee?> GetByUserAsync(Guid userId, CancellationToken ct);
     Task<Employee> AddAsync(Employee employee, CancellationToken ct);
     Task AssignSpecialtyAsync(Guid userId, Guid? specialtyId, CancellationToken ct);
-    Task UpdateAsync(Guid userId, string? licenseNumber, Guid? specialtyId, CancellationToken ct);
+    Task UpdateAsync(Guid userId, string? licenseNumber, Guid? specialtyId, string documentNumber, CancellationToken ct);
     Task SetActiveAsync(Guid userId, bool active, CancellationToken ct);
     Task SetInsurersAsync(Guid userId, IReadOnlyList<Guid> insurerIds, CancellationToken ct);
 }

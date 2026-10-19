@@ -286,6 +286,10 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("DocumentNumber")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
@@ -300,6 +304,9 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("DocumentNumber")
+                        .IsUnique();
 
                     b.HasIndex("SpecialtyId");
 

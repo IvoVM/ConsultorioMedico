@@ -110,6 +110,7 @@ public class ClinicSeeder(TenantDbContext db, UserManager<TenantUser> users, ICo
         var zone = TimeZoneInfo.FindSystemTimeZoneById(configuration["TimeZone"] ?? "America/Argentina/Buenos_Aires");
         var admin = await users.FindByEmailAsync(adminEmail);
         await new DemoDataSeeder(db, users).SeedAsync(password, zone, admin?.Id, ct);
+        await EnsureStaffDocuments(adminEmail, ct);
         await InsurerCatalog.EnsureAsync(db, ct);
     }
 
@@ -167,6 +168,33 @@ public class ClinicSeeder(TenantDbContext db, UserManager<TenantUser> users, ICo
             employee.LicenseNumber = licenseNumber;
         if (specialtyId is Guid specialty)
             employee.SpecialtyId = specialty;
+        await db.SaveChangesAsync(ct);
+    }
+
+    private async Task EnsureStaffDocuments(string adminEmail, CancellationToken ct)
+    {
+        (string Email, string Document)[] known =
+        [
+            (adminEmail, "20000001"),
+            ("secretaria@demo.local", "27111222"),
+            ("medico@demo.local", "28111222"),
+            ("elena.vazquez@demo.local", "29111222"),
+            ("julian.costa@demo.local", "30111005"),
+            ("sofia.herrera@demo.local", "31111222")
+        ];
+        foreach (var (email, document) in known)
+        {
+            var user = await users.FindByEmailAsync(email);
+            if (user is null)
+                continue;
+            var employee = await db.Employees.FirstOrDefaultAsync(item => item.UserId == user.Id, ct);
+            if (employee is null || !string.IsNullOrWhiteSpace(employee.DocumentNumber))
+                continue;
+            if (await db.Employees.AnyAsync(item => item.DocumentNumber == document, ct))
+                continue;
+            employee.DocumentNumber = document;
+        }
+
         await db.SaveChangesAsync(ct);
     }
 }

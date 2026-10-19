@@ -91,7 +91,9 @@ public class TenantDbContext(DbContextOptions<TenantDbContext> options)
         builder.Entity<Employee>(e =>
         {
             e.Property(x => x.LicenseNumber).HasMaxLength(40);
+            e.Property(x => x.DocumentNumber).HasMaxLength(20);
             e.HasIndex(x => x.UserId).IsUnique();
+            e.HasIndex(x => x.DocumentNumber).IsUnique();
             e.HasOne(x => x.Specialty).WithMany(s => s.Employees).HasForeignKey(x => x.SpecialtyId).OnDelete(DeleteBehavior.SetNull);
             e.HasMany(x => x.Insurers).WithMany().UsingEntity(join => join.ToTable("EmployeeInsurers"));
         });
