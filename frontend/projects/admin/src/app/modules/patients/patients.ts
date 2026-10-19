@@ -2,7 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { MedicalRecordDto, MedicalRecordsService, PatientsService, errorMessage } from 'sdk';
-import { UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable } from 'ui';
+import { UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable, formatPhone } from 'ui';
 import { ScreenNote } from '../../screen-note';
 import { TablePager, listParams, queueSearch } from '../../table-pager';
 import { SortCol, SortState, nextSort } from '../../table-sort';
@@ -84,9 +84,26 @@ export class PatientsPage {
     queueMicrotask(() => document.getElementById('alta-nombre')?.focus());
   }
 
+  normalizePhone(field: 'phone' | 'emergency') {
+    const current = field === 'phone' ? this.phone : this.emergencyPhone;
+    const formatted = formatPhone(current);
+    if (!formatted) return;
+    if (field === 'phone') this.phone = formatted;
+    else this.emergencyPhone = formatted;
+  }
+
   async create() {
     this.saving.set(true);
     this.error.set('');
+    const phone = formatPhone(this.phone);
+    const emergencyPhone = this.emergencyPhone.trim() ? formatPhone(this.emergencyPhone) : '';
+    if (!phone || (this.emergencyPhone.trim() && !emergencyPhone)) {
+      this.error.set('El teléfono no es válido.');
+      this.saving.set(false);
+      return;
+    }
+    this.phone = phone;
+    this.emergencyPhone = emergencyPhone ?? '';
     try {
       const created = await firstValueFrom(
         this.patientsApi.createPatient({

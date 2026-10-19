@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Text } from 'react-native';
+import { formatPhone } from '../../src/account';
 import { api, type PatientCard } from '../../src/api';
 import { colors, type } from '../../src/theme';
 import { Button, Card, ErrorText, Field, Screen } from '../../src/ui';
@@ -32,14 +33,19 @@ export default function Pacientes() {
       <Field label="Email" autoCapitalize="none" value={form.email} onChangeText={set('email')} />
       <Field label="Documento" value={form.documentNumber} onChangeText={set('documentNumber')} />
       <Field label="Nacimiento" placeholder="AAAA-MM-DD" value={form.birthDate} onChangeText={set('birthDate')} />
-      <Field label="Teléfono" value={form.phone} onChangeText={set('phone')} />
+      <Field label="Teléfono" keyboardType="phone-pad" placeholder="+54 2291 542049" value={form.phone} onChangeText={set('phone')} onBlur={() => { const formatted = formatPhone(form.phone); if (formatted) set('phone')(formatted); }} />
       <ErrorText text={error} />
       {password ? <Text style={{ fontFamily: type.sansBold, color: colors.deep }}>Clave temporal: {password}</Text> : null}
       <Button
         label="Crear paciente"
         onPress={() => {
           setError('');
-          api.createPatient(form)
+          const phone = formatPhone(form.phone);
+          if (!phone) {
+            setError('El teléfono no es válido.');
+            return;
+          }
+          api.createPatient({ ...form, phone })
             .then((created) => setPassword(created.temporaryPassword))
             .catch((reason: unknown) => setError(reason instanceof Error ? reason.message : 'No se pudo crear.'));
         }}

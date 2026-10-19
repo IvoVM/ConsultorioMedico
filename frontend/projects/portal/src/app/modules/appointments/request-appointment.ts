@@ -14,7 +14,7 @@ import {
   clinicaSession,
   errorMessage,
 } from 'sdk';
-import { UiButton, UiEmpty, UiField, UiModal, UiSkeleton, formatFecha } from 'ui';
+import { UiButton, UiEmpty, UiField, UiModal, UiSkeleton, formatFecha, formatPhone } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { Coverage, Intent, Offer, Step } from './request-appointment.enums';
 
@@ -59,7 +59,8 @@ export class RequestAppointmentPage {
   private readonly slotsFor = signal('');
   insurerId = '';
   memberNumber = '';
-  name = '';
+  firstName = '';
+  lastName = '';
   documentNumber = '';
   phone = '';
 
@@ -144,7 +145,7 @@ export class RequestAppointmentPage {
         : 'Es para ver a un profesional. Después podés tomar el turno más próximo o elegir el día.';
       case Step.Day: return 'Los días marcados tienen un horario libre.';
       case Step.Time: return `${this.specialtyName()}. Elegí un horario.`;
-      case Step.Data: return 'Nombre, documento y teléfono. Con el documento vas a poder ver esta solicitud.';
+      case Step.Data: return 'Nombre, apellido, documento y teléfono. Con el documento vas a poder ver esta solicitud.';
       case Step.Coverage: return this.insurers().length ? 'Si no tenés, el turno queda como particular.' : 'Este profesional atiende como particular.';
       case Step.Review: return 'Al enviarla, la secretaría confirma el turno.';
       default: return this.session.token()
@@ -154,13 +155,17 @@ export class RequestAppointmentPage {
   }
 
   accountDraft() {
-    const parts = this.name.trim().split(/\s+/);
     return {
       documento: this.documentNumber,
-      nombre: parts[0] ?? '',
-      apellido: parts.slice(1).join(' '),
+      nombre: this.firstName.trim(),
+      apellido: this.lastName.trim(),
       telefono: this.phone,
     };
+  }
+
+  normalizePhone() {
+    const formatted = formatPhone(this.phone);
+    if (formatted) this.phone = formatted;
   }
 
   when(value: string) {
@@ -199,7 +204,8 @@ export class RequestAppointmentPage {
       rows.push({ label: 'Hora', value: this.time(chosen.start) });
       rows.push({ label: 'Profesional', value: chosen.professional });
     }
-    if (this.name.trim()) rows.push({ label: 'Nombre', value: this.name.trim() });
+    if (this.firstName.trim()) rows.push({ label: 'Nombre', value: this.firstName.trim() });
+    if (this.lastName.trim()) rows.push({ label: 'Apellido', value: this.lastName.trim() });
     if (this.documentNumber.trim()) rows.push({ label: 'Documento', value: this.documentNumber.trim() });
     if (this.phone.trim()) rows.push({ label: 'Teléfono', value: this.phone.trim() });
     if (this.steps().indexOf(this.furthest()) >= this.steps().indexOf(Step.Review)) {
@@ -329,10 +335,11 @@ export class RequestAppointmentPage {
   }
 
   continueData() {
-    const name = this.name.trim();
+    const firstName = this.firstName.trim();
+    const lastName = this.lastName.trim();
     const documentNumber = this.documentNumber.replace(/[.\-\s]/g, '');
-    const phone = this.phone.trim();
-    if (name.length < 3 || !name.includes(' ')) {
+    const phone = formatPhone(this.phone);
+    if (!firstName || !lastName) {
       this.error.set('Escribí tu nombre y tu apellido.');
       return;
     }
@@ -340,11 +347,12 @@ export class RequestAppointmentPage {
       this.error.set('El documento no es válido.');
       return;
     }
-    if (phone.replace(/\D/g, '').length < 6) {
+    if (!phone) {
       this.error.set('El teléfono no es válido.');
       return;
     }
-    this.name = name;
+    this.firstName = firstName;
+    this.lastName = lastName;
     this.documentNumber = documentNumber;
     this.phone = phone;
     this.error.set('');
@@ -398,7 +406,7 @@ export class RequestAppointmentPage {
         locationId: slot.locationId,
         appointmentTypeId: slot.appointmentTypeId,
         start: slot.start,
-        name: this.name.trim(),
+        name: `${this.firstName.trim()} ${this.lastName.trim()}`,
         phone: this.phone.trim(),
         documentNumber: this.documentNumber.trim(),
         insurerId: this.coverage() === Coverage.Obra ? this.insurerId : null,
@@ -425,8 +433,10 @@ export class RequestAppointmentPage {
       if (clinicaSession.role() === 'Patient') {
         const history = await firstValueFrom(this.clinical.clinicalHistory()).catch(() => null);
         if (history) {
-          this.name = history.patient.name;
-          this.phone = history.patient.phone;
+          const parts = history.patient.name.trim().split(/\s+/);
+          this.firstName = parts[0] ?? '';
+          this.lastName = parts.slice(1).join(' ');
+          this.phone = formatPhone(history.patient.phone) ?? history.patient.phone;
           this.documentNumber = history.patient.documentNumber;
         }
       }

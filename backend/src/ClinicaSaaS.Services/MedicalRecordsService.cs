@@ -47,7 +47,7 @@ public class MedicalRecordsService(
             UserId = account.Id,
             DocumentNumber = document,
             BirthDate = command.BirthDate,
-            Phone = command.Phone.Trim()
+            Phone = PhoneRules.Require(command.Phone)
         }, ct);
 
         var record = new MedicalRecord
@@ -57,7 +57,7 @@ public class MedicalRecordsService(
             HealthInsurance = Clean(command.HealthInsurance),
             MemberNumber = Clean(command.MemberNumber),
             EmergencyContact = Clean(command.EmergencyContact),
-            EmergencyPhone = Clean(command.EmergencyPhone),
+            EmergencyPhone = PhoneRules.Optional(command.EmergencyPhone),
             UpdatedAt = clock.GetUtcNow(),
             UpdatedBy = currentUser.Id
         };
@@ -178,7 +178,7 @@ public class MedicalRecordsService(
         var client = await clients.GetAsync(patientId, ct) ?? throw new NotFoundException("Paciente no encontrado.");
         client.DocumentNumber = command.DocumentNumber.Trim();
         client.BirthDate = command.BirthDate;
-        client.Phone = command.Phone.Trim();
+        client.Phone = PhoneRules.Require(command.Phone);
 
         var record = await records.GetByClientAsync(patientId, ct);
         if (record is null)
@@ -195,7 +195,7 @@ public class MedicalRecordsService(
         record.HealthInsurance = Clean(command.HealthInsurance);
         record.MemberNumber = Clean(command.MemberNumber);
         record.EmergencyContact = Clean(command.EmergencyContact);
-        record.EmergencyPhone = Clean(command.EmergencyPhone);
+        record.EmergencyPhone = PhoneRules.Optional(command.EmergencyPhone);
         record.Notes = Clean(command.Notes);
         record.UpdatedAt = clock.GetUtcNow();
         record.UpdatedBy = currentUser.Id;

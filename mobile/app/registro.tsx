@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
+import { formatPhone, passwordIssue } from '../src/account';
 import { register } from '../src/api';
 import { Button, ErrorText, Field, Screen } from '../src/ui';
 
@@ -12,14 +13,24 @@ export default function Registro() {
 
   async function submit() {
     setError('');
+    const issue = passwordIssue(form.password);
+    if (issue) {
+      setError(issue);
+      return;
+    }
     if (form.password !== form.confirm) {
       setError('Las contraseñas no coinciden.');
+      return;
+    }
+    const phone = formatPhone(form.phone);
+    if (!phone) {
+      setError('El teléfono no es válido.');
       return;
     }
     setBusy(true);
     try {
       const { confirm: _confirm, ...body } = form;
-      await register({ ...body, email: form.email.trim() });
+      await register({ ...body, email: form.email.trim(), phone });
       router.replace('/(tabs)/panel');
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'No se pudo crear la cuenta.');
@@ -37,7 +48,7 @@ export default function Registro() {
       <Field label="Confirmar contraseña" secureTextEntry value={form.confirm} onChangeText={set('confirm')} />
       <Field label="Documento" value={form.documentNumber} onChangeText={set('documentNumber')} />
       <Field label="Nacimiento" placeholder="1990-04-12" value={form.birthDate} onChangeText={set('birthDate')} />
-      <Field label="Teléfono" keyboardType="phone-pad" value={form.phone} onChangeText={set('phone')} />
+      <Field label="Teléfono" keyboardType="phone-pad" placeholder="+54 2291 542049" value={form.phone} onChangeText={set('phone')} onBlur={() => { const formatted = formatPhone(form.phone); if (formatted) set('phone')(formatted); }} />
       <ErrorText text={error} />
       <Button label={busy ? 'Creando…' : 'Crear cuenta'} disabled={busy} onPress={() => void submit()} />
     </Screen>

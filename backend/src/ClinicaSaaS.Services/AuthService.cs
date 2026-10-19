@@ -98,9 +98,9 @@ public class AuthService(
     {
         if (currentUser.Id is not Guid id)
             throw new UnauthorizedException("La sesión expiró. Volvé a ingresar.");
-        var password = command.Password?.Trim() ?? "";
-        if (password.Length < 8)
-            throw new BusinessRuleException("La contraseña tiene que tener al menos 8 caracteres.");
+        var password = command.Password ?? "";
+        if (PasswordRules.Issue(password) is string issue)
+            throw new BusinessRuleException(issue);
         await users.SetPasswordAsync(id, password, ct);
         var user = await users.FindByIdAsync(id, ct)
             ?? throw new NotFoundException("Usuario no encontrado.");
@@ -134,7 +134,7 @@ public class AuthService(
             var client = await clients.GetAsync(existing.Id, ct)
                 ?? throw new NotFoundException("Paciente no encontrado.");
             client.DocumentNumber = document;
-            client.Phone = command.Phone.Trim();
+            client.Phone = PhoneRules.Require(command.Phone);
             await clients.SaveAsync(ct);
             user = await users.FindByIdAsync(existing.UserId, ct)
                 ?? throw new NotFoundException("Usuario no encontrado.");
@@ -155,7 +155,7 @@ public class AuthService(
                 Id = Guid.NewGuid(),
                 UserId = user.Id,
                 DocumentNumber = document,
-                Phone = command.Phone.Trim()
+                Phone = PhoneRules.Require(command.Phone)
             }, ct);
             clientId = client.Id;
         }

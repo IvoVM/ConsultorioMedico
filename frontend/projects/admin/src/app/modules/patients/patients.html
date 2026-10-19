@@ -88,7 +88,7 @@
           <ui-field label="Apellido"><input name="lastName" required maxlength="80" autocomplete="off" [(ngModel)]="lastName" /></ui-field>
           <ui-field label="Documento"><input name="documentNumber" required maxlength="20" inputmode="numeric" autocomplete="off" [(ngModel)]="documentNumber" /></ui-field>
           <ui-field label="Fecha de nacimiento"><input name="birthDate" type="date" required [max]="today" [(ngModel)]="birthDate" /></ui-field>
-          <ui-field label="Teléfono"><input name="phone" type="tel" required maxlength="30" autocomplete="off" [(ngModel)]="phone" /></ui-field>
+          <ui-field label="Teléfono"><input name="phone" type="tel" inputmode="tel" required maxlength="30" placeholder="+54 2291 542049" autocomplete="tel" [(ngModel)]="phone" (blur)="normalizePhone('phone')" /></ui-field>
           <ui-field label="Email"><input name="email" type="email" required maxlength="120" autocomplete="off" [(ngModel)]="email" /></ui-field>
         </div>
         <p class="mt-2 text-sm text-ink/55">Entra con el documento. La clave temporal aparece una sola vez, después del alta.</p>
@@ -104,7 +104,7 @@
         <legend>Contacto de emergencia</legend>
         <div class="grid gap-4 sm:grid-cols-2">
           <ui-field label="Nombre y vínculo"><input name="emergencyContact" maxlength="120" placeholder="Ej.: Laura Gómez, hermana" [(ngModel)]="emergencyContact" /></ui-field>
-          <ui-field label="Teléfono"><input name="emergencyPhone" type="tel" maxlength="30" [(ngModel)]="emergencyPhone" /></ui-field>
+          <ui-field label="Teléfono"><input name="emergencyPhone" type="tel" inputmode="tel" maxlength="30" placeholder="+54 2291 542049" [(ngModel)]="emergencyPhone" (blur)="normalizePhone('emergency')" /></ui-field>
         </div>
         @if (error()) { <p class="mt-3 text-sm text-pulse" role="alert">{{ error() }}</p> }
         <div class="mt-5 flex flex-wrap gap-3">

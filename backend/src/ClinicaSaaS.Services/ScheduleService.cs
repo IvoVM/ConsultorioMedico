@@ -451,7 +451,7 @@ public class ScheduleService(
     public async Task<BookingRequestDto> CreateRequestAsync(CreateBookingRequestCommand command, CancellationToken ct)
     {
         var name = command.Name?.Trim() ?? "";
-        var phone = command.Phone?.Trim() ?? "";
+        var phone = PhoneRules.TryFormat(command.Phone, out var formattedPhone) ? formattedPhone : "";
         var document = DocumentRules.Normalize(command.DocumentNumber);
         if (command.SpecialtyId == Guid.Empty)
             throw new BusinessRuleException("Elegí una especialidad.");
@@ -459,7 +459,7 @@ public class ScheduleService(
             throw new BusinessRuleException("Escribí tu nombre y tu apellido.");
         if (name.Length > 160)
             throw new BusinessRuleException("El nombre es demasiado largo.");
-        if (phone.Count(char.IsDigit) < 6 || phone.Length > 30)
+        if (phone.Length == 0)
             throw new BusinessRuleException("El teléfono no es válido.");
         if (!DocumentRules.IsValid(document))
             throw new BusinessRuleException("El documento no es válido.");

@@ -1,4 +1,5 @@
 using ClinicaSaaS.Domain;
+using ClinicaSaaS.Services.Utilities;
 using FluentValidation;
 
 namespace ClinicaSaaS.Services;
@@ -8,12 +9,14 @@ public class RegisterPatientValidator : AbstractValidator<RegisterPatientCommand
     public RegisterPatientValidator()
     {
         RuleFor(x => x.Password)
-            .MinimumLength(8)
-            .WithMessage("La contraseña tiene que tener al menos 8 caracteres.");
+            .Must(password => PasswordRules.Issue(password) is null)
+            .WithMessage(command => PasswordRules.Issue(command.Password)!);
         RuleFor(x => x.FirstName).NotEmpty().MaximumLength(80);
         RuleFor(x => x.LastName).NotEmpty().MaximumLength(80);
         RuleFor(x => x.DocumentNumber).NotEmpty().MaximumLength(20);
-        RuleFor(x => x.Phone).NotEmpty().MaximumLength(30);
+        RuleFor(x => x.Phone)
+            .Must(phone => PhoneRules.TryFormat(phone, out _))
+            .WithMessage("El teléfono no es válido.");
     }
 }
 
@@ -52,14 +55,18 @@ public class CreatePatientValidator : AbstractValidator<CreatePatientCommand>
         RuleFor(x => x.FirstName).NotEmpty().MaximumLength(80);
         RuleFor(x => x.LastName).NotEmpty().MaximumLength(80);
         RuleFor(x => x.DocumentNumber).NotEmpty().MaximumLength(20);
-        RuleFor(x => x.Phone).NotEmpty().MaximumLength(30);
+        RuleFor(x => x.Phone)
+            .Must(phone => PhoneRules.TryFormat(phone, out _))
+            .WithMessage("El teléfono no es válido.");
         RuleFor(x => x.BirthDate)
             .Must(d => d <= DateOnly.FromDateTime(clock.GetUtcNow().DateTime))
             .WithMessage("La fecha de nacimiento no puede ser futura.");
         RuleFor(x => x.HealthInsurance).MaximumLength(120);
         RuleFor(x => x.MemberNumber).MaximumLength(40);
         RuleFor(x => x.EmergencyContact).MaximumLength(120);
-        RuleFor(x => x.EmergencyPhone).MaximumLength(30);
+        RuleFor(x => x.EmergencyPhone)
+            .Must(phone => string.IsNullOrWhiteSpace(phone) || PhoneRules.TryFormat(phone, out _))
+            .WithMessage("El teléfono no es válido.");
     }
 }
 
@@ -72,7 +79,9 @@ public class SaveMedicalRecordValidator : AbstractValidator<SaveMedicalRecordCom
         RuleFor(x => x.FirstName).NotEmpty().MaximumLength(80);
         RuleFor(x => x.LastName).NotEmpty().MaximumLength(80);
         RuleFor(x => x.DocumentNumber).NotEmpty().MaximumLength(20);
-        RuleFor(x => x.Phone).NotEmpty().MaximumLength(30);
+        RuleFor(x => x.Phone)
+            .Must(phone => PhoneRules.TryFormat(phone, out _))
+            .WithMessage("El teléfono no es válido.");
         RuleFor(x => x.BirthDate)
             .Must(d => d <= DateOnly.FromDateTime(clock.GetUtcNow().DateTime))
             .WithMessage("La fecha de nacimiento no puede ser futura.");
@@ -87,7 +96,9 @@ public class SaveMedicalRecordValidator : AbstractValidator<SaveMedicalRecordCom
         RuleFor(x => x.HealthInsurance).MaximumLength(120);
         RuleFor(x => x.MemberNumber).MaximumLength(40);
         RuleFor(x => x.EmergencyContact).MaximumLength(120);
-        RuleFor(x => x.EmergencyPhone).MaximumLength(30);
+        RuleFor(x => x.EmergencyPhone)
+            .Must(phone => string.IsNullOrWhiteSpace(phone) || PhoneRules.TryFormat(phone, out _))
+            .WithMessage("El teléfono no es válido.");
         RuleFor(x => x.Notes).MaximumLength(2000);
     }
 }

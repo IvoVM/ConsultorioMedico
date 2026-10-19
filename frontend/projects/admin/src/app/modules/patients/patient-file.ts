@@ -2,7 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ClinicalHistoryDto, ClinicalService, DiagnosisDto, MedicalRecordDto, MedicalRecordsService, errorMessage } from 'sdk';
-import { UiButton, UiEmpty, UiField, UiSkeleton, formatFecha } from 'ui';
+import { UiButton, UiEmpty, UiField, UiSkeleton, formatFecha, formatPhone } from 'ui';
 import { ScreenNote } from '../../screen-note';
 import { firstValueFrom } from 'rxjs';
 import { BLOOD_TYPES, MedicalRecordForm, age, shortDate, toForm } from '../medical-records/models/medical-record-form';
@@ -92,13 +92,28 @@ export class PatientFilePage {
     return formatFecha(value);
   }
 
+  normalizePhone(key: 'phone' | 'emergencyPhone') {
+    const form = this.form();
+    if (!form) return;
+    const formatted = formatPhone(form[key]);
+    if (formatted) this.form.set({ ...form, [key]: formatted });
+  }
+
   async save() {
     const form = this.form();
     if (!form) return;
+    const phone = formatPhone(form.phone);
+    const emergencyPhone = form.emergencyPhone.trim() ? formatPhone(form.emergencyPhone) : '';
+    if (!phone || (form.emergencyPhone.trim() && !emergencyPhone)) {
+      this.error.set('El teléfono no es válido.');
+      return;
+    }
+    const next = { ...form, phone, emergencyPhone: emergencyPhone ?? '' };
+    this.form.set(next);
     this.saving.set(true);
     this.error.set('');
     try {
-      this.apply(await firstValueFrom(this.recordsApi.saveMedicalRecord(this.patientId, form)));
+      this.apply(await firstValueFrom(this.recordsApi.saveMedicalRecord(this.patientId, next)));
       this.saved.set(true);
       setTimeout(() => this.saved.set(false), 2600);
     } catch (error) {

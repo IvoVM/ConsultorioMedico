@@ -84,9 +84,10 @@
               }
             } @else if (step() === Step.Data) {
               <form class="ask" (ngSubmit)="continueData()">
-                <ui-field label="Nombre y apellido"><input name="name" [(ngModel)]="name" autocomplete="name" required /></ui-field>
+                <ui-field label="Nombre"><input name="firstName" [(ngModel)]="firstName" autocomplete="given-name" required /></ui-field>
+                <ui-field label="Apellido"><input name="lastName" [(ngModel)]="lastName" autocomplete="family-name" required /></ui-field>
                 <ui-field label="Documento"><input name="documentNumber" [(ngModel)]="documentNumber" required maxlength="20" /></ui-field>
-                <ui-field label="Teléfono"><input name="phone" [(ngModel)]="phone" autocomplete="tel" required /></ui-field>
+                <ui-field label="Teléfono"><input name="phone" type="tel" inputmode="tel" [(ngModel)]="phone" (blur)="normalizePhone()" required maxlength="30" placeholder="+54 2291 542049" autocomplete="tel" /></ui-field>
                 <ui-button type="submit">Continuar</ui-button>
               </form>
             } @else if (step() === Step.Coverage) {
@@ -118,7 +119,8 @@
                   <div><dt>Servicio</dt><dd>{{ specialtyName() }}</dd></div>
                   <div><dt>Cuándo</dt><dd>{{ when(chosen.start) }}</dd></div>
                   <div><dt>Profesional</dt><dd>{{ chosen.professional }}</dd></div>
-                  <div><dt>Nombre</dt><dd>{{ name }}</dd></div>
+                  <div><dt>Nombre</dt><dd>{{ firstName }}</dd></div>
+                  <div><dt>Apellido</dt><dd>{{ lastName }}</dd></div>
                   <div><dt>Documento</dt><dd>{{ documentNumber }}</dd></div>
                   <div><dt>Teléfono</dt><dd>{{ phone }}</dd></div>
                   <div><dt>Cobertura</dt><dd>{{ coverage() === Coverage.Obra ? insurerName() + ' · ' + memberNumber : 'Particular' }}</dd></div>

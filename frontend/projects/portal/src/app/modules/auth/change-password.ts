@@ -2,7 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService, ClinicService, clinicaSession, errorMessage } from 'sdk';
-import { UiButton, UiField } from 'ui';
+import { UiButton, UiField, passwordIssue } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { readClinicName } from './clinic-name';
 
@@ -38,6 +38,11 @@ export class ChangePasswordPage {
 
   async submit() {
     this.error.set('');
+    const issue = passwordIssue(this.password);
+    if (issue) {
+      this.error.set(issue);
+      return;
+    }
     if (this.password !== this.confirm) {
       this.error.set('Las contraseñas no coinciden.');
       return;

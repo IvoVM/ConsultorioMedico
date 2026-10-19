@@ -2,7 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService, ClinicService, clinicaSession, errorMessage } from 'sdk';
-import { UiButton, UiField } from 'ui';
+import { UiButton, UiField, formatPhone, passwordIssue } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { readClinicName } from './clinic-name';
 
@@ -36,12 +36,28 @@ export class RegisterPage {
     this.fromRequest.set(!!(this.documentNumber || this.firstName || this.phone));
   }
 
+  normalizePhone() {
+    const formatted = formatPhone(this.phone);
+    if (formatted) this.phone = formatted;
+  }
+
   async submit() {
     this.error.set('');
+    const issue = passwordIssue(this.password);
+    if (issue) {
+      this.error.set(issue);
+      return;
+    }
     if (this.password !== this.confirm) {
       this.error.set('Las contraseñas no coinciden.');
       return;
     }
+    const phone = formatPhone(this.phone);
+    if (!phone) {
+      this.error.set('El teléfono no es válido.');
+      return;
+    }
+    this.phone = phone;
     this.loading.set(true);
     try {
       const token = await firstValueFrom(
