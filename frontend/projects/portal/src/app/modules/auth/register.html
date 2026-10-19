@@ -1,24 +1,28 @@
-<section>
-  <h1 class="font-serif text-5xl leading-tight font-medium tracking-tight">Crear tu cuenta</h1>
-  <p class="mt-4 max-w-[46ch] text-lg leading-relaxed text-ink/75">
-    @if (fromRequest()) {
-      Dejamos cargados el documento, el nombre y el teléfono de la solicitud. Elegí una contraseña para ver el turno.
-    } @else {
-      Recordá que los turnos creados están asociados a tu número de documento.
-    }
-  </p>
-  <form class="mt-10 grid max-w-2xl gap-x-4 gap-y-5 sm:grid-cols-2" (ngSubmit)="submit()">
-    <ui-field label="Documento"><input name="documentNumber" [(ngModel)]="documentNumber" required /></ui-field>
-    <ui-field label="Nombre"><input name="firstName" [(ngModel)]="firstName" required autocomplete="given-name" /></ui-field>
-    <ui-field label="Apellido"><input name="lastName" [(ngModel)]="lastName" required autocomplete="family-name" /></ui-field>
-    <ui-field label="Teléfono"><input name="phone" [(ngModel)]="phone" required autocomplete="tel" /></ui-field>
-    <ui-field class="sm:col-span-2" label="Contraseña">
-      <input name="password" type="password" [(ngModel)]="password" required minlength="8" autocomplete="new-password" />
-    </ui-field>
-    <p class="text-sm text-ink/65 sm:col-span-2">Al menos 8 caracteres, con una mayúscula, una minúscula y un número.</p>
-    @if (error()) { <p class="text-sm text-pulse sm:col-span-2" role="alert">{{ error() }}</p> }
-    <div class="pt-1 sm:col-span-2">
-      <ui-button type="submit" [loading]="loading()">Crear cuenta</ui-button>
+<main class="grid min-h-screen bg-paper text-ink lg:grid-cols-2">
+  <section class="flex flex-col justify-center gap-6 px-6 py-10 sm:px-12 lg:px-16 lg:py-16">
+    <p class="font-serif text-2xl text-clinic-deep">{{ clinicName() }}</p>
+    <h1 class="max-w-[14ch] font-serif text-5xl leading-tight font-medium tracking-tight xl:text-6xl">Crear tu cuenta</h1>
+    <div class="max-w-xl space-y-4 text-lg leading-relaxed text-ink/75">
+      @if (fromRequest()) {
+        <p>Dejamos cargados el documento, el nombre y el teléfono de la solicitud. Elegí una contraseña para ver el turno.</p>
+      } @else {
+        <p>Con la cuenta ves los turnos, la historia clínica y las recetas.</p>
+      }
+      <p>Recordá que los turnos creados están asociados a tu número de documento.</p>
     </div>
-  </form>
-</section>
+  </section>
+  <section class="flex items-center border-rule px-6 py-12 sm:px-12 lg:border-l lg:px-16">
+    <form class="flex w-full max-w-md flex-col gap-5" (ngSubmit)="submit()">
+      <ui-field label="Documento"><input name="documentNumber" [(ngModel)]="documentNumber" required /></ui-field>
+      <ui-field label="Nombre"><input name="firstName" [(ngModel)]="firstName" required autocomplete="given-name" /></ui-field>
+      <ui-field label="Apellido"><input name="lastName" [(ngModel)]="lastName" required autocomplete="family-name" /></ui-field>
+      <ui-field label="Teléfono"><input name="phone" [(ngModel)]="phone" required autocomplete="tel" /></ui-field>
+      <ui-field label="Contraseña">
+        <input name="password" type="password" [(ngModel)]="password" required minlength="8" autocomplete="new-password" />
+      </ui-field>
+      <p class="text-sm text-ink/65">Al menos 8 caracteres, con una mayúscula, una minúscula y un número.</p>
+      @if (error()) { <p class="text-sm text-pulse" role="alert">{{ error() }}</p> }
+      <ui-button type="submit" [loading]="loading()">Crear cuenta</ui-button>
+    </form>
+  </section>
+</main>

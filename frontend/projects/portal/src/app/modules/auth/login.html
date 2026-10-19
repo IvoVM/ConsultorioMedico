@@ -18,14 +18,22 @@
     </section>
   </main>
 } @else {
-  <section>
-    <h1 class="font-serif text-5xl leading-tight font-medium tracking-tight">Tu cuenta</h1>
-    <p class="mt-4 max-w-[46ch] text-lg leading-relaxed text-ink/75">Recordá que los turnos creados están asociados a tu número de documento.</p>
-    <form class="mt-10 max-w-md space-y-5" (ngSubmit)="submit()">
-      <ui-field label="Documento"><input name="documentNumber" [(ngModel)]="documentNumber" required autocomplete="username" /></ui-field>
-      <ui-field label="Contraseña"><input name="password" type="password" [(ngModel)]="password" required autocomplete="current-password" /></ui-field>
-      @if (error()) { <p class="text-sm text-pulse" role="alert">{{ error() }}</p> }
-      <ui-button type="submit" [loading]="loading()">Entrar</ui-button>
-    </form>
-  </section>
+  <main class="grid min-h-screen bg-paper text-ink lg:grid-cols-2">
+    <section class="flex flex-col justify-center gap-6 px-6 py-10 sm:px-12 lg:px-16 lg:py-16">
+      <p class="font-serif text-2xl text-clinic-deep">{{ clinicName() }}</p>
+      <h1 class="max-w-[14ch] font-serif text-5xl leading-tight font-medium tracking-tight xl:text-6xl">Quiero ver mis turnos</h1>
+      <div class="max-w-xl space-y-4 text-lg leading-relaxed text-ink/75">
+        <p>Entrá para ver los turnos, la historia clínica y las recetas.</p>
+        <p>Recordá que los turnos creados están asociados a tu número de documento.</p>
+      </div>
+    </section>
+    <section class="flex items-center border-rule px-6 py-12 sm:px-12 lg:border-l lg:px-16">
+      <form class="flex w-full max-w-md flex-col gap-5" (ngSubmit)="submit()">
+        <ui-field label="Documento"><input name="documentNumber" [(ngModel)]="documentNumber" required autocomplete="username" /></ui-field>
+        <ui-field label="Contraseña"><input name="password" type="password" [(ngModel)]="password" required autocomplete="current-password" /></ui-field>
+        @if (error()) { <p class="text-sm text-pulse" role="alert">{{ error() }}</p> }
+        <ui-button type="submit" [loading]="loading()">Entrar</ui-button>
+      </form>
+    </section>
+  </main>
 }

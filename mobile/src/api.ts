@@ -191,11 +191,11 @@ async function sessionFrom(response: Response) {
   return session;
 }
 
-export async function login(email: string, password: string) {
+export async function login(documentNumber: string, password: string) {
   const response = await fetch(`${apiUrl}/api/acceso/ingreso`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ documentNumber, password }),
   });
   return sessionFrom(response);
 }

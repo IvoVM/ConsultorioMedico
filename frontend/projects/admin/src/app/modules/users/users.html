@@ -10,7 +10,7 @@
 
 <div class="mb-6">
   <ui-field class="sm:w-80" label="Buscar">
-    <input type="search" name="query" [ngModel]="query()" (ngModelChange)="onSearch($event)" placeholder="Nombre, documento, email o rol" />
+    <input type="search" name="query" [ngModel]="query()" (ngModelChange)="onSearch($event)" placeholder="Nombre, documento o rol" />
   </ui-field>
 </div>
 
@@ -25,7 +25,6 @@
         <th><button type="button" sortCol [on]="sort().key === 'name'" [dir]="sort().dir" (click)="sortBy('name')">Persona</button></th>
         <th><button type="button" sortCol [on]="sort().key === 'document'" [dir]="sort().dir" (click)="sortBy('document')">Documento</button></th>
         <th><button type="button" sortCol [on]="sort().key === 'role'" [dir]="sort().dir" (click)="sortBy('role')">Rol</button></th>
-        <th><button type="button" sortCol [on]="sort().key === 'email'" [dir]="sort().dir" (click)="sortBy('email')">Email</button></th>
         <th class="w-px"></th>
       </tr>
     </thead>
@@ -35,7 +34,6 @@
           <td class="font-serif text-lg">{{ person.lastName }}, {{ person.firstName }}</td>
           <td>{{ person.documentNumber || '—' }}</td>
           <td>{{ roleLabels[person.role] }}</td>
-          <td>{{ person.email }}</td>
           <td class="w-px whitespace-nowrap">
             @if (person.documentNumber) {
               <ui-actions>

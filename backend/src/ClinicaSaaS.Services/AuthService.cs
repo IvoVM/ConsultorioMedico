@@ -19,12 +19,38 @@ public class AuthService(
 {
     public async Task<IssuedSession> LoginTenantAsync(LoginCommand command, CancellationToken ct)
     {
-        var user = await users.FindByEmailAsync(command.Email.Trim(), ct)
-            ?? throw new BusinessRuleException("Credenciales inválidas.");
+        var document = DocumentRules.Normalize(command.DocumentNumber);
+        if (!DocumentRules.IsValid(document))
+            throw new BusinessRuleException("El documento no es válido.");
+
+        var employee = await employees.Employees
+            .Where(e => e.DocumentNumber == document || (e.DocumentNumber != null && e.DocumentNumber.ToLower() == document.ToLower()))
+            .Select(e => new { e.UserId, e.IsActive })
+            .FirstOrDefaultAsync(ct);
+
+        Guid userId;
+        if (employee is not null)
+        {
+            if (!employee.IsActive)
+                throw new BusinessRuleException("Esta cuenta está dada de baja.");
+            userId = employee.UserId;
+        }
+        else
+        {
+            var client = await clients.Clients
+                .Where(c => c.DocumentNumber == document || c.DocumentNumber.ToLower() == document.ToLower())
+                .Select(c => new { c.UserId, c.User.Email })
+                .FirstOrDefaultAsync(ct)
+                ?? throw new BusinessRuleException("El documento o la contraseña no coinciden.");
+            if (IsPlaceholder(client.Email))
+                throw new BusinessRuleException("Todavía no creaste la cuenta. Registrate con este documento para ver tus solicitudes.");
+            userId = client.UserId;
+        }
+
+        var user = await users.FindByIdAsync(userId, ct)
+            ?? throw new BusinessRuleException("El documento o la contraseña no coinciden.");
         if (!await users.CheckPasswordAsync(user.Id, command.Password, ct))
-            throw new BusinessRuleException("Credenciales inválidas.");
-        if (await IsInactiveEmployeeAsync(user.Id, ct))
-            throw new BusinessRuleException("Esta cuenta está dada de baja.");
+            throw new BusinessRuleException("El documento o la contraseña no coinciden.");
         return await IssueAsync(user, ct);
     }
 

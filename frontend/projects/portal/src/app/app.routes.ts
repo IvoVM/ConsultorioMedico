@@ -4,6 +4,8 @@ import { authGuard, roleGuard, signedInGuard } from './auth.guard';
 export const routes: Routes = [
   { path: 'ingreso', loadComponent: () => import('./modules/auth/welcome').then((m) => m.WelcomePage) },
   { path: 'ingreso/empleado', loadComponent: () => import('./modules/auth/login').then((m) => m.LoginPage), data: { audience: 'staff' } },
+  { path: 'ingreso/cuenta', loadComponent: () => import('./modules/auth/login').then((m) => m.LoginPage), data: { audience: 'patient' } },
+  { path: 'registro', loadComponent: () => import('./modules/auth/register').then((m) => m.RegisterPage) },
   { path: 'clave', canActivate: [signedInGuard], loadComponent: () => import('./modules/auth/change-password').then((m) => m.ChangePasswordPage) },
   { path: 'paciente', redirectTo: 'reservar' },
   {
@@ -11,8 +13,6 @@ export const routes: Routes = [
     loadComponent: () => import('./modules/shell/shell').then((m) => m.ShellPage),
     children: [
       { path: 'reservar', loadComponent: () => import('./modules/appointments/request-appointment').then((m) => m.RequestAppointmentPage) },
-      { path: 'registro', loadComponent: () => import('./modules/auth/register').then((m) => m.RegisterPage) },
-      { path: 'ingreso/cuenta', loadComponent: () => import('./modules/auth/login').then((m) => m.LoginPage), data: { audience: 'patient' } },
       {
         path: '',
         canActivate: [authGuard],

@@ -339,7 +339,7 @@
       "InvoiceStatus": { "type": "string", "enum": ["Pending", "Paid", "Voided"] },
       "DayOfWeek": { "type": "string", "enum": ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] },
       "ClinicDto": { "type": "object", "required": ["slug", "name"], "properties": { "slug": { "type": "string" }, "name": { "type": "string" } } },
-      "LoginCommand": { "type": "object", "required": ["email", "password"], "properties": { "email": { "type": "string" }, "password": { "type": "string" } } },
+      "LoginCommand": { "type": "object", "required": ["documentNumber", "password"], "properties": { "documentNumber": { "type": "string" }, "password": { "type": "string" } } },
       "TokenDto": { "type": "object", "required": ["token", "email", "name", "role", "mustChangePassword"], "properties": { "token": { "type": "string" }, "email": { "type": "string" }, "name": { "type": "string" }, "role": { "type": "string" }, "tenantSlug": { "type": "string", "nullable": true }, "mustChangePassword": { "type": "boolean" } } },
       "RegisterPatientCommand": { "type": "object", "required": ["email", "password", "firstName", "lastName", "documentNumber", "birthDate", "phone"], "properties": { "email": { "type": "string" }, "password": { "type": "string" }, "firstName": { "type": "string" }, "lastName": { "type": "string" }, "documentNumber": { "type": "string" }, "birthDate": { "type": "string" }, "phone": { "type": "string" } } },
       "LocationDto": { "type": "object", "required": ["id", "name", "address", "isActive"], "properties": { "id": { "type": "string" }, "name": { "type": "string" }, "address": { "type": "string" }, "isActive": { "type": "boolean" } } },

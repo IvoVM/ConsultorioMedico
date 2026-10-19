@@ -15,7 +15,7 @@ public record TenantAccount(
 
 public record ClinicDto(string Slug, string Name);
 
-public record LoginCommand(string Email, string Password);
+public record LoginCommand(string DocumentNumber, string Password);
 public record LoginStaffCommand(string DocumentNumber, string Password);
 public record ChangePasswordCommand(string Password);
 public record TokenDto(string Token, string Email, string Name, string Role, string? TenantSlug, bool MustChangePassword);
