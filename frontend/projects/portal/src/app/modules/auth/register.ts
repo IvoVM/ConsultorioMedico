@@ -22,6 +22,7 @@ export class RegisterPage {
   phone = '';
   readonly fromRequest = signal(false);
   password = '';
+  confirm = '';
   readonly error = signal('');
   readonly loading = signal(false);
 
@@ -37,6 +38,10 @@ export class RegisterPage {
 
   async submit() {
     this.error.set('');
+    if (this.password !== this.confirm) {
+      this.error.set('Las contraseñas no coinciden.');
+      return;
+    }
     this.loading.set(true);
     try {
       const token = await firstValueFrom(

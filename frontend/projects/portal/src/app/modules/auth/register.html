@@ -20,6 +20,9 @@
       <ui-field label="Contraseña">
         <input name="password" type="password" [(ngModel)]="password" required minlength="8" autocomplete="new-password" />
       </ui-field>
+      <ui-field label="Confirmar contraseña">
+        <input name="confirm" type="password" [(ngModel)]="confirm" required minlength="8" autocomplete="new-password" />
+      </ui-field>
       <p class="text-sm text-ink/65">Al menos 8 caracteres, con una mayúscula, una minúscula y un número.</p>
       @if (error()) { <p class="text-sm text-pulse" role="alert">{{ error() }}</p> }
       <ui-button type="submit" [loading]="loading()">Crear cuenta</ui-button>
