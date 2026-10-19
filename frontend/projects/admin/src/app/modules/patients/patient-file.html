@@ -59,7 +59,7 @@
           <ui-field label="Apellido"><input name="lastName" required maxlength="80" autocomplete="off" [(ngModel)]="f.lastName" /></ui-field>
           <ui-field label="Documento"><input name="documentNumber" required maxlength="20" inputmode="numeric" [(ngModel)]="f.documentNumber" /></ui-field>
           <ui-field label="Fecha de nacimiento"><input name="birthDate" type="date" required [max]="today" [(ngModel)]="f.birthDate" /></ui-field>
-          <ui-field label="Teléfono"><input name="phone" type="tel" inputmode="tel" required maxlength="30" placeholder="+54 2291 542049" [(ngModel)]="f.phone" (blur)="normalizePhone('phone')" /></ui-field>
+          <ui-field label="Teléfono"><input name="phone" type="tel" inputmode="tel" required maxlength="30" placeholder="+54 11 00000000" [(ngModel)]="f.phone" (blur)="normalizePhone('phone')" /></ui-field>
           <ui-field label="Email">
             <input name="email" type="email" disabled [value]="record()?.email ?? ''" />
           </ui-field>
@@ -79,7 +79,7 @@
         <legend>Contacto de emergencia</legend>
         <div class="grid gap-4 sm:grid-cols-2">
           <ui-field label="Nombre y vínculo"><input name="emergencyContact" maxlength="120" placeholder="Ej.: Laura Gómez, hermana" [(ngModel)]="f.emergencyContact" /></ui-field>
-          <ui-field label="Teléfono"><input name="emergencyPhone" type="tel" inputmode="tel" maxlength="30" placeholder="+54 2291 542049" [(ngModel)]="f.emergencyPhone" (blur)="normalizePhone('emergencyPhone')" /></ui-field>
+          <ui-field label="Teléfono"><input name="emergencyPhone" type="tel" inputmode="tel" maxlength="30" placeholder="+54 11 00000000" [(ngModel)]="f.emergencyPhone" (blur)="normalizePhone('emergencyPhone')" /></ui-field>
         </div>
       </fieldset>
 

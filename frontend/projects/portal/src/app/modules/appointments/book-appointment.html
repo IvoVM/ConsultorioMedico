@@ -83,8 +83,8 @@
         <p class="mt-1 text-ink/75">{{ dayTitle(slot.start.slice(0, 10)) }}</p>
         <p class="mt-2 max-w-[42ch] text-ink/75">Para guardar este turno, creá una cuenta o entrá con la tuya.</p>
         <div class="mt-6 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-          <a routerLink="/registro" class="action-link">Crear cuenta</a>
-          <a routerLink="/ingreso/cuenta" class="text-link">Ya tengo cuenta</a>
+          <a [routerLink]="paths.Registro" class="action-link">Crear cuenta</a>
+          <a [routerLink]="paths.IngresoCuenta" class="text-link">Ya tengo cuenta</a>
           <ui-button variant="outlined" (click)="release()">Elegir otro horario</ui-button>
         </div>
       } @else if (days().length === 0) {

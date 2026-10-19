@@ -16,7 +16,7 @@
       <ui-field label="Documento"><input name="documentNumber" [(ngModel)]="documentNumber" required /></ui-field>
       <ui-field label="Nombre"><input name="firstName" [(ngModel)]="firstName" required autocomplete="given-name" /></ui-field>
       <ui-field label="Apellido"><input name="lastName" [(ngModel)]="lastName" required autocomplete="family-name" /></ui-field>
-      <ui-field label="Teléfono"><input name="phone" type="tel" inputmode="tel" [(ngModel)]="phone" (blur)="normalizePhone()" required maxlength="30" placeholder="+54 2291 542049" autocomplete="tel" /></ui-field>
+      <ui-field label="Teléfono"><input name="phone" type="tel" inputmode="tel" [(ngModel)]="phone" (blur)="normalizePhone()" required maxlength="30" placeholder="+54 11 00000000" autocomplete="tel" /></ui-field>
       <ui-field label="Contraseña">
         <input name="password" type="password" [(ngModel)]="password" required minlength="8" autocomplete="new-password" />
       </ui-field>

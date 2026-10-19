@@ -17,6 +17,7 @@ import {
 import { UiButton, UiEmpty, UiField, UiSelect, UiSpinner, formatFecha } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { clearPending, readPending, savePending } from './pending-booking';
+import { AppRoute } from '../../app.routes.enum';
 
 interface DayOption {
   iso: string;
@@ -39,6 +40,7 @@ export class BookAppointmentPage {
   private chart: { insurance: string; member: string } | null = null;
   private readonly cache = new Map<string, DayOption[]>();
   readonly session = clinicaSession;
+  readonly paths = AppRoute;
   readonly specialties = signal<SpecialtyDto[]>([]);
   readonly professionals = signal<ProfessionalDto[]>([]);
   readonly days = signal<DayOption[]>([]);
@@ -356,7 +358,7 @@ export class BookAppointmentPage {
         }),
       );
       clearPending();
-      await this.router.navigateByUrl('/mis-turnos');
+      await this.router.navigateByUrl(AppRoute.MisTurnos);
       return true;
     } catch (error) {
       this.error.set(errorMessage(error));
@@ -436,7 +438,7 @@ export class BookAppointmentPage {
       );
       clearPending();
       this.draft.set(null);
-      await this.router.navigateByUrl(this.bookingPatientId ? '/secretaria' : '/mis-turnos');
+      await this.router.navigateByUrl(this.bookingPatientId ? AppRoute.Secretaria : AppRoute.MisTurnos);
     } catch (error) {
       this.error.set(errorMessage(error));
     } finally {

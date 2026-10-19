@@ -17,6 +17,7 @@ import {
 import { UiButton, UiEmpty, UiField, UiModal, UiSkeleton, formatFecha, formatPhone } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { Coverage, Intent, Offer, Step } from './request-appointment.enums';
+import { AppRoute } from '../../app.routes.enum';
 
 
 @Component({
@@ -30,6 +31,7 @@ export class RequestAppointmentPage {
   private readonly appointments = inject(AppointmentsService);
   private readonly clinical = inject(ClinicalService);
   readonly session = clinicaSession;
+  readonly route = AppRoute;
   readonly Intent = Intent;
   readonly Coverage = Coverage;
   readonly Offer = Offer;

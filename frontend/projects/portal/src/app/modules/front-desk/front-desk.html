@@ -22,8 +22,8 @@
             </p>
           </div>
           <div class="flex gap-4">
-            <a class="text-link" [routerLink]="['/historia']" [queryParams]="{ paciente: patient.patientId }">Ficha</a>
-            <a class="text-link" [routerLink]="['/reservar/paciente']" [queryParams]="{ paciente: patient.patientId }">Reservar</a>
+            <a class="text-link" [routerLink]="route.Historia" [queryParams]="{ paciente: patient.patientId }">Ficha</a>
+            <a class="text-link" [routerLink]="route.ReservarPaciente" [queryParams]="{ paciente: patient.patientId }">Reservar</a>
           </div>
         </li>
       }

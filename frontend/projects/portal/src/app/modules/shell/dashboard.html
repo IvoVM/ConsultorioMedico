@@ -5,12 +5,12 @@
     <section>
       <h2 class="font-serif text-3xl tracking-tight">Reservar un turno</h2>
       <p class="mt-2 max-w-[36ch] leading-relaxed text-ink/75">Elegí el especialista y el horario más próximo.</p>
-      <a routerLink="/reservar" class="action-link mt-5">Reservar</a>
+      <a [routerLink]="route.Reservar" class="action-link mt-5">Reservar</a>
     </section>
     <section class="md:border-l md:border-rule md:pl-8">
       <h2 class="font-serif text-3xl tracking-tight">Historia clínica</h2>
       <p class="mt-2 max-w-[36ch] leading-relaxed text-ink/75">Consultas, diagnósticos y lo que ya te atendieron.</p>
-      <a routerLink="/historia" class="action-link mt-5">Abrir historia</a>
+      <a [routerLink]="route.Historia" class="action-link mt-5">Abrir historia</a>
     </section>
   </div>
   <section class="mt-8">
@@ -55,7 +55,7 @@
             <td class="font-serif text-lg leading-tight">{{ appointment.patient }}</td>
             <td>{{ appointment.visitReason || '—' }}</td>
             <td><ui-badge [tone]="appointment.status === 'Cancelled' || appointment.status === 'NoShow' ? 'warn' : appointment.status === 'Completed' ? 'ok' : 'muted'">{{ statusLabels[appointment.status] }}</ui-badge></td>
-            <td class="whitespace-nowrap"><a class="text-link" [routerLink]="['/historia']" [queryParams]="{ paciente: appointment.patientId }">Historia</a></td>
+            <td class="whitespace-nowrap"><a class="text-link" [routerLink]="route.Historia" [queryParams]="{ paciente: appointment.patientId }">Historia</a></td>
           </tr>
         }
       </tbody>
@@ -67,7 +67,7 @@
       <h2 class="font-serif text-3xl tracking-tight">Turnos de hoy</h2>
       <p class="mt-1 text-ink/70">{{ dayLabel }}@if (!loading()) { <span> · {{ appointments().length }} {{ appointments().length === 1 ? 'turno' : 'turnos' }}</span> }</p>
     </div>
-    <a routerLink="/reservar" class="action-link">Reservar un turno</a>
+    <a [routerLink]="route.Reservar" class="action-link">Reservar un turno</a>
   </header>
   @if (loading()) {
     <ui-skeleton label="Cargando la agenda" />
@@ -87,6 +87,6 @@
         }
       </tbody>
     </ui-table>
-    <a routerLink="/secretaria" class="text-link mt-6">Abrir secretaría</a>
+    <a [routerLink]="route.Secretaria" class="text-link mt-6">Abrir secretaría</a>
   }
 }

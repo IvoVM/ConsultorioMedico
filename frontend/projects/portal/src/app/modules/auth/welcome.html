@@ -1,5 +1,5 @@
 <section class="gate" [class.is-patient]="chosen() === 'patient'" [class.is-staff]="chosen() === 'staff'">
-  <a class="panel patient" href="/reservar" (click)="open('patient', $event)">
+  <a class="panel patient" [href]="route.Reservar" (click)="open('patient', $event)">
     <span class="photo" style="background-image: url('fila.jpg')" aria-hidden="true"></span>
     <span class="veil" aria-hidden="true"></span>
     <span class="copy">
@@ -8,7 +8,7 @@
       <p class="lead">Reservá un turno.</p>
     </span>
   </a>
-  <a class="panel staff" href="/ingreso/empleado" (click)="open('staff', $event)">
+  <a class="panel staff" [href]="route.IngresoEmpleado" (click)="open('staff', $event)">
     <span class="photo" style="background-image: url('recepcion.jpg')" aria-hidden="true"></span>
     <span class="veil" aria-hidden="true"></span>
     <span class="copy">

@@ -87,7 +87,7 @@
                 <ui-field label="Nombre"><input name="firstName" [(ngModel)]="firstName" autocomplete="given-name" required /></ui-field>
                 <ui-field label="Apellido"><input name="lastName" [(ngModel)]="lastName" autocomplete="family-name" required /></ui-field>
                 <ui-field label="Documento"><input name="documentNumber" [(ngModel)]="documentNumber" required maxlength="20" /></ui-field>
-                <ui-field label="Teléfono"><input name="phone" type="tel" inputmode="tel" [(ngModel)]="phone" (blur)="normalizePhone()" required maxlength="30" placeholder="+54 2291 542049" autocomplete="tel" /></ui-field>
+                <ui-field label="Teléfono"><input name="phone" type="tel" inputmode="tel" [(ngModel)]="phone" (blur)="normalizePhone()" required maxlength="30" placeholder="+54 11 00000000" autocomplete="tel" /></ui-field>
                 <ui-button type="submit">Continuar</ui-button>
               </form>
             } @else if (step() === Step.Coverage) {
@@ -130,9 +130,9 @@
             } @else if (step() === Step.Done) {
               <div class="mt-8 flex flex-wrap gap-4">
                 @if (session.token()) {
-                  <a routerLink="/panel" class="action-link">Volver al inicio</a>
+                  <a [routerLink]="route.Panel" class="action-link">Volver al inicio</a>
                 } @else {
-                  <a routerLink="/registro" [queryParams]="accountDraft()" class="action-link">Crear cuenta y ver el turno</a>
+                  <a [routerLink]="route.Registro" [queryParams]="accountDraft()" class="action-link">Crear cuenta y ver el turno</a>
                 }
               </div>
             }

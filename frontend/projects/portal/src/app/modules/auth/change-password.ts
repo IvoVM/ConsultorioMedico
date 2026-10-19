@@ -5,6 +5,7 @@ import { AuthService, ClinicService, clinicaSession, errorMessage } from 'sdk';
 import { UiButton, UiField, passwordIssue } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { readClinicName } from './clinic-name';
+import { AppRoute } from '../../app.routes.enum';
 
 @Component({
   imports: [FormsModule, UiButton, UiField],
@@ -23,13 +24,13 @@ export class ChangePasswordPage {
   constructor() {
     void readClinicName(this.clinic).then((name) => this.clinicName.set(name));
     if (!clinicaSession.mustChangePassword()) {
-      const home = clinicaSession.role() === 'Patient' ? '/mis-turnos' : '/panel';
+      const home = clinicaSession.role() === 'Patient' ? AppRoute.MisTurnos : AppRoute.Panel;
       void this.router.navigateByUrl(home);
     }
   }
 
   back() {
-    const next = clinicaSession.role() === 'Patient' ? '/ingreso/cuenta' : '/ingreso/empleado';
+    const next = clinicaSession.role() === 'Patient' ? AppRoute.IngresoCuenta : AppRoute.IngresoEmpleado;
     void firstValueFrom(this.auth.logout()).finally(() => {
       clinicaSession.clear();
       location.href = next;
@@ -51,7 +52,7 @@ export class ChangePasswordPage {
     try {
       const token = await firstValueFrom(this.auth.changePassword({ password: this.password }));
       clinicaSession.set(token.token, token.role, token.name, token.mustChangePassword);
-      await this.router.navigateByUrl(token.role === 'Patient' ? '/mis-turnos' : '/panel');
+      await this.router.navigateByUrl(token.role === 'Patient' ? AppRoute.MisTurnos : AppRoute.Panel);
     } catch (error) {
       this.error.set(errorMessage(error));
     } finally {

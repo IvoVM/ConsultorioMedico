@@ -33,7 +33,7 @@ export default function Pacientes() {
       <Field label="Email" autoCapitalize="none" value={form.email} onChangeText={set('email')} />
       <Field label="Documento" value={form.documentNumber} onChangeText={set('documentNumber')} />
       <Field label="Nacimiento" placeholder="AAAA-MM-DD" value={form.birthDate} onChangeText={set('birthDate')} />
-      <Field label="Teléfono" keyboardType="phone-pad" placeholder="+54 2291 542049" value={form.phone} onChangeText={set('phone')} onBlur={() => { const formatted = formatPhone(form.phone); if (formatted) set('phone')(formatted); }} />
+      <Field label="Teléfono" keyboardType="phone-pad" placeholder="+54 11 00000000" value={form.phone} onChangeText={set('phone')} onBlur={() => { const formatted = formatPhone(form.phone); if (formatted) set('phone')(formatted); }} />
       <ErrorText text={error} />
       {password ? <Text style={{ fontFamily: type.sansBold, color: colors.deep }}>Clave temporal: {password}</Text> : null}
       <Button

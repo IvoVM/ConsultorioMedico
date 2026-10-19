@@ -5,6 +5,7 @@ import { AuthService, ClinicService, clinicaSession, errorMessage } from 'sdk';
 import { UiButton, UiField, formatPhone, passwordIssue } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { readClinicName } from './clinic-name';
+import { AppRoute } from '../../app.routes.enum';
 
 @Component({
   imports: [FormsModule, UiButton, UiField],
@@ -70,7 +71,7 @@ export class RegisterPage {
         }),
       );
       clinicaSession.set(token.token, token.role, token.name);
-      await this.router.navigateByUrl('/mis-turnos');
+      await this.router.navigateByUrl(AppRoute.MisTurnos);
     } catch (error) {
       this.error.set(errorMessage(error));
     } finally {

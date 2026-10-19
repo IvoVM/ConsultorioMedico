@@ -6,6 +6,7 @@ import { UiButton, UiField } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { readPending } from '../appointments/pending-booking';
 import { readClinicName } from './clinic-name';
+import { AppRoute } from '../../app.routes.enum';
 
 @Component({
   imports: [FormsModule, UiButton, UiField],
@@ -35,10 +36,10 @@ export class LoginPage {
         : await firstValueFrom(this.auth.loginPatient({ documentNumber: this.documentNumber, password: this.password }));
       clinicaSession.set(token.token, token.role, token.name, token.mustChangePassword);
       if (token.mustChangePassword) {
-        await this.router.navigateByUrl('/clave');
+        await this.router.navigateByUrl(AppRoute.Clave);
         return;
       }
-      const next = token.role === 'Patient' ? (readPending() ? '/reservar' : '/mis-turnos') : '/panel';
+      const next = token.role === 'Patient' ? (readPending() ? AppRoute.Reservar : AppRoute.MisTurnos) : AppRoute.Panel;
       await this.router.navigateByUrl(next);
     } catch (error) {
       this.error.set(errorMessage(error));

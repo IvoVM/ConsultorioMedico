@@ -4,6 +4,7 @@ import { AppointmentDto, AppointmentsService, clinicaSession, errorMessage } fro
 import { UiBadge, UiEmpty, UiSkeleton, UiTable, formatFecha } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { appointmentStatusLabels } from '../appointments/models/appointment-status-labels';
+import { AppRoute } from '../../app.routes.enum';
 
 @Component({
   imports: [RouterLink, UiBadge, UiEmpty, UiSkeleton, UiTable],
@@ -12,6 +13,7 @@ import { appointmentStatusLabels } from '../appointments/models/appointment-stat
 export class DashboardPage {
   private readonly appointmentsApi = inject(AppointmentsService);
   readonly session = clinicaSession;
+  readonly route = AppRoute;
   readonly statusLabels = appointmentStatusLabels;
   readonly appointments = signal<AppointmentDto[]>([]);
   readonly error = signal('');

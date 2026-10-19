@@ -2,6 +2,7 @@ import { Component, inject, OnDestroy, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { ClinicService } from 'sdk';
 import { readClinicName } from './clinic-name';
+import { AppRoute } from '../../app.routes.enum';
 
 @Component({
   imports: [],
@@ -13,6 +14,7 @@ export class WelcomePage implements OnDestroy {
   private readonly router = inject(Router);
   private timer = 0;
   readonly clinicName = signal('Consultorio');
+  readonly route = AppRoute;
   readonly chosen = signal<'patient' | 'staff' | null>(null);
 
   constructor() {
@@ -22,7 +24,7 @@ export class WelcomePage implements OnDestroy {
   open(side: 'patient' | 'staff', event: Event) {
     event.preventDefault();
     if (this.chosen()) return;
-    const next = side === 'patient' ? '/reservar' : '/ingreso/empleado';
+    const next = side === 'patient' ? AppRoute.Reservar : AppRoute.IngresoEmpleado;
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduce) {
       void this.router.navigateByUrl(next);
