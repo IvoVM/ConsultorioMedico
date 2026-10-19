@@ -15,7 +15,7 @@ import {
 import { UiButton, UiEmpty, UiField, UiSkeleton, formatFecha } from 'ui';
 import { firstValueFrom } from 'rxjs';
 
-type Step = 'specialty' | 'day' | 'time' | 'name' | 'document' | 'phone' | 'coverage' | 'insurer' | 'member' | 'review' | 'done';
+type Step = 'specialty' | 'day' | 'time' | 'name' | 'document' | 'phone' | 'coverage' | 'review' | 'done';
 
 @Component({
   imports: [FormsModule, RouterLink, UiButton, UiEmpty, UiField, UiSkeleton],
@@ -41,7 +41,7 @@ export class RequestAppointmentPage {
   readonly specialtyId = signal('');
   readonly year = signal(new Date().getFullYear());
   readonly month = signal(new Date().getMonth() + 1);
-  coverage: 'particular' | 'obra' = 'particular';
+  readonly coverage = signal<'particular' | 'obra'>('particular');
   insurerId = '';
   memberNumber = '';
   name = '';
@@ -52,12 +52,7 @@ export class RequestAppointmentPage {
   readonly furthest = signal<Step>('specialty');
   readonly direction = signal<1 | -1>(1);
   readonly motion = signal(0);
-  readonly steps = computed(() => {
-    const list: Step[] = ['specialty', 'day', 'time', 'name', 'document', 'phone', 'coverage'];
-    if (this.coverage === 'obra' && this.insurers().length) list.push('insurer', 'member');
-    list.push('review');
-    return list;
-  });
+  readonly steps = computed((): Step[] => ['specialty', 'day', 'time', 'name', 'document', 'phone', 'coverage', 'review']);
   readonly stepIndex = computed(() => this.steps().indexOf(this.step()));
   readonly furthestIndex = computed(() => this.steps().indexOf(this.furthest()));
   readonly monthTitle = computed(() => {
@@ -94,8 +89,6 @@ export class RequestAppointmentPage {
       case 'document': return 'Documento';
       case 'phone': return 'Teléfono';
       case 'coverage': return 'Cobertura';
-      case 'insurer': return 'Obra social';
-      case 'member': return 'Afiliado';
       case 'review': return 'Confirmar';
       default: return '';
     }
@@ -110,8 +103,6 @@ export class RequestAppointmentPage {
       case 'document': return '¿Cuál es tu documento?';
       case 'phone': return '¿A qué número te llamamos?';
       case 'coverage': return '¿Tenés obra social?';
-      case 'insurer': return '¿Cuál es tu obra social?';
-      case 'member': return '¿Cuál es tu número de afiliado?';
       case 'review': return 'Revisá la solicitud';
       default: return 'Listo';
     }
@@ -126,8 +117,6 @@ export class RequestAppointmentPage {
       case 'document': return 'Con este número vas a entrar y vas a ver esta solicitud cuando crees tu cuenta.';
       case 'phone': return 'La secretaría te llama a este número si hace falta.';
       case 'coverage': return this.insurers().length ? 'Si no tenés, el turno queda como particular.' : 'Este profesional atiende como particular.';
-      case 'insurer': return 'Solo las que atiende el profesional de ese horario.';
-      case 'member': return 'La secretaría lo revisa antes de confirmar.';
       case 'review': return 'Al enviarla, la secretaría confirma el turno.';
       default: return 'La secretaría va a revisar tu solicitud. Cuando crees tu cuenta con este documento, la vas a ver ahí.';
     }
@@ -203,7 +192,7 @@ export class RequestAppointmentPage {
 
   async pickSlot(slot: SlotDto) {
     this.slot.set(slot);
-    this.coverage = 'particular';
+    this.coverage.set('particular');
     this.insurerId = '';
     this.memberNumber = '';
     this.error.set('');
@@ -249,26 +238,27 @@ export class RequestAppointmentPage {
   }
 
   pickCoverage(kind: 'particular' | 'obra') {
-    this.coverage = kind;
     this.error.set('');
     if (kind === 'particular' || !this.insurers().length) {
-      this.coverage = 'particular';
+      this.coverage.set('particular');
       this.insurerId = '';
       this.memberNumber = '';
       this.go('review');
       return;
     }
-    if (this.furthest() === 'review') this.furthest.set('coverage');
-    this.go('insurer');
+    this.coverage.set('obra');
   }
 
   pickInsurer(id: string) {
     this.insurerId = id;
     this.error.set('');
-    this.go('member');
   }
 
-  continueMember() {
+  continueCoverage() {
+    if (!this.insurerId) {
+      this.error.set('Elegí tu obra social.');
+      return;
+    }
     if (!this.memberNumber.trim()) {
       this.error.set('El número de afiliado es obligatorio.');
       return;
@@ -297,8 +287,8 @@ export class RequestAppointmentPage {
         name: this.name.trim(),
         phone: this.phone.trim(),
         documentNumber: this.documentNumber.trim(),
-        insurerId: this.coverage === 'obra' ? this.insurerId : null,
-        memberNumber: this.coverage === 'obra' ? this.memberNumber.trim() : null,
+        insurerId: this.coverage() === 'obra' ? this.insurerId : null,
+        memberNumber: this.coverage() === 'obra' ? this.memberNumber.trim() : null,
       }));
       this.show('done');
     } catch (error) {

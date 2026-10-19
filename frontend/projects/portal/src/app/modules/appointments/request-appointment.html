@@ -94,22 +94,25 @@
         <div class="choices">
           <button type="button" (click)="pickCoverage('particular')">No, voy como particular</button>
           @if (insurers().length) {
-            <button type="button" (click)="pickCoverage('obra')">Sí, tengo obra social</button>
+            <button type="button" [class.is-picked]="coverage() === 'obra'" (click)="pickCoverage('obra')">Sí, tengo obra social</button>
           }
         </div>
-      }
-      @case ('insurer') {
-        <div class="choices">
-          @for (item of insurers(); track item.id) {
-            <button type="button" (click)="pickInsurer(item.id)">{{ item.name }}</button>
-          }
-        </div>
-      }
-      @case ('member') {
-        <form class="ask" (ngSubmit)="continueMember()">
-          <ui-field label="Número de afiliado"><input name="memberNumber" [(ngModel)]="memberNumber" required maxlength="40" /></ui-field>
-          <ui-button type="submit">Continuar</ui-button>
-        </form>
+        @if (coverage() === 'obra') {
+          <div class="coverage-more">
+            <p class="hint">Solo las que atiende el profesional de ese horario.</p>
+            <div class="choices">
+              @for (item of insurers(); track item.id) {
+                <button type="button" [class.is-picked]="insurerId === item.id" (click)="pickInsurer(item.id)">{{ item.name }}</button>
+              }
+            </div>
+            @if (insurerId) {
+              <form class="ask" (ngSubmit)="continueCoverage()">
+                <ui-field label="Número de afiliado"><input name="memberNumber" [(ngModel)]="memberNumber" required maxlength="40" /></ui-field>
+                <ui-button type="submit">Continuar</ui-button>
+              </form>
+            }
+          </div>
+        }
       }
       @case ('review') {
         @if (slot(); as chosen) {
@@ -120,7 +123,7 @@
             <div><dt>Nombre</dt><dd>{{ name }}</dd></div>
             <div><dt>Documento</dt><dd>{{ documentNumber }}</dd></div>
             <div><dt>Teléfono</dt><dd>{{ phone }}</dd></div>
-            <div><dt>Cobertura</dt><dd>{{ coverage === 'obra' ? insurerName() + ' · ' + memberNumber : 'Particular' }}</dd></div>
+            <div><dt>Cobertura</dt><dd>{{ coverage() === 'obra' ? insurerName() + ' · ' + memberNumber : 'Particular' }}</dd></div>
           </dl>
           <ui-button [loading]="sending()" (click)="send()">Enviar solicitud</ui-button>
         }
