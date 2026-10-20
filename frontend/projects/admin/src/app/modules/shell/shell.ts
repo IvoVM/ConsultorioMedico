@@ -14,35 +14,42 @@ export class ShellPage {
   readonly menu = computed((): NavNode[] => [
       { label: 'Inicio', path: '/inicio', exact: true },
       {
-        label: 'Organización',
+        label: 'Agenda',
         children: [
-          { label: 'Servicios', path: '/organizacion/servicios' },
-          { label: 'Especialidades', path: '/organizacion/especialidades' },
-          { label: 'Obras sociales', path: '/organizacion/obras-sociales' },
+          { label: 'Solicitudes de turnos', path: '/turnos/solicitudes' },
+          { label: 'Historial de turnos', path: '/turnos/historial' },
+          { label: 'Agendas', path: '/agendas' },
         ],
       },
       {
-        label: 'Personas',
+        label: 'Pacientes',
         children: [
-          { label: 'Empleados', path: '/empleados' },
           { label: 'Pacientes', path: '/pacientes' },
           { label: 'Historias médicas', path: '/historias' },
         ],
       },
-      { label: 'Agendas', path: '/agendas' },
       {
-        label: 'Turnos',
+        label: 'Atención',
         children: [
-          { label: 'Historial de turnos', path: '/turnos/historial' },
-          { label: 'Solicitudes de turnos', path: '/turnos/solicitudes' },
+          { label: 'Especialidades', path: '/organizacion/especialidades' },
+          { label: 'Servicios', path: '/organizacion/servicios' },
         ],
       },
-      { label: 'Comprobantes', path: '/comprobantes' },
-      { label: 'Auditoría', path: '/auditoria' },
       {
-        label: 'Configuraciones',
-        children: [{ label: 'Usuarios', path: '/configuracion/usuarios' }],
+        label: 'Facturación',
+        children: [
+          { label: 'Obras sociales', path: '/organizacion/obras-sociales' },
+          { label: 'Comprobantes', path: '/comprobantes' },
+        ],
       },
+      {
+        label: 'Personal',
+        children: [
+          { label: 'Empleados', path: '/empleados' },
+          { label: 'Usuarios', path: '/configuracion/usuarios' },
+        ],
+      },
+      { label: 'Auditoría', path: '/auditoria' },
     ]);
 
   logout() {
