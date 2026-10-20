@@ -49,7 +49,7 @@ public class TenantDbContext(DbContextOptions<TenantDbContext> options)
             e.Property(u => u.LastName).HasMaxLength(80);
             e.Property(u => u.Role).HasConversion<string>().HasMaxLength(20);
             e.Ignore(u => u.Name);
-            e.HasOne(u => u.Client).WithOne(c => c.User).HasForeignKey<Client>(c => c.UserId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(u => u.Client).WithOne(c => c.User).HasForeignKey<Client>(c => c.UserId).IsRequired(false).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(u => u.Employee).WithOne(x => x.User).HasForeignKey<Employee>(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
         });
         builder.Entity<IdentityRole<Guid>>().ToTable("Roles");
@@ -104,9 +104,12 @@ public class TenantDbContext(DbContextOptions<TenantDbContext> options)
         });
         builder.Entity<Client>(e =>
         {
+            e.Property(c => c.FirstName).HasMaxLength(80);
+            e.Property(c => c.LastName).HasMaxLength(80);
             e.Property(c => c.DocumentNumber).HasMaxLength(20);
             e.Property(c => c.Phone).HasMaxLength(30);
             e.HasIndex(c => c.UserId).IsUnique();
+            e.HasIndex(c => c.DocumentNumber).IsUnique();
         });
         builder.Entity<MedicalRecord>(e =>
         {

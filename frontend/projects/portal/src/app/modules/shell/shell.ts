@@ -36,6 +36,14 @@ export class ShellPage {
           { label: 'Recetas', path: AppRoute.Recetas },
         ],
       });
+    } else if (role === TenantRole.Secretary || role === TenantRole.TenantAdmin) {
+      nodes.push({
+        label: 'Turnos',
+        children: [
+          { label: 'Dar un turno', path: AppRoute.DarTurno },
+          { label: 'Solicitudes', path: AppRoute.Solicitudes },
+        ],
+      });
     } else if (this.session.token()) {
       nodes.push({ label: 'Reservar', path: AppRoute.Reservar });
     }

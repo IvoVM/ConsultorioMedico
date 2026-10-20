@@ -25,6 +25,21 @@ export class AppointmentsService extends ApiClient {
     return this.http.post<AppointmentDto>(`${this.base}/api/turnos`, body);
   }
 
+  bookAtDesk(body: {
+    documentNumber: string;
+    firstName: string;
+    lastName: string;
+    phone: string;
+    professionalId: string;
+    locationId: string;
+    appointmentTypeId: string;
+    start: string;
+    insurerId?: string | null;
+    memberNumber?: string | null;
+  }) {
+    return this.http.post<AppointmentDto>(`${this.base}/api/turnos/mostrador`, body);
+  }
+
   myAppointments() {
     return this.http.get<AppointmentDto[]>(`${this.base}/api/turnos/mios`);
   }

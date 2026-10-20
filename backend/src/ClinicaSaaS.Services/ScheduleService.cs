@@ -15,7 +15,6 @@ public class ScheduleService(
     IClientStore clients,
     IWaitlistStore waitlist,
     IBookingRequestStore requests,
-    ITenantUserStore users,
     IMedicalRecordStore records,
     ITimeZoneProvider timeZone,
     ICurrentUser currentUser,
@@ -228,12 +227,63 @@ public class ScheduleService(
         return await LoadAppointmentAsync(appointment.Id, ct);
     }
 
+    public async Task<AppointmentDto> BookAtDeskAsync(DeskAppointmentCommand command, CancellationToken ct)
+    {
+        var document = DocumentRules.Normalize(command.DocumentNumber);
+        if (!DocumentRules.IsValid(document))
+            throw new BusinessRuleException("El documento no es válido.");
+        var firstName = command.FirstName?.Trim() ?? "";
+        var lastName = command.LastName?.Trim() ?? "";
+        if (firstName.Length == 0 || lastName.Length == 0 || firstName.Length > 80 || lastName.Length > 80)
+            throw new BusinessRuleException("Nombre y apellido son obligatorios.");
+        var phone = PhoneRules.Require(command.Phone);
+        var known = await clients.Clients
+            .Where(client => client.DocumentNumber == document || client.DocumentNumber.ToLower() == document.ToLower())
+            .Select(client => (Guid?)client.Id)
+            .FirstOrDefaultAsync(ct);
+        Guid clientId;
+        if (known is Guid found)
+        {
+            clientId = found;
+        }
+        else
+        {
+            var client = await clients.AddAsync(new Client
+            {
+                Id = Guid.NewGuid(),
+                FirstName = firstName,
+                LastName = lastName,
+                DocumentNumber = document,
+                Phone = phone
+            }, ct);
+            records.Add(new MedicalRecord
+            {
+                Id = Guid.NewGuid(),
+                ClientId = client.Id,
+                UpdatedAt = clock.GetUtcNow(),
+                UpdatedBy = currentUser.Id
+            });
+            await records.SaveAsync(ct);
+            clientId = client.Id;
+        }
+
+        return await BookAsync(new BookAppointmentCommand(
+            clientId,
+            command.ProfessionalId,
+            command.LocationId,
+            command.AppointmentTypeId,
+            command.Start,
+            null,
+            command.InsurerId,
+            command.MemberNumber), ct);
+    }
+
     public async Task<PageDto<AppointmentDto>> HistoryAsync(ListQuery query, CancellationToken ct)
     {
         var source = appointments.Appointments.AsQueryable();
         if (query.Term is string term)
             source = source.Where(a =>
-                (a.Client.User.FirstName + " " + a.Client.User.LastName).ToLower().Contains(term) ||
+                (a.Client.FirstName + " " + a.Client.LastName).ToLower().Contains(term) ||
                 (a.Professional.FirstName + " " + a.Professional.LastName).ToLower().Contains(term) ||
                 a.AppointmentType.Name.ToLower().Contains(term) ||
                 a.Location.Name.ToLower().Contains(term) ||
@@ -245,8 +295,8 @@ public class ScheduleService(
                     : "ausente").Contains(term));
         var ordered = (query.Sort, query.Desc) switch
         {
-            ("patient", true) => source.OrderByDescending(a => a.Client.User.LastName).ThenByDescending(a => a.Client.User.FirstName).ThenByDescending(a => a.Start),
-            ("patient", false) => source.OrderBy(a => a.Client.User.LastName).ThenBy(a => a.Client.User.FirstName).ThenByDescending(a => a.Start),
+            ("patient", true) => source.OrderByDescending(a => a.Client.LastName).ThenByDescending(a => a.Client.FirstName).ThenByDescending(a => a.Start),
+            ("patient", false) => source.OrderBy(a => a.Client.LastName).ThenBy(a => a.Client.FirstName).ThenByDescending(a => a.Start),
             ("professional", true) => source.OrderByDescending(a => a.Professional.LastName).ThenByDescending(a => a.Professional.FirstName).ThenByDescending(a => a.Start),
             ("professional", false) => source.OrderBy(a => a.Professional.LastName).ThenBy(a => a.Professional.FirstName).ThenByDescending(a => a.Start),
             ("status", true) => source.OrderByDescending(a => a.Status).ThenByDescending(a => a.Start),
@@ -643,18 +693,11 @@ public class ScheduleService(
         var parts = request.Name.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
         var first = parts[0];
         var last = parts.Length > 1 ? parts[1] : parts[0];
-        var account = await users.CreateAsync(
-            $"solicitud.{Guid.NewGuid():N}@pacientes.local",
-            "Aa1" + Utilities.TemporaryPassword.Generate(),
-            first.Length > 80 ? first[..80] : first,
-            last.Length > 80 ? last[..80] : last,
-            TenantRole.Patient,
-            true,
-            ct);
         var client = await clients.AddAsync(new Client
         {
             Id = Guid.NewGuid(),
-            UserId = account.Id,
+            FirstName = first.Length > 80 ? first[..80] : first,
+            LastName = last.Length > 80 ? last[..80] : last,
             DocumentNumber = document,
             BirthDate = default,
             Phone = phone

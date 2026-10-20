@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { AppointmentDto, AppointmentStatus, AppointmentsService, TenantRole, clinicaSession, errorMessage } from 'sdk';
+import { AppointmentDto, AppointmentStatus, AppointmentsService, BookingRequestDto, TenantRole, clinicaSession, errorMessage } from 'sdk';
 import { UiBadge, UiEmpty, UiSkeleton, UiTable, formatFecha } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { appointmentStatusLabels } from '../appointments/models/appointment-status-labels';
@@ -18,6 +18,7 @@ export class DashboardPage {
   readonly route = AppRoute;
   readonly statusLabels = appointmentStatusLabels;
   readonly appointments = signal<AppointmentDto[]>([]);
+  readonly requests = signal<BookingRequestDto[]>([]);
   readonly error = signal('');
   readonly loading = signal(true);
   readonly dayLabel = new Intl.DateTimeFormat('es-AR', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
@@ -57,6 +58,9 @@ export class DashboardPage {
       } else if (role === TenantRole.Doctor || role === TenantRole.Secretary || role === TenantRole.TenantAdmin) {
         const list = await firstValueFrom(this.appointmentsApi.appointmentsForDay({ date: this.today() }));
         this.appointments.set([...list].sort((a, b) => a.start.localeCompare(b.start)));
+        if (role === TenantRole.Secretary || role === TenantRole.TenantAdmin) {
+          this.requests.set(await firstValueFrom(this.appointmentsApi.pendingRequests()));
+        }
       }
     } catch (error) {
       this.error.set(errorMessage(error));

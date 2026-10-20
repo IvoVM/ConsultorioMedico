@@ -17,6 +17,7 @@ import {
 } from 'sdk';
 import { UiButton, UiEmpty, UiField, UiSelect, UiSpinner, formatFecha } from 'ui';
 import { firstValueFrom } from 'rxjs';
+import { DeskPatient } from './desk-booking';
 import { clearPending, readPending, savePending } from './pending-booking';
 import { AppRoute } from '../../app.routes.enum';
 
@@ -65,6 +66,7 @@ export class BookAppointmentPage {
   memberNumber = '';
   readonly bookingFor = signal('');
   private bookingPatientId: string | null = null;
+  private deskDraft: DeskPatient | null = null;
 
   readonly nearestIso = computed(() => this.days()[0]?.iso ?? '');
   readonly specialtyOptions = computed(() => [
@@ -256,8 +258,22 @@ export class BookAppointmentPage {
   private async loadChart() {
     const requested = this.route.snapshot.queryParamMap.get('paciente');
     const staff = clinicaSession.role() === TenantRole.Secretary || clinicaSession.role() === TenantRole.TenantAdmin;
+    const draft = history.state as Partial<DeskPatient> | null;
+    if (staff && !requested && draft?.documentNumber && draft.firstName && draft.lastName && draft.phone) {
+      this.deskDraft = {
+        documentNumber: draft.documentNumber,
+        firstName: draft.firstName,
+        lastName: draft.lastName,
+        phone: draft.phone,
+      };
+      this.bookingFor.set(`${draft.lastName}, ${draft.firstName}`);
+      return;
+    }
     const patientId = staff ? requested : null;
-    if (staff && !patientId) return;
+    if (staff && !patientId) {
+      await this.router.navigateByUrl(AppRoute.DarTurno);
+      return;
+    }
     if (!staff && clinicaSession.role() !== TenantRole.Patient) return;
     this.bookingPatientId = patientId;
     try {
@@ -401,7 +417,7 @@ export class BookAppointmentPage {
       this.draft.set(null);
       return;
     }
-    if (clinicaSession.role() !== TenantRole.Patient && !this.bookingPatientId) {
+    if (clinicaSession.role() !== TenantRole.Patient && !this.bookingPatientId && !this.deskDraft) {
       this.error.set('Para reservar este turno, elegí al paciente desde secretaría.');
       return;
     }
@@ -426,21 +442,39 @@ export class BookAppointmentPage {
     this.booking.set(slot.start + slot.professionalId);
     this.error.set('');
     try {
-      await firstValueFrom(
-        this.appointmentsApi.bookAppointment({
-          professionalId: slot.professionalId,
-          locationId: slot.locationId,
-          appointmentTypeId: slot.appointmentTypeId,
-          start: slot.start,
-          patientId: this.bookingPatientId,
-          visitReason: null,
-          insurerId: coverage.insurerId,
-          memberNumber: coverage.memberNumber,
-        }),
-      );
+      const draft = this.deskDraft;
+      if (draft) {
+        await firstValueFrom(
+          this.appointmentsApi.bookAtDesk({
+            documentNumber: draft.documentNumber,
+            firstName: draft.firstName,
+            lastName: draft.lastName,
+            phone: draft.phone,
+            professionalId: slot.professionalId,
+            locationId: slot.locationId,
+            appointmentTypeId: slot.appointmentTypeId,
+            start: slot.start,
+            insurerId: coverage.insurerId,
+            memberNumber: coverage.memberNumber,
+          }),
+        );
+      } else {
+        await firstValueFrom(
+          this.appointmentsApi.bookAppointment({
+            professionalId: slot.professionalId,
+            locationId: slot.locationId,
+            appointmentTypeId: slot.appointmentTypeId,
+            start: slot.start,
+            patientId: this.bookingPatientId,
+            visitReason: null,
+            insurerId: coverage.insurerId,
+            memberNumber: coverage.memberNumber,
+          }),
+        );
+      }
       clearPending();
       this.draft.set(null);
-      await this.router.navigateByUrl(this.bookingPatientId ? AppRoute.Secretaria : AppRoute.MisTurnos);
+      await this.router.navigateByUrl(this.bookingPatientId || draft ? AppRoute.Secretaria : AppRoute.MisTurnos);
     } catch (error) {
       this.error.set(errorMessage(error));
     } finally {

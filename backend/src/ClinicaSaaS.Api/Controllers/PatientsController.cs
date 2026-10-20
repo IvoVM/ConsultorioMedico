@@ -14,6 +14,10 @@ public class PatientsController(MedicalRecordsService records) : ApiController
     public Task<IActionResult> Search([FromQuery] string q, CancellationToken ct) =>
         Run(() => records.SearchAsync(q, ct));
 
+    [HttpGet("documento")]
+    public Task<IActionResult> ByDocument([FromQuery] string number, CancellationToken ct) =>
+        Run(() => records.FindByDocumentAsync(number, ct));
+
     [Authorize(Roles = AppRoles.TenantAdmin)]
     [HttpPost]
     public Task<IActionResult> Create(CreatePatientCommand command, CancellationToken ct) =>

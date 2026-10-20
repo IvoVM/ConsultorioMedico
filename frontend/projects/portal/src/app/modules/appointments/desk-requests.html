@@ -1,0 +1,38 @@
+<header class="mb-6">
+  <h2 class="font-serif text-3xl tracking-tight">Solicitudes de turnos</h2>
+  <p class="mt-2 max-w-prose text-sm leading-relaxed text-ink/70">
+    Al aprobar, el turno queda en la agenda. Si esa persona todavía no tiene ficha, se crea en ese momento. La cuenta la abre ella al registrarse. Al denegar no se crea nada.
+  </p>
+</header>
+@if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
+@if (notice()) { <p class="mb-4 text-sm text-ink/70" role="status">{{ notice() }}</p> }
+@if (loading()) {
+  <ui-skeleton label="Cargando solicitudes" />
+} @else if (!requests().length) {
+  <ui-empty message="No hay solicitudes para confirmar." />
+} @else {
+  <ui-table>
+    <thead><tr><th>Cuándo</th><th>Persona</th><th>Para</th><th></th></tr></thead>
+    <tbody>
+      @for (item of requests(); track item.id) {
+        <tr>
+          <td class="whitespace-nowrap">{{ item.start | fecha }}</td>
+          <td>
+            <span class="font-serif text-lg leading-tight">{{ item.name }}</span>
+            <span class="mt-1 block text-sm text-ink/70">{{ item.documentNumber }} · {{ item.phone }}</span>
+          </td>
+          <td>
+            {{ item.specialty }}
+            <span class="mt-1 block text-sm text-ink/70">{{ item.professional }} · {{ item.insurer || 'Particular' }}@if (item.memberNumber) { <span> · afiliado {{ item.memberNumber }}</span> }</span>
+          </td>
+          <td class="whitespace-nowrap">
+            <div class="flex gap-2">
+              <ui-button [loading]="pending() === 'approve:' + item.id" (click)="decide(item, true)">Aprobar</ui-button>
+              <ui-button variant="ghost" [loading]="pending() === 'deny:' + item.id" (click)="decide(item, false)">Denegar</ui-button>
+            </div>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </ui-table>
+}

@@ -62,31 +62,58 @@
     </ui-table>
   }
 } @else {
-  <header class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-    <div>
-      <h2 class="font-serif text-3xl tracking-tight">Turnos de hoy</h2>
-      <p class="mt-1 text-ink/70">{{ dayLabel }}@if (!loading()) { <span> · {{ appointments().length }} {{ appointments().length === 1 ? 'turno' : 'turnos' }}</span> }</p>
-    </div>
-    <a [routerLink]="route.Reservar" class="action-link">Reservar un turno</a>
+  <header class="mb-8">
+    <h2 class="font-serif text-3xl tracking-tight">Hoy en el consultorio</h2>
+    <p class="mt-1 text-ink/70">
+      {{ dayLabel }}
+      @if (!loading()) {
+        <span> · {{ appointments().length }} {{ appointments().length === 1 ? 'turno' : 'turnos' }}</span>
+        <span> · {{ requests().length }} {{ requests().length === 1 ? 'solicitud pendiente' : 'solicitudes pendientes' }}</span>
+      }
+    </p>
   </header>
-  @if (loading()) {
-    <ui-skeleton label="Cargando la agenda" />
-  } @else if (!appointments().length) {
-    <ui-empty message="Hoy no hay turnos cargados." />
-  } @else {
-    <ui-table>
-      <thead><tr><th>Hora</th><th>Paciente</th><th>Profesional</th><th>Estado</th></tr></thead>
-      <tbody>
-        @for (appointment of appointments(); track appointment.id) {
-          <tr>
-            <td class="whitespace-nowrap tabular-nums">{{ timeLabel(appointment.start) }}</td>
-            <td class="font-serif text-lg leading-tight">{{ appointment.patient }}</td>
-            <td>{{ appointment.professional }}</td>
-            <td><ui-badge [tone]="appointment.status === status.Cancelled || appointment.status === status.NoShow ? 'warn' : appointment.status === status.Completed ? 'ok' : 'muted'">{{ statusLabels[appointment.status] }}</ui-badge></td>
-          </tr>
+  <nav class="mb-10 grid gap-8 border-b border-rule pb-8 md:grid-cols-2">
+    <section>
+      <h2 class="font-serif text-2xl tracking-tight">Dar un turno</h2>
+      <p class="mt-2 max-w-[36ch] leading-relaxed text-ink/75">Buscás al paciente por documento y le confirmás el horario.</p>
+      <a [routerLink]="route.DarTurno" class="action-link mt-5">Dar un turno</a>
+    </section>
+    <section class="md:border-l md:border-rule md:pl-8">
+      <h2 class="font-serif text-2xl tracking-tight">Solicitudes</h2>
+      <p class="mt-2 max-w-[36ch] leading-relaxed text-ink/75">
+        @if (loading()) {
+          Los pedidos que llegaron en línea.
+        } @else if (requests().length) {
+          Hay {{ requests().length }} {{ requests().length === 1 ? 'pedido' : 'pedidos' }} para confirmar.
+        } @else {
+          No hay pedidos esperando confirmación.
         }
-      </tbody>
-    </ui-table>
-    <a [routerLink]="route.Secretaria" class="text-link mt-6">Abrir secretaría</a>
-  }
+      </p>
+      <a [routerLink]="route.Solicitudes" class="action-link mt-5">Ver solicitudes</a>
+    </section>
+  </nav>
+  <section>
+    <h2 class="font-serif text-2xl tracking-tight">Turnos de hoy</h2>
+    @if (loading()) {
+      <ui-skeleton class="mt-4" label="Cargando la agenda" />
+    } @else if (!appointments().length) {
+      <ui-empty message="Hoy no hay turnos cargados." />
+    } @else {
+      <div class="mt-4">
+        <ui-table>
+          <thead><tr><th>Hora</th><th>Paciente</th><th>Profesional</th><th>Estado</th></tr></thead>
+          <tbody>
+            @for (appointment of appointments(); track appointment.id) {
+              <tr>
+                <td class="whitespace-nowrap tabular-nums">{{ timeLabel(appointment.start) }}</td>
+                <td class="font-serif text-lg leading-tight">{{ appointment.patient }}</td>
+                <td>{{ appointment.professional }}</td>
+                <td><ui-badge [tone]="appointment.status === status.Cancelled || appointment.status === status.NoShow ? 'warn' : appointment.status === status.Completed ? 'ok' : 'muted'">{{ statusLabels[appointment.status] }}</ui-badge></td>
+              </tr>
+            }
+          </tbody>
+        </ui-table>
+      </div>
+    }
+  </section>
 }

@@ -12,7 +12,7 @@ public static class BillingMappings
             i.Id,
             i.AppointmentId,
             i.ClientId,
-            (i.Client.User.FirstName + " " + i.Client.User.LastName).Trim(),
+            (i.Client.FirstName + " " + i.Client.LastName).Trim(),
             i.Total,
             i.Status,
             i.PaymentMethod,

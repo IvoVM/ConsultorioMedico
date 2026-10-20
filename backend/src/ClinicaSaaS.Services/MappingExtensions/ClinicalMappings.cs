@@ -10,7 +10,7 @@ public static class ClinicalMappings
     public static IQueryable<PatientSummaryDto> ToPatientSummaries(this IQueryable<Client> query) =>
         query.Select(c => new PatientSummaryDto(
             c.Id,
-            (c.User.FirstName + " " + c.User.LastName).Trim(),
+            (c.FirstName + " " + c.LastName).Trim(),
             c.DocumentNumber,
             c.BirthDate,
             c.Phone,

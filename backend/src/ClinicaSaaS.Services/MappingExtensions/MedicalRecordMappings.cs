@@ -9,8 +9,8 @@ public static class MedicalRecordMappings
         query.Select(c => new ClientCard
         {
             ClientId = c.Id,
-            FirstName = c.User.FirstName,
-            LastName = c.User.LastName,
+            FirstName = c.FirstName,
+            LastName = c.LastName,
             DocumentNumber = c.DocumentNumber,
             BirthDate = c.BirthDate,
             Phone = c.Phone,
@@ -23,9 +23,9 @@ public static class MedicalRecordMappings
     public static IQueryable<MedicalRecordDto> ToMedicalRecordDtos(this IQueryable<Client> query) =>
         query.Select(c => new MedicalRecordDto(
             c.Id,
-            c.User.FirstName,
-            c.User.LastName,
-            c.User.Email ?? "",
+            c.FirstName,
+            c.LastName,
+            c.User != null ? c.User.Email ?? "" : "",
             c.DocumentNumber,
             c.BirthDate,
             c.Phone,

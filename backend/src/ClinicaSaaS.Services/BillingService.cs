@@ -99,20 +99,20 @@ public class BillingService(
         var source = store.Invoices.AsQueryable();
         if (query.Term is string term)
             source = source.Where(i =>
-                (i.Client.User.FirstName + " " + i.Client.User.LastName).ToLower().Contains(term) ||
+                (i.Client.FirstName + " " + i.Client.LastName).ToLower().Contains(term) ||
                 i.Total.ToString().Contains(term) ||
                 (i.Status == InvoiceStatus.Voided ? "anulado" : i.Status == InvoiceStatus.Paid ? "pagado" : "pendiente").Contains(term) ||
                 (i.PaymentMethod == PaymentMethod.Card ? "tarjeta" : i.PaymentMethod == PaymentMethod.Transfer ? "transferencia" : i.PaymentMethod == PaymentMethod.Cash ? "efectivo" : "").Contains(term));
         var ordered = (query.Sort, query.Desc) switch
         {
-            ("total", false) => source.OrderBy(i => i.Total).ThenBy(i => i.Client.User.LastName),
-            ("total", true) => source.OrderByDescending(i => i.Total).ThenBy(i => i.Client.User.LastName),
-            ("status", false) => source.OrderBy(i => i.Status == InvoiceStatus.Voided ? "Anulado" : i.Status == InvoiceStatus.Paid ? "Pagado" : "Pendiente").ThenBy(i => i.Client.User.LastName),
-            ("status", true) => source.OrderByDescending(i => i.Status == InvoiceStatus.Voided ? "Anulado" : i.Status == InvoiceStatus.Paid ? "Pagado" : "Pendiente").ThenBy(i => i.Client.User.LastName),
-            ("payment", false) => source.OrderBy(i => i.PaymentMethod == PaymentMethod.Card ? "Tarjeta" : i.PaymentMethod == PaymentMethod.Transfer ? "Transferencia" : i.PaymentMethod == PaymentMethod.Cash ? "Efectivo" : "").ThenBy(i => i.Client.User.LastName),
-            ("payment", true) => source.OrderByDescending(i => i.PaymentMethod == PaymentMethod.Card ? "Tarjeta" : i.PaymentMethod == PaymentMethod.Transfer ? "Transferencia" : i.PaymentMethod == PaymentMethod.Cash ? "Efectivo" : "").ThenBy(i => i.Client.User.LastName),
-            ("patient", true) => source.OrderByDescending(i => i.Client.User.LastName).ThenByDescending(i => i.Client.User.FirstName),
-            _ => source.OrderBy(i => i.Client.User.LastName).ThenBy(i => i.Client.User.FirstName)
+            ("total", false) => source.OrderBy(i => i.Total).ThenBy(i => i.Client.LastName),
+            ("total", true) => source.OrderByDescending(i => i.Total).ThenBy(i => i.Client.LastName),
+            ("status", false) => source.OrderBy(i => i.Status == InvoiceStatus.Voided ? "Anulado" : i.Status == InvoiceStatus.Paid ? "Pagado" : "Pendiente").ThenBy(i => i.Client.LastName),
+            ("status", true) => source.OrderByDescending(i => i.Status == InvoiceStatus.Voided ? "Anulado" : i.Status == InvoiceStatus.Paid ? "Pagado" : "Pendiente").ThenBy(i => i.Client.LastName),
+            ("payment", false) => source.OrderBy(i => i.PaymentMethod == PaymentMethod.Card ? "Tarjeta" : i.PaymentMethod == PaymentMethod.Transfer ? "Transferencia" : i.PaymentMethod == PaymentMethod.Cash ? "Efectivo" : "").ThenBy(i => i.Client.LastName),
+            ("payment", true) => source.OrderByDescending(i => i.PaymentMethod == PaymentMethod.Card ? "Tarjeta" : i.PaymentMethod == PaymentMethod.Transfer ? "Transferencia" : i.PaymentMethod == PaymentMethod.Cash ? "Efectivo" : "").ThenBy(i => i.Client.LastName),
+            ("patient", true) => source.OrderByDescending(i => i.Client.LastName).ThenByDescending(i => i.Client.FirstName),
+            _ => source.OrderBy(i => i.Client.LastName).ThenBy(i => i.Client.FirstName)
         };
         return await Pages.Materialize(ordered.ToInvoiceDtos(), query, ct);
     }

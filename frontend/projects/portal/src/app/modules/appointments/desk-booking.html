@@ -1,0 +1,29 @@
+<header class="mb-6">
+  <h2 class="font-serif text-3xl tracking-tight">Dar un turno</h2>
+  <p class="mt-2 max-w-prose text-sm leading-relaxed text-ink/70">
+    El turno es para un paciente. Con el documento se busca si ya tiene ficha. Si no la tiene, se crea recién cuando el horario queda confirmado, y la cuenta la crea esa persona al registrarse.
+  </p>
+</header>
+
+<form class="grid max-w-xl gap-4" (ngSubmit)="lookup()">
+  <ui-field label="Documento">
+    <input name="documentNumber" required maxlength="20" inputmode="numeric" autocomplete="off" [(ngModel)]="documentNumber" />
+  </ui-field>
+  @if (error() && !unknown()) { <p class="text-sm text-pulse" role="alert">{{ error() }}</p> }
+  <ui-button type="submit" [loading]="looking()">Buscar</ui-button>
+</form>
+
+@if (unknown()) {
+  <form class="mt-8 grid max-w-xl gap-4 border-t border-rule pt-8" (ngSubmit)="continueNew()">
+    <p class="text-sm leading-relaxed text-ink/70">No hay un paciente con ese documento. Cargá el nombre y el teléfono. La ficha se crea al confirmar el turno.</p>
+    <div class="grid gap-4 sm:grid-cols-2">
+      <ui-field label="Nombre"><input name="firstName" required maxlength="80" autocomplete="off" [(ngModel)]="firstName" /></ui-field>
+      <ui-field label="Apellido"><input name="lastName" required maxlength="80" autocomplete="off" [(ngModel)]="lastName" /></ui-field>
+    </div>
+    <ui-field label="Teléfono">
+      <input name="phone" type="tel" inputmode="tel" required maxlength="30" placeholder="+54 11 00000000" autocomplete="tel" [(ngModel)]="phone" />
+    </ui-field>
+    @if (error()) { <p class="text-sm text-pulse" role="alert">{{ error() }}</p> }
+    <ui-button type="submit">Elegir horario</ui-button>
+  </form>
+}

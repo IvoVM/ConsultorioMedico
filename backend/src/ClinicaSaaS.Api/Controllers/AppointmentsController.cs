@@ -15,6 +15,11 @@ public class AppointmentsController(ScheduleService schedule) : ApiController
     public Task<IActionResult> Book(BookAppointmentCommand command, CancellationToken ct) =>
         Run(() => schedule.BookAsync(command, ct));
 
+    [Authorize(Roles = $"{AppRoles.Secretary},{AppRoles.TenantAdmin}")]
+    [HttpPost("mostrador")]
+    public Task<IActionResult> BookAtDesk(DeskAppointmentCommand command, CancellationToken ct) =>
+        Run(() => schedule.BookAtDeskAsync(command, ct));
+
     [Authorize(Roles = $"{AppRoles.Secretary},{AppRoles.TenantAdmin},{AppRoles.Doctor}")]
     [HttpGet]
     public Task<IActionResult> ForDay([FromQuery] DateOnly date, [FromQuery] Guid? professionalId, CancellationToken ct) =>

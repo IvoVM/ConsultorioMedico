@@ -38,7 +38,7 @@ public static class ScheduleMappings
         query.Select(a => new AppointmentDto(
             a.Id,
             a.ClientId,
-            (a.Client.User.FirstName + " " + a.Client.User.LastName).Trim(),
+            (a.Client.FirstName + " " + a.Client.LastName).Trim(),
             a.ProfessionalId,
             (a.Professional.FirstName + " " + a.Professional.LastName).Trim(),
             a.LocationId,
@@ -57,7 +57,7 @@ public static class ScheduleMappings
         query.Select(w => new WaitlistEntryDto(
             w.Id,
             w.ClientId,
-            (w.Client.User.FirstName + " " + w.Client.User.LastName).Trim(),
+            (w.Client.FirstName + " " + w.Client.LastName).Trim(),
             w.ProfessionalId,
             w.LocationId,
             w.SpecialtyId,

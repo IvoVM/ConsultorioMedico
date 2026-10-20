@@ -1,7 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { AppointmentDto, AppointmentStatus, AppointmentsService, BillingService, BookingRequestDto, InvoiceDto, InvoiceStatus, PatientLookupDto, PatientsService, PaymentMethod, ScheduleService, SlotDto, WaitlistEntryDto, errorMessage } from 'sdk';
+import { AppointmentDto, AppointmentStatus, AppointmentsService, BillingService, InvoiceDto, InvoiceStatus, PatientLookupDto, PatientsService, PaymentMethod, ScheduleService, SlotDto, WaitlistEntryDto, errorMessage } from 'sdk';
 import { FechaPipe, UiActions, UiBadge, UiButton, UiCalendar, UiEmpty, UiField, UiSkeleton, UiTable, formatFecha } from 'ui';
 import { Observable, firstValueFrom } from 'rxjs';
 import { appointmentStatusLabels } from '../appointments/models/appointment-status-labels';
@@ -33,7 +33,6 @@ export class FrontDeskPage {
   readonly invoiceStatusLabels = invoiceStatusLabels;
   readonly paymentLabels = paymentLabels;
   readonly appointments = signal<AppointmentDto[]>([]);
-  readonly requests = signal<BookingRequestDto[]>([]);
   readonly waitlist = signal<WaitlistEntryDto[]>([]);
   readonly invoices = signal<InvoiceDto[]>([]);
   readonly slots = signal<SlotDto[]>([]);
@@ -201,41 +200,19 @@ export class FrontDeskPage {
     }
   }
 
-  async decide(item: BookingRequestDto, accepted: boolean) {
-    this.pending.set(`${accepted ? 'approve' : 'reject'}:${item.id}`);
-    this.error.set('');
-    this.notice.set('');
-    try {
-      if (accepted) {
-        await firstValueFrom(this.appointmentsApi.approveRequest(item.id));
-        this.notice.set(`${item.name} quedó el ${formatFecha(item.start)} con ${item.professional}.`);
-      } else {
-        await firstValueFrom(this.appointmentsApi.rejectRequest(item.id));
-        this.notice.set(`La solicitud de ${item.name} quedó rechazada.`);
-      }
-      await this.fetchDay();
-    } catch (error) {
-      this.error.set(errorMessage(error));
-    } finally {
-      this.pending.set('');
-    }
-  }
-
   async pay(item: InvoiceDto, method: PaymentMethod) {
     await this.run(`pay:${item.id}:${method}`, () => this.billing.payInvoice(item.id, { method }));
   }
 
   private async fetchDay() {
-      const [appointments, waitlist, invoices, requests] = await Promise.all([
+      const [appointments, waitlist, invoices] = await Promise.all([
         firstValueFrom(this.appointmentsApi.appointmentsForDay({ date: this.date })),
         firstValueFrom(this.appointmentsApi.waitlist()),
         firstValueFrom(this.billing.invoices()),
-        firstValueFrom(this.appointmentsApi.pendingRequests()),
       ]);
       this.appointments.set(appointments);
       this.waitlist.set(waitlist);
       this.invoices.set(invoices);
-      this.requests.set(requests);
   }
 
   private async run(key: string, call: () => Observable<unknown>) {

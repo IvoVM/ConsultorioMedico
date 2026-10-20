@@ -257,6 +257,8 @@ public class DemoDataSeeder(TenantDbContext db, UserManager<TenantUser> users)
         {
             Id = Guid.NewGuid(),
             UserId = user.Id,
+            FirstName = firstName,
+            LastName = lastName,
             DocumentNumber = document,
             BirthDate = birth,
             Phone = phone

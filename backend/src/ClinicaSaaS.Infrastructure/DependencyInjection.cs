@@ -100,6 +100,8 @@ public class ClinicSeeder(TenantDbContext db, UserManager<TenantUser> users, ICo
             {
                 Id = Guid.NewGuid(),
                 UserId = clientUser.Id,
+                FirstName = "Ana",
+                LastName = "Pérez",
                 DocumentNumber = "30111222",
                 BirthDate = new DateOnly(1990, 4, 12),
                 Phone = "1112345678"

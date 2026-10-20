@@ -39,12 +39,12 @@ public class AuthService(
         {
             var client = await clients.Clients
                 .Where(c => c.DocumentNumber == document || c.DocumentNumber.ToLower() == document.ToLower())
-                .Select(c => new { c.UserId, c.User.Email })
+                .Select(c => new { c.UserId, Email = c.User != null ? c.User.Email : null })
                 .FirstOrDefaultAsync(ct)
                 ?? throw new BusinessRuleException("El documento o la contraseña no coinciden.");
-            if (IsPlaceholder(client.Email))
+            if (client.UserId is not Guid patientUser || IsPlaceholder(client.Email))
                 throw new BusinessRuleException("Todavía no creaste la cuenta. Registrate con este documento para ver tus solicitudes.");
-            userId = client.UserId;
+            userId = patientUser;
         }
 
         var user = await users.FindByIdAsync(userId, ct)
@@ -61,12 +61,12 @@ public class AuthService(
             throw new BusinessRuleException("El documento no es válido.");
         var match = await clients.Clients
             .Where(client => client.DocumentNumber == document || client.DocumentNumber.ToLower() == document.ToLower())
-            .Select(client => new { client.UserId, client.User.Email })
+            .Select(client => new { client.UserId, Email = client.User != null ? client.User.Email : null })
             .FirstOrDefaultAsync(ct)
             ?? throw new BusinessRuleException("No hay una cuenta con ese documento. Creala con el mismo número para ver tus solicitudes.");
-        if (IsPlaceholder(match.Email))
+        if (match.UserId is not Guid patientUser || IsPlaceholder(match.Email))
             throw new BusinessRuleException("Todavía no creaste la cuenta. Registrate con este documento para ver tus solicitudes.");
-        var user = await users.FindByIdAsync(match.UserId, ct)
+        var user = await users.FindByIdAsync(patientUser, ct)
             ?? throw new BusinessRuleException("No hay una cuenta con ese documento. Creala con el mismo número para ver tus solicitudes.");
         if (user.Role != TenantRole.Patient)
             throw new BusinessRuleException("El documento o la contraseña no coinciden.");
@@ -118,26 +118,44 @@ public class AuthService(
         var email = AccountEmail.ForPatient(document);
         var existing = await clients.Clients
             .Where(client => client.DocumentNumber == document || client.DocumentNumber.ToLower() == document.ToLower())
-            .Select(client => new { client.Id, client.UserId, client.User.Email })
+            .Select(client => new { client.Id, client.UserId, Email = client.User != null ? client.User.Email : null })
             .FirstOrDefaultAsync(ct);
-        if (existing is not null && !IsPlaceholder(existing.Email))
+        if (existing is not null && existing.UserId is Guid && !IsPlaceholder(existing.Email))
             throw new ConflictException("Ya hay una cuenta con ese documento. Entrá con el documento y la contraseña.");
-        if (await users.FindByEmailAsync(email, ct) is { } owner && (existing is null || owner.Id != existing.UserId))
+        if (await users.FindByEmailAsync(email, ct) is { } owner && (existing?.UserId is null || owner.Id != existing.UserId))
             throw new ConflictException("Ya hay una cuenta con ese documento. Entrá con el documento y la contraseña.");
 
+        var firstName = command.FirstName.Trim();
+        var lastName = command.LastName.Trim();
+        var phone = PhoneRules.Require(command.Phone);
         TenantAccount user;
         Guid clientId;
-        if (existing is not null)
+        if (existing is not null && existing.UserId is Guid linkedUser)
         {
-            await users.UpdateProfileAsync(existing.UserId, command.FirstName.Trim(), command.LastName.Trim(), email, TenantRole.Patient, ct);
-            await users.SetPasswordAsync(existing.UserId, command.Password, ct);
+            await users.UpdateProfileAsync(linkedUser, firstName, lastName, email, TenantRole.Patient, ct);
+            await users.SetPasswordAsync(linkedUser, command.Password, ct);
             var client = await clients.GetAsync(existing.Id, ct)
                 ?? throw new NotFoundException("Paciente no encontrado.");
+            client.FirstName = firstName;
+            client.LastName = lastName;
             client.DocumentNumber = document;
-            client.Phone = PhoneRules.Require(command.Phone);
+            client.Phone = phone;
             await clients.SaveAsync(ct);
-            user = await users.FindByIdAsync(existing.UserId, ct)
+            user = await users.FindByIdAsync(linkedUser, ct)
                 ?? throw new NotFoundException("Usuario no encontrado.");
+            clientId = existing.Id;
+        }
+        else if (existing is not null)
+        {
+            user = await users.CreateAsync(email, command.Password, firstName, lastName, TenantRole.Patient, false, ct);
+            var client = await clients.GetAsync(existing.Id, ct)
+                ?? throw new NotFoundException("Paciente no encontrado.");
+            client.UserId = user.Id;
+            client.FirstName = firstName;
+            client.LastName = lastName;
+            client.DocumentNumber = document;
+            client.Phone = phone;
+            await clients.SaveAsync(ct);
             clientId = existing.Id;
         }
         else
@@ -154,6 +172,8 @@ public class AuthService(
             {
                 Id = Guid.NewGuid(),
                 UserId = user.Id,
+                FirstName = command.FirstName.Trim(),
+                LastName = command.LastName.Trim(),
                 DocumentNumber = document,
                 Phone = PhoneRules.Require(command.Phone)
             }, ct);
