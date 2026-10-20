@@ -15,7 +15,7 @@ import {
   clinicaSession,
   errorMessage,
 } from 'sdk';
-import { UiButton, UiEmpty, UiField, UiSelect, UiSpinner, formatFecha } from 'ui';
+import { UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSpinner, formatFecha, formatPhone } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { DeskPatient } from './desk-booking';
 import { clearPending, readPending, savePending } from './pending-booking';
@@ -27,7 +27,7 @@ interface DayOption {
 }
 
 @Component({
-  imports: [FormsModule, RouterLink, UiButton, UiField, UiEmpty, UiSelect, UiSpinner],
+  imports: [FormsModule, RouterLink, UiButton, UiField, UiEmpty, UiModal, UiSelect, UiSpinner],
   templateUrl: './book-appointment.html',
   styleUrl: './book-appointment.css',
 })
@@ -65,6 +65,8 @@ export class BookAppointmentPage {
   insurerId = '';
   memberNumber = '';
   readonly bookingFor = signal('');
+  readonly patientCard = signal<PatientCard | null>(null);
+  readonly detailsOpen = signal(false);
   private bookingPatientId: string | null = null;
   private deskDraft: DeskPatient | null = null;
 
@@ -101,6 +103,15 @@ export class BookAppointmentPage {
 
   specialtyName(id: string | null | undefined) {
     return this.specialties().find((item) => item.id === id)?.name ?? '';
+  }
+
+  isStaff() {
+    const role = this.session.role();
+    return role === TenantRole.Secretary || role === TenantRole.TenantAdmin;
+  }
+
+  canJoinWaitlist() {
+    return this.isStaff() && !!this.bookingPatientId && this.days().length === 0;
   }
 
   timeLabel(value: string) {
@@ -238,7 +249,7 @@ export class BookAppointmentPage {
     try {
       await firstValueFrom(
         this.appointmentsApi.joinWaitlist({
-          patientId: null,
+          patientId: this.isStaff() ? this.bookingPatientId : null,
           professionalId: this.professionalId() || null,
           locationId: this.locationId(),
           specialtyId: this.specialtyId() || this.specialties()[0]?.id || '',
@@ -246,7 +257,9 @@ export class BookAppointmentPage {
         }),
       );
       this.error.set('');
-      this.notice.set('Quedaste en la lista de espera.');
+      const name = this.patientCard()?.name;
+      this.notice.set(this.isStaff() && name ? `${name} quedó en la lista de espera.` : 'Quedaste en la lista de espera.');
+      this.detailsOpen.set(false);
     } catch (error) {
       this.notice.set('');
       this.error.set(errorMessage(error));
@@ -267,6 +280,14 @@ export class BookAppointmentPage {
         phone: draft.phone,
       };
       this.bookingFor.set(`${draft.lastName}, ${draft.firstName}`);
+      this.patientCard.set({
+        name: `${draft.lastName}, ${draft.firstName}`,
+        documentNumber: draft.documentNumber,
+        phone: formatPhone(draft.phone) ?? draft.phone,
+        birthDate: '',
+        insurance: '',
+        member: '',
+      });
       return;
     }
     const patientId = staff ? requested : null;
@@ -278,11 +299,22 @@ export class BookAppointmentPage {
     this.bookingPatientId = patientId;
     try {
       const history = await firstValueFrom(this.clinical.clinicalHistory(patientId ? { patientId } : {}));
-      this.bookingFor.set(patientId ? history.patient.name : '');
+      const patient = history.patient;
+      this.bookingFor.set(patientId ? patient.name : '');
       this.chart = {
-        insurance: history.patient.healthInsurance?.trim() ?? '',
-        member: history.patient.memberNumber?.trim() ?? '',
+        insurance: patient.healthInsurance?.trim() ?? '',
+        member: patient.memberNumber?.trim() ?? '',
       };
+      if (patientId) {
+        this.patientCard.set({
+          name: patient.name,
+          documentNumber: patient.documentNumber,
+          phone: formatPhone(patient.phone) ?? patient.phone,
+          birthDate: birthLabel(patient.birthDate),
+          insurance: this.chart.insurance,
+          member: this.chart.member,
+        });
+      }
     } catch {
       this.chart = null;
     }
@@ -481,6 +513,20 @@ export class BookAppointmentPage {
       this.booking.set('');
     }
   }
+}
+
+interface PatientCard {
+  name: string;
+  documentNumber: string;
+  phone: string;
+  birthDate: string;
+  insurance: string;
+  member: string;
+}
+
+function birthLabel(value: string) {
+  if (!value || value.startsWith('0001')) return '';
+  return formatFecha(value);
 }
 
 function isoDate(date: Date) {
