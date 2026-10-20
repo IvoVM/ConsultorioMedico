@@ -1,9 +1,13 @@
-import { Component, booleanAttribute, input, output } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, booleanAttribute, inject, input, output } from '@angular/core';
 
 @Component({
   selector: 'ui-modal',
   templateUrl: './ui-modal.component.html',
   styles: `
+    :host {
+      display: contents;
+    }
+
     .modal-close {
       display: grid;
       width: 2.25rem;
@@ -22,9 +26,18 @@ import { Component, booleanAttribute, input, output } from '@angular/core';
     }
   `,
 })
-export class UiModal {
+export class UiModal implements AfterViewInit, OnDestroy {
+  private readonly host = inject(ElementRef<HTMLElement>);
   readonly open = input(false);
   readonly title = input('');
   readonly wide = input(false, { transform: booleanAttribute });
   readonly closed = output<void>();
+
+  ngAfterViewInit() {
+    document.body.appendChild(this.host.nativeElement);
+  }
+
+  ngOnDestroy() {
+    this.host.nativeElement.remove();
+  }
 }
