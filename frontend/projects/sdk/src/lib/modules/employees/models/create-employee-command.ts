@@ -4,7 +4,6 @@ import type { TenantRole } from './tenant-role';
 export interface CreateEmployeeCommand {
   firstName: string;
   lastName: string;
-  email: string;
   documentNumber: string;
   role: TenantRole;
   licenseNumber?: string | null;

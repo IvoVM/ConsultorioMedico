@@ -25,12 +25,14 @@ public class MedicalRecordsService(
         if (!result.IsValid)
             throw new ValidationException(result.Errors);
 
-        var email = command.Email.Trim();
-        var document = command.DocumentNumber.Trim();
-        if (await users.FindByEmailAsync(email, ct) is not null)
-            throw new ConflictException("Ese email ya está registrado.");
+        var document = DocumentRules.Normalize(command.DocumentNumber);
+        if (!DocumentRules.IsValid(document))
+            throw new BusinessRuleException("El documento no es válido.");
+        var email = AccountEmail.ForPatient(document);
         if (await clients.Clients.AnyAsync(c => c.DocumentNumber.ToLower() == document.ToLower(), ct))
             throw new ConflictException("Ya hay un paciente con ese documento.");
+        if (await users.FindByEmailAsync(email, ct) is not null)
+            throw new ConflictException("Ya hay una cuenta con ese documento.");
 
         var password = TemporaryPassword.Generate();
         var account = await users.CreateAsync(
@@ -175,8 +177,14 @@ public class MedicalRecordsService(
         if (!result.IsValid)
             throw new ValidationException(result.Errors);
 
+        var document = DocumentRules.Normalize(command.DocumentNumber);
+        if (!DocumentRules.IsValid(document))
+            throw new BusinessRuleException("El documento no es válido.");
+        if (await clients.Clients.AnyAsync(c => c.Id != patientId && c.DocumentNumber.ToLower() == document.ToLower(), ct))
+            throw new ConflictException("Ya hay un paciente con ese documento.");
+
         var client = await clients.GetAsync(patientId, ct) ?? throw new NotFoundException("Paciente no encontrado.");
-        client.DocumentNumber = command.DocumentNumber.Trim();
+        client.DocumentNumber = document;
         client.BirthDate = command.BirthDate;
         client.Phone = PhoneRules.Require(command.Phone);
 

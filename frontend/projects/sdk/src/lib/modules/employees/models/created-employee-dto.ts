@@ -3,7 +3,7 @@ import type { TenantRole } from './tenant-role';
 
 export interface CreatedEmployeeDto {
   row: number;
-  email: string;
+  documentNumber: string;
   temporaryPassword: string;
   role: TenantRole;
 }

@@ -17,11 +17,11 @@ import { TablePager, listParams, queueSearch } from '../../table-pager';
 import { SortCol, SortState, nextSort } from '../../table-sort';
 import { roleLabels } from './models/role-labels';
 
-export const sampleCsv = `nombre,apellido,documento,email,rol,matricula,especialidad
-Camila,Suárez,40111222,camila.suarez@prueba.local,Medico,MN 55110,Clínica médica
-Pedro,Luna,40222333,pedro.luna@prueba.local,Secretario,,
-Inés,Molina,40333444,ines.molina@prueba.local,AdminTenant,,
-,soloapellido,12,correo-invalido,Ayudante,,
+export const sampleCsv = `nombre,apellido,documento,rol,matricula,especialidad
+Camila,Suárez,40111222,Medico,MN 55110,Clínica médica
+Pedro,Luna,40222333,Secretario,,
+Inés,Molina,40333444,AdminTenant,,
+,soloapellido,12,Ayudante,,
 `;
 
 const csvRoles: Record<string, string> = {
@@ -34,7 +34,7 @@ const csvRoles: Record<string, string> = {
 interface PreviewRow {
   row: number;
   name: string;
-  email: string;
+  documentNumber: string;
   role: string;
   ok: boolean;
   reason: string;
@@ -77,7 +77,6 @@ export class EmployeesPage {
   readonly csv = signal('');
   firstName = '';
   lastName = '';
-  email = '';
   documentNumber = '';
   role: TenantRole = TenantRole.Doctor;
   licenseNumber = '';
@@ -132,7 +131,6 @@ export class EmployeesPage {
     if (panel === 'cargar') {
       this.firstName = '';
       this.lastName = '';
-      this.email = '';
       this.documentNumber = '';
       this.role = TenantRole.Doctor;
       this.licenseNumber = '';
@@ -154,7 +152,6 @@ export class EmployeesPage {
     this.editing.set(person);
     this.firstName = person.firstName;
     this.lastName = person.lastName;
-    this.email = person.email;
     this.documentNumber = person.documentNumber ?? '';
     this.role = person.role;
     this.licenseNumber = person.licenseNumber ?? '';
@@ -194,7 +191,6 @@ export class EmployeesPage {
     return {
       firstName: this.firstName.trim(),
       lastName: this.lastName.trim(),
-      email: this.email.trim(),
       documentNumber: this.documentNumber.trim(),
       role: this.role,
       licenseNumber: this.role === TenantRole.Doctor ? this.licenseNumber.trim() || null : null,
@@ -223,7 +219,6 @@ export class EmployeesPage {
       this.panel.set('');
       this.firstName = '';
       this.lastName = '';
-      this.email = '';
       this.documentNumber = '';
       this.licenseNumber = '';
       await this.load();
@@ -272,34 +267,30 @@ function previewCsv(text: string): PreviewRow[] {
   return lines.slice(1).map((line, index) => {
     const cols = line.split(',');
     const name = `${cols[0]?.trim() ?? ''} ${cols[1]?.trim() ?? ''}`.trim();
-    const email = cols[3]?.trim() ?? '';
     const documentNumber = cols[2]?.trim() ?? '';
-    const role = cols[4]?.trim() ?? '';
-    const specialty = cols[6]?.trim() ?? '';
+    const role = cols[3]?.trim() ?? '';
+    const specialty = cols[5]?.trim() ?? '';
     const row = index + 2;
-    if (cols.length < 5) {
-      return bad(row, name, email, role, 'Faltan columnas.');
+    if (cols.length < 4) {
+      return bad(row, name, documentNumber, role, 'Faltan columnas.');
     }
-    if (!cols[0]?.trim() || !cols[1]?.trim() || !email) {
-      return bad(row, name, email, role, 'Nombre, apellido y email son obligatorios.');
+    if (!cols[0]?.trim() || !cols[1]?.trim()) {
+      return bad(row, name, documentNumber, role, 'Nombre y apellido son obligatorios.');
     }
     const document = documentNumber.replace(/[.\-\s]/g, '');
     if (document.length < 6 || document.length > 20) {
-      return bad(row, name, email, role, 'El documento tiene que tener entre 6 y 20 caracteres.');
-    }
-    if (!email.includes('@') || email.startsWith('@') || email.endsWith('@')) {
-      return bad(row, name, email, role, 'El email no es válido.');
+      return bad(row, name, documentNumber, role, 'El documento tiene que tener entre 6 y 20 caracteres.');
     }
     if (!csvRoles[role.toLowerCase()]) {
-      return bad(row, name, email, role, 'El rol tiene que ser Medico, Secretario o AdminTenant.');
+      return bad(row, name, documentNumber, role, 'El rol tiene que ser Medico, Secretario o AdminTenant.');
     }
     if (csvRoles[role.toLowerCase()] === 'Médico' && !specialty) {
-      return bad(row, name, email, role, 'Un médico necesita una especialidad ya cargada.');
+      return bad(row, name, documentNumber, role, 'Un médico necesita una especialidad ya cargada.');
     }
-    return { row, name, email, role: csvRoles[role.toLowerCase()], ok: true, reason: 'Se va a cargar.' };
+    return { row, name, documentNumber, role: csvRoles[role.toLowerCase()], ok: true, reason: 'Se va a cargar.' };
   });
 }
 
-function bad(row: number, name: string, email: string, role: string, reason: string): PreviewRow {
-  return { row, name: name || '—', email: email || '—', role: role || '—', ok: false, reason: `Esta fila no se carga: ${reason}` };
+function bad(row: number, name: string, documentNumber: string, role: string, reason: string): PreviewRow {
+  return { row, name: name || '—', documentNumber: documentNumber || '—', role: role || '—', ok: false, reason: `Esta fila no se carga: ${reason}` };
 }

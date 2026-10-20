@@ -64,10 +64,10 @@
 @if (created().length) {
   <h2 class="mb-4 mt-10 font-serif text-2xl tracking-tight">Cargados</h2>
   <ui-table>
-    <thead><tr><th>Fila</th><th>Email</th><th>Rol</th><th>Clave inicial</th></tr></thead>
+    <thead><tr><th>Fila</th><th>Documento</th><th>Rol</th><th>Clave inicial</th></tr></thead>
     <tbody>
-      @for (item of created(); track item.email) {
-        <tr><td>{{ item.row }}</td><td>{{ item.email }}</td><td>{{ roleLabels[item.role] }}</td><td>{{ item.temporaryPassword }}</td></tr>
+      @for (item of created(); track item.row) {
+        <tr><td>{{ item.row }}</td><td>{{ item.documentNumber }}</td><td>{{ roleLabels[item.role] }}</td><td>{{ item.temporaryPassword }}</td></tr>
       }
     </tbody>
   </ui-table>
@@ -98,8 +98,7 @@
       <div class="grid gap-4 sm:grid-cols-2">
         <ui-field label="Nombre"><input name="firstName" required maxlength="80" autocomplete="off" [(ngModel)]="firstName" /></ui-field>
         <ui-field label="Apellido"><input name="lastName" required maxlength="80" autocomplete="off" [(ngModel)]="lastName" /></ui-field>
-        <ui-field label="Documento"><input name="documentNumber" required maxlength="20" autocomplete="off" [(ngModel)]="documentNumber" /></ui-field>
-        <ui-field label="Email"><input name="email" type="email" required maxlength="120" autocomplete="off" [(ngModel)]="email" /></ui-field>
+        <ui-field label="Documento"><input name="documentNumber" required maxlength="20" inputmode="numeric" autocomplete="off" [(ngModel)]="documentNumber" /></ui-field>
         <ui-field label="Rol">
           <ui-select name="role" [(ngModel)]="role" [options]="roleOptions" />
         </ui-field>
@@ -140,7 +139,7 @@
 @if (panel() === 'importar') {
   <ui-modal [open]="true" [wide]="true" title="Importar empleados" (closed)="panel.set('')">
     <p class="text-sm leading-relaxed text-ink/75">
-      Cada fila es una persona. El orden es nombre, apellido, documento, email, rol, matrícula y especialidad.
+      Cada fila es una persona. El orden es nombre, apellido, documento, rol, matrícula y especialidad.
       El rol se escribe Medico, Secretario o AdminTenant. La especialidad tiene que existir ya, con el mismo nombre.
       Descargá el archivo de ejemplo: las tres primeras filas están bien y la última no, porque le faltan datos.
     </p>
@@ -158,13 +157,13 @@
     @if (preview().length && !created().length && !rejected().length) {
       <h3 class="mb-3 mt-8 font-serif text-xl">Cómo se lee cada fila</h3>
       <ui-table>
-        <thead><tr><th>Fila</th><th>Persona</th><th>Email</th><th>Rol</th><th>Resultado</th></tr></thead>
+        <thead><tr><th>Fila</th><th>Persona</th><th>Documento</th><th>Rol</th><th>Resultado</th></tr></thead>
         <tbody>
           @for (item of preview(); track item.row) {
             <tr [class.text-pulse]="!item.ok">
               <td>{{ item.row }}</td>
               <td>{{ item.name }}</td>
-              <td>{{ item.email }}</td>
+              <td>{{ item.documentNumber }}</td>
               <td>{{ item.role }}</td>
               <td>{{ item.reason }}</td>
             </tr>

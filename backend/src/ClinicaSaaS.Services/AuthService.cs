@@ -115,7 +115,7 @@ public class AuthService(
         var document = DocumentRules.Normalize(command.DocumentNumber);
         if (!DocumentRules.IsValid(document))
             throw new BusinessRuleException("El documento no es válido.");
-        var email = AccountEmail(document);
+        var email = AccountEmail.ForPatient(document);
         var existing = await clients.Clients
             .Where(client => client.DocumentNumber == document || client.DocumentNumber.ToLower() == document.ToLower())
             .Select(client => new { client.Id, client.UserId, client.User.Email })
@@ -177,12 +177,6 @@ public class AuthService(
     }
 
     public Task LogoutAsync(string? rawToken, CancellationToken ct) => sessions.RevokeAsync(rawToken, ct);
-
-    private static string AccountEmail(string document)
-    {
-        var local = new string(document.Where(char.IsLetterOrDigit).ToArray());
-        return $"{local}@pacientes.local";
-    }
 
     private static bool IsPlaceholder(string? email) =>
         email is not null && email.StartsWith("solicitud.", StringComparison.OrdinalIgnoreCase) && email.EndsWith("@pacientes.local", StringComparison.OrdinalIgnoreCase);

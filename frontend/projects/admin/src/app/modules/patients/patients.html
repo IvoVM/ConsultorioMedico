@@ -89,7 +89,6 @@
           <ui-field label="Documento"><input name="documentNumber" required maxlength="20" inputmode="numeric" autocomplete="off" [(ngModel)]="documentNumber" /></ui-field>
           <ui-field label="Fecha de nacimiento"><input name="birthDate" type="date" required [max]="today" [(ngModel)]="birthDate" /></ui-field>
           <ui-field label="Teléfono"><input name="phone" type="tel" inputmode="tel" required maxlength="30" placeholder="+54 11 00000000" autocomplete="tel" [(ngModel)]="phone" (blur)="normalizePhone('phone')" /></ui-field>
-          <ui-field label="Email"><input name="email" type="email" required maxlength="120" autocomplete="off" [(ngModel)]="email" /></ui-field>
         </div>
         <p class="mt-2 text-sm text-ink/55">Entra con el documento. La clave temporal aparece una sola vez, después del alta.</p>
       </fieldset>

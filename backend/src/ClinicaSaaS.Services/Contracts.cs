@@ -41,13 +41,13 @@ public record ProfessionalDto(Guid Id, string FirstName, string LastName, string
 public record AssignSpecialtyCommand(Guid? SpecialtyId);
 
 public record EmployeeDto(Guid Id, string FirstName, string LastName, string Email, string? DocumentNumber, TenantRole Role, string? LicenseNumber, string? Specialty, Guid? SpecialtyId, bool Active, IReadOnlyList<Guid> InsurerIds);
-public record CreateEmployeeCommand(string FirstName, string LastName, string Email, string DocumentNumber, TenantRole Role, string? LicenseNumber, Guid? SpecialtyId, IReadOnlyList<Guid>? InsurerIds = null);
-public record UpdateEmployeeCommand(string FirstName, string LastName, string Email, string DocumentNumber, TenantRole Role, string? LicenseNumber, Guid? SpecialtyId, IReadOnlyList<Guid>? InsurerIds = null);
+public record CreateEmployeeCommand(string FirstName, string LastName, string DocumentNumber, TenantRole Role, string? LicenseNumber, Guid? SpecialtyId, IReadOnlyList<Guid>? InsurerIds = null);
+public record UpdateEmployeeCommand(string FirstName, string LastName, string DocumentNumber, TenantRole Role, string? LicenseNumber, Guid? SpecialtyId, IReadOnlyList<Guid>? InsurerIds = null);
 public record AccountUserDto(Guid Id, string FirstName, string LastName, string Email, TenantRole Role, string? DocumentNumber);
 public record SetEmployeeActiveCommand(bool Active);
 public record CreatedEmployeeAccountDto(EmployeeDto Employee, string TemporaryPassword);
 public record ImportEmployeesCommand(string Csv);
-public record CreatedEmployeeDto(int Row, string Email, string TemporaryPassword, TenantRole Role);
+public record CreatedEmployeeDto(int Row, string DocumentNumber, string TemporaryPassword, TenantRole Role);
 public record RejectedRowDto(int Row, string Reason);
 public record EmployeeImportDto(IReadOnlyList<CreatedEmployeeDto> Created, IReadOnlyList<RejectedRowDto> Rejected);
 
@@ -140,7 +140,6 @@ public record ClinicalHistoryDto(PatientSummaryDto Patient, IReadOnlyList<Encoun
 public record PatientSummaryDto(Guid Id, string Name, string DocumentNumber, DateOnly BirthDate, string Phone, string? HealthInsurance, string? MemberNumber);
 
 public record CreatePatientCommand(
-    string Email,
     string FirstName,
     string LastName,
     string DocumentNumber,

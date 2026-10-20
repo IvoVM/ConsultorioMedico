@@ -62,43 +62,42 @@ public class EmployeesService(ITenantUserStore users, IEmployeeStore employees, 
             command.FirstName,
             command.LastName,
             command.DocumentNumber,
-            command.Email,
             RoleText(command.Role),
             command.LicenseNumber,
             command.Role == TenantRole.Doctor ? await SpecialtyNameAsync(command.SpecialtyId, ct) : null,
             ct);
         if (command.Role == TenantRole.Doctor && command.InsurerIds is { Count: > 0 })
             await employees.SetInsurersAsync(created.UserId, command.InsurerIds, ct);
-        await audit.RecordAsync(currentUser.Id, "alta", "Empleado", created.UserId.ToString(), created.Email, ct);
+        await audit.RecordAsync(currentUser.Id, "alta", "Empleado", created.UserId.ToString(), created.Document, ct);
         var employee = await employees.Employees.Where(e => e.UserId == created.UserId).ToEmployeeDtos().FirstAsync(ct);
-        return new CreatedEmployeeAccountDto(employee, created.Password);
+        return new CreatedEmployeeAccountDto(employee, created.Document);
     }
 
     public async Task<EmployeeDto> UpdateAsync(Guid id, UpdateEmployeeCommand command, CancellationToken ct)
     {
         var current = await employees.Employees.Where(e => e.UserId == id)
-            .Select(e => new { e.User.Role, e.IsActive })
+            .Select(e => new { e.User.Role, e.User.Email, e.IsActive })
             .FirstOrDefaultAsync(ct) ?? throw new NotFoundException("Empleado no encontrado.");
 
         var firstName = command.FirstName?.Trim() ?? "";
         var lastName = command.LastName?.Trim() ?? "";
-        var email = command.Email?.Trim() ?? "";
         var document = RequireDocument(command.DocumentNumber);
         var license = string.IsNullOrWhiteSpace(command.LicenseNumber) ? null : command.LicenseNumber.Trim();
-        if (firstName.Length == 0 || lastName.Length == 0 || email.Length == 0)
-            throw new BusinessRuleException("Nombre, apellido y email son obligatorios.");
+        if (firstName.Length == 0 || lastName.Length == 0)
+            throw new BusinessRuleException("Nombre y apellido son obligatorios.");
         if (firstName.Length > 80 || lastName.Length > 80)
             throw new BusinessRuleException("El nombre y el apellido no pueden pasar de 80 caracteres.");
-        if (!email.Contains('@') || email.StartsWith('@') || email.EndsWith('@') || email.Length > 120)
-            throw new BusinessRuleException("El email no es válido.");
         if (command.Role is not (TenantRole.Doctor or TenantRole.Secretary or TenantRole.TenantAdmin))
             throw new BusinessRuleException("El rol tiene que ser médico, secretario o administrador.");
         if (id == currentUser.Id && command.Role != current.Role)
             throw new BusinessRuleException("No podés cambiar tu propio rol.");
 
+        var email = current.Email ?? "";
+        if (email.EndsWith("@personal.local", StringComparison.OrdinalIgnoreCase))
+            email = AccountEmail.ForStaff(document);
         var taken = await users.FindByEmailAsync(email, ct);
         if (taken is not null && taken.Id != id)
-            throw new BusinessRuleException("Ese email ya está cargado.");
+            throw new BusinessRuleException("Ese documento ya está cargado.");
         await EnsureDocumentFreeAsync(document, id, ct);
 
         Guid? specialtyId = null;
@@ -166,9 +165,9 @@ public class EmployeesService(ITenantUserStore users, IEmployeeStore employees, 
         {
             var row = i + 1;
             var cols = lines[i].Split(',');
-            if (cols.Length < 5)
+            if (cols.Length < 4)
             {
-                rejected.Add(Skip(row, "No tiene el formato correcto: faltan columnas. Cada fila es nombre, apellido, documento, email, rol, matrícula y especialidad."));
+                rejected.Add(Skip(row, "No tiene el formato correcto: faltan columnas. Cada fila es nombre, apellido, documento, rol, matrícula y especialidad."));
                 continue;
             }
 
@@ -179,11 +178,10 @@ public class EmployeesService(ITenantUserStore users, IEmployeeStore employees, 
                     cols[1],
                     cols[2],
                     cols[3],
-                    cols[4],
+                    cols.Length > 4 ? cols[4] : null,
                     cols.Length > 5 ? cols[5] : null,
-                    cols.Length > 6 ? cols[6] : null,
                     ct);
-                created.Add(new CreatedEmployeeDto(row, account.Email, account.Password, account.Role));
+                created.Add(new CreatedEmployeeDto(row, account.Document, account.Document, account.Role));
             }
             catch (BusinessRuleException ex)
             {
@@ -199,7 +197,6 @@ public class EmployeesService(ITenantUserStore users, IEmployeeStore employees, 
         string? firstName,
         string? lastName,
         string? documentNumber,
-        string? email,
         string? roleText,
         string? licenseNumber,
         string? specialtyName,
@@ -207,21 +204,19 @@ public class EmployeesService(ITenantUserStore users, IEmployeeStore employees, 
     {
         firstName = firstName?.Trim() ?? "";
         lastName = lastName?.Trim() ?? "";
-        email = email?.Trim() ?? "";
         roleText = roleText?.Trim() ?? "";
         licenseNumber = string.IsNullOrWhiteSpace(licenseNumber) ? null : licenseNumber.Trim();
         specialtyName = string.IsNullOrWhiteSpace(specialtyName) ? null : specialtyName.Trim();
         var document = RequireDocument(documentNumber);
+        var email = AccountEmail.ForStaff(document);
 
-        if (firstName.Length == 0 || lastName.Length == 0 || email.Length == 0)
-            throw new BusinessRuleException("No tiene el formato correcto: nombre, apellido y email son obligatorios.");
-        if (!email.Contains('@') || email.StartsWith('@') || email.EndsWith('@'))
-            throw new BusinessRuleException("No tiene el formato correcto: el email no es válido.");
+        if (firstName.Length == 0 || lastName.Length == 0)
+            throw new BusinessRuleException("No tiene el formato correcto: nombre y apellido son obligatorios.");
         if (!CsvRoles.TryGetValue(roleText, out var role))
             throw new BusinessRuleException("No tiene el formato correcto: el rol tiene que ser Medico, Secretario o AdminTenant.");
 
         if (await users.FindByEmailAsync(email, ct) is not null)
-            throw new BusinessRuleException("Ese email ya está cargado, así que esta persona no se agrega.");
+            throw new BusinessRuleException("Ese documento ya está cargado, así que esta persona no se agrega.");
         await EnsureDocumentFreeAsync(document, null, ct);
 
         Guid? specialtyId = null;
@@ -246,7 +241,7 @@ public class EmployeesService(ITenantUserStore users, IEmployeeStore employees, 
             SpecialtyId = specialtyId,
             IsActive = true
         }, ct);
-        return new NewAccount(account.Id, account.Email, document, role);
+        return new NewAccount(account.Id, document, role);
     }
 
     private static string RequireDocument(string? value)
@@ -288,5 +283,5 @@ public class EmployeesService(ITenantUserStore users, IEmployeeStore employees, 
     private static RejectedRowDto Skip(int row, string reason) =>
         new(row, $"La fila {row} no se carga. {reason}");
 
-    private sealed record NewAccount(Guid UserId, string Email, string Password, TenantRole Role);
+    private sealed record NewAccount(Guid UserId, string Document, TenantRole Role);
 }

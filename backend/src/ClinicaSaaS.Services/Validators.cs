@@ -51,7 +51,6 @@ public class CreatePatientValidator : AbstractValidator<CreatePatientCommand>
 {
     public CreatePatientValidator(TimeProvider clock)
     {
-        RuleFor(x => x.Email).NotEmpty().EmailAddress();
         RuleFor(x => x.FirstName).NotEmpty().MaximumLength(80);
         RuleFor(x => x.LastName).NotEmpty().MaximumLength(80);
         RuleFor(x => x.DocumentNumber).NotEmpty().MaximumLength(20);

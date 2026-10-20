@@ -33,7 +33,6 @@ export class PatientsPage {
 
   firstName = '';
   lastName = '';
-  email = '';
   documentNumber = '';
   birthDate = '';
   phone = '';
@@ -107,7 +106,6 @@ export class PatientsPage {
     try {
       const created = await firstValueFrom(
         this.patientsApi.createPatient({
-          email: this.email.trim(),
           firstName: this.firstName.trim(),
           lastName: this.lastName.trim(),
           documentNumber: this.documentNumber.trim(),

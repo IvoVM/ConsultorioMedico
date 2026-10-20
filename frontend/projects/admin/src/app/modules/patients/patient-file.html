@@ -22,7 +22,6 @@
         <span>DNI {{ f.documentNumber }}</span>
         @if (age() !== null) { <span>{{ age() }} años</span> }
         <span>{{ f.phone }}</span>
-        <span>{{ record()?.email }}</span>
       </p>
       <screen-note
         screen="Ficha del paciente"
@@ -60,11 +59,8 @@
           <ui-field label="Documento"><input name="documentNumber" required maxlength="20" inputmode="numeric" [(ngModel)]="f.documentNumber" /></ui-field>
           <ui-field label="Fecha de nacimiento"><input name="birthDate" type="date" required [max]="today" [(ngModel)]="f.birthDate" /></ui-field>
           <ui-field label="Teléfono"><input name="phone" type="tel" inputmode="tel" required maxlength="30" placeholder="+54 11 00000000" [(ngModel)]="f.phone" (blur)="normalizePhone('phone')" /></ui-field>
-          <ui-field label="Email">
-            <input name="email" type="email" disabled [value]="record()?.email ?? ''" />
-          </ui-field>
         </div>
-        <p class="mt-2 text-sm text-ink/55">El ingreso es con el documento. El email queda en la ficha y no se cambia desde acá.</p>
+        <p class="mt-2 text-sm text-ink/55">Entra con el documento.</p>
       </fieldset>
 
       <fieldset id="coverage" class="record-section">
