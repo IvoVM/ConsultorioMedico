@@ -23,6 +23,20 @@ export enum AppointmentKind {
 }
 
 export type AppointmentType = { id: string; name: string; durationMinutes: number; specialtyId?: string | null; kind: AppointmentKind };
+export type Insurer = { id: string; name: string };
+export type BookingRequest = {
+  id: string;
+  name: string;
+  phone: string;
+  documentNumber: string;
+  specialty: string;
+  professional: string;
+  appointmentType: string;
+  start: string;
+  insurer?: string | null;
+  memberNumber?: string | null;
+  status: string;
+};
 export type Professional = { id: string; firstName: string; lastName: string; email: string; licenseNumber?: string | null; specialtyId?: string | null };
 export type Slot = {
   professionalId: string;
@@ -201,12 +215,10 @@ export async function login(documentNumber: string, password: string) {
 }
 
 export async function register(body: {
-  email: string;
   password: string;
   firstName: string;
   lastName: string;
   documentNumber: string;
-  birthDate: string;
   phone: string;
 }) {
   const response = await fetch(`${apiUrl}/api/acceso/registro`, {
@@ -251,6 +263,25 @@ export const api = {
   importEmployees: (csv: string) => request<{ created: { email: string; temporaryPassword: string }[]; rejected: { row: number; reason: string }[] }>('/api/empleados/importar', { method: 'POST', body: JSON.stringify({ csv }) }),
   availability: (locationId: string, specialtyId: string, date: string, professionalId?: string) =>
     request<Slot[]>(`/api/disponibilidad${query({ locationId, specialtyId, date, professionalId })}`, {}, false),
+  openDays: (specialtyId: string, year: number, month: number, appointmentTypeIds: string[]) => {
+    const params = new URLSearchParams({ specialtyId, year: String(year), month: String(month) });
+    for (const id of appointmentTypeIds) params.append('appointmentTypeIds', id);
+    return request<string[]>(`/api/disponibilidad/dias?${params}`, {}, false);
+  },
+  professionalInsurers: (professionalId: string) => request<Insurer[]>(`/api/profesionales/${professionalId}/obras-sociales`, {}, false),
+  createRequest: (body: {
+    specialtyId: string;
+    professionalId: string;
+    locationId: string;
+    appointmentTypeId: string;
+    start: string;
+    name: string;
+    phone: string;
+    documentNumber: string;
+    insurerId?: string | null;
+    memberNumber?: string | null;
+  }) => request<BookingRequest>('/api/solicitudes', { method: 'POST', body: JSON.stringify(body) }, false),
+  myRequests: () => request<BookingRequest[]>('/api/solicitudes/mias'),
   book: (body: { patientId?: string | null; professionalId: string; locationId: string; appointmentTypeId: string; start: string; visitReason?: string | null }) =>
     request<Appointment>('/api/turnos', { method: 'POST', body: JSON.stringify(body) }),
   day: (date: string, professionalId?: string) => request<Appointment[]>(`/api/turnos${query({ date, professionalId })}`),

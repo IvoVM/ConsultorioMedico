@@ -1,7 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { login } from '../src/api';
-import { hold } from '../src/hold';
 import { Button, ErrorText, Field, Screen } from '../src/ui';
 
 export default function Ingreso() {
@@ -16,7 +15,7 @@ export default function Ingreso() {
     setError('');
     try {
       await login(documentNumber.trim(), password);
-      router.replace(hold.get() ? '/(tabs)/reservar' : '/(tabs)/panel');
+      router.replace('/(tabs)/panel');
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'No se pudo ingresar.');
     } finally {

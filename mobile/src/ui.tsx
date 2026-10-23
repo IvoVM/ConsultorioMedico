@@ -85,6 +85,37 @@ export function ErrorText({ text }: { text: string }) {
   return text ? <Text style={styles.error}>{text}</Text> : null;
 }
 
+export function Option({
+  title,
+  detail,
+  selected,
+  onPress,
+}: {
+  title: string;
+  detail?: string;
+  selected?: boolean;
+  onPress: () => void;
+}) {
+  const scale = useSharedValue(1);
+  const animated = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  return (
+    <Press
+      accessibilityRole="button"
+      onPress={onPress}
+      onPressIn={() => {
+        if (!reduceMotion) scale.value = withSpring(0.98, { damping: 18, stiffness: 280 });
+      }}
+      onPressOut={() => {
+        scale.value = withSpring(1, { damping: 16, stiffness: 220 });
+      }}
+      style={[styles.option, selected && styles.optionOn, animated]}
+    >
+      <Text style={[styles.optionTitle, selected && styles.optionTitleOn]}>{title}</Text>
+      {detail ? <Text style={[styles.optionDetail, selected && styles.optionDetailOn]}>{detail}</Text> : null}
+    </Press>
+  );
+}
+
 export function Choice({
   label,
   selected,
@@ -164,8 +195,24 @@ const styles = StyleSheet.create({
   card: { backgroundColor: colors.white, borderRadius: 8, padding: 14, gap: 4, borderWidth: 1, borderColor: colors.rule },
   empty: { fontFamily: type.sans, color: colors.ink, fontSize: 16, lineHeight: 22 },
   error: { fontFamily: type.sans, color: colors.pulse, fontSize: 15, lineHeight: 21 },
-  choice: { paddingVertical: 10, paddingHorizontal: 12, borderRadius: 4, backgroundColor: colors.mist },
+  option: {
+    minHeight: 72,
+    borderRadius: 4,
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.rule,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    justifyContent: 'center',
+    gap: 2,
+  },
+  optionOn: { backgroundColor: colors.deep, borderColor: colors.deep },
+  optionTitle: { fontFamily: type.sansBold, fontSize: 18, lineHeight: 24, color: colors.ink },
+  optionTitleOn: { color: colors.white },
+  optionDetail: { fontFamily: type.sans, fontSize: 15, lineHeight: 20, color: colors.ink },
+  optionDetailOn: { color: 'rgba(255,255,255,0.85)' },
+  choice: { minHeight: 48, paddingVertical: 12, paddingHorizontal: 16, borderRadius: 4, backgroundColor: colors.mist, justifyContent: 'center' },
   choiceOn: { backgroundColor: colors.deep },
-  choiceText: { fontFamily: type.sansBold, color: colors.ink },
+  choiceText: { fontFamily: type.sansBold, color: colors.ink, fontSize: 16 },
   choiceTextOn: { color: colors.white },
 });

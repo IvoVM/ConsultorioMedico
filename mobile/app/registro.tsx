@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { formatPhone, passwordIssue } from '../src/account';
 import { register } from '../src/api';
@@ -6,7 +6,15 @@ import { Button, ErrorText, Field, Screen } from '../src/ui';
 
 export default function Registro() {
   const router = useRouter();
-  const [form, setForm] = useState({ email: '', password: '', confirm: '', firstName: '', lastName: '', documentNumber: '', birthDate: '', phone: '' });
+  const params = useLocalSearchParams<{ documento?: string; nombre?: string; apellido?: string; telefono?: string }>();
+  const [form, setForm] = useState({
+    password: '',
+    confirm: '',
+    firstName: params.nombre ?? '',
+    lastName: params.apellido ?? '',
+    documentNumber: params.documento ?? '',
+    phone: params.telefono ?? '',
+  });
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const set = (key: keyof typeof form) => (value: string) => setForm((current) => ({ ...current, [key]: value }));
@@ -27,10 +35,20 @@ export default function Registro() {
       setError('El teléfono no es válido.');
       return;
     }
+    const documentNumber = form.documentNumber.replace(/[.\-\s]/g, '');
+    if (documentNumber.length < 6 || documentNumber.length > 20) {
+      setError('El documento no es válido.');
+      return;
+    }
     setBusy(true);
     try {
-      const { confirm: _confirm, ...body } = form;
-      await register({ ...body, email: form.email.trim(), phone });
+      await register({
+        password: form.password,
+        firstName: form.firstName.trim(),
+        lastName: form.lastName.trim(),
+        documentNumber,
+        phone,
+      });
       router.replace('/(tabs)/panel');
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'No se pudo crear la cuenta.');
@@ -40,15 +58,13 @@ export default function Registro() {
   }
 
   return (
-    <Screen title="Cuenta de paciente" subtitle="La fecha de nacimiento va como AAAA-MM-DD.">
+    <Screen title="Cuenta de paciente" subtitle="Entrá después con el documento. El teléfono va como +54 11 00000000.">
       <Field label="Nombre" value={form.firstName} onChangeText={set('firstName')} />
       <Field label="Apellido" value={form.lastName} onChangeText={set('lastName')} />
-      <Field label="Email" autoCapitalize="none" keyboardType="email-address" value={form.email} onChangeText={set('email')} />
+      <Field label="Documento" autoComplete="username" value={form.documentNumber} onChangeText={set('documentNumber')} />
+      <Field label="Teléfono" keyboardType="phone-pad" placeholder="+54 11 00000000" autoComplete="tel" value={form.phone} onChangeText={set('phone')} onBlur={() => { const formatted = formatPhone(form.phone); if (formatted) set('phone')(formatted); }} />
       <Field label="Contraseña" secureTextEntry value={form.password} onChangeText={set('password')} />
       <Field label="Confirmar contraseña" secureTextEntry value={form.confirm} onChangeText={set('confirm')} />
-      <Field label="Documento" value={form.documentNumber} onChangeText={set('documentNumber')} />
-      <Field label="Nacimiento" placeholder="1990-04-12" value={form.birthDate} onChangeText={set('birthDate')} />
-      <Field label="Teléfono" keyboardType="phone-pad" placeholder="+54 11 00000000" value={form.phone} onChangeText={set('phone')} onBlur={() => { const formatted = formatPhone(form.phone); if (formatted) set('phone')(formatted); }} />
       <ErrorText text={error} />
       <Button label={busy ? 'Creando…' : 'Crear cuenta'} disabled={busy} onPress={() => void submit()} />
     </Screen>

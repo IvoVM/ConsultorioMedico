@@ -1,3 +1,9 @@
+export enum BookingRequestStatus {
+  Pending = 'Pending',
+  Approved = 'Approved',
+  Rejected = 'Rejected',
+}
+
 export enum AppointmentStatus {
   Booked = 'Booked',
   CheckedIn = 'CheckedIn',
