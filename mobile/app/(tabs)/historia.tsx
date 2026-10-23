@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Text } from 'react-native';
 import { api, fechaCorta, type History } from '../../src/api';
 import { TenantRole } from '../../src/role';
@@ -12,14 +12,37 @@ export default function Historia() {
   const [matches, setMatches] = useState<{ patientId: string; firstName: string; lastName: string }[]>([]);
   const [history, setHistory] = useState<History | null>(null);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const staff = current && current.role !== TenantRole.Patient;
 
-  async function open(patientId?: string) {
+  useEffect(() => {
+    if (!current || current.role !== TenantRole.Patient) return;
+    let alive = true;
+    setLoading(true);
+    api.history()
+      .then((next) => {
+        if (alive) setHistory(next);
+      })
+      .catch((reason: unknown) => {
+        if (alive) setError(reason instanceof Error ? reason.message : 'No se pudo abrir la historia.');
+      })
+      .finally(() => {
+        if (alive) setLoading(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [current]);
+
+  async function open(patientId: string) {
     setError('');
+    setLoading(true);
     try {
       setHistory(await api.history(patientId));
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'No se pudo abrir la historia.');
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -38,10 +61,9 @@ export default function Historia() {
             <Button key={item.patientId} tone="ghost" label={`${item.lastName}, ${item.firstName}`} onPress={() => void open(item.patientId)} />
           ))}
         </>
-      ) : (
-        <Button label="Ver mi historia" onPress={() => void open()} />
-      )}
+      ) : null}
       <ErrorText text={error} />
+      {loading ? <Empty text="Abriendo la historia…" /> : null}
       {history ? (
         <>
           <Text style={{ fontFamily: type.serif, fontSize: 24, color: colors.deep }}>{history.patient.name}</Text>
