@@ -18,6 +18,7 @@
   <ui-empty [message]="query() ? 'Ningún servicio coincide con esa búsqueda.' : 'Todavía no hay servicios. Cargá un tipo de turno para poder ponerle precio.'" />
 } @else {
 <ui-table>
+<table class="cards">
   <thead>
     <tr>
       <th><button type="button" sortCol [on]="sort().key === 'name'" [dir]="sort().dir" (click)="sortBy('name')">Servicio</button></th>
@@ -30,14 +31,15 @@
     @for (row of rows(); track row.appointmentTypeId) {
       <tr>
         <td>{{ row.service }}</td>
-        <td>{{ row.amount != null ? row.amount : '—' }}</td>
-        <td>{{ row.effectiveFrom ? (row.effectiveFrom | fecha) : '—' }}</td>
+        <td data-name="Monto">{{ row.amount != null ? row.amount : '—' }}</td>
+        <td data-name="Desde">{{ row.effectiveFrom ? (row.effectiveFrom | fecha) : '—' }}</td>
         <td class="w-px whitespace-nowrap">
           <ui-button variant="outlined" (click)="open(row)">{{ row.amount != null ? 'Editar' : 'Crear' }}</ui-button>
         </td>
       </tr>
     }
   </tbody>
+</table>
 </ui-table>
 <table-pager [total]="total()" [page]="page()" (pageChange)="go($event)" />
 }

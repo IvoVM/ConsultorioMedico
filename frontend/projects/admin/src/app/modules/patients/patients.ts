@@ -2,7 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { MedicalRecordDto, MedicalRecordsService, PatientsService, errorMessage } from 'sdk';
-import { UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable, formatPhone } from 'ui';
+import { MediaWatcherService, UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable, formatPhone } from 'ui';
 import { ScreenNote } from '../../screen-note';
 import { TablePager, listParams, queueSearch } from '../../table-pager';
 import { SortCol, SortState, nextSort } from '../../table-sort';
@@ -17,6 +17,7 @@ export class PatientsPage {
   private readonly recordsApi = inject(MedicalRecordsService);
   private readonly patientsApi = inject(PatientsService);
   private readonly router = inject(Router);
+  private readonly media = inject(MediaWatcherService);
   private readonly searchHost: { timer?: ReturnType<typeof setTimeout> } = {};
   readonly age = age;
   readonly today = new Date().toISOString().slice(0, 10);
@@ -43,6 +44,13 @@ export class PatientsPage {
 
   constructor() {
     void this.load();
+  }
+
+  openFile(patientId: string, event: Event) {
+    if (!this.media.mobile()) return;
+    const target = event.target;
+    if (target instanceof Element && target.closest('a, button, ui-button')) return;
+    void this.router.navigate(['/pacientes', patientId]);
   }
 
   sortBy(key: string) {

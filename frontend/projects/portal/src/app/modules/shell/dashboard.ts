@@ -1,7 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AppointmentDto, AppointmentStatus, AppointmentsService, BookingRequestDto, TenantRole, clinicaSession, errorMessage } from 'sdk';
-import { UiBadge, UiEmpty, UiSkeleton, UiTable, formatFecha } from 'ui';
+import { MediaWatcherService, UiBadge, UiEmpty, UiSkeleton, UiTable, formatFecha } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { appointmentStatusLabels } from '../appointments/models/appointment-status-labels';
 import { AppRoute } from '../../app.routes.enum';
@@ -12,6 +12,8 @@ import { AppRoute } from '../../app.routes.enum';
 })
 export class DashboardPage {
   private readonly appointmentsApi = inject(AppointmentsService);
+  private readonly media = inject(MediaWatcherService);
+  private readonly router = inject(Router);
   readonly session = clinicaSession;
   readonly roles = TenantRole;
   readonly status = AppointmentStatus;
@@ -25,6 +27,13 @@ export class DashboardPage {
 
   constructor() {
     void this.load();
+  }
+
+  openChart(patientId: string, event: Event) {
+    if (!this.media.mobile()) return;
+    const target = event.target;
+    if (target instanceof Element && target.closest('a, button, ui-button')) return;
+    void this.router.navigate([AppRoute.Historia], { queryParams: { paciente: patientId } });
   }
 
   timeLabel(start: string) {

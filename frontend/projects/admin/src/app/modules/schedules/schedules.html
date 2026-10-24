@@ -33,6 +33,7 @@
   <ui-empty [message]="blockQuery() ? 'Ningún horario coincide con esa búsqueda.' : 'Esta agenda todavía no tiene horarios. Crear suma un bloque; después hay que publicarla.'" />
 } @else {
 <ui-table>
+<table class="cards">
   <thead>
     <tr>
       <th><button type="button" sortCol [on]="blockSort().key === 'day'" [dir]="blockSort().dir" (click)="sortBlocks('day')">Día</button></th>
@@ -44,11 +45,12 @@
     @for (block of blockRows(); track block.id) {
       <tr>
         <td>{{ dayLabels[block.day] }}</td>
-        <td>{{ block.startTime | fecha }} – {{ block.endTime | fecha }}</td>
+        <td data-name="Horario">{{ block.startTime | fecha }} – {{ block.endTime | fecha }}</td>
         <td><ui-button variant="ghost" (click)="removeBlock(block.id)">Quitar</ui-button></td>
       </tr>
     }
   </tbody>
+</table>
 </ui-table>
 <table-pager [total]="blockTotal()" [page]="blockPage()" (pageChange)="goBlocks($event)" />
 }
@@ -64,6 +66,7 @@
   <ui-empty [message]="blockoutQuery() ? 'Ningún bloqueo coincide con esa búsqueda.' : 'No hay bloqueos en esta agenda.'" />
 } @else {
 <ui-table>
+<table class="cards">
   <thead>
     <tr>
       <th><button type="button" sortCol [on]="blockoutSort().key === 'start'" [dir]="blockoutSort().dir" (click)="sortBlockouts('start')">Desde</button></th>
@@ -76,12 +79,13 @@
     @for (blockout of blockoutRows(); track blockout.id) {
       <tr>
         <td>{{ blockout.start | fecha }}</td>
-        <td>{{ blockout.end | fecha }}</td>
-        <td>{{ blockout.reason }}</td>
+        <td data-name="Hasta">{{ blockout.end | fecha }}</td>
+        <td data-name="Motivo">{{ blockout.reason }}</td>
         <td><ui-button variant="danger" [loading]="pending() === blockout.id" (click)="deleteBlockout(blockout)">Quitar</ui-button></td>
       </tr>
     }
   </tbody>
+</table>
 </ui-table>
 <table-pager [total]="blockoutTotal()" [page]="blockoutPage()" (pageChange)="goBlockouts($event)" />
 }

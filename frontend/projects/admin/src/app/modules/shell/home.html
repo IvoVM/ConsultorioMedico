@@ -18,20 +18,22 @@
   <ui-empty message="Hoy no hay turnos cargados." />
 } @else {
   <ui-table>
+<table class="cards">
     <thead><tr><th>Hora</th><th>Paciente</th><th>Profesional</th><th>Estado</th><th></th></tr></thead>
     <tbody>
       @for (appointment of appointments(); track appointment.id) {
-        <tr>
+        <tr (click)="openFile(appointment.patientId, $event)">
           <td class="whitespace-nowrap tabular-nums">{{ timeLabel(appointment.start) }}</td>
-          <td class="font-serif text-lg leading-tight">{{ appointment.patient }}</td>
-          <td>
+          <td data-name="Paciente" class="font-serif text-lg leading-tight">{{ appointment.patient }}</td>
+          <td data-name="Profesional">
             {{ appointment.professional }}
             <span class="mt-1 block text-sm text-ink/70">{{ appointment.insurer ? appointment.insurer + (appointment.memberNumber ? ' · afiliado ' + appointment.memberNumber : '') : 'Particular' }}</span>
           </td>
-          <td><ui-badge [tone]="appointment.status === status.Cancelled || appointment.status === status.NoShow ? 'warn' : appointment.status === status.Completed ? 'ok' : 'muted'">{{ statusLabels[appointment.status] }}</ui-badge></td>
+          <td data-name="Estado"><ui-badge [tone]="appointment.status === status.Cancelled || appointment.status === status.NoShow ? 'warn' : appointment.status === status.Completed ? 'ok' : 'muted'">{{ statusLabels[appointment.status] }}</ui-badge></td>
           <td class="whitespace-nowrap"><a class="text-link" [routerLink]="['/pacientes', appointment.patientId]">Ficha</a></td>
         </tr>
       }
     </tbody>
-  </ui-table>
+  </table>
+</ui-table>
 }

@@ -1,8 +1,8 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { MedicalRecordDto, MedicalRecordsService, errorMessage } from 'sdk';
-import { UiEmpty, UiField, UiSkeleton, UiTable } from 'ui';
+import { MediaWatcherService, UiEmpty, UiField, UiSkeleton, UiTable } from 'ui';
 import { ScreenNote } from '../../screen-note';
 import { TablePager, listParams, queueSearch } from '../../table-pager';
 import { SortCol, SortState, nextSort } from '../../table-sort';
@@ -16,6 +16,8 @@ import { MedicalRecordFilter } from './models/record-filter';
 })
 export class MedicalRecordsPage {
   private readonly recordsApi = inject(MedicalRecordsService);
+  private readonly media = inject(MediaWatcherService);
+  private readonly router = inject(Router);
   private readonly searchHost: { timer?: ReturnType<typeof setTimeout> } = {};
   readonly bloodTypes = BLOOD_TYPES;
   readonly age = age;
@@ -42,6 +44,13 @@ export class MedicalRecordsPage {
 
   constructor() {
     void this.load();
+  }
+
+  openFile(patientId: string, event: Event) {
+    if (!this.media.mobile()) return;
+    const target = event.target;
+    if (target instanceof Element && target.closest('a, button, ui-button')) return;
+    void this.router.navigate(['/historias', patientId]);
   }
 
   sortBy(key: string) {

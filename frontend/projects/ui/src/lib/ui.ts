@@ -17,3 +17,4 @@ export { UiSelect } from './ui-select.component';
 export type { SelectOption } from './ui-select.component';
 export { UiSkeleton } from './ui-skeleton.component';
 export { UiTable } from './ui-table.component';
+export { MediaWatcherService } from './media-watcher.service';

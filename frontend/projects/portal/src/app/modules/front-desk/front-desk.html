@@ -46,12 +46,13 @@
       <ui-empty message="No hay turnos en este día." />
     } @else {
     <ui-table>
+<table class="cards">
       <thead><tr><th>Hora</th><th>Paciente</th><th>Profesional</th><th>Estado</th><th></th></tr></thead>
       <tbody>
         @for (appointment of appointments(); track appointment.id) {
           <tr>
             <td class="whitespace-nowrap tabular-nums">{{ appointment.start | fecha:'hora' }}</td>
-            <td>
+            <td data-name="Paciente">
               {{ appointment.patient }}
               <span class="mt-1 block text-sm text-ink/70">{{ coverageLabel(appointment) }}</span>
               @if (charge(appointment); as bill) {
@@ -65,8 +66,8 @@
                 </span>
               }
             </td>
-            <td>{{ appointment.professional }}</td>
-            <td><ui-badge>{{ statusLabels[appointment.status] }}</ui-badge></td>
+            <td data-name="Profesional">{{ appointment.professional }}</td>
+            <td data-name="Estado"><ui-badge>{{ statusLabels[appointment.status] }}</ui-badge></td>
             <td class="whitespace-nowrap">
               <ui-actions>
                 @if (appointment.insurer && appointment.coverageAccepted == null && appointment.status !== status.Cancelled && appointment.status !== status.NoShow) {
@@ -93,7 +94,8 @@
           </tr>
         }
       </tbody>
-    </ui-table>
+    </table>
+</ui-table>
     }
   </div>
   @if (moving(); as appointment) {
@@ -127,23 +129,25 @@
       <ui-empty message="La lista de espera está vacía." />
     } @else {
     <ui-table>
+<table class="cards">
       <thead><tr><th>Paciente</th><th>Para</th><th>Notas</th><th></th></tr></thead>
       <tbody>
         @for (item of waitlist(); track item.id) {
           <tr>
             <td class="font-serif text-lg leading-tight">{{ item.patient }}</td>
-            <td>
+            <td data-name="Para">
               {{ item.specialty }}
               @if (item.professional) { <span class="mt-1 block text-sm text-ink/70">{{ item.professional }}</span> }
             </td>
-            <td>{{ item.notes || '—' }}</td>
+            <td data-name="Notas">{{ item.notes || '—' }}</td>
             <td class="whitespace-nowrap">
               <ui-button [loading]="pending() === 'offer:' + item.id" (click)="offer(item)">Ofrecer próximo hueco</ui-button>
             </td>
           </tr>
         }
       </tbody>
-    </ui-table>
+    </table>
+</ui-table>
     }
   </div>
 </section>

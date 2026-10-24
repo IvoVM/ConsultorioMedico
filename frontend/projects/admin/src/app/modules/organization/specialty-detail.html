@@ -33,6 +33,7 @@
       <ui-button class="mt-4" [loading]="busy() === 'default'" (click)="createDefault()">Crear consulta</ui-button>
     } @else {
       <ui-table>
+<table class="cards">
         <thead>
           <tr>
             <th>Prestación</th>
@@ -46,9 +47,9 @@
           @for (row of prestaciones(); track row.id) {
             <tr>
               <td class="font-serif text-lg leading-tight">{{ row.name }}</td>
-              <td>{{ row.durationMinutes }} min</td>
-              <td>{{ money(row.particular) }}</td>
-              <td>
+              <td data-name="Duración">{{ row.durationMinutes }} min</td>
+              <td data-name="Particular">{{ money(row.particular) }}</td>
+              <td data-name="Obras sociales">
                 @if (!row.insurers.length) {
                   <span class="text-ink/60">Ninguna</span>
                 } @else {
@@ -67,7 +68,8 @@
             </tr>
           }
         </tbody>
-      </ui-table>
+      </table>
+</ui-table>
     }
   </section>
 

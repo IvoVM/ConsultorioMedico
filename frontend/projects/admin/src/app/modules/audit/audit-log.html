@@ -20,6 +20,7 @@
   <ui-empty [message]="query() ? 'Ningún movimiento coincide con esa búsqueda.' : 'Todavía no hay movimientos en la auditoría.'" />
 } @else {
 <ui-table>
+<table class="cards">
   <thead>
     <tr>
       <th><button type="button" sortCol [on]="sort().key === 'date'" [dir]="sort().dir" (click)="sortBy('date')">Fecha</button></th>
@@ -30,9 +31,10 @@
   </thead>
   <tbody>
     @for (item of entries(); track item.id) {
-      <tr><td>{{ item.timestamp | fecha }}</td><td>{{ item.action }}</td><td>{{ item.entity }}</td><td>{{ item.detail }}</td></tr>
+      <tr><td>{{ item.timestamp | fecha }}</td><td data-name="Acción">{{ item.action }}</td><td data-name="Entidad">{{ item.entity }}</td><td data-name="Detalle">{{ item.detail }}</td></tr>
     }
   </tbody>
+</table>
 </ui-table>
 <table-pager [total]="total()" [page]="page()" (pageChange)="go($event)" />
 }

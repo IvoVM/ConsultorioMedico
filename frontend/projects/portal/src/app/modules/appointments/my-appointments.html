@@ -7,6 +7,7 @@
     <h2 class="mb-3 font-serif text-2xl">Solicitudes</h2>
     <p class="mb-4 max-w-[48ch] text-ink/75">Las que pediste con tu documento, también las de antes de crear la cuenta.</p>
     <ui-table>
+<table class="cards">
       <thead>
         <tr>
           <th>Cuándo</th>
@@ -24,13 +25,13 @@
                 <span class="mt-1 block text-sm text-ink/70">Antes: {{ request.previousStart | fecha }}</span>
               }
             </td>
-            <td>
+            <td data-name="Para">
               {{ request.specialty }}
               <span class="mt-1 block text-sm text-ink/70">{{ request.professional }}</span>
             </td>
-            <td><ui-badge [tone]="tone(request.status)">{{ requestStatus[request.status] }}</ui-badge></td>
+            <td data-name="Estado"><ui-badge [tone]="tone(request.status)">{{ requestStatus[request.status] }}</ui-badge></td>
             @if (hasReason()) {
-              <td>
+              <td data-name="Motivo">
                 @if (request.status === booking.Rejected) {
                   <ui-button variant="ghost" (click)="reasonFor.set(request)">Ver motivo</ui-button>
                 }
@@ -39,21 +40,23 @@
           </tr>
         }
       </tbody>
-    </ui-table>
+    </table>
+</ui-table>
   }
   @if (appointments().length) {
     <h2 class="mt-10 mb-3 font-serif text-2xl">Turnos</h2>
     <ui-table>
+<table class="cards">
       <thead><tr><th>Cuándo</th><th>Profesional</th><th>Estado</th><th></th></tr></thead>
       <tbody>
         @for (appointment of appointments(); track appointment.id) {
           <tr>
             <td>{{ appointment.start | fecha }}</td>
-            <td>
+            <td data-name="Profesional">
               {{ appointment.professional }}
               <span class="mt-1 block text-sm text-ink/70">{{ appointment.insurer ? appointment.insurer + (appointment.memberNumber ? ' · ' + appointment.memberNumber : '') : 'Particular' }}</span>
             </td>
-            <td><ui-badge [tone]="appointment.status === status.Cancelled ? 'warn' : appointment.status === status.Rescheduled ? 'muted' : 'ok'">{{ statusLabels[appointment.status] }}</ui-badge></td>
+            <td data-name="Estado"><ui-badge [tone]="appointment.status === status.Cancelled ? 'warn' : appointment.status === status.Rescheduled ? 'muted' : 'ok'">{{ statusLabels[appointment.status] }}</ui-badge></td>
             <td>
               @if (appointment.status === status.Booked || appointment.status === status.Rescheduled) {
                 <ui-button variant="ghost" [loading]="pending() === appointment.id" (click)="cancel(appointment)">Cancelar</ui-button>
@@ -62,7 +65,8 @@
           </tr>
         }
       </tbody>
-    </ui-table>
+    </table>
+</ui-table>
   }
   @if (appointments().length === 0 && requests().length === 0) {
     <ui-empty message="Todavía no tenés turnos. Cuando reserves uno, aparece acá." />

@@ -21,6 +21,7 @@
   <ui-empty [message]="query() ? 'Ninguna obra social coincide con esa búsqueda.' : 'Todavía no hay obras sociales.'" />
 } @else {
   <ui-table>
+<table class="cards">
     <thead>
       <tr>
         <th><button type="button" sortCol [on]="sort().key === 'name'" [dir]="sort().dir" (click)="sortBy('name')">Obra social</button></th>
@@ -32,14 +33,15 @@
       @for (item of rows(); track item.id) {
         <tr>
           <td class="font-serif text-lg">{{ item.name }}</td>
-          <td><ui-badge [tone]="item.enabled ? 'ok' : 'muted'">{{ item.enabled ? 'Permitida' : 'No permitida' }}</ui-badge></td>
+          <td data-name="Estado"><ui-badge [tone]="item.enabled ? 'ok' : 'muted'">{{ item.enabled ? 'Permitida' : 'No permitida' }}</ui-badge></td>
           <td class="w-px whitespace-nowrap">
             <ui-button variant="outlined" [loading]="pending() === item.id" (click)="toggle(item)">{{ item.enabled ? 'Quitar' : 'Permitir' }}</ui-button>
           </td>
         </tr>
       }
     </tbody>
-  </ui-table>
+  </table>
+</ui-table>
   <table-pager [total]="total()" [page]="page()" (pageChange)="go($event)" />
 }
 

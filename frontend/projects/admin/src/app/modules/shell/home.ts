@@ -1,7 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AppointmentDto, AppointmentStatus, AppointmentsService, errorMessage } from 'sdk';
-import { UiBadge, UiEmpty, UiSkeleton, UiTable } from 'ui';
+import { MediaWatcherService, UiBadge, UiEmpty, UiSkeleton, UiTable } from 'ui';
 import { firstValueFrom } from 'rxjs';
 
 const statusLabels: Record<AppointmentStatus, string> = {
@@ -20,6 +20,8 @@ const statusLabels: Record<AppointmentStatus, string> = {
 })
 export class HomePage {
   private readonly appointmentsApi = inject(AppointmentsService);
+  private readonly media = inject(MediaWatcherService);
+  private readonly router = inject(Router);
   readonly statusLabels = statusLabels;
   readonly status = AppointmentStatus;
   readonly appointments = signal<AppointmentDto[]>([]);
@@ -29,6 +31,13 @@ export class HomePage {
 
   constructor() {
     void this.load();
+  }
+
+  openFile(patientId: string, event: Event) {
+    if (!this.media.mobile()) return;
+    const target = event.target;
+    if (target instanceof Element && target.closest('a, button, ui-button')) return;
+    void this.router.navigate(['/pacientes', patientId]);
   }
 
   timeLabel(start: string) {

@@ -37,6 +37,7 @@
   <ui-skeleton label="Cargando historias" />
 } @else if (records().length) {
   <ui-table>
+<table class="cards">
     <thead>
       <tr>
         <th><button type="button" sortCol [on]="sort().key === 'patient'" [dir]="sort().dir" (click)="sortBy('patient')">Paciente</button></th>
@@ -53,6 +54,7 @@
           class="record-row"
           [class.is-saved]="justSaved() === r.patientId"
           [style.--i]="i < 12 ? i : 12"
+          (click)="openFile(r.patientId, $event)"
         >
           <td>
             <p class="font-serif text-lg leading-tight">{{ r.lastName }}, {{ r.firstName }}</p>
@@ -61,25 +63,25 @@
               @if (age(r.birthDate) !== null) { <span class="text-ink/45">— {{ age(r.birthDate) }} años</span> }
             </p>
           </td>
-          <td>
+          <td data-name="Grupo">
             @if (r.bloodType) {
               <span class="vial" [attr.aria-label]="'Grupo ' + r.bloodType">{{ r.bloodType }}</span>
             } @else {
               <span class="vial is-empty" aria-label="Sin grupo cargado">?</span>
             }
           </td>
-          <td class="hidden max-w-56 md:table-cell">
+          <td data-name="Alergias" class="hidden max-w-56 md:table-cell">
             @if (r.allergies) {
               <span class="allergy-flag" [title]="r.allergies">{{ r.allergies }}</span>
             } @else {
               <span class="text-ink/45">Sin registrar</span>
             }
           </td>
-          <td class="hidden lg:table-cell">
+          <td data-name="Cobertura" class="hidden lg:table-cell">
             {{ r.healthInsurance || 'Particular' }}
             @if (r.memberNumber) { <span class="block text-ink/55">{{ r.memberNumber }}</span> }
           </td>
-          <td class="hidden sm:table-cell">
+          <td data-name="Última edición" class="hidden sm:table-cell">
             @if (justSaved() === r.patientId) {
               <span class="saved-note">Historia guardada</span>
             } @else if (r.updatedAt) {
@@ -94,10 +96,12 @@
         </tr>
       }
     </tbody>
-  </ui-table>
+  </table>
+</ui-table>
   <table-pager [total]="total()" [page]="page()" (pageChange)="go($event)" />
 } @else if (search() || filter() !== 'all') {
   <ui-empty message="Ninguna historia coincide con esa búsqueda. Probá con el documento o quitá el filtro." />
 } @else {
   <ui-empty message="Todavía no hay historias. Aparecen acá cuando un paciente tiene ficha." />
 }
+

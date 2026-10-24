@@ -14,6 +14,7 @@
   <ui-empty message="No hay solicitudes para confirmar." />
 } @else {
   <ui-table>
+<table class="cards">
     <thead><tr><th>Cuándo</th><th>Persona</th><th>Para</th><th>Estado</th><th></th></tr></thead>
     <tbody>
       @for (item of requests(); track item.id) {
@@ -22,26 +23,27 @@
             {{ item.start | fecha }}
             @if (item.previousStart) { <span class="mt-1 block text-sm text-ink/70">Antes: {{ item.previousStart | fecha }}</span> }
           </td>
-          <td>
+          <td data-name="Persona">
             <span class="font-serif text-lg leading-tight">{{ item.name }}</span>
             <span class="mt-1 block text-sm text-ink/70">{{ item.documentNumber }} · {{ item.phone }}</span>
           </td>
-          <td>
+          <td data-name="Para">
             {{ item.specialty }}
             <span class="mt-1 block text-sm text-ink/70">{{ item.professional }} · {{ item.appointmentType }} · {{ item.insurer || 'Particular' }}@if (item.memberNumber) { <span> · afiliado {{ item.memberNumber }}</span> }</span>
           </td>
-          <td>{{ statusLabel(item.status) }}</td>
+          <td data-name="Estado">{{ statusLabel(item.status) }}</td>
           <td class="whitespace-nowrap">
             <ui-actions>
               <ui-button [loading]="pending() === 'approve:' + item.id" (click)="decide(item, true)">Aprobar</ui-button>
-              <ui-button variant="ghost" (click)="startMove(item)">Reprogramar</ui-button>
-              <ui-button variant="ghost" (click)="decide(item, false)">Denegar</ui-button>
+              <ui-button variant="secondary" (click)="startMove(item)">Reprogramar</ui-button>
+              <ui-button variant="error" (click)="decide(item, false)">Denegar</ui-button>
             </ui-actions>
           </td>
         </tr>
       }
     </tbody>
-  </ui-table>
+  </table>
+</ui-table>
 }
 @if (moving(); as item) {
   <form class="mt-6 max-w-3xl border border-rule bg-white p-4" (ngSubmit)="loadSlots()">
@@ -71,6 +73,6 @@
       <textarea name="reason" rows="4" [(ngModel)]="reason" required maxlength="400"></textarea>
     </ui-field>
     @if (error()) { <p class="text-sm text-pulse" role="alert">{{ error() }}</p> }
-    <ui-button type="submit" [loading]="pending().startsWith('deny:')">Denegar solicitud</ui-button>
+    <ui-button type="submit" variant="error" [loading]="pending().startsWith('deny:')">Denegar solicitud</ui-button>
   </form>
 </ui-modal>

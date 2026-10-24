@@ -22,10 +22,10 @@
       <button
         class="menu-button"
         type="button"
-        aria-label="Abrir menú"
+        [attr.aria-label]="menuOpen() ? 'Cerrar menú' : 'Abrir menú'"
         aria-controls="app-sidebar"
         [attr.aria-expanded]="menuOpen()"
-        (click)="menuOpen.set(true)"
+        (click)="menuOpen.update((open) => !open)"
       >
         <span class="menu-glyph" [class.is-open]="menuOpen()"></span>
       </button>

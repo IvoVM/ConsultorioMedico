@@ -2,7 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AppointmentKind, AppointmentTypeRowDto, OrganizationService, errorMessage } from 'sdk';
-import { UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable } from 'ui';
+import { MediaWatcherService, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable } from 'ui';
 import { ScreenNote } from '../../screen-note';
 import { TablePager, listParams, queueSearch } from '../../table-pager';
 import { SortCol, SortState, nextSort } from '../../table-sort';
@@ -15,6 +15,7 @@ import { firstValueFrom } from 'rxjs';
 export class TurnosPage {
   private readonly organization = inject(OrganizationService);
   private readonly router = inject(Router);
+  private readonly media = inject(MediaWatcherService);
   private readonly searchHost: { timer?: ReturnType<typeof setTimeout> } = {};
   readonly rows = signal<AppointmentTypeRowDto[]>([]);
   readonly total = signal(0);
@@ -35,6 +36,13 @@ export class TurnosPage {
 
   constructor() {
     void this.load();
+  }
+
+  openFile(id: string, event: Event) {
+    if (!this.media.mobile()) return;
+    const target = event.target;
+    if (target instanceof Element && target.closest('a, button, ui-button')) return;
+    void this.router.navigate(['/organizacion/turnos', id]);
   }
 
   countLabel(count: number, one: string, many: string) {

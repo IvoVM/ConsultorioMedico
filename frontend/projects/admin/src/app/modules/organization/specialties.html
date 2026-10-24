@@ -21,6 +21,7 @@
   <ui-empty [message]="query() ? 'Ninguna especialidad coincide con esa búsqueda.' : 'Todavía no hay especialidades. Crear abre la ficha con una consulta de 30 minutos.'" />
 } @else {
   <ui-table>
+<table class="cards">
     <thead>
       <tr>
         <th><button type="button" sortCol [on]="sort().key === 'name'" [dir]="sort().dir" (click)="sortBy('name')">Especialidad</button></th>
@@ -30,16 +31,17 @@
     </thead>
     <tbody>
       @for (item of rows(); track item.id; let i = $index) {
-        <tr class="record-row" [style.--i]="i < 12 ? i : 12">
+        <tr class="record-row" [style.--i]="i < 12 ? i : 12" (click)="openFile(item.id, $event)">
           <td><p class="font-serif text-lg leading-tight">{{ item.name }}</p></td>
-          <td>{{ countLabel(item.professionals, 'profesional', 'profesionales') }}</td>
+          <td data-name="Profesionales">{{ countLabel(item.professionals, 'profesional', 'profesionales') }}</td>
           <td class="w-px whitespace-nowrap">
             <a class="text-link" [routerLink]="['/organizacion/especialidades', item.id]">Editar</a>
           </td>
         </tr>
       }
     </tbody>
-  </ui-table>
+  </table>
+</ui-table>
   <table-pager [total]="total()" [page]="page()" (pageChange)="go($event)" />
 }
 

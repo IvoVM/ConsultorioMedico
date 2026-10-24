@@ -31,6 +31,7 @@
   <ui-skeleton label="Cargando pacientes" />
 } @else if (patients().length) {
   <ui-table>
+<table class="cards">
     <thead>
       <tr>
         <th><button type="button" sortCol [on]="sort().key === 'name'" [dir]="sort().dir" (click)="sortBy('name')">Paciente</button></th>
@@ -42,7 +43,7 @@
     </thead>
     <tbody>
       @for (patient of patients(); track patient.patientId; let i = $index) {
-        <tr class="record-row" [style.--i]="i < 12 ? i : 12">
+        <tr class="record-row" [style.--i]="i < 12 ? i : 12" (click)="openFile(patient.patientId, $event)">
           <td>
             <p class="font-serif text-lg leading-tight">{{ patient.lastName }}, {{ patient.firstName }}</p>
             <p class="mt-0.5 text-ink/60">
@@ -51,12 +52,12 @@
             </p>
             <p class="mt-0.5 text-ink/60 md:hidden">{{ patient.phone }}</p>
           </td>
-          <td class="hidden md:table-cell">{{ patient.phone }}</td>
-          <td>
+          <td data-name="Teléfono" class="hidden md:table-cell">{{ patient.phone }}</td>
+          <td data-name="Cobertura">
             {{ patient.healthInsurance || 'Particular' }}
             @if (patient.memberNumber) { <span class="block text-ink/55">{{ patient.memberNumber }}</span> }
           </td>
-          <td class="hidden lg:table-cell">
+          <td data-name="Emergencia" class="hidden lg:table-cell">
             @if (patient.emergencyContact || patient.emergencyPhone) {
               <span>{{ patient.emergencyContact }}</span>
               @if (patient.emergencyPhone) { <span class="block text-ink/55">{{ patient.emergencyPhone }}</span> }
@@ -70,7 +71,8 @@
         </tr>
       }
     </tbody>
-  </ui-table>
+  </table>
+</ui-table>
   <table-pager [total]="total()" [page]="page()" (pageChange)="go($event)" />
 } @else if (search()) {
   <ui-empty message="Ningún paciente coincide con esa búsqueda. Probá con el documento o el número de afiliado." />

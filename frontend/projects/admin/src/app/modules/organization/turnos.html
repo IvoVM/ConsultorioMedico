@@ -21,6 +21,7 @@
   <ui-empty [message]="query() ? 'Ningún turno coincide con esa búsqueda.' : 'Todavía no hay turnos. Crear abre un nombre y una duración; después se completa la ficha.'" />
 } @else {
   <ui-table>
+<table class="cards">
     <thead>
       <tr>
         <th><button type="button" sortCol [on]="sort().key === 'name'" [dir]="sort().dir" (click)="sortBy('name')">Turno</button></th>
@@ -32,18 +33,19 @@
     </thead>
     <tbody>
       @for (item of rows(); track item.id; let i = $index) {
-        <tr class="record-row" [style.--i]="i < 12 ? i : 12">
+        <tr class="record-row" [style.--i]="i < 12 ? i : 12" (click)="openFile(item.id, $event)">
           <td><p class="font-serif text-lg leading-tight">{{ item.name }}</p></td>
-          <td>{{ item.durationMinutes }} min</td>
-          <td>{{ item.specialty || 'Sin asignar' }}</td>
-          <td>{{ countLabel(item.professionals, 'profesional', 'profesionales') }}</td>
+          <td data-name="Duración">{{ item.durationMinutes }} min</td>
+          <td data-name="Especialidad">{{ item.specialty || 'Sin asignar' }}</td>
+          <td data-name="Profesionales">{{ countLabel(item.professionals, 'profesional', 'profesionales') }}</td>
           <td class="w-px whitespace-nowrap">
             <a class="text-link" [routerLink]="['/organizacion/turnos', item.id]">Editar</a>
           </td>
         </tr>
       }
     </tbody>
-  </ui-table>
+  </table>
+</ui-table>
   <table-pager [total]="total()" [page]="page()" (pageChange)="go($event)" />
 }
 

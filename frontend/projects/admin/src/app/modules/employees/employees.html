@@ -28,6 +28,7 @@
   <ui-empty [message]="query() ? 'Ningún empleado coincide con esa búsqueda.' : 'Todavía no hay empleados. Crear carga una ficha. Importar lee un archivo.'" />
 } @else {
   <ui-table>
+<table class="cards">
     <thead>
       <tr>
         <th><button type="button" sortCol [on]="sort().key === 'name'" [dir]="sort().dir" (click)="sortBy('name')">Persona</button></th>
@@ -43,11 +44,11 @@
       @for (person of people(); track person.id) {
         <tr>
           <td class="font-serif text-lg">{{ person.lastName }}, {{ person.firstName }}</td>
-          <td>{{ person.documentNumber || '—' }}</td>
-          <td>{{ roleLabels[person.role] }}</td>
-          <td>{{ person.licenseNumber || '—' }}</td>
-          <td>{{ person.specialty || '—' }}</td>
-          <td><ui-badge [tone]="person.active ? 'ok' : 'warn'">{{ person.active ? 'Activo' : 'De baja' }}</ui-badge></td>
+          <td data-name="Documento">{{ person.documentNumber || '—' }}</td>
+          <td data-name="Rol">{{ roleLabels[person.role] }}</td>
+          <td data-name="Matrícula">{{ person.licenseNumber || '—' }}</td>
+          <td data-name="Especialidad">{{ person.specialty || '—' }}</td>
+          <td data-name="Estado"><ui-badge [tone]="person.active ? 'ok' : 'warn'">{{ person.active ? 'Activo' : 'De baja' }}</ui-badge></td>
           <td class="w-px whitespace-nowrap">
             <ui-actions>
               <button type="button" class="text-link" (click)="edit(person)">Editar</button>
@@ -57,32 +58,37 @@
         </tr>
       }
     </tbody>
-  </ui-table>
+  </table>
+</ui-table>
   <table-pager [total]="total()" [page]="page()" (pageChange)="go($event)" />
 }
 
 @if (created().length) {
   <h2 class="mb-4 mt-10 font-serif text-2xl tracking-tight">Cargados</h2>
   <ui-table>
+<table class="cards">
     <thead><tr><th>Fila</th><th>Documento</th><th>Rol</th><th>Clave inicial</th></tr></thead>
     <tbody>
       @for (item of created(); track item.row) {
-        <tr><td>{{ item.row }}</td><td>{{ item.documentNumber }}</td><td>{{ roleLabels[item.role] }}</td><td>{{ item.temporaryPassword }}</td></tr>
+        <tr><td>{{ item.row }}</td><td data-name="Documento">{{ item.documentNumber }}</td><td data-name="Rol">{{ roleLabels[item.role] }}</td><td data-name="Clave inicial">{{ item.temporaryPassword }}</td></tr>
       }
     </tbody>
-  </ui-table>
+  </table>
+</ui-table>
 }
 @if (rejected().length) {
   <h2 class="mb-4 mt-10 font-serif text-2xl tracking-tight">No se cargaron</h2>
   <p class="mb-4 max-w-prose text-sm text-ink/70">Estas filas quedaron afuera. El resto del archivo sí se cargó.</p>
   <ui-table>
+<table class="cards">
     <thead><tr><th>Fila</th><th>Por qué no se carga</th></tr></thead>
     <tbody>
       @for (item of rejected(); track item.row) {
-        <tr class="text-pulse"><td>{{ item.row }}</td><td>{{ item.reason }}</td></tr>
+        <tr class="text-pulse"><td>{{ item.row }}</td><td data-name="Por qué no se carga">{{ item.reason }}</td></tr>
       }
     </tbody>
-  </ui-table>
+  </table>
+</ui-table>
 }
 
 @if (panel() === 'cargar' || panel() === 'editar') {
@@ -157,19 +163,21 @@
     @if (preview().length && !created().length && !rejected().length) {
       <h3 class="mb-3 mt-8 font-serif text-xl">Cómo se lee cada fila</h3>
       <ui-table>
+<table class="cards">
         <thead><tr><th>Fila</th><th>Persona</th><th>Documento</th><th>Rol</th><th>Resultado</th></tr></thead>
         <tbody>
           @for (item of preview(); track item.row) {
             <tr [class.text-pulse]="!item.ok">
               <td>{{ item.row }}</td>
-              <td>{{ item.name }}</td>
-              <td>{{ item.documentNumber }}</td>
-              <td>{{ item.role }}</td>
-              <td>{{ item.reason }}</td>
+              <td data-name="Persona">{{ item.name }}</td>
+              <td data-name="Documento">{{ item.documentNumber }}</td>
+              <td data-name="Rol">{{ item.role }}</td>
+              <td data-name="Resultado">{{ item.reason }}</td>
             </tr>
           }
         </tbody>
-      </ui-table>
+      </table>
+</ui-table>
     }
   </ui-modal>
 }

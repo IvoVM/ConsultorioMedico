@@ -22,17 +22,19 @@
     } @else {
       <div class="mt-4">
       <ui-table>
+<table class="cards">
         <thead><tr><th>Cuándo</th><th>Profesional</th><th>Estado</th></tr></thead>
         <tbody>
           @for (appointment of appointments(); track appointment.id) {
             <tr>
               <td class="whitespace-nowrap tabular-nums">{{ whenLabel(appointment.start) }}</td>
-              <td>{{ appointment.professional }}</td>
-              <td><ui-badge [tone]="appointment.status === status.Completed ? 'ok' : 'muted'">{{ statusLabels[appointment.status] }}</ui-badge></td>
+              <td data-name="Profesional">{{ appointment.professional }}</td>
+              <td data-name="Estado"><ui-badge [tone]="appointment.status === status.Completed ? 'ok' : 'muted'">{{ statusLabels[appointment.status] }}</ui-badge></td>
             </tr>
           }
         </tbody>
-      </ui-table>
+      </table>
+</ui-table>
       </div>
     }
   </section>
@@ -47,19 +49,21 @@
     <ui-empty message="Hoy no hay pacientes en tu agenda." />
   } @else {
     <ui-table>
+<table class="cards">
       <thead><tr><th>Hora</th><th>Paciente</th><th>Motivo</th><th>Estado</th><th></th></tr></thead>
       <tbody>
         @for (appointment of appointments(); track appointment.id) {
-          <tr>
+          <tr (click)="openChart(appointment.patientId, $event)">
             <td class="whitespace-nowrap tabular-nums">{{ timeLabel(appointment.start) }}</td>
-            <td class="font-serif text-lg leading-tight">{{ appointment.patient }}</td>
-            <td>{{ appointment.visitReason || '—' }}</td>
-            <td><ui-badge [tone]="appointment.status === status.Cancelled || appointment.status === status.NoShow ? 'warn' : appointment.status === status.Completed ? 'ok' : 'muted'">{{ statusLabels[appointment.status] }}</ui-badge></td>
+            <td data-name="Paciente" class="font-serif text-lg leading-tight">{{ appointment.patient }}</td>
+            <td data-name="Motivo">{{ appointment.visitReason || '—' }}</td>
+            <td data-name="Estado"><ui-badge [tone]="appointment.status === status.Cancelled || appointment.status === status.NoShow ? 'warn' : appointment.status === status.Completed ? 'ok' : 'muted'">{{ statusLabels[appointment.status] }}</ui-badge></td>
             <td class="whitespace-nowrap"><a class="text-link" [routerLink]="route.Historia" [queryParams]="{ paciente: appointment.patientId }">Historia</a></td>
           </tr>
         }
       </tbody>
-    </ui-table>
+    </table>
+</ui-table>
   }
 } @else {
   <header class="mb-8">
@@ -101,18 +105,20 @@
     } @else {
       <div class="mt-4">
         <ui-table>
+<table class="cards">
           <thead><tr><th>Hora</th><th>Paciente</th><th>Profesional</th><th>Estado</th></tr></thead>
           <tbody>
             @for (appointment of appointments(); track appointment.id) {
               <tr>
                 <td class="whitespace-nowrap tabular-nums">{{ timeLabel(appointment.start) }}</td>
-                <td class="font-serif text-lg leading-tight">{{ appointment.patient }}</td>
-                <td>{{ appointment.professional }}</td>
-                <td><ui-badge [tone]="appointment.status === status.Cancelled || appointment.status === status.NoShow ? 'warn' : appointment.status === status.Completed ? 'ok' : 'muted'">{{ statusLabels[appointment.status] }}</ui-badge></td>
+                <td data-name="Paciente" class="font-serif text-lg leading-tight">{{ appointment.patient }}</td>
+                <td data-name="Profesional">{{ appointment.professional }}</td>
+                <td data-name="Estado"><ui-badge [tone]="appointment.status === status.Cancelled || appointment.status === status.NoShow ? 'warn' : appointment.status === status.Completed ? 'ok' : 'muted'">{{ statusLabels[appointment.status] }}</ui-badge></td>
               </tr>
             }
           </tbody>
-        </ui-table>
+        </table>
+</ui-table>
       </div>
     }
   </section>

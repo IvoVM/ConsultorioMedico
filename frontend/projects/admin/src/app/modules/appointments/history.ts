@@ -1,8 +1,8 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AppointmentDto, AppointmentStatus, AppointmentsService, ScheduleService, SlotDto, errorMessage } from 'sdk';
-import { FechaPipe, UiBadge, UiButton, UiEmpty, UiField, UiSkeleton, UiTable } from 'ui';
+import { FechaPipe, MediaWatcherService, UiBadge, UiButton, UiEmpty, UiField, UiSkeleton, UiTable } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { TablePager, listParams, queueSearch } from '../../table-pager';
 import { SortCol, SortState, nextSort } from '../../table-sort';
@@ -24,6 +24,8 @@ const statusLabels: Record<AppointmentStatus, string> = {
 export class AppointmentHistoryPage {
   private readonly appointments = inject(AppointmentsService);
   private readonly schedule = inject(ScheduleService);
+  private readonly media = inject(MediaWatcherService);
+  private readonly router = inject(Router);
   private readonly searchHost: { timer?: ReturnType<typeof setTimeout> } = {};
   readonly statusLabels = statusLabels;
   readonly status = AppointmentStatus;
@@ -42,6 +44,13 @@ export class AppointmentHistoryPage {
 
   constructor() {
     void this.load();
+  }
+
+  openFile(patientId: string, event: Event) {
+    if (!this.media.mobile()) return;
+    const target = event.target;
+    if (target instanceof Element && target.closest('a, button, ui-button')) return;
+    void this.router.navigate(['/pacientes', patientId]);
   }
 
   sortBy(key: string) {

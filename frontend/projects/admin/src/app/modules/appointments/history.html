@@ -19,6 +19,7 @@
   <ui-empty [message]="query() ? 'Ningún turno coincide con esa búsqueda.' : 'Todavía no hay turnos.'" />
 } @else {
   <ui-table>
+<table class="cards">
     <thead>
       <tr>
         <th><button type="button" sortCol [on]="sort().key === 'start'" [dir]="sort().dir" (click)="sortBy('start')">Cuándo</button></th>
@@ -30,14 +31,14 @@
     </thead>
     <tbody>
       @for (item of rows(); track item.id) {
-        <tr>
+        <tr (click)="openFile(item.patientId, $event)">
           <td class="whitespace-nowrap">{{ item.start | fecha }}</td>
-          <td class="font-serif text-lg leading-tight">{{ item.patient }}</td>
-          <td>
+          <td data-name="Paciente" class="font-serif text-lg leading-tight">{{ item.patient }}</td>
+          <td data-name="Profesional">
             {{ item.professional }}
             <span class="mt-1 block text-sm text-ink/70">{{ item.appointmentType }} · {{ item.location }}</span>
           </td>
-          <td><ui-badge [tone]="item.status === status.Cancelled || item.status === status.NoShow ? 'warn' : item.status === status.Completed ? 'ok' : 'muted'">{{ statusLabels[item.status] }}</ui-badge></td>
+          <td data-name="Estado"><ui-badge [tone]="item.status === status.Cancelled || item.status === status.NoShow ? 'warn' : item.status === status.Completed ? 'ok' : 'muted'">{{ statusLabels[item.status] }}</ui-badge></td>
           <td class="whitespace-nowrap">
             <a class="text-link" [routerLink]="['/pacientes', item.patientId]">Ficha</a>
             @if (canMove(item)) {
@@ -47,7 +48,8 @@
         </tr>
       }
     </tbody>
-  </ui-table>
+  </table>
+</ui-table>
   <table-pager [total]="total()" [page]="page()" (pageChange)="go($event)" />
   @if (moving(); as item) {
     <form class="mt-6 max-w-3xl border border-rule bg-white p-4" (ngSubmit)="loadSlots()">
