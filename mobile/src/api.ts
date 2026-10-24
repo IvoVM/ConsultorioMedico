@@ -46,6 +46,7 @@ export type Slot = {
   appointmentType: string;
   start: string;
   end: string;
+  insurers?: Insurer[];
 };
 export type Appointment = {
   id: string;
@@ -269,6 +270,9 @@ export const api = {
     return request<string[]>(`/api/disponibilidad/dias?${params}`, {}, false);
   },
   professionalInsurers: (professionalId: string) => request<Insurer[]>(`/api/profesionales/${professionalId}/obras-sociales`, {}, false),
+  profile: () => request<{ firstName: string; lastName: string; documentNumber: string; phone: string }>('/api/cuenta/perfil'),
+  updateProfile: (body: { firstName: string; lastName: string; phone: string }) =>
+    request<{ firstName: string; lastName: string; documentNumber: string; phone: string }>('/api/cuenta/perfil', { method: 'PUT', body: JSON.stringify(body) }),
   createRequest: (body: {
     specialtyId: string;
     professionalId: string;

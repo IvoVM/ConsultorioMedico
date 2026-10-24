@@ -4,5 +4,7 @@ export * from './models/login-command';
 export * from './models/login-patient-command';
 export * from './models/login-staff-command';
 export * from './models/change-password-command';
+export * from './models/patient-profile-dto';
+export * from './models/update-patient-profile-command';
 export * from './models/token-dto';
 export * from './models/register-patient-command';

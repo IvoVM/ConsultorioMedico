@@ -2,6 +2,8 @@
 import { Injectable } from '@angular/core';
 import { ApiClient } from '../../core/api-client';
 import type { ChangePasswordCommand } from './models/change-password-command';
+import type { PatientProfileDto } from './models/patient-profile-dto';
+import type { UpdatePatientProfileCommand } from './models/update-patient-profile-command';
 import type { LoginCommand } from './models/login-command';
 import type { LoginPatientCommand } from './models/login-patient-command';
 import type { LoginStaffCommand } from './models/login-staff-command';
@@ -24,6 +26,14 @@ export class AuthService extends ApiClient {
 
   changePassword(body: ChangePasswordCommand) {
     return this.http.post<TokenDto>(`${this.base}/api/cuenta/clave`, body);
+  }
+
+  profile() {
+    return this.http.get<PatientProfileDto>(`${this.base}/api/cuenta/perfil`);
+  }
+
+  updateProfile(body: UpdatePatientProfileCommand) {
+    return this.http.put<PatientProfileDto>(`${this.base}/api/cuenta/perfil`, body);
   }
 
   registerPatient(body: RegisterPatientCommand) {

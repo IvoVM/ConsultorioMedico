@@ -59,6 +59,7 @@ export function BookScreen() {
   const [lastName, setLastName] = useState('');
   const [documentNumber, setDocumentNumber] = useState('');
   const [phone, setPhone] = useState('');
+  const [knownProfile, setKnownProfile] = useState(false);
   const [offer, setOffer] = useState<Offer | null>(null);
   const [nearest, setNearest] = useState<Slot | null>(null);
   const [seeking, setSeeking] = useState(false);
@@ -76,10 +77,15 @@ export function BookScreen() {
           const history = await api.history().catch(() => null);
           if (!history) return;
           const parts = history.patient.name.trim().split(/\s+/);
-          setFirstName(parts[0] ?? '');
-          setLastName(parts.slice(1).join(' '));
-          setDocumentNumber(history.patient.documentNumber);
-          setPhone(formatPhone(history.patient.phone) ?? history.patient.phone);
+          const first = parts[0] ?? '';
+          const last = parts.slice(1).join(' ');
+          const document = history.patient.documentNumber;
+          const nextPhone = formatPhone(history.patient.phone) ?? history.patient.phone;
+          setFirstName(first);
+          setLastName(last);
+          setDocumentNumber(document);
+          setPhone(nextPhone);
+          setKnownProfile(Boolean(first.trim() && last.trim() && document.trim() && nextPhone.trim()));
         }
       })
       .catch((reason: unknown) => setError(reason instanceof Error ? reason.message : 'No se pudo cargar la agenda.'))
@@ -220,12 +226,8 @@ export function BookScreen() {
     setMemberNumber('');
     setOffer(null);
     setError('');
-    try {
-      setInsurers(await api.professionalInsurers(chosen.professionalId));
-    } catch {
-      setInsurers([]);
-    }
-    setStep(Step.Data);
+    setInsurers(chosen.insurers ?? []);
+    setStep(knownProfile ? Step.Coverage : Step.Data);
   }
 
   async function pickDay(iso: string) {

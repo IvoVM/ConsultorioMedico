@@ -9,6 +9,7 @@ export enum AppRoute {
   Panel = '/panel',
   MisTurnos = '/mis-turnos',
   Historia = '/historia',
+  Perfil = '/perfil',
   Recetas = '/recetas',
   ReservarPaciente = '/reservar/paciente',
   DarTurno = '/dar-turno',

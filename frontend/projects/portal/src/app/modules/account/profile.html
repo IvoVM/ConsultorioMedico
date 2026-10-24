@@ -1,0 +1,17 @@
+<header class="mb-6 max-w-prose">
+  <h2 class="font-serif text-2xl tracking-tight">Tu perfil</h2>
+  <p class="mt-2 text-ink/75">Nombre, apellido y teléfono. El documento identifica tu ficha y no se cambia.</p>
+</header>
+@if (loading()) {
+  <ui-skeleton [framed]="false" [count]="3" height="4rem" label="Cargando perfil" />
+} @else {
+  <form class="flex max-w-md flex-col gap-5" (ngSubmit)="save()">
+    <ui-field label="Nombre"><input name="firstName" [(ngModel)]="firstName" autocomplete="given-name" required /></ui-field>
+    <ui-field label="Apellido"><input name="lastName" [(ngModel)]="lastName" autocomplete="family-name" required /></ui-field>
+    <ui-field label="Documento"><input name="documentNumber" [value]="documentNumber" disabled /></ui-field>
+    <ui-field label="Teléfono"><input name="phone" type="tel" inputmode="tel" [(ngModel)]="phone" (blur)="normalizePhone()" required maxlength="30" placeholder="+54 11 00000000" autocomplete="tel" /></ui-field>
+    @if (error()) { <p class="text-sm text-pulse" role="alert">{{ error() }}</p> }
+    @if (saved()) { <p class="text-sm text-clinic">Guardamos tus datos.</p> }
+    <ui-button type="submit" [loading]="saving()">Guardar</ui-button>
+  </form>
+}

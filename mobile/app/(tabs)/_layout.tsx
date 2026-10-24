@@ -32,6 +32,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="mas" options={{ title: 'Más' }} />
       <Tabs.Screen name="turnos" options={{ href: null, title: 'Mis turnos' }} />
       <Tabs.Screen name="historia" options={{ href: null, title: 'Historia' }} />
+      <Tabs.Screen name="perfil" options={{ href: null, title: 'Perfil' }} />
       <Tabs.Screen name="recetas" options={{ href: null, title: 'Recetas' }} />
       <Tabs.Screen name="secretaria" options={{ href: null, title: 'Mostrador' }} />
       <Tabs.Screen name="medico" options={{ href: null, title: 'Atención' }} />

@@ -225,13 +225,8 @@ export class BookAppointmentPage {
     this.insurerId = '';
     this.memberNumber = '';
     this.draft.set(slot);
-    try {
-      this.insurers.set(await firstValueFrom(this.organization.professionalInsurers(slot.professionalId)));
-      this.applyChart();
-    } catch (error) {
-      this.insurers.set([]);
-      this.error.set(errorMessage(error));
-    }
+    this.insurers.set(slot.insurers ?? []);
+    this.applyChart();
   }
 
   cancelDraft() {

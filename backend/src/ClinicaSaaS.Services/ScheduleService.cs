@@ -131,6 +131,19 @@ public class ScheduleService(
             return [];
 
         var ids = openings.Select(o => o.ProfessionalId).Distinct().ToList();
+        var accepted = await employees.Employees
+            .Where(employee => ids.Contains(employee.UserId) && employee.IsActive && employee.User.Role == TenantRole.Doctor)
+            .SelectMany(employee => employee.Insurers.Where(insurer => insurer.Enabled).Select(insurer => new { employee.UserId, insurer.Id, insurer.Name, insurer.Enabled }))
+            .ToListAsync(ct);
+        var coverageByProfessional = accepted
+            .GroupBy(row => row.UserId)
+            .ToDictionary(
+                group => group.Key,
+                group => (IReadOnlyList<InsurerDto>)group
+                    .DistinctBy(row => row.Id)
+                    .OrderBy(row => row.Name)
+                    .Select(row => new InsurerDto(row.Id, row.Name, row.Enabled))
+                    .ToList());
         var dayStart = SchedulingRules.Combine(query.Date, TimeOnly.MinValue, timeZone.Zone);
         var dayEnd = dayStart.AddDays(1);
         var busy = await appointments.Appointments
@@ -160,6 +173,7 @@ public class ScheduleService(
                 var slots = SchedulingRules.GenerateSlots(
                     query.Date, opening.StartTime, opening.EndTime, opening.DurationMinutes, timeZone.Zone, occupied);
                 var name = $"{opening.ProfessionalFirstName} {opening.ProfessionalLastName}".Trim();
+                coverageByProfessional.TryGetValue(opening.ProfessionalId, out var coverage);
                 foreach (var slot in slots)
                 {
                     result.Add(new SlotDto(
@@ -169,7 +183,8 @@ public class ScheduleService(
                         opening.AppointmentTypeId,
                         opening.AppointmentType,
                         slot.Start,
-                        slot.End));
+                        slot.End,
+                        coverage ?? []));
                     occupied.Add(slot);
                 }
             }

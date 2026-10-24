@@ -94,6 +94,34 @@ public class AuthService(
         return await IssueAsync(user, ct);
     }
 
+    public async Task<PatientProfileDto> ProfileAsync(CancellationToken ct)
+    {
+        var client = await OwnClientAsync(ct);
+        return new PatientProfileDto(client.FirstName, client.LastName, client.DocumentNumber, client.Phone);
+    }
+
+    public async Task<PatientProfileDto> UpdateProfileAsync(UpdatePatientProfileCommand command, CancellationToken ct)
+    {
+        var first = command.FirstName.Trim();
+        var last = command.LastName.Trim();
+        if (first.Length is < 1 or > 80 || last.Length is < 1 or > 80)
+            throw new BusinessRuleException("Escribí tu nombre y tu apellido.");
+        var client = await OwnClientAsync(ct);
+        client.FirstName = first;
+        client.LastName = last;
+        client.Phone = PhoneRules.Require(command.Phone);
+        await clients.SaveAsync(ct);
+        await users.UpdateNameAsync(client.UserId!.Value, first, last, ct);
+        return new PatientProfileDto(client.FirstName, client.LastName, client.DocumentNumber, client.Phone);
+    }
+
+    private async Task<Client> OwnClientAsync(CancellationToken ct)
+    {
+        var userId = currentUser.Id ?? throw new UnauthorizedException("La sesión expiró. Volvé a ingresar.");
+        return await clients.GetByUserAsync(userId, ct)
+            ?? throw new NotFoundException("No hay una ficha para esta cuenta.");
+    }
+
     public async Task<IssuedSession> ChangePasswordAsync(ChangePasswordCommand command, CancellationToken ct)
     {
         if (currentUser.Id is not Guid id)

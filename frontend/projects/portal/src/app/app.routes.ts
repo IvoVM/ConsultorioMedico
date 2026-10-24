@@ -32,6 +32,11 @@ export const routes: Routes = [
             loadComponent: () => import('./modules/clinical/clinical-history').then((m) => m.ClinicalHistoryPage),
           },
           {
+            path: routePath(AppRoute.Perfil),
+            canActivate: [roleGuard(TenantRole.Patient)],
+            loadComponent: () => import('./modules/account/profile').then((m) => m.ProfilePage),
+          },
+          {
             path: routePath(AppRoute.Recetas),
             canActivate: [roleGuard(TenantRole.Patient)],
             loadComponent: () => import('./modules/prescriptions/prescriptions').then((m) => m.PrescriptionsPage),

@@ -89,7 +89,13 @@ export class RequestAppointmentPage {
   readonly furthest = signal<Step>(Step.Specialty);
   readonly direction = signal<1 | -1>(1);
   readonly motion = signal(0);
-  readonly steps = computed((): Step[] => [Step.Specialty, Step.Day, Step.Time, Step.Data, Step.Coverage, Step.Review]);
+  readonly profileReady = signal(false);
+  readonly steps = computed((): Step[] => {
+    const steps = [Step.Specialty, Step.Day, Step.Time];
+    if (!this.profileReady()) steps.push(Step.Data);
+    steps.push(Step.Coverage, Step.Review);
+    return steps;
+  });
   readonly stepIndex = computed(() => this.steps().indexOf(this.step()));
   readonly furthestIndex = computed(() => this.steps().indexOf(this.furthest()));
   readonly monthTitle = computed(() => {
@@ -443,6 +449,7 @@ export class RequestAppointmentPage {
           this.lastName = parts.slice(1).join(' ');
           this.phone = formatPhone(history.patient.phone) ?? history.patient.phone;
           this.documentNumber = history.patient.documentNumber;
+          this.profileReady.set(Boolean(this.firstName.trim() && this.lastName.trim() && this.documentNumber.trim() && this.phone.trim()));
         }
       }
     } catch (error) {
@@ -464,12 +471,8 @@ export class RequestAppointmentPage {
     this.insurerId = '';
     this.memberNumber = '';
     this.error.set('');
-    try {
-      this.insurers.set(await firstValueFrom(this.organization.professionalInsurers(slot.professionalId)));
-    } catch {
-      this.insurers.set([]);
-    }
-    this.go(Step.Data);
+    this.insurers.set(slot.insurers ?? []);
+    this.go(this.profileReady() ? Step.Coverage : Step.Data);
   }
 
   private clearSchedule() {

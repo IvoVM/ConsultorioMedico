@@ -18,6 +18,8 @@ public record ClinicDto(string Slug, string Name);
 public record LoginCommand(string DocumentNumber, string Password);
 public record LoginStaffCommand(string DocumentNumber, string Password);
 public record ChangePasswordCommand(string Password);
+public record PatientProfileDto(string FirstName, string LastName, string DocumentNumber, string Phone);
+public record UpdatePatientProfileCommand(string FirstName, string LastName, string Phone);
 public record TokenDto(string Token, string Email, string Name, string Role, string? TenantSlug, bool MustChangePassword);
 
 public record IssuedSession(TokenDto Access, string RefreshToken, DateTimeOffset RefreshExpires);
@@ -56,7 +58,7 @@ public record SaveScheduleCommand(Guid ProfessionalId, IReadOnlyList<ScheduleBlo
 public record BlockoutDto(Guid Id, Guid ProfessionalId, DateTimeOffset Start, DateTimeOffset End, string Reason);
 public record CreateBlockoutCommand(Guid ProfessionalId, DateTimeOffset Start, DateTimeOffset End, string Reason);
 
-public record SlotDto(Guid ProfessionalId, string Professional, Guid LocationId, Guid AppointmentTypeId, string AppointmentType, DateTimeOffset Start, DateTimeOffset End);
+public record SlotDto(Guid ProfessionalId, string Professional, Guid LocationId, Guid AppointmentTypeId, string AppointmentType, DateTimeOffset Start, DateTimeOffset End, IReadOnlyList<InsurerDto> Insurers);
 public record AvailabilityQuery(Guid LocationId, Guid SpecialtyId, Guid? ProfessionalId, DateOnly Date);
 
 public record BookAppointmentCommand(Guid? PatientId, Guid ProfessionalId, Guid LocationId, Guid AppointmentTypeId, DateTimeOffset Start, string? VisitReason, Guid? InsurerId = null, string? MemberNumber = null);

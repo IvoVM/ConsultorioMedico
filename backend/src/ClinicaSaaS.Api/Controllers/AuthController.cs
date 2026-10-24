@@ -1,4 +1,5 @@
 using ClinicaSaaS.Services;
+using ClinicaSaaS.Services.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -25,6 +26,16 @@ public class AuthController(AuthService auth) : ApiController
     [HttpPost("/api/cuenta/clave")]
     public Task<IActionResult> ChangePassword(ChangePasswordCommand command, CancellationToken ct) =>
         Issue(() => auth.ChangePasswordAsync(command, ct));
+
+    [Authorize(Roles = AppRoles.Patient)]
+    [HttpGet("/api/cuenta/perfil")]
+    public Task<IActionResult> Profile(CancellationToken ct) =>
+        Run(() => auth.ProfileAsync(ct));
+
+    [Authorize(Roles = AppRoles.Patient)]
+    [HttpPut("/api/cuenta/perfil")]
+    public Task<IActionResult> UpdateProfile(UpdatePatientProfileCommand command, CancellationToken ct) =>
+        Run(() => auth.UpdateProfileAsync(command, ct));
 
     [HttpPost("registro")]
     public Task<IActionResult> Register(RegisterPatientCommand command, CancellationToken ct) =>

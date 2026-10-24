@@ -33,6 +33,7 @@ export class ShellPage {
         label: 'Mi salud',
         children: [
           { label: 'Historia', path: AppRoute.Historia },
+          { label: 'Perfil', path: AppRoute.Perfil },
           { label: 'Recetas', path: AppRoute.Recetas },
         ],
       });

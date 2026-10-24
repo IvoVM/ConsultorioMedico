@@ -6,6 +6,7 @@ const links: Record<string, { href: string; label: string }[]> = {
   Patient: [
     { href: '/(tabs)/turnos', label: 'Mis turnos' },
     { href: '/(tabs)/historia', label: 'Historia clínica' },
+    { href: '/(tabs)/perfil', label: 'Perfil' },
     { href: '/(tabs)/recetas', label: 'Recetas' },
   ],
   Doctor: [
