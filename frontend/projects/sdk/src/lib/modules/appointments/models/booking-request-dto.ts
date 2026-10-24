@@ -12,6 +12,8 @@ export interface BookingRequestDto {
   insurer?: string | null;
   memberNumber?: string | null;
   status: BookingRequestStatus;
+  rejectionReason?: string | null;
+  previousStart?: string | null;
 }
 
 export interface CreateBookingRequestCommand {

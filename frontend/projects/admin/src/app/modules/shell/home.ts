@@ -11,6 +11,7 @@ const statusLabels: Record<AppointmentStatus, string> = {
   [AppointmentStatus.Completed]: 'Atendido',
   [AppointmentStatus.Cancelled]: 'Cancelado',
   [AppointmentStatus.NoShow]: 'Ausente',
+  [AppointmentStatus.Rescheduled]: 'Reprogramado',
 };
 
 @Component({

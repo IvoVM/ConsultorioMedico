@@ -8,6 +8,7 @@ import type { AssignWaitlistEntryCommand } from './models/assign-waitlist-entry-
 import type { BookAppointmentCommand } from './models/book-appointment-command';
 import type { CreateWaitlistEntryCommand } from './models/create-waitlist-entry-command';
 import type { RescheduleAppointmentCommand } from './models/reschedule-appointment-command';
+import type { SlotDto } from '../schedule/models/slot-dto';
 import type { BookingRequestDto, CreateBookingRequestCommand } from './models/booking-request-dto';
 import type { WaitlistEntryDto } from './models/waitlist-entry-dto';
 
@@ -96,7 +97,15 @@ export class AppointmentsService extends ApiClient {
     return this.http.post<AppointmentDto>(`${this.base}/api/solicitudes/${id}/aprobar`, {});
   }
 
-  rejectRequest(id: string) {
-    return this.http.post<void>(`${this.base}/api/solicitudes/${id}/rechazar`, {});
+  rejectRequest(id: string, body: { reason: string }) {
+    return this.http.post<void>(`${this.base}/api/solicitudes/${id}/rechazar`, body);
+  }
+
+  requestSlots(id: string, date: string) {
+    return this.http.get<SlotDto[]>(`${this.base}/api/solicitudes/${id}/horarios?date=${date}`);
+  }
+
+  rescheduleRequest(id: string, body: { start: string }) {
+    return this.http.post<BookingRequestDto>(`${this.base}/api/solicitudes/${id}/reprogramar`, body);
   }
 }

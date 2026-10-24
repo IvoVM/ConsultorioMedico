@@ -79,7 +79,7 @@ export class FrontDeskPage {
   }
 
   canMove(appointment: AppointmentDto) {
-    return appointment.status === AppointmentStatus.Booked || appointment.status === AppointmentStatus.CheckedIn;
+    return appointment.status === AppointmentStatus.Booked || appointment.status === AppointmentStatus.Rescheduled || appointment.status === AppointmentStatus.CheckedIn;
   }
 
   private async searchPatients() {

@@ -64,7 +64,9 @@ public record AvailabilityQuery(Guid LocationId, Guid SpecialtyId, Guid? Profess
 public record BookAppointmentCommand(Guid? PatientId, Guid ProfessionalId, Guid LocationId, Guid AppointmentTypeId, DateTimeOffset Start, string? VisitReason, Guid? InsurerId = null, string? MemberNumber = null);
 public record DeskAppointmentCommand(string DocumentNumber, string FirstName, string LastName, string Phone, Guid ProfessionalId, Guid LocationId, Guid AppointmentTypeId, DateTimeOffset Start, Guid? InsurerId, string? MemberNumber);
 public record CreateBookingRequestCommand(Guid SpecialtyId, Guid ProfessionalId, Guid LocationId, Guid AppointmentTypeId, DateTimeOffset Start, string Name, string Phone, string DocumentNumber, Guid? InsurerId, string? MemberNumber);
-public record BookingRequestDto(Guid Id, string Name, string Phone, string DocumentNumber, string Specialty, string Professional, string AppointmentType, DateTimeOffset Start, string? Insurer, string? MemberNumber, BookingRequestStatus Status);
+public record BookingRequestDto(Guid Id, string Name, string Phone, string DocumentNumber, string Specialty, string Professional, string AppointmentType, DateTimeOffset Start, string? Insurer, string? MemberNumber, BookingRequestStatus Status, string? RejectionReason, DateTimeOffset? PreviousStart);
+public record RejectBookingRequestCommand(string Reason);
+public record RescheduleBookingRequestCommand(DateTimeOffset Start);
 public record LoginPatientCommand(string DocumentNumber, string Password);
 public record ReviewCoverageCommand(bool Accepted);
 public record InsurerDto(Guid Id, string Name, bool Enabled);

@@ -15,7 +15,7 @@ public static class SchedulingRules
     public static readonly TimeSpan PatientCancellationNotice = TimeSpan.FromHours(24);
 
     public static bool CountsAsBusy(AppointmentStatus status) =>
-        status is AppointmentStatus.Booked or AppointmentStatus.CheckedIn or AppointmentStatus.InProgress or AppointmentStatus.Completed;
+        status is AppointmentStatus.Booked or AppointmentStatus.Rescheduled or AppointmentStatus.CheckedIn or AppointmentStatus.InProgress or AppointmentStatus.Completed;
 
     public static bool Overlap(TimeRange a, TimeRange b) => a.Start < b.End && b.Start < a.End;
 
@@ -23,10 +23,10 @@ public static class SchedulingRules
         existing.Any(e => CountsAsBusy(e.Status) && Overlap(e.Range, candidate));
 
     public static bool PatientCanCancel(AppointmentStatus status, DateTimeOffset start, DateTimeOffset now) =>
-        status == AppointmentStatus.Booked && start - now >= PatientCancellationNotice;
+        status is AppointmentStatus.Booked or AppointmentStatus.Rescheduled && start - now >= PatientCancellationNotice;
 
     public static bool CanReschedule(AppointmentStatus status) =>
-        status is AppointmentStatus.Booked or AppointmentStatus.CheckedIn;
+        status is AppointmentStatus.Booked or AppointmentStatus.Rescheduled or AppointmentStatus.CheckedIn;
 
     public static IReadOnlyList<TimeRange> GenerateSlots(
         DateOnly date,

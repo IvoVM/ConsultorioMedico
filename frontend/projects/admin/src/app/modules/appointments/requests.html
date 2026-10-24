@@ -1,7 +1,7 @@
 <header class="mb-6">
   <h2 class="font-serif text-2xl tracking-tight">Solicitudes de turnos</h2>
   <p class="mt-2 max-w-prose text-sm leading-relaxed text-ink/70">
-    Alguien pidió un turno en línea. Aprobar lo deja en la agenda. Denegar libera el horario.
+    Aprobar deja el turno en la agenda, asociado al documento. Reprogramar lo mueve a un horario libre. Denegar pide un motivo, que ve quien lo solicitó.
   </p>
 </header>
 
@@ -14,11 +14,14 @@
   <ui-empty message="No hay solicitudes para confirmar." />
 } @else {
   <ui-table>
-    <thead><tr><th>Cuándo</th><th>Persona</th><th>Para</th><th></th></tr></thead>
+    <thead><tr><th>Cuándo</th><th>Persona</th><th>Para</th><th>Estado</th><th></th></tr></thead>
     <tbody>
       @for (item of requests(); track item.id) {
         <tr>
-          <td class="whitespace-nowrap">{{ item.start | fecha }}</td>
+          <td class="whitespace-nowrap">
+            {{ item.start | fecha }}
+            @if (item.previousStart) { <span class="mt-1 block text-sm text-ink/70">Antes: {{ item.previousStart | fecha }}</span> }
+          </td>
           <td>
             <span class="font-serif text-lg leading-tight">{{ item.name }}</span>
             <span class="mt-1 block text-sm text-ink/70">{{ item.documentNumber }} · {{ item.phone }}</span>
@@ -27,10 +30,12 @@
             {{ item.specialty }}
             <span class="mt-1 block text-sm text-ink/70">{{ item.professional }} · {{ item.appointmentType }} · {{ item.insurer || 'Particular' }}@if (item.memberNumber) { <span> · afiliado {{ item.memberNumber }}</span> }</span>
           </td>
+          <td>{{ statusLabel(item.status) }}</td>
           <td class="whitespace-nowrap">
             <ui-actions>
               <ui-button [loading]="pending() === 'approve:' + item.id" (click)="decide(item, true)">Aprobar</ui-button>
-              <ui-button variant="ghost" [loading]="pending() === 'reject:' + item.id" (click)="decide(item, false)">Denegar</ui-button>
+              <ui-button variant="ghost" (click)="startMove(item)">Reprogramar</ui-button>
+              <ui-button variant="ghost" (click)="decide(item, false)">Denegar</ui-button>
             </ui-actions>
           </td>
         </tr>
@@ -38,3 +43,34 @@
     </tbody>
   </ui-table>
 }
+@if (moving(); as item) {
+  <form class="mt-6 max-w-3xl border border-rule bg-white p-4" (ngSubmit)="loadSlots()">
+    <h3 class="font-serif text-xl">Reprogramar a {{ item.name }}</h3>
+    <p class="mt-1 text-sm text-ink/70">{{ item.professional }} · {{ item.appointmentType }}. Elegí un día y un horario libre.</p>
+    <ui-field class="mt-4 sm:w-64" label="Día">
+      <input name="moveDate" type="date" [(ngModel)]="moveDate" (ngModelChange)="loadSlots()" required />
+    </ui-field>
+    @if (slotsLoading()) {
+      <p class="mt-4 text-sm text-ink/60">Buscando horarios…</p>
+    } @else if (!slots().length) {
+      <p class="mt-4 text-sm text-ink/70">Ese día no tiene horarios libres para esta prestación.</p>
+    } @else {
+      <div class="mt-4 flex flex-wrap gap-2">
+        @for (slot of slots(); track slot.start) {
+          <ui-button type="button" variant="outlined" [loading]="pending() === 'move:' + item.id" (click)="moveTo(slot)">{{ slot.start | fecha:'hora' }}</ui-button>
+        }
+      </div>
+    }
+    <ui-button class="mt-4" type="button" variant="ghost" (click)="cancelMove()">Volver a las solicitudes</ui-button>
+  </form>
+}
+<ui-modal [open]="denying() !== null" title="Motivo de la denegación" (closed)="denying.set(null)">
+  <form class="flex flex-col gap-4" (ngSubmit)="confirmDeny()">
+    <p class="text-sm text-ink/75">{{ denying()?.name }} va a ver este texto y puede pedir otro turno.</p>
+    <ui-field label="Motivo">
+      <textarea name="reason" rows="4" [(ngModel)]="reason" required maxlength="400"></textarea>
+    </ui-field>
+    @if (error()) { <p class="text-sm text-pulse" role="alert">{{ error() }}</p> }
+    <ui-button type="submit" [loading]="pending().startsWith('deny:')">Denegar solicitud</ui-button>
+  </form>
+</ui-modal>

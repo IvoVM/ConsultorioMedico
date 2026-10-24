@@ -189,8 +189,15 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
 
+                    b.Property<DateTimeOffset?>("PreviousStart")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<Guid>("ProfessionalId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("RejectionReason")
+                        .HasMaxLength(400)
+                        .HasColumnType("character varying(400)");
 
                     b.Property<Guid>("SpecialtyId")
                         .HasColumnType("uuid");

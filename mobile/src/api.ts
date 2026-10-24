@@ -36,6 +36,8 @@ export type BookingRequest = {
   insurer?: string | null;
   memberNumber?: string | null;
   status: string;
+  rejectionReason?: string | null;
+  previousStart?: string | null;
 };
 export type Professional = { id: string; firstName: string; lastName: string; email: string; licenseNumber?: string | null; specialtyId?: string | null };
 export type Slot = {
@@ -332,6 +334,7 @@ export const statusLabel: Record<string, string> = {
   Completed: 'Atendido',
   Cancelled: 'Cancelado',
   NoShow: 'Ausente',
+  Rescheduled: 'Reprogramado',
   Pending: 'En espera',
   Offered: 'Ofrecido',
   Accepted: 'Asignado',

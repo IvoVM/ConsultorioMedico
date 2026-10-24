@@ -56,7 +56,7 @@ public class ClinicalService(
         encounter.Temperature = command.Temperature;
         encounter.WeightKg = command.WeightKg;
         await clinical.ReplaceDiagnosesAsync(encounter.Id, command.DiagnosisIds, ct);
-        if (appointment.Status is AppointmentStatus.Booked or AppointmentStatus.CheckedIn)
+        if (appointment.Status is AppointmentStatus.Booked or AppointmentStatus.Rescheduled or AppointmentStatus.CheckedIn)
             appointment.Status = AppointmentStatus.InProgress;
         await appointments.SaveAsync(ct);
         await clinical.SaveAsync(ct);

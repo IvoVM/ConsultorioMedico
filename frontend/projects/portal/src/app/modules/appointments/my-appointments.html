@@ -2,20 +2,40 @@
 @if (loading()) {
   <ui-skeleton label="Cargando turnos" />
 } @else {
+  <p class="mb-6 max-w-prose text-ink/75">La secretaría confirma cada solicitud. Cuando lo hace, el turno queda asociado a tu documento: recordá llevarlo al consultorio.</p>
   @if (requests().length) {
     <h2 class="mb-3 font-serif text-2xl">Solicitudes</h2>
     <p class="mb-4 max-w-[48ch] text-ink/75">Las que pediste con tu documento, también las de antes de crear la cuenta.</p>
     <ui-table>
-      <thead><tr><th>Cuándo</th><th>Para</th><th>Estado</th></tr></thead>
+      <thead>
+        <tr>
+          <th>Cuándo</th>
+          <th>Para</th>
+          <th>Estado</th>
+          @if (hasReason()) { <th>Motivo</th> }
+        </tr>
+      </thead>
       <tbody>
         @for (request of requests(); track request.id) {
           <tr>
-            <td>{{ request.start | fecha }}</td>
+            <td>
+              {{ request.start | fecha }}
+              @if (request.status === booking.Rescheduled && request.previousStart) {
+                <span class="mt-1 block text-sm text-ink/70">Antes: {{ request.previousStart | fecha }}</span>
+              }
+            </td>
             <td>
               {{ request.specialty }}
               <span class="mt-1 block text-sm text-ink/70">{{ request.professional }}</span>
             </td>
-            <td><ui-badge [tone]="request.status === booking.Rejected ? 'warn' : 'ok'">{{ requestStatus[request.status] }}</ui-badge></td>
+            <td><ui-badge [tone]="tone(request.status)">{{ requestStatus[request.status] }}</ui-badge></td>
+            @if (hasReason()) {
+              <td>
+                @if (request.status === booking.Rejected) {
+                  <ui-button variant="ghost" (click)="reasonFor.set(request)">Ver motivo</ui-button>
+                }
+              </td>
+            }
           </tr>
         }
       </tbody>
@@ -23,31 +43,33 @@
   }
   @if (appointments().length) {
     <h2 class="mt-10 mb-3 font-serif text-2xl">Turnos</h2>
+    <ui-table>
+      <thead><tr><th>Cuándo</th><th>Profesional</th><th>Estado</th><th></th></tr></thead>
+      <tbody>
+        @for (appointment of appointments(); track appointment.id) {
+          <tr>
+            <td>{{ appointment.start | fecha }}</td>
+            <td>
+              {{ appointment.professional }}
+              <span class="mt-1 block text-sm text-ink/70">{{ appointment.insurer ? appointment.insurer + (appointment.memberNumber ? ' · ' + appointment.memberNumber : '') : 'Particular' }}</span>
+            </td>
+            <td><ui-badge [tone]="appointment.status === status.Cancelled ? 'warn' : appointment.status === status.Rescheduled ? 'muted' : 'ok'">{{ statusLabels[appointment.status] }}</ui-badge></td>
+            <td>
+              @if (appointment.status === status.Booked || appointment.status === status.Rescheduled) {
+                <ui-button variant="ghost" [loading]="pending() === appointment.id" (click)="cancel(appointment)">Cancelar</ui-button>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </ui-table>
   }
   @if (appointments().length === 0 && requests().length === 0) {
     <ui-empty message="Todavía no tenés turnos. Cuando reserves uno, aparece acá." />
-  } @else if (appointments().length === 0) {
-    <p class="mt-8 text-ink/75">Cuando secretaría confirme una solicitud, el turno aparece acá.</p>
-  } @else {
-  <ui-table>
-    <thead><tr><th>Cuándo</th><th>Profesional</th><th>Estado</th><th></th></tr></thead>
-    <tbody>
-      @for (appointment of appointments(); track appointment.id) {
-        <tr>
-          <td>{{ appointment.start | fecha }}</td>
-          <td>
-            {{ appointment.professional }}
-            <span class="mt-1 block text-sm text-ink/70">{{ appointment.insurer ? appointment.insurer + (appointment.memberNumber ? ' · ' + appointment.memberNumber : '') : 'Particular' }}</span>
-          </td>
-          <td><ui-badge [tone]="appointment.status === status.Cancelled ? 'warn' : 'ok'">{{ statusLabels[appointment.status] }}</ui-badge></td>
-          <td>
-            @if (appointment.status === status.Booked) {
-              <ui-button variant="ghost" [loading]="pending() === appointment.id" (click)="cancel(appointment)">Cancelar</ui-button>
-            }
-          </td>
-        </tr>
-      }
-    </tbody>
-  </ui-table>
   }
 }
+<ui-modal [open]="reasonFor() !== null" title="No se confirmó el turno" (closed)="reasonFor.set(null)">
+  <p class="max-w-prose leading-relaxed">{{ reasonFor()?.rejectionReason || 'La secretaría no dejó un motivo.' }}</p>
+  <p class="mt-3 max-w-prose leading-relaxed text-ink/75">Podés pedir otro turno. Cuando la secretaría lo confirme, queda asociado a tu documento: recordá llevarlo al consultorio.</p>
+  <a class="text-link mt-5 inline-block" [routerLink]="route.Reservar" (click)="reasonFor.set(null)">Pedir otro turno</a>
+</ui-modal>

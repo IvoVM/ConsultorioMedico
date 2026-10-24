@@ -19,6 +19,8 @@ public class BookingRequest
     public Guid? ClientId { get; set; }
     public Guid? AppointmentId { get; set; }
     public BookingRequestStatus Status { get; set; } = BookingRequestStatus.Pending;
+    public string? RejectionReason { get; set; }
+    public DateTimeOffset? PreviousStart { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
 
     public virtual Specialty Specialty { get; set; } = null!;

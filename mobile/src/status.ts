@@ -6,6 +6,7 @@ export enum BookingRequestStatus {
   Pending = 'Pending',
   Approved = 'Approved',
   Rejected = 'Rejected',
+  Rescheduled = 'Rescheduled',
 }
 
 export enum AppointmentStatus {
@@ -15,4 +16,5 @@ export enum AppointmentStatus {
   Completed = 'Completed',
   Cancelled = 'Cancelled',
   NoShow = 'NoShow',
+  Rescheduled = 'Rescheduled',
 }

@@ -7,4 +7,5 @@ export const appointmentStatusLabels: Record<AppointmentStatus, string> = {
   Completed: 'Atendido',
   Cancelled: 'Cancelado',
   NoShow: 'Ausente',
+  Rescheduled: 'Reprogramado',
 };

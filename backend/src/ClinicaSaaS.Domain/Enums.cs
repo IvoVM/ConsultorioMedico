@@ -15,7 +15,8 @@ public enum AppointmentStatus
     InProgress,
     Completed,
     Cancelled,
-    NoShow
+    NoShow,
+    Rescheduled
 }
 
 public enum WaitlistStatus
@@ -30,7 +31,8 @@ public enum BookingRequestStatus
 {
     Pending,
     Approved,
-    Rejected
+    Rejected,
+    Rescheduled
 }
 
 public enum PaymentMethod

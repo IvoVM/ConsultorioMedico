@@ -1,7 +1,7 @@
 <header class="mb-6">
   <h2 class="font-serif text-2xl tracking-tight">Historial de turnos</h2>
   <p class="mt-2 max-w-prose text-sm leading-relaxed text-ink/70">
-    Cada fila es un turno del consultorio, del más reciente al más antiguo. El estado dice si está reservado, admitido, atendido, cancelado o ausente.
+    Cada fila es un turno del consultorio, del más reciente al más antiguo. El estado dice si está reservado, reprogramado, admitido, atendido, cancelado o ausente.
   </p>
 </header>
 
@@ -38,10 +38,36 @@
             <span class="mt-1 block text-sm text-ink/70">{{ item.appointmentType }} · {{ item.location }}</span>
           </td>
           <td><ui-badge [tone]="item.status === status.Cancelled || item.status === status.NoShow ? 'warn' : item.status === status.Completed ? 'ok' : 'muted'">{{ statusLabels[item.status] }}</ui-badge></td>
-          <td class="whitespace-nowrap"><a class="text-link" [routerLink]="['/pacientes', item.patientId]">Ficha</a></td>
+          <td class="whitespace-nowrap">
+            <a class="text-link" [routerLink]="['/pacientes', item.patientId]">Ficha</a>
+            @if (canMove(item)) {
+              <ui-button class="ml-3" variant="ghost" (click)="startMove(item)">Reprogramar</ui-button>
+            }
+          </td>
         </tr>
       }
     </tbody>
   </ui-table>
   <table-pager [total]="total()" [page]="page()" (pageChange)="go($event)" />
+  @if (moving(); as item) {
+    <form class="mt-6 max-w-3xl border border-rule bg-white p-4" (ngSubmit)="loadSlots()">
+      <h3 class="font-serif text-xl">Reprogramar a {{ item.patient }}</h3>
+      <p class="mt-1 text-sm text-ink/70">{{ item.professional }} · {{ item.appointmentType }}. Elegí un día y un horario libre.</p>
+      <ui-field class="mt-4 sm:w-64" label="Día">
+        <input name="moveDate" type="date" [(ngModel)]="moveDate" (ngModelChange)="loadSlots()" required />
+      </ui-field>
+      @if (slotsLoading()) {
+        <p class="mt-4 text-sm text-ink/60">Buscando horarios…</p>
+      } @else if (!slots().length) {
+        <p class="mt-4 text-sm text-ink/70">Ese día no tiene horarios libres para esta prestación.</p>
+      } @else {
+        <div class="mt-4 flex flex-wrap gap-2">
+          @for (slot of slots(); track slot.start) {
+            <ui-button type="button" variant="outlined" [loading]="pending() === item.id" (click)="moveTo(slot)">{{ slot.start | fecha:'hora' }}</ui-button>
+          }
+        </div>
+      }
+      <ui-button class="mt-4" type="button" variant="ghost" (click)="cancelMove()">Volver al historial</ui-button>
+    </form>
+  }
 }
