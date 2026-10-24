@@ -1,3 +1,7 @@
+export enum AuthFrom {
+  Solicitud = 'solicitud',
+}
+
 export enum BookingRequestStatus {
   Pending = 'Pending',
   Approved = 'Approved',

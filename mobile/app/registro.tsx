@@ -2,11 +2,12 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { formatPhone, passwordIssue } from '../src/account';
 import { register } from '../src/api';
+import { AuthFrom } from '../src/status';
 import { Button, ErrorText, Field, Screen } from '../src/ui';
 
 export default function Registro() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ documento?: string; nombre?: string; apellido?: string; telefono?: string }>();
+  const params = useLocalSearchParams<{ documento?: string; nombre?: string; apellido?: string; telefono?: string; desde?: string }>();
   const [form, setForm] = useState({
     password: '',
     confirm: '',
@@ -58,7 +59,7 @@ export default function Registro() {
   }
 
   return (
-    <Screen title="Cuenta de paciente" subtitle="Entrá después con el documento. El teléfono va como +54 11 00000000.">
+    <Screen title="Cuenta de paciente" subtitle={params.desde === AuthFrom.Solicitud ? 'Dejamos cargados el documento, el nombre y el teléfono de la solicitud. Elegí una contraseña para ver el turno.' : 'Entrá después con el documento. El teléfono va como +54 11 00000000.'}>
       <Field label="Nombre" value={form.firstName} onChangeText={set('firstName')} />
       <Field label="Apellido" value={form.lastName} onChangeText={set('lastName')} />
       <Field label="Documento" autoComplete="username" value={form.documentNumber} onChangeText={set('documentNumber')} />
@@ -67,6 +68,11 @@ export default function Registro() {
       <Field label="Confirmar contraseña" secureTextEntry value={form.confirm} onChangeText={set('confirm')} />
       <ErrorText text={error} />
       <Button label={busy ? 'Creando…' : 'Crear cuenta'} disabled={busy} onPress={() => void submit()} />
+      <Button
+        label="Ya tengo cuenta"
+        tone="ghost"
+        onPress={() => router.push({ pathname: '/ingreso', params: { documento: form.documentNumber, desde: params.desde ?? '' } })}
+      />
     </Screen>
   );
 }

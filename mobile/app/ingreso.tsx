@@ -1,11 +1,13 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { login } from '../src/api';
+import { AuthFrom } from '../src/status';
 import { Button, ErrorText, Field, Screen } from '../src/ui';
 
 export default function Ingreso() {
   const router = useRouter();
-  const [documentNumber, setDocumentNumber] = useState('');
+  const params = useLocalSearchParams<{ documento?: string; desde?: string }>();
+  const [documentNumber, setDocumentNumber] = useState(params.documento ?? '');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -15,7 +17,7 @@ export default function Ingreso() {
     setError('');
     try {
       await login(documentNumber.trim(), password);
-      router.replace('/(tabs)/panel');
+      router.replace(params.desde === AuthFrom.Solicitud ? '/(tabs)/turnos' : '/(tabs)/panel');
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'No se pudo ingresar.');
     } finally {

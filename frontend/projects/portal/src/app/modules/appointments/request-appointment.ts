@@ -19,6 +19,7 @@ import { UiButton, UiEmpty, UiField, UiModal, UiSkeleton, formatFecha, formatPho
 import { firstValueFrom } from 'rxjs';
 import { Coverage, Intent, Offer, Step } from './request-appointment.enums';
 import { AppRoute } from '../../app.routes.enum';
+import { AuthFrom } from '../auth/auth-from';
 
 
 @Component({
@@ -163,6 +164,7 @@ export class RequestAppointmentPage {
       nombre: this.firstName.trim(),
       apellido: this.lastName.trim(),
       telefono: this.phone,
+      desde: AuthFrom.Solicitud,
     };
   }
 

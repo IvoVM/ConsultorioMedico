@@ -1,5 +1,5 @@
 <main class="grid min-h-screen bg-paper text-ink lg:grid-cols-2">
-  <section class="flex flex-col justify-center gap-6 px-6 py-10 sm:px-12 lg:px-16 lg:py-16">
+  <section class="flex flex-col justify-start gap-6 px-6 py-10 sm:px-12 lg:px-16 lg:py-16">
     <p class="font-serif text-2xl text-clinic-deep">{{ clinicName() }}</p>
     <h1 class="max-w-[14ch] font-serif text-5xl leading-tight font-medium tracking-tight xl:text-6xl">Crear tu cuenta</h1>
     <div class="max-w-xl space-y-4 text-lg leading-relaxed text-ink/75">
@@ -11,7 +11,7 @@
       <p>Recordá que los turnos creados están asociados a tu número de documento.</p>
     </div>
   </section>
-  <section class="flex items-center border-rule px-6 py-12 sm:px-12 lg:border-l lg:px-16">
+  <section class="flex items-start border-rule px-6 py-10 sm:px-12 lg:border-l lg:px-16 lg:py-16">
     <form class="flex w-full max-w-md flex-col gap-5" (ngSubmit)="submit()">
       <ui-field label="Nombre"><input name="firstName" [(ngModel)]="firstName" required autocomplete="given-name" /></ui-field>
       <ui-field label="Apellido"><input name="lastName" [(ngModel)]="lastName" required autocomplete="family-name" /></ui-field>
@@ -26,6 +26,7 @@
       <p class="text-sm text-ink/65">Al menos 8 caracteres, con una mayúscula, una minúscula y un número.</p>
       @if (error()) { <p class="text-sm text-pulse" role="alert">{{ error() }}</p> }
       <ui-button type="submit" [loading]="loading()">Crear cuenta</ui-button>
+      <a [routerLink]="paths.IngresoCuenta" [queryParams]="loginQuery()" class="text-link">Ya tengo cuenta</a>
     </form>
   </section>
 </main>

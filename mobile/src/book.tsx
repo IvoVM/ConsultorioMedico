@@ -4,6 +4,7 @@ import { Modal, Pressable, Text, View } from 'react-native';
 import { formatPhone } from './account';
 import { api, hora, type AppointmentType, type Insurer, type Slot, type Specialty, AppointmentKind } from './api';
 import { TenantRole } from './role';
+import { AuthFrom } from './status';
 import { useSession } from './session';
 import { colors, type } from './theme';
 import { Button, Empty, ErrorText, Field, Option, Screen } from './ui';
@@ -433,16 +434,12 @@ export function BookScreen() {
               {insurers.length ? <Option title="Sí, tengo obra social" selected={coverage === Coverage.Obra} onPress={() => pickCoverage(Coverage.Obra)} /> : null}
               {coverage === Coverage.Obra ? (
                 <>
-                  <Text style={{ fontFamily: type.sans, fontSize: 16, color: colors.ink }}>Solo las que atiende el profesional de ese horario.</Text>
+                  <Field label="Número de afiliado" value={memberNumber} onChangeText={setMemberNumber} maxLength={40} />
+                  <Text style={{ fontFamily: type.sans, fontSize: 16, color: colors.ink }}>Elegí la obra social. Solo aparecen las que atiende el profesional de ese horario.</Text>
                   {insurers.map((item) => (
                     <Option key={item.id} title={item.name} selected={insurerId === item.id} onPress={() => setInsurerId(item.id)} />
                   ))}
-                  {insurerId ? (
-                    <>
-                      <Field label="Número de afiliado" value={memberNumber} onChangeText={setMemberNumber} maxLength={40} />
-                      <Button label="Continuar" onPress={continueCoverage} />
-                    </>
-                  ) : null}
+                  <Button label="Continuar" onPress={continueCoverage} />
                 </>
               ) : null}
             </>
@@ -464,7 +461,7 @@ export function BookScreen() {
             current ? <Button label="Volver al inicio" onPress={() => router.replace('/(tabs)/panel')} /> : (
               <Button
                 label="Crear cuenta y ver el turno"
-                onPress={() => router.push({ pathname: '/registro', params: { documento: documentNumber, nombre: firstName, apellido: lastName, telefono: phone } })}
+                onPress={() => router.push({ pathname: '/registro', params: { documento: documentNumber, nombre: firstName, apellido: lastName, telefono: phone, desde: AuthFrom.Solicitud } })}
               />
             )
           ) : null}

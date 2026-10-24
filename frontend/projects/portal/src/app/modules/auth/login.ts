@@ -7,6 +7,7 @@ import { firstValueFrom } from 'rxjs';
 import { readPending } from '../appointments/pending-booking';
 import { readClinicName } from './clinic-name';
 import { AppRoute } from '../../app.routes.enum';
+import { AuthFrom } from './auth-from';
 
 @Component({
   imports: [FormsModule, UiButton, UiField, UiPassword],
@@ -16,15 +17,20 @@ export class LoginPage {
   private readonly auth = inject(AuthService);
   private readonly clinic = inject(ClinicService);
   private readonly router = inject(Router);
-  readonly staff = inject(ActivatedRoute).snapshot.data['audience'] === 'staff';
+  private readonly route = inject(ActivatedRoute);
+  readonly staff = this.route.snapshot.data['audience'] === 'staff';
   documentNumber = '';
   password = '';
   readonly clinicName = signal('Consultorio');
+  readonly fromRequest = signal(false);
   readonly error = signal('');
   readonly loading = signal(false);
 
   constructor() {
     void readClinicName(this.clinic).then((name) => this.clinicName.set(name));
+    const query = this.route.snapshot.queryParamMap;
+    this.documentNumber = query.get('documento') ?? '';
+    this.fromRequest.set(query.get('desde') === AuthFrom.Solicitud);
   }
 
   async submit() {
@@ -39,7 +45,11 @@ export class LoginPage {
         await this.router.navigateByUrl(AppRoute.Clave);
         return;
       }
-      const next = token.role === TenantRole.Patient ? (readPending() ? AppRoute.Reservar : AppRoute.MisTurnos) : AppRoute.Panel;
+      const next = token.role !== TenantRole.Patient
+        ? AppRoute.Panel
+        : readPending() && !this.fromRequest()
+          ? AppRoute.Reservar
+          : AppRoute.MisTurnos;
       await this.router.navigateByUrl(next);
     } catch (error) {
       this.error.set(errorMessage(error));

@@ -98,20 +98,16 @@
                 }
               </div>
               @if (coverage() === Coverage.Obra) {
-                <div class="coverage-more">
-                  <p class="hint">Solo las que atiende el profesional de ese horario.</p>
+                <form class="ask" (ngSubmit)="continueCoverage()">
+                  <ui-field label="Número de afiliado"><input name="memberNumber" [(ngModel)]="memberNumber" required maxlength="40" /></ui-field>
+                  <p class="hint">Elegí la obra social. Solo aparecen las que atiende el profesional de ese horario.</p>
                   <div class="choices">
                     @for (item of insurers(); track item.id) {
                       <button type="button" [class.is-picked]="insurerId === item.id" (click)="pickInsurer(item.id)">{{ item.name }}</button>
                     }
                   </div>
-                  @if (insurerId) {
-                    <form class="ask" (ngSubmit)="continueCoverage()">
-                      <ui-field label="Número de afiliado"><input name="memberNumber" [(ngModel)]="memberNumber" required maxlength="40" /></ui-field>
-                      <ui-button type="submit">Continuar</ui-button>
-                    </form>
-                  }
-                </div>
+                  <ui-button type="submit">Continuar</ui-button>
+                </form>
               }
             } @else if (step() === Step.Review) {
               @if (slot(); as chosen) {

@@ -1,14 +1,15 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService, ClinicService, clinicaSession, errorMessage } from 'sdk';
 import { UiButton, UiField, UiPassword, formatPhone, passwordIssue } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { readClinicName } from './clinic-name';
 import { AppRoute } from '../../app.routes.enum';
+import { AuthFrom } from './auth-from';
 
 @Component({
-  imports: [FormsModule, UiButton, UiField, UiPassword],
+  imports: [FormsModule, RouterLink, UiButton, UiField, UiPassword],
   templateUrl: './register.html',
 })
 export class RegisterPage {
@@ -21,6 +22,7 @@ export class RegisterPage {
   firstName = '';
   lastName = '';
   phone = '';
+  readonly paths = AppRoute;
   readonly fromRequest = signal(false);
   password = '';
   confirm = '';
@@ -34,7 +36,14 @@ export class RegisterPage {
     this.firstName = query.get('nombre') ?? '';
     this.lastName = query.get('apellido') ?? '';
     this.phone = query.get('telefono') ?? '';
-    this.fromRequest.set(!!(this.documentNumber || this.firstName || this.phone));
+    this.fromRequest.set(query.get('desde') === AuthFrom.Solicitud);
+  }
+
+  loginQuery() {
+    const params: Record<string, string> = {};
+    if (this.fromRequest()) params['desde'] = AuthFrom.Solicitud;
+    if (this.documentNumber) params['documento'] = this.documentNumber;
+    return params;
   }
 
   normalizePhone() {
