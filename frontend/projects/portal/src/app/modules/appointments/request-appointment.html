@@ -1,7 +1,10 @@
 <section class="request">
   <div class="booking" [class.has-sheet]="!!intent()">
     <div class="wizard">
-      <h1>Reservá tu turno</h1>
+      <h1>{{ forDesk() ? 'Dar un turno' : 'Reservá tu turno' }}</h1>
+      @if (forDesk() && firstName) {
+        <p class="hint">El turno queda para {{ lastName ? lastName + ', ' + firstName : firstName }}.</p>
+      }
       @if (!intent()) {
         <h2>¿Qué necesitás?</h2>
         <p class="hint">Una consulta es ver a un profesional. Un estudio es una práctica, como un electrocardiograma.</p>
@@ -121,11 +124,13 @@
                   <div><dt>Teléfono</dt><dd>{{ phone }}</dd></div>
                   <div><dt>Cobertura</dt><dd>{{ coverage() === Coverage.Obra ? insurerName() + ' · ' + memberNumber : 'Particular' }}</dd></div>
                 </dl>
-                <ui-button [loading]="sending()" (click)="send()">Enviar solicitud</ui-button>
+                <ui-button [loading]="sending()" (click)="send()">{{ forDesk() ? 'Confirmar turno' : 'Enviar solicitud' }}</ui-button>
               }
             } @else if (step() === Step.Done) {
               <div class="mt-8 flex flex-wrap gap-4">
-                @if (session.token()) {
+                @if (forDesk()) {
+                  <a [routerLink]="route.Secretaria" class="action-link">Volver a secretaría</a>
+                } @else if (session.token()) {
                   <a [routerLink]="route.Panel" class="action-link">Volver al inicio</a>
                 } @else {
                   <a [routerLink]="route.Registro" [queryParams]="accountDraft()" class="action-link">Crear cuenta y ver el turno</a>

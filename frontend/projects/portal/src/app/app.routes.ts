@@ -54,7 +54,7 @@ export const routes: Routes = [
           {
             path: routePath(AppRoute.ReservarPaciente),
             canActivate: [roleGuard(TenantRole.Secretary, TenantRole.TenantAdmin)],
-            loadComponent: () => import('./modules/appointments/book-appointment').then((m) => m.BookAppointmentPage),
+            loadComponent: () => import('./modules/appointments/request-appointment').then((m) => m.RequestAppointmentPage),
           },
           {
             path: routePath(AppRoute.Secretaria),

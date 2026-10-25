@@ -1,6 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   AppointmentsService,
   ClinicalService,
@@ -18,8 +18,9 @@ import {
 import { UiButton, UiEmpty, UiField, UiModal, UiSkeleton, formatFecha, formatPhone } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { Coverage, Intent, Offer, Step } from './request-appointment.enums';
-import { AppRoute } from '../../app.routes.enum';
+import { AppRoute, routePath } from '../../app.routes.enum';
 import { AuthFrom } from '../auth/auth-from';
+import { DeskPatient } from './desk-booking';
 
 
 @Component({
@@ -32,6 +33,11 @@ export class RequestAppointmentPage {
   private readonly schedule = inject(ScheduleService);
   private readonly appointments = inject(AppointmentsService);
   private readonly clinical = inject(ClinicalService);
+  private readonly activated = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private deskPatientId: string | null = null;
+  private deskDraft: DeskPatient | null = null;
+  private chart: { insurance: string; member: string } | null = null;
   readonly session = clinicaSession;
   readonly route = AppRoute;
   readonly Intent = Intent;
@@ -90,6 +96,7 @@ export class RequestAppointmentPage {
   readonly direction = signal<1 | -1>(1);
   readonly motion = signal(0);
   readonly profileReady = signal(false);
+  readonly forDesk = signal(false);
   readonly steps = computed((): Step[] => {
     const steps = [Step.Specialty, Step.Day, Step.Time];
     if (!this.profileReady()) steps.push(Step.Data);
@@ -143,7 +150,7 @@ export class RequestAppointmentPage {
       case Step.Time: return '¿A qué hora?';
       case Step.Data: return 'Tus datos';
       case Step.Coverage: return '¿Tenés obra social?';
-      case Step.Review: return 'Revisá la solicitud';
+      case Step.Review: return this.forDesk() ? 'Revisá el turno' : 'Revisá la solicitud';
       default: return 'Listo';
     }
   }
@@ -157,8 +164,12 @@ export class RequestAppointmentPage {
       case Step.Time: return `${this.specialtyName()}. Elegí un horario.`;
       case Step.Data: return 'Nombre, apellido, documento y teléfono. Con el documento vas a poder ver esta solicitud.';
       case Step.Coverage: return this.insurers().length ? 'Si no tenés, el turno queda como particular.' : 'Este profesional atiende como particular.';
-      case Step.Review: return 'Al enviarla, la secretaría confirma el turno.';
-      default: return this.session.token()
+      case Step.Review: return this.forDesk()
+        ? 'Al confirmar, el turno queda en la agenda y asociado al documento.'
+        : 'Al enviarla, la secretaría confirma el turno.';
+      default: return this.forDesk()
+        ? 'El turno quedó en la agenda. La persona lo ve cuando entra con ese documento.'
+        : this.session.token()
         ? 'La secretaría puede contactarte para confirmar el turno. También lo vas a ver en Mis turnos.'
         : 'La secretaría puede contactarte para confirmar el turno. Si querés ver el estado del turno y tu información personal, podés crear una cuenta.';
     }
@@ -411,18 +422,49 @@ export class RequestAppointmentPage {
     this.sending.set(true);
     this.error.set('');
     try {
-      await firstValueFrom(this.appointments.createRequest({
-        specialtyId: this.specialtyId(),
-        professionalId: slot.professionalId,
-        locationId: slot.locationId,
-        appointmentTypeId: slot.appointmentTypeId,
-        start: slot.start,
-        name: `${this.firstName.trim()} ${this.lastName.trim()}`,
-        phone: this.phone.trim(),
-        documentNumber: this.documentNumber.trim(),
-        insurerId: this.coverage() === Coverage.Obra ? this.insurerId : null,
-        memberNumber: this.coverage() === Coverage.Obra ? this.memberNumber.trim() : null,
-      }));
+      const insurerId = this.coverage() === Coverage.Obra ? this.insurerId : null;
+      const memberNumber = this.coverage() === Coverage.Obra ? this.memberNumber.trim() : null;
+      if (this.forDesk()) {
+        const draft = this.deskDraft;
+        if (draft) {
+          await firstValueFrom(this.appointments.bookAtDesk({
+            documentNumber: draft.documentNumber,
+            firstName: draft.firstName,
+            lastName: draft.lastName,
+            phone: draft.phone,
+            professionalId: slot.professionalId,
+            locationId: slot.locationId,
+            appointmentTypeId: slot.appointmentTypeId,
+            start: slot.start,
+            insurerId,
+            memberNumber,
+          }));
+        } else {
+          await firstValueFrom(this.appointments.bookAppointment({
+            patientId: this.deskPatientId,
+            professionalId: slot.professionalId,
+            locationId: slot.locationId,
+            appointmentTypeId: slot.appointmentTypeId,
+            start: slot.start,
+            visitReason: null,
+            insurerId,
+            memberNumber,
+          }));
+        }
+      } else {
+        await firstValueFrom(this.appointments.createRequest({
+          specialtyId: this.specialtyId(),
+          professionalId: slot.professionalId,
+          locationId: slot.locationId,
+          appointmentTypeId: slot.appointmentTypeId,
+          start: slot.start,
+          name: `${this.firstName.trim()} ${this.lastName.trim()}`,
+          phone: this.phone.trim(),
+          documentNumber: this.documentNumber.trim(),
+          insurerId,
+          memberNumber,
+        }));
+      }
       this.show(Step.Done);
     } catch (error) {
       this.error.set(errorMessage(error));
@@ -441,7 +483,30 @@ export class RequestAppointmentPage {
       this.specialties.set(specialties);
       this.types.set(types);
       this.locationIds.set(locations.filter((location) => location.isActive).map((location) => location.id));
-      if (clinicaSession.role() === TenantRole.Patient) {
+      const staff = clinicaSession.role() === TenantRole.Secretary || clinicaSession.role() === TenantRole.TenantAdmin;
+      const requested = this.activated.snapshot.queryParamMap.get('paciente');
+      const draft = history.state as Partial<DeskPatient> | null;
+      const onDeskRoute = this.activated.snapshot.routeConfig?.path === routePath(AppRoute.ReservarPaciente);
+      if (staff && onDeskRoute && !requested && !(draft?.documentNumber && draft.firstName && draft.lastName && draft.phone)) {
+        await this.router.navigateByUrl(AppRoute.DarTurno);
+        return;
+      }
+      if (staff && requested) {
+        await this.loadDeskPatient(requested);
+      } else if (staff && draft?.documentNumber && draft.firstName && draft.lastName && draft.phone) {
+        this.deskDraft = {
+          documentNumber: draft.documentNumber,
+          firstName: draft.firstName,
+          lastName: draft.lastName,
+          phone: draft.phone,
+        };
+        this.firstName = draft.firstName;
+        this.lastName = draft.lastName;
+        this.documentNumber = draft.documentNumber;
+        this.phone = formatPhone(draft.phone) ?? draft.phone;
+        this.profileReady.set(true);
+        this.forDesk.set(true);
+      } else if (clinicaSession.role() === TenantRole.Patient) {
         const history = await firstValueFrom(this.clinical.clinicalHistory()).catch(() => null);
         if (history) {
           const parts = history.patient.name.trim().split(/\s+/);
@@ -472,7 +537,35 @@ export class RequestAppointmentPage {
     this.memberNumber = '';
     this.error.set('');
     this.insurers.set(slot.insurers ?? []);
+    this.applyChart();
     this.go(this.profileReady() ? Step.Coverage : Step.Data);
+  }
+
+  private async loadDeskPatient(patientId: string) {
+    this.deskPatientId = patientId;
+    this.forDesk.set(true);
+    const history = await firstValueFrom(this.clinical.clinicalHistory({ patientId }));
+    const patient = history.patient;
+    const parts = patient.name.trim().split(/\s+/);
+    this.firstName = parts[0] ?? '';
+    this.lastName = parts.slice(1).join(' ');
+    this.phone = formatPhone(patient.phone) ?? patient.phone;
+    this.documentNumber = patient.documentNumber;
+    this.chart = {
+      insurance: patient.healthInsurance?.trim() ?? '',
+      member: patient.memberNumber?.trim() ?? '',
+    };
+    this.profileReady.set(Boolean(this.firstName.trim() && this.lastName.trim() && this.documentNumber.trim() && this.phone.trim()));
+  }
+
+  private applyChart() {
+    const insurance = this.chart?.insurance ?? '';
+    if (!insurance) return;
+    const match = this.insurers().find((item) => item.name.localeCompare(insurance, 'es', { sensitivity: 'accent' }) === 0);
+    if (!match || !this.chart?.member) return;
+    this.coverage.set(Coverage.Obra);
+    this.insurerId = match.id;
+    this.memberNumber = this.chart.member;
   }
 
   private clearSchedule() {
