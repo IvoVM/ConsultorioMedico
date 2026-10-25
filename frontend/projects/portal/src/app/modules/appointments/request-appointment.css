@@ -150,6 +150,23 @@ h1 {
   font-weight: 650;
 }
 
+.today-only {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  width: fit-content;
+  margin-top: 1.15rem;
+  cursor: pointer;
+  font-size: 1.05rem;
+}
+
+.today-only input {
+  width: 1.15rem;
+  height: 1.15rem;
+  margin: 0;
+  accent-color: var(--color-clinic);
+}
+
 .stage {
   animation: step-forward 0.7s ease;
 }

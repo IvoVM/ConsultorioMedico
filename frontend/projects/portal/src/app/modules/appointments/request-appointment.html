@@ -34,6 +34,12 @@
           <div class="stage" [class.is-back]="direction() < 0">
             <h2>{{ question() }}</h2>
             <p class="hint">{{ hint() }}</p>
+            @if (forDesk() && step() === Step.Specialty) {
+              <label class="today-only">
+                <input type="checkbox" name="todayOnly" [ngModel]="todayOnly()" (ngModelChange)="todayOnly.set($event)" />
+                Ver qué hay disponible hoy
+              </label>
+            }
             @if (error()) { <p class="mt-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
             @if (loading() && step() !== Step.Specialty) {
               <ui-skeleton class="mt-8" label="Buscando horarios" />
@@ -41,7 +47,7 @@
               @if (loading()) {
                 <ui-skeleton class="mt-8" label="Cargando servicios" />
               } @else if (!catalog().length) {
-                <ui-empty [message]="intent() === Intent.Estudio ? 'Todavía no hay estudios para reservar.' : 'Todavía no hay consultas para reservar.'" />
+                <ui-empty [message]="forDesk() && todayOnly() ? (intent() === Intent.Estudio ? 'Hoy no hay estudios con horario libre.' : 'Hoy no hay consultas con horario libre.') : (intent() === Intent.Estudio ? 'Todavía no hay estudios para reservar.' : 'Todavía no hay consultas para reservar.')" />
               } @else {
                 <div class="choices">
                   @for (item of catalog(); track item.id) {

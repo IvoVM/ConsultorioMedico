@@ -80,13 +80,16 @@ export class RequestAppointmentPage {
   });
   readonly catalog = computed(() => {
     const types = this.types();
+    const restrict = this.forDesk() && this.todayOnly();
+    const open = this.openToday();
+    const available = (id: string) => !restrict || (open?.has(id) ?? false);
     if (this.intent() === Intent.Estudio) {
       return types
-        .filter((type) => type.specialtyId && type.kind === AppointmentKind.Estudio)
+        .filter((type) => type.specialtyId && type.kind === AppointmentKind.Estudio && available(type.id))
         .map((type) => ({ id: type.id, name: type.name, specialtyId: type.specialtyId ?? '' }))
         .sort((left, right) => left.name.localeCompare(right.name, 'es'));
     }
-    const ids = new Set(types.filter((type) => type.specialtyId && type.kind === AppointmentKind.Consulta).map((type) => type.specialtyId));
+    const ids = new Set(types.filter((type) => type.specialtyId && type.kind === AppointmentKind.Consulta && available(type.id)).map((type) => type.specialtyId));
     return this.specialties()
       .filter((item) => ids.has(item.id))
       .map((item) => ({ id: item.id, name: item.name, specialtyId: item.id }))
@@ -97,6 +100,8 @@ export class RequestAppointmentPage {
   readonly motion = signal(0);
   readonly profileReady = signal(false);
   readonly forDesk = signal(false);
+  readonly todayOnly = signal(true);
+  private readonly openToday = signal<ReadonlySet<string> | null>(null);
   readonly steps = computed((): Step[] => {
     const steps = [Step.Specialty, Step.Day, Step.Time];
     if (!this.profileReady()) steps.push(Step.Data);
@@ -517,6 +522,7 @@ export class RequestAppointmentPage {
           this.profileReady.set(Boolean(this.firstName.trim() && this.lastName.trim() && this.documentNumber.trim() && this.phone.trim()));
         }
       }
+      if (this.forDesk()) await this.loadToday();
     } catch (error) {
       this.error.set(errorMessage(error));
     } finally {
@@ -574,6 +580,18 @@ export class RequestAppointmentPage {
     this.slots.set([]);
     this.slotsFor.set('');
     this.nearest.set(null);
+  }
+
+  private async loadToday() {
+    const now = new Date();
+    const iso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const lists = await Promise.all(this.locationIds().map((locationId) => firstValueFrom(this.schedule.availability({
+      locationId,
+      specialtyId: '00000000-0000-0000-0000-000000000000',
+      date: iso,
+    }))));
+    const cutoff = Date.now();
+    this.openToday.set(new Set(lists.flat().filter((slot) => new Date(slot.start).getTime() > cutoff).map((slot) => slot.appointmentTypeId)));
   }
 
   private async loadSlots(iso: string, spin = false) {
