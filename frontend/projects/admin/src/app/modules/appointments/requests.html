@@ -18,9 +18,10 @@
     <tbody>
       @for (item of requests(); track item.id) {
         <tr>
-          <td class="whitespace-nowrap">
-            {{ item.start | fecha }}
-            @if (item.previousStart) { <span class="mt-1 block text-sm text-ink/70">Antes: {{ item.previousStart | fecha }}</span> }
+          <td class="w-80 min-w-80 whitespace-normal">
+            <span class="block">{{ item.start | fecha:'dia' }}</span>
+            <span class="block tabular-nums">{{ item.start | fecha:'hora' }}</span>
+            @if (item.previousStart) { <span class="mt-1 block max-w-80 text-sm text-ink/70">Antes: {{ item.previousStart | fecha:'dia' }}, {{ item.previousStart | fecha:'hora' }}</span> }
           </td>
           <td data-name="Persona">
             <span class="font-serif text-lg leading-tight">{{ item.name }}</span>

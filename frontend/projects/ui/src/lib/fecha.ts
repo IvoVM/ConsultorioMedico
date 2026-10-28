@@ -16,7 +16,14 @@ const dateOnly = new Intl.DateTimeFormat('es-AR', {
   year: 'numeric',
 });
 
-export function formatFecha(value?: string | null, mode: 'fecha' | 'hora' = 'fecha'): string {
+const dayLabel = new Intl.DateTimeFormat('es-AR', {
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+});
+
+export function formatFecha(value?: string | null, mode: 'fecha' | 'hora' | 'dia' = 'fecha'): string {
   if (!value) return '';
   const text = value.trim();
   const clock = text.match(/^(\d{2}):(\d{2})/);
@@ -33,12 +40,13 @@ export function formatFecha(value?: string | null, mode: 'fecha' | 'hora' = 'fec
   if (mode === 'hora' && hour && minute) return `${hour}:${minute}`;
 
   const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]), hour ? Number(hour) : 12, minute ? Number(minute) : 0);
+  if (mode === 'dia') return dayLabel.format(date);
   return hour ? dateTime.format(date) : dateOnly.format(date);
 }
 
 @Pipe({ name: 'fecha' })
 export class FechaPipe implements PipeTransform {
-  transform(value?: string | null, mode: 'fecha' | 'hora' = 'fecha') {
+  transform(value?: string | null, mode: 'fecha' | 'hora' | 'dia' = 'fecha') {
     return formatFecha(value, mode);
   }
 }
