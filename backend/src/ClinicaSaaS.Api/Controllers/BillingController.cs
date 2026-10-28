@@ -8,23 +8,23 @@ namespace ClinicaSaaS.Api.Controllers;
 [ApiController]
 [Authorize(Roles = $"{AppRoles.TenantAdmin},{AppRoles.Secretary}")]
 [Route("api")]
-public class BillingController(BillingService billing) : ApiController
+public class BillingController(FeeService fees, InvoiceService invoices) : ApiController
 {
     [Authorize(Roles = AppRoles.TenantAdmin)]
     [HttpGet("aranceles")]
     public Task<IActionResult> Fees([FromQuery] ListQuery query, CancellationToken ct) =>
-        Run(() => billing.FeesResultAsync(query, ct));
+        Run(() => fees.FeesResultAsync(query, ct));
 
     [Authorize(Roles = AppRoles.TenantAdmin)]
     [HttpPost("aranceles")]
     public Task<IActionResult> CreateFee(CreateFeeCommand command, CancellationToken ct) =>
-        Run(() => billing.CreateFeeAsync(command, ct));
+        Run(() => fees.CreateFeeAsync(command, ct));
 
     [HttpGet("comprobantes")]
     public Task<IActionResult> Invoices([FromQuery] ListQuery query, CancellationToken ct) =>
-        Run(() => billing.InvoicesResultAsync(query, ct));
+        Run(() => invoices.InvoicesResultAsync(query, ct));
 
     [HttpPost("comprobantes/{id:guid}/pagar")]
     public Task<IActionResult> Pay(Guid id, PayInvoiceCommand command, CancellationToken ct) =>
-        Run(() => billing.PayAsync(id, command, ct));
+        Run(() => invoices.PayAsync(id, command, ct));
 }

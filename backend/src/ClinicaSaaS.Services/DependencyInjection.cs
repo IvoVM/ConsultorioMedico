@@ -56,7 +56,8 @@ public static class DependencyInjection
         services.AddScoped<UsersService>();
         services.AddScoped<ScheduleService>();
         services.AddScoped<ClinicalService>();
-        services.AddScoped<BillingService>();
+        services.AddScoped<FeeService>();
+        services.AddScoped<InvoiceService>();
         services.AddScoped<MedicalRecordsService>();
         return services;
     }

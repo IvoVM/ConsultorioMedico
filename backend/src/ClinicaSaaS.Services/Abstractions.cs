@@ -1,4 +1,5 @@
 using ClinicaSaaS.Domain;
+using ClinicaSaaS.Domain.QueryViews;
 using ClinicaSaaS.Infrastructure.Identity;
 
 namespace ClinicaSaaS.Services;
@@ -148,6 +149,7 @@ public interface IClinicalStore
 public interface IBillingStore
 {
     IQueryable<Fee> Fees { get; }
+    IQueryable<FeeRow> FeeRows(DateOnly today);
     Task<Fee?> GetCurrentFeeAsync(Guid appointmentTypeId, DateOnly today, string? payer, CancellationToken ct);
     Task RemoveFeesEffectiveFromAsync(Guid appointmentTypeId, DateOnly day, string? payer, Guid? keepId, CancellationToken ct);
     Task<Fee> AddFeeAsync(Fee fee, CancellationToken ct);

@@ -409,6 +409,15 @@ public class BillingStore(TenantDbContext db) : IBillingStore
 {
     public IQueryable<Fee> Fees => db.Fees.AsNoTracking();
 
+    public IQueryable<FeeRow> FeeRows(DateOnly today) =>
+        db.AppointmentTypes.AsNoTracking().Select(t => new FeeRow
+        {
+            AppointmentTypeId = t.Id,
+            Service = t.Name,
+            Amount = t.Fees.Where(f => f.Payer == null && f.EffectiveFrom <= today).OrderByDescending(f => f.EffectiveFrom).ThenByDescending(f => f.Id).Select(f => (decimal?)f.Amount).FirstOrDefault(),
+            EffectiveFrom = t.Fees.Where(f => f.Payer == null && f.EffectiveFrom <= today).OrderByDescending(f => f.EffectiveFrom).ThenByDescending(f => f.Id).Select(f => (DateOnly?)f.EffectiveFrom).FirstOrDefault()
+        });
+
     public Task<Fee?> GetCurrentFeeAsync(Guid appointmentTypeId, DateOnly today, string? payer, CancellationToken ct)
     {
         var query = db.Fees.Where(f => f.AppointmentTypeId == appointmentTypeId && f.EffectiveFrom <= today);
