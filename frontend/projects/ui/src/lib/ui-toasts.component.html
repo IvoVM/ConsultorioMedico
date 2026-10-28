@@ -1,0 +1,11 @@
+<div class="stack" aria-live="polite">
+  @for (item of toasts.items(); track item.id) {
+    <article class="toast" [class.leaving]="item.leaving" [class.error]="item.tone === 'error'">
+      <div class="copy">
+        <p class="title">{{ item.title }}</p>
+        <p class="description">{{ item.description }}</p>
+      </div>
+      <button type="button" class="close" aria-label="Cerrar" (click)="toasts.dismiss(item.id)">×</button>
+    </article>
+  }
+</div>

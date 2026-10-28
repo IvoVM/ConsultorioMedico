@@ -2,7 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AppointmentDto, AppointmentStatus, AppointmentsService, BillingService, InvoiceDto, InvoiceStatus, PatientLookupDto, PatientsService, PaymentMethod, ScheduleService, SlotDto, WaitlistEntryDto, errorMessage } from 'sdk';
-import { FechaPipe, UiActions, UiBadge, UiButton, UiCalendar, UiEmpty, UiField, UiSkeleton, UiTable, formatFecha } from 'ui';
+import { FechaPipe, ToastService, UiActions, UiBadge, UiButton, UiCalendar, UiEmpty, UiField, UiModal, UiSkeleton, UiTable, formatFecha } from 'ui';
 import { Observable, firstValueFrom } from 'rxjs';
 import { appointmentStatusLabels } from '../appointments/models/appointment-status-labels';
 import { invoiceStatusLabels } from './models/invoice-labels';
@@ -15,7 +15,7 @@ const paymentLabels: Record<PaymentMethod, string> = {
 };
 
 @Component({
-  imports: [FormsModule, RouterLink, FechaPipe, UiActions, UiBadge, UiButton, UiCalendar, UiEmpty, UiField, UiSkeleton, UiTable],
+  imports: [FormsModule, RouterLink, FechaPipe, UiActions, UiBadge, UiButton, UiCalendar, UiEmpty, UiField, UiModal, UiSkeleton, UiTable],
   templateUrl: './front-desk.html',
 })
 export class FrontDeskPage {
@@ -27,6 +27,7 @@ export class FrontDeskPage {
   private readonly billing = inject(BillingService);
   private readonly patientsApi = inject(PatientsService);
   private readonly schedule = inject(ScheduleService);
+  private readonly toasts = inject(ToastService);
   private searchSeq = 0;
   private searchTimer = 0;
   readonly statusLabels = appointmentStatusLabels;
@@ -38,7 +39,7 @@ export class FrontDeskPage {
   readonly slots = signal<SlotDto[]>([]);
   readonly moving = signal<AppointmentDto | null>(null);
   readonly error = signal('');
-  readonly notice = signal('');
+  readonly slotsError = signal('');
   readonly loading = signal(true);
   readonly refreshing = signal(false);
   readonly pending = signal('');
@@ -147,19 +148,21 @@ export class FrontDeskPage {
     this.moving.set(appointment);
     this.moveDate = appointment.start.slice(0, 10);
     this.slots.set([]);
+    this.slotsError.set('');
     await this.loadSlots();
   }
 
   cancelMove() {
     this.moving.set(null);
     this.slots.set([]);
+    this.slotsError.set('');
   }
 
   async loadSlots() {
     const appointment = this.moving();
     if (!appointment || !this.moveDate) return;
     this.slotsLoading.set(true);
-    this.error.set('');
+    this.slotsError.set('');
     try {
       const slots = await firstValueFrom(
         this.schedule.availability({
@@ -172,7 +175,7 @@ export class FrontDeskPage {
       this.slots.set(slots.filter((slot) => slot.appointmentTypeId === appointment.appointmentTypeId));
     } catch (error) {
       this.slots.set([]);
-      this.error.set(errorMessage(error));
+      this.slotsError.set(errorMessage(error));
     } finally {
       this.slotsLoading.set(false);
     }
@@ -181,20 +184,27 @@ export class FrontDeskPage {
   async moveTo(slot: SlotDto) {
     const appointment = this.moving();
     if (!appointment) return;
-    await this.run(`move:${appointment.id}`, () => this.appointmentsApi.rescheduleAppointment(appointment.id, { start: slot.start }));
-    if (!this.error()) this.cancelMove();
+    this.pending.set(`move:${appointment.id}`);
+    try {
+      await firstValueFrom(this.appointmentsApi.rescheduleAppointment(appointment.id, { start: slot.start }));
+      this.toasts.success('Turno reprogramado', `${appointment.patient} quedó para el ${formatFecha(slot.start)}.`);
+      this.cancelMove();
+      await this.fetchDay();
+    } catch (error) {
+      this.toasts.error('No se pudo reprogramar', errorMessage(error));
+    } finally {
+      this.pending.set('');
+    }
   }
 
   async offer(item: WaitlistEntryDto) {
     this.pending.set(`offer:${item.id}`);
-    this.error.set('');
-    this.notice.set('');
     try {
       const appointment = await firstValueFrom(this.appointmentsApi.offerWaitlist(item.id));
-      this.notice.set(`${item.patient} tiene turno el ${formatFecha(appointment.start)} con ${appointment.professional}.`);
+      this.toasts.success('Turno asignado', `${item.patient} tiene turno el ${formatFecha(appointment.start)} con ${appointment.professional}.`);
       await this.fetchDay();
     } catch (error) {
-      this.error.set(errorMessage(error));
+      this.toasts.error('No se pudo asignar el turno', errorMessage(error));
     } finally {
       this.pending.set('');
     }

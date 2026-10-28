@@ -6,7 +6,6 @@
 </header>
 
 @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
-@if (notice()) { <p class="mb-4 text-sm text-ink/70" role="status">{{ notice() }}</p> }
 
 @if (loading()) {
   <ui-skeleton label="Cargando solicitudes" />
@@ -46,25 +45,27 @@
 </ui-table>
 }
 @if (moving(); as item) {
-  <form class="mt-6 max-w-3xl border border-rule bg-white p-4" (ngSubmit)="loadSlots()">
-    <h3 class="font-serif text-xl">Reprogramar a {{ item.name }}</h3>
-    <p class="mt-1 text-sm text-ink/70">{{ item.professional }} · {{ item.appointmentType }}. Elegí un día y un horario libre.</p>
-    <ui-field class="mt-4 sm:w-64" label="Día">
-      <input name="moveDate" type="date" [(ngModel)]="moveDate" (ngModelChange)="loadSlots()" required />
-    </ui-field>
-    @if (slotsLoading()) {
-      <p class="mt-4 text-sm text-ink/60">Buscando horarios…</p>
-    } @else if (!slots().length) {
-      <p class="mt-4 text-sm text-ink/70">Ese día no tiene horarios libres para esta prestación.</p>
-    } @else {
-      <div class="mt-4 flex flex-wrap gap-2">
-        @for (slot of slots(); track slot.start) {
-          <ui-button type="button" variant="outlined" [loading]="pending() === 'move:' + item.id" (click)="moveTo(slot)">{{ slot.start | fecha:'hora' }}</ui-button>
-        }
-      </div>
-    }
-    <ui-button class="mt-4" type="button" variant="ghost" (click)="cancelMove()">Volver a las solicitudes</ui-button>
-  </form>
+  <ui-modal [open]="true" [wide]="true" [title]="'Reprogramar a ' + item.name" (closed)="cancelMove()">
+    <form (ngSubmit)="loadSlots()">
+      <p class="text-sm text-ink/70">{{ item.professional }} · {{ item.appointmentType }}. Elegí un día y un horario libre.</p>
+      <ui-field class="mt-4 sm:w-64" label="Día">
+        <input name="moveDate" type="date" [(ngModel)]="moveDate" (ngModelChange)="loadSlots()" required />
+      </ui-field>
+      @if (slotsError()) {
+        <p class="mt-4 text-sm text-pulse" role="alert">{{ slotsError() }}</p>
+      } @else if (slotsLoading()) {
+        <p class="mt-4 text-sm text-ink/60">Buscando horarios…</p>
+      } @else if (!slots().length) {
+        <p class="mt-4 text-sm text-ink/70">Ese día no tiene horarios libres para esta prestación.</p>
+      } @else {
+        <div class="mt-4 flex flex-wrap gap-2">
+          @for (slot of slots(); track slot.start) {
+            <ui-button type="button" variant="outlined" [loading]="pending() === 'move:' + item.id" (click)="moveTo(slot)">{{ slot.start | fecha:'hora' }}</ui-button>
+          }
+        </div>
+      }
+    </form>
+  </ui-modal>
 }
 <ui-modal [open]="denying() !== null" title="Motivo de la denegación" (closed)="denying.set(null)">
   <form class="flex flex-col gap-4" (ngSubmit)="confirmDeny()">
@@ -72,7 +73,6 @@
     <ui-field label="Motivo">
       <textarea name="reason" rows="4" [(ngModel)]="reason" required maxlength="400"></textarea>
     </ui-field>
-    @if (error()) { <p class="text-sm text-pulse" role="alert">{{ error() }}</p> }
     <ui-button type="submit" variant="error" [loading]="pending().startsWith('deny:')">Denegar solicitud</ui-button>
   </form>
 </ui-modal>

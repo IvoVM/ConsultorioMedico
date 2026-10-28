@@ -1,0 +1,115 @@
+:host {
+  display: contents;
+}
+
+.stack {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: min(20rem, calc(100vw - 2rem));
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.65rem 0.5rem 0.7rem 0.75rem;
+  border: 1px solid var(--color-rule, #d3ddd7);
+  border-left: 3px solid var(--color-clinic, #1b6b52);
+  background: white;
+  color: var(--color-ink, #17332c);
+  font-family: var(--font-sans, 'Segoe UI', sans-serif);
+  font-size: 0.875rem;
+  line-height: 1.35;
+  pointer-events: auto;
+  animation: toast-in 0.34s cubic-bezier(0.16, 0.84, 0.32, 1) both;
+}
+
+.toast.error {
+  border-left-color: var(--color-pulse, #8d3b33);
+}
+
+.toast.leaving {
+  animation: toast-out 0.28s ease forwards;
+}
+
+.copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-serif, Georgia, serif);
+  font-size: 1rem;
+  line-height: 1.25;
+  color: var(--color-clinic-deep, #124a38);
+}
+
+.toast.error .title {
+  color: var(--color-pulse-deep, #732f29);
+}
+
+.description {
+  margin: 0.2rem 0 0;
+  color: color-mix(in srgb, var(--color-ink, #17332c) 72%, transparent);
+}
+
+.close {
+  display: grid;
+  width: 1.5rem;
+  height: 1.5rem;
+  flex-shrink: 0;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: color-mix(in srgb, var(--color-ink, #17332c) 55%, transparent);
+  font-size: 1.15rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.close:hover {
+  background: var(--color-mist, #e6eeea);
+  color: var(--color-ink, #17332c);
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(110%);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes toast-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+
+  to {
+    opacity: 0;
+    transform: translateX(110%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast,
+  .toast.leaving {
+    animation: none;
+  }
+
+  .toast.leaving {
+    opacity: 0;
+  }
+}

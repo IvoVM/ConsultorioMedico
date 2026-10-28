@@ -2,7 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AppointmentDto, AppointmentStatus, AppointmentsService, ScheduleService, SlotDto, errorMessage } from 'sdk';
-import { FechaPipe, MediaWatcherService, UiBadge, UiButton, UiEmpty, UiField, UiSkeleton, UiTable } from 'ui';
+import { FechaPipe, MediaWatcherService, ToastService, UiBadge, UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable, formatFecha } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { TablePager, listParams, queueSearch } from '../../table-pager';
 import { SortCol, SortState, nextSort } from '../../table-sort';
@@ -18,7 +18,7 @@ const statusLabels: Record<AppointmentStatus, string> = {
 };
 
 @Component({
-  imports: [FormsModule, RouterLink, FechaPipe, SortCol, TablePager, UiBadge, UiButton, UiEmpty, UiField, UiSkeleton, UiTable],
+  imports: [FormsModule, RouterLink, FechaPipe, SortCol, TablePager, UiBadge, UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable],
   templateUrl: './history.html',
 })
 export class AppointmentHistoryPage {
@@ -26,6 +26,7 @@ export class AppointmentHistoryPage {
   private readonly schedule = inject(ScheduleService);
   private readonly media = inject(MediaWatcherService);
   private readonly router = inject(Router);
+  private readonly toasts = inject(ToastService);
   private readonly searchHost: { timer?: ReturnType<typeof setTimeout> } = {};
   readonly statusLabels = statusLabels;
   readonly status = AppointmentStatus;
@@ -38,6 +39,7 @@ export class AppointmentHistoryPage {
   readonly sort = signal<SortState>({ key: 'start', dir: 'desc' });
   readonly moving = signal<AppointmentDto | null>(null);
   readonly slots = signal<SlotDto[]>([]);
+  readonly slotsError = signal('');
   readonly slotsLoading = signal(false);
   readonly pending = signal('');
   moveDate = new Date().toISOString().slice(0, 10);
@@ -78,19 +80,21 @@ export class AppointmentHistoryPage {
     this.moving.set(item);
     this.moveDate = item.start.slice(0, 10);
     this.slots.set([]);
+    this.slotsError.set('');
     await this.loadSlots();
   }
 
   cancelMove() {
     this.moving.set(null);
     this.slots.set([]);
+    this.slotsError.set('');
   }
 
   async loadSlots() {
     const item = this.moving();
     if (!item || !this.moveDate) return;
     this.slotsLoading.set(true);
-    this.error.set('');
+    this.slotsError.set('');
     try {
       const slots = await firstValueFrom(this.schedule.availability({
         locationId: item.locationId,
@@ -101,7 +105,7 @@ export class AppointmentHistoryPage {
       this.slots.set(slots.filter((slot) => slot.appointmentTypeId === item.appointmentTypeId));
     } catch (error) {
       this.slots.set([]);
-      this.error.set(errorMessage(error));
+      this.slotsError.set(errorMessage(error));
     } finally {
       this.slotsLoading.set(false);
     }
@@ -111,13 +115,13 @@ export class AppointmentHistoryPage {
     const item = this.moving();
     if (!item) return;
     this.pending.set(item.id);
-    this.error.set('');
     try {
       await firstValueFrom(this.appointments.rescheduleAppointment(item.id, { start: slot.start }));
+      this.toasts.success('Turno reprogramado', `${item.patient} quedó para el ${formatFecha(slot.start)}.`);
       this.cancelMove();
       await this.load();
     } catch (error) {
-      this.error.set(errorMessage(error));
+      this.toasts.error('No se pudo reprogramar', errorMessage(error));
     } finally {
       this.pending.set('');
     }

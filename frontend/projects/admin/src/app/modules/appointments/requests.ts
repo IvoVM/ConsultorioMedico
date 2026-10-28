@@ -1,7 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AppointmentsService, BookingRequestDto, BookingRequestStatus, SlotDto, errorMessage } from 'sdk';
-import { FechaPipe, UiActions, UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable, formatFecha } from 'ui';
+import { FechaPipe, ToastService, UiActions, UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable, formatFecha } from 'ui';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
@@ -10,12 +10,13 @@ import { firstValueFrom } from 'rxjs';
 })
 export class AppointmentRequestsPage {
   private readonly appointments = inject(AppointmentsService);
+  private readonly toasts = inject(ToastService);
   readonly requests = signal<BookingRequestDto[]>([]);
   readonly slots = signal<SlotDto[]>([]);
   readonly moving = signal<BookingRequestDto | null>(null);
   readonly denying = signal<BookingRequestDto | null>(null);
   readonly error = signal('');
-  readonly notice = signal('');
+  readonly slotsError = signal('');
   readonly loading = signal(true);
   readonly pending = signal('');
   readonly slotsLoading = signal(false);
@@ -34,18 +35,15 @@ export class AppointmentRequestsPage {
     if (!accepted) {
       this.denying.set(item);
       this.reason = '';
-      this.error.set('');
       return;
     }
     this.pending.set(`approve:${item.id}`);
-    this.error.set('');
-    this.notice.set('');
     try {
       await firstValueFrom(this.appointments.approveRequest(item.id));
-      this.notice.set(`${item.name} quedó el ${formatFecha(item.start)} con ${item.professional}.`);
+      this.toasts.success('Turno aprobado', `${item.name} quedó el ${formatFecha(item.start)} con ${item.professional}.`);
       await this.load();
     } catch (error) {
-      this.error.set(errorMessage(error));
+      this.toasts.error('No se pudo aprobar', errorMessage(error));
     } finally {
       this.pending.set('');
     }
@@ -55,15 +53,13 @@ export class AppointmentRequestsPage {
     const item = this.denying();
     if (!item) return;
     this.pending.set(`deny:${item.id}`);
-    this.error.set('');
-    this.notice.set('');
     try {
       await firstValueFrom(this.appointments.rejectRequest(item.id, { reason: this.reason.trim() }));
-      this.notice.set(`La solicitud de ${item.name} quedó denegada.`);
+      this.toasts.success('Solicitud denegada', `La solicitud de ${item.name} quedó denegada.`);
       this.denying.set(null);
       await this.load();
     } catch (error) {
-      this.error.set(errorMessage(error));
+      this.toasts.error('No se pudo denegar', errorMessage(error));
     } finally {
       this.pending.set('');
     }
@@ -73,24 +69,26 @@ export class AppointmentRequestsPage {
     this.moving.set(item);
     this.moveDate = item.start.slice(0, 10);
     this.slots.set([]);
+    this.slotsError.set('');
     await this.loadSlots();
   }
 
   cancelMove() {
     this.moving.set(null);
     this.slots.set([]);
+    this.slotsError.set('');
   }
 
   async loadSlots() {
     const item = this.moving();
     if (!item || !this.moveDate) return;
     this.slotsLoading.set(true);
-    this.error.set('');
+    this.slotsError.set('');
     try {
       this.slots.set(await firstValueFrom(this.appointments.requestSlots(item.id, this.moveDate)));
     } catch (error) {
       this.slots.set([]);
-      this.error.set(errorMessage(error));
+      this.slotsError.set(errorMessage(error));
     } finally {
       this.slotsLoading.set(false);
     }
@@ -100,15 +98,13 @@ export class AppointmentRequestsPage {
     const item = this.moving();
     if (!item) return;
     this.pending.set(`move:${item.id}`);
-    this.error.set('');
-    this.notice.set('');
     try {
       await firstValueFrom(this.appointments.rescheduleRequest(item.id, { start: slot.start }));
-      this.notice.set(`${item.name} quedó reprogramado para el ${formatFecha(slot.start)}.`);
+      this.toasts.success('Turno reprogramado', `${item.name} quedó para el ${formatFecha(slot.start)}.`);
       this.cancelMove();
       await this.load();
     } catch (error) {
-      this.error.set(errorMessage(error));
+      this.toasts.error('No se pudo reprogramar', errorMessage(error));
     } finally {
       this.pending.set('');
     }
