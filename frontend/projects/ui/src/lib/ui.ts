@@ -26,3 +26,6 @@ export { UiBoard, UiTone } from './ui-board.component';
 export type { BoardColumn, BoardItem } from './ui-board.component';
 export { UiStat } from './ui-stat.component';
 export { greeting, todayLabel } from './greeting';
+export { UiTabs } from './ui-tabs.component';
+export type { TabItem } from './ui-tabs.component';
+export { RequestTab, daysOverdue, localDate, overdueLabel, requestExpired, requestTabLabels, startOfToday } from './request-tabs';

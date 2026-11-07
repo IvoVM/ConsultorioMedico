@@ -21,6 +21,16 @@ public class SchedulingRulesTests
     }
 
     [Fact]
+    public void Request_expires_once_its_day_has_passed_in_the_clinic_zone()
+    {
+        var now = SchedulingRules.Combine(new DateOnly(2026, 10, 5), new TimeOnly(15, 0), Zone);
+
+        Assert.True(SchedulingRules.RequestExpired(SchedulingRules.Combine(new DateOnly(2026, 10, 4), new TimeOnly(18, 0), Zone), now, Zone));
+        Assert.False(SchedulingRules.RequestExpired(SchedulingRules.Combine(new DateOnly(2026, 10, 5), new TimeOnly(9, 0), Zone), now, Zone));
+        Assert.False(SchedulingRules.RequestExpired(SchedulingRules.Combine(new DateOnly(2026, 10, 6), new TimeOnly(9, 0), Zone), now, Zone));
+    }
+
+    [Fact]
     public void Generates_slots_and_skips_busy_ranges()
     {
         var busy = new TimeRange(At(9, 30), At(10, 0));

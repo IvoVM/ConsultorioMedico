@@ -1,11 +1,11 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AppointmentsService, BookingRequestDto, BookingRequestStatus, SlotDto, errorMessage } from 'sdk';
-import { FechaPipe, ToastService, UiActions, UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable, formatFecha } from 'ui';
+import { FechaPipe, RequestTab, TabItem, ToastService, UiActions, UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable, UiTabs, UiTone, formatFecha, localDate, overdueLabel, requestExpired, requestTabLabels } from 'ui';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
-  imports: [FormsModule, FechaPipe, UiActions, UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable],
+  imports: [FormsModule, FechaPipe, UiActions, UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable, UiTabs],
   templateUrl: './requests.html',
 })
 export class AppointmentRequestsPage {
@@ -20,7 +20,18 @@ export class AppointmentRequestsPage {
   readonly loading = signal(true);
   readonly pending = signal('');
   readonly slotsLoading = signal(false);
-  moveDate = new Date().toISOString().slice(0, 10);
+  readonly tabKeys = RequestTab;
+  readonly overdueLabel = overdueLabel;
+  readonly tab = signal<string>(RequestTab.Vigentes);
+  readonly today = localDate(new Date());
+  readonly expired = computed(() => this.requests().filter((item) => requestExpired(item.start)));
+  readonly current = computed(() => this.requests().filter((item) => !requestExpired(item.start)));
+  readonly shown = computed(() => (this.tab() === RequestTab.Vencidas ? this.expired() : this.current()));
+  readonly tabs = computed((): TabItem[] => [
+    { key: RequestTab.Vigentes, label: requestTabLabels[RequestTab.Vigentes], icon: 'pending_actions', count: this.current().length, tone: UiTone.Warn },
+    { key: RequestTab.Vencidas, label: requestTabLabels[RequestTab.Vencidas], icon: 'event_busy', count: this.expired().length, tone: UiTone.Bad },
+  ]);
+  moveDate = localDate(new Date());
   reason = '';
 
   constructor() {
@@ -67,7 +78,7 @@ export class AppointmentRequestsPage {
 
   async startMove(item: BookingRequestDto) {
     this.moving.set(item);
-    this.moveDate = item.start.slice(0, 10);
+    this.moveDate = requestExpired(item.start) ? this.today : item.start.slice(0, 10);
     this.slots.set([]);
     this.slotsError.set('');
     await this.loadSlots();
@@ -85,7 +96,9 @@ export class AppointmentRequestsPage {
     this.slotsLoading.set(true);
     this.slotsError.set('');
     try {
-      this.slots.set(await firstValueFrom(this.appointments.requestSlots(item.id, this.moveDate)));
+      const now = Date.now();
+      const slots = await firstValueFrom(this.appointments.requestSlots(item.id, this.moveDate));
+      this.slots.set(slots.filter((slot) => new Date(slot.start).getTime() > now));
     } catch (error) {
       this.slots.set([]);
       this.slotsError.set(errorMessage(error));

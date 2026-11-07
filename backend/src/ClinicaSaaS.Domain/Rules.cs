@@ -25,6 +25,9 @@ public static class SchedulingRules
     public static bool PatientCanCancel(AppointmentStatus status, DateTimeOffset start, DateTimeOffset now) =>
         status is AppointmentStatus.Booked or AppointmentStatus.Rescheduled && start - now >= PatientCancellationNotice;
 
+    public static bool RequestExpired(DateTimeOffset start, DateTimeOffset now, TimeZoneInfo zone) =>
+        DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(start, zone).DateTime) < DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(now, zone).DateTime);
+
     public static bool CanReschedule(AppointmentStatus status) =>
         status is AppointmentStatus.Booked or AppointmentStatus.Rescheduled or AppointmentStatus.CheckedIn;
 

@@ -705,6 +705,8 @@ public class ScheduleService(
         var request = await requests.GetAsync(id, ct) ?? throw new NotFoundException("Esa solicitud no está.");
         if (request.Status is not (BookingRequestStatus.Pending or BookingRequestStatus.Rescheduled) || request.AppointmentId is not null)
             throw new BusinessRuleException("Esa solicitud ya fue resuelta.");
+        if (SchedulingRules.RequestExpired(request.Start, clock.GetUtcNow(), timeZone.Zone))
+            throw new BusinessRuleException("Esa solicitud ya venció. Reprogramala a un horario libre.");
 
         var clientId = await EnsureClientAsync(request, ct);
         var appointment = await appointments.BookAsync(new Appointment

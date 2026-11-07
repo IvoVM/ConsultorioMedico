@@ -8,48 +8,68 @@
 @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
 @if (loading()) {
   <ui-skeleton label="Cargando solicitudes" />
-} @else if (!requests().length) {
-  <ui-empty message="No hay solicitudes para confirmar." />
 } @else {
-  <ui-table>
-<table class="cards">
-    <thead><tr><th>Cuándo</th><th>Persona</th><th>Para</th><th>Estado</th><th></th></tr></thead>
-    <tbody>
-      @for (item of requests(); track item.id) {
-        <tr>
-          <td class="w-80 min-w-80 whitespace-normal">
-            <span class="block">{{ item.start | fecha:'dia' }}</span>
-            <span class="block tabular-nums">{{ item.start | fecha:'hora' }}</span>
-            @if (item.previousStart) { <span class="mt-1 block max-w-80 text-sm text-ink/70">Antes: {{ item.previousStart | fecha:'dia' }}, {{ item.previousStart | fecha:'hora' }}</span> }
-          </td>
-          <td data-name="Persona">
-            <span class="font-serif text-lg leading-tight">{{ item.name }}</span>
-            <span class="mt-1 block text-sm text-ink/70">{{ item.documentNumber }} · {{ item.phone }}</span>
-          </td>
-          <td data-name="Para">
-            {{ item.specialty }}
-            <span class="mt-1 block text-sm text-ink/70">{{ item.professional }} · {{ item.insurer || 'Particular' }}@if (item.memberNumber) { <span> · afiliado {{ item.memberNumber }}</span> }</span>
-          </td>
-          <td data-name="Estado">{{ statusLabel(item.status) }}</td>
-          <td class="whitespace-nowrap">
-            <div class="flex flex-wrap gap-2">
-              <ui-button [loading]="pending() === 'approve:' + item.id" (click)="decide(item, true)">Aprobar</ui-button>
-              <ui-button variant="secondary" (click)="startMove(item)">Reprogramar</ui-button>
-              <ui-button variant="error" (click)="decide(item, false)">Denegar</ui-button>
-            </div>
-          </td>
-        </tr>
-      }
-    </tbody>
-  </table>
-</ui-table>
+  <ui-tabs class="mb-5" label="Solicitudes" [tabs]="tabs()" [(active)]="tab" />
+  @if (tab() === tabKeys.Vencidas) {
+    <p class="mb-4 max-w-prose text-sm leading-relaxed text-ink/70">
+      Son pedidos de un día que ya pasó. No se pueden aprobar: reprogramalos a un horario libre o denegalos.
+    </p>
+  }
+  @if (!shown().length) {
+    <ui-empty [message]="tab() === tabKeys.Vencidas ? 'No hay solicitudes vencidas.' : 'No hay solicitudes para confirmar.'" />
+  } @else {
+    @for (view of [tab()]; track view) {
+      <ui-table>
+        <table class="cards">
+          <thead><tr><th>Cuándo</th><th>Persona</th><th>Para</th><th>Estado</th><th></th></tr></thead>
+          <tbody>
+            @for (item of shown(); track item.id) {
+              <tr>
+                <td class="w-80 min-w-80 whitespace-normal">
+                  <span class="block">{{ item.start | fecha:'dia' }}</span>
+                  <span class="block tabular-nums">{{ item.start | fecha:'hora' }}</span>
+                  @if (item.previousStart) { <span class="mt-1 block max-w-80 text-sm text-ink/70">Antes: {{ item.previousStart | fecha:'dia' }}, {{ item.previousStart | fecha:'hora' }}</span> }
+                </td>
+                <td data-name="Persona">
+                  <span class="font-serif text-lg leading-tight">{{ item.name }}</span>
+                  <span class="mt-1 block text-sm text-ink/70">{{ item.documentNumber }} · {{ item.phone }}</span>
+                </td>
+                <td data-name="Para">
+                  {{ item.specialty }}
+                  <span class="mt-1 block text-sm text-ink/70">{{ item.professional }} · {{ item.insurer || 'Particular' }}@if (item.memberNumber) { <span> · afiliado {{ item.memberNumber }}</span> }</span>
+                </td>
+                <td data-name="Estado">
+                  @if (view === tabKeys.Vencidas) {
+                    <span class="chip is-bad whitespace-nowrap">{{ overdueLabel(item.start) }}</span>
+                  } @else {
+                    {{ statusLabel(item.status) }}
+                  }
+                </td>
+                <td class="whitespace-nowrap">
+                  <div class="flex flex-wrap gap-2">
+                    @if (view === tabKeys.Vencidas) {
+                      <ui-button (click)="startMove(item)">Reprogramar</ui-button>
+                    } @else {
+                      <ui-button [loading]="pending() === 'approve:' + item.id" (click)="decide(item, true)">Aprobar</ui-button>
+                      <ui-button variant="secondary" (click)="startMove(item)">Reprogramar</ui-button>
+                    }
+                    <ui-button variant="error" (click)="decide(item, false)">Denegar</ui-button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </ui-table>
+    }
+  }
 }
 @if (moving(); as item) {
   <ui-modal [open]="true" [wide]="true" [title]="'Reprogramar a ' + item.name" (closed)="cancelMove()">
     <form (ngSubmit)="loadSlots()">
       <p class="text-sm text-ink/70">{{ item.professional }} · {{ item.appointmentType }}. Elegí un día y un horario libre.</p>
       <ui-field class="mt-4 sm:w-64" label="Día">
-        <input name="moveDate" type="date" [(ngModel)]="moveDate" (ngModelChange)="loadSlots()" required />
+        <input name="moveDate" type="date" [min]="today" [(ngModel)]="moveDate" (ngModelChange)="loadSlots()" required />
       </ui-field>
       @if (slotsError()) {
         <p class="mt-4 text-sm text-pulse" role="alert">{{ slotsError() }}</p>
