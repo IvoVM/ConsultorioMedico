@@ -2,13 +2,13 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { AuthService, ClinicService, TenantRole, clinicaSession } from 'sdk';
 import { firstValueFrom } from 'rxjs';
-import { NavNode, UiIcon, UiNav, UiPage } from 'ui';
+import { NavNode, UiNav, UiPage } from 'ui';
 import { readClinicName } from '../auth/clinic-name';
 import { AppRoute } from '../../app.routes.enum';
 import { roleLabel } from './models/role-labels';
 
 @Component({
-  imports: [RouterOutlet, RouterLink, UiPage, UiIcon, UiNav],
+  imports: [RouterOutlet, RouterLink, UiPage, UiNav],
   templateUrl: './shell.html',
 })
 export class ShellPage {
@@ -17,7 +17,6 @@ export class ShellPage {
   private readonly router = inject(Router);
   readonly session = clinicaSession;
   readonly route = AppRoute;
-  readonly roles = TenantRole;
   readonly roleText = computed(() => roleLabel(this.session.role()));
   readonly clinicName = signal('Consultorio');
   readonly menu = computed((): NavNode[] => {

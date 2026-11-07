@@ -3,17 +3,10 @@
   brand="Clínica"
   eyebrow="Administración"
   [title]="session.name() ?? 'Admin'"
-  [nodes]="menu()"
   [userName]="session.name() ?? 'Admin'"
   [userRole]="roleLabel()"
   (logout)="logout()"
 >
   <ui-nav uiNav class="min-h-0 flex-1 overflow-y-auto" label="Administración" [nodes]="menu()" />
-  <div uiActions class="flex items-center gap-2">
-    <a routerLink="/turnos/solicitudes" class="bar-icon" aria-label="Solicitudes de turnos" title="Solicitudes de turnos">
-      <ui-icon name="notifications" [size]="20" />
-    </a>
-    <a routerLink="/pacientes" class="action-link max-sm:hidden"><ui-icon name="person_search" [size]="18" />Pacientes</a>
-  </div>
   <router-outlet />
 </ui-page>

@@ -4,23 +4,11 @@
     [brand]="clinicName()"
     eyebrow="Portal"
     [title]="session.name() ?? 'Paciente'"
-    [nodes]="menu()"
     [userName]="session.name() ?? 'Paciente'"
     [userRole]="roleText()"
     (logout)="logout()"
   >
     <ui-nav uiNav class="min-h-0 flex-1 overflow-y-auto" label="Portal" [nodes]="menu()" />
-    <div uiActions class="flex items-center gap-2">
-      @if (session.role() === roles.Patient) {
-        <a [routerLink]="route.MisTurnos" class="bar-icon" aria-label="Mis turnos" title="Mis turnos"><ui-icon name="event_available" [size]="20" /></a>
-        <a [routerLink]="route.Reservar" class="action-link"><ui-icon name="add" [size]="18" /><span class="max-sm:hidden">Reservar</span></a>
-      } @else if (session.role() === roles.Secretary || session.role() === roles.TenantAdmin) {
-        <a [routerLink]="route.Solicitudes" class="bar-icon" aria-label="Solicitudes" title="Solicitudes"><ui-icon name="notifications" [size]="20" /></a>
-        <a [routerLink]="route.DarTurno" class="action-link"><ui-icon name="add" [size]="18" /><span class="max-sm:hidden">Dar un turno</span></a>
-      } @else if (session.role() === roles.Doctor) {
-        <a [routerLink]="route.Medico" class="action-link"><ui-icon name="stethoscope" [size]="18" /><span class="max-sm:hidden">Atención</span></a>
-      }
-    </div>
     <router-outlet />
   </ui-page>
 } @else {

@@ -1,12 +1,12 @@
 import { Component, computed, inject } from '@angular/core';
-import { RouterLink, RouterOutlet } from '@angular/router';
+import { RouterOutlet } from '@angular/router';
 import { AuthService, clinicaSession } from 'sdk';
 import { firstValueFrom } from 'rxjs';
-import { NavNode, UiIcon, UiNav, UiPage } from 'ui';
+import { NavNode, UiNav, UiPage } from 'ui';
 import { roleLabels } from '../employees/models/role-labels';
 
 @Component({
-  imports: [RouterOutlet, RouterLink, UiPage, UiIcon, UiNav],
+  imports: [RouterOutlet, UiPage, UiNav],
   templateUrl: './shell.html',
 })
 export class ShellPage {

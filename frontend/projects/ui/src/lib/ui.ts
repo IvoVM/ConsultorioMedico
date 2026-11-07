@@ -24,6 +24,5 @@ export { MediaWatcherService } from './media-watcher.service';
 export { UiAvatar, initials } from './ui-avatar.component';
 export { UiBoard, UiTone } from './ui-board.component';
 export type { BoardColumn, BoardItem } from './ui-board.component';
-export { UiCommand } from './ui-command.component';
 export { UiStat } from './ui-stat.component';
 export { greeting, todayLabel } from './greeting';
