@@ -627,10 +627,13 @@ public class ScheduleService(
         return await LoadRequestAsync(request.Id, ct);
     }
 
-    public async Task<IReadOnlyList<BookingRequestDto>> PendingRequestsAsync(CancellationToken ct) =>
-        await requests.Entries
+    public async Task<IReadOnlyList<BookingRequestDto>> PendingRequestsAsync(CancellationToken ct)
+    {
+        var activeFrom = SchedulingRules.ActiveRequestsFrom(clock.GetUtcNow(), timeZone.Zone);
+        return await requests.Entries
             .Where(request => request.Status == BookingRequestStatus.Pending || request.Status == BookingRequestStatus.Rescheduled)
             .Where(request => request.AppointmentId == null)
+            .Where(request => request.Start >= activeFrom)
             .OrderBy(request => request.Start)
             .Select(request => new BookingRequestDto(
                 request.Id,
@@ -647,6 +650,7 @@ public class ScheduleService(
                 request.RejectionReason,
                 request.PreviousStart))
             .ToListAsync(ct);
+    }
 
     public async Task<IReadOnlyList<BookingRequestDto>> MyRequestsAsync(CancellationToken ct)
     {
@@ -654,8 +658,12 @@ public class ScheduleService(
             throw new BusinessRuleException("Solo un paciente puede ver sus solicitudes.");
         var client = await clients.GetByUserAsync(userId, ct)
             ?? throw new NotFoundException("No hay un paciente asociado a esta cuenta.");
+        var activeFrom = SchedulingRules.ActiveRequestsFrom(clock.GetUtcNow(), timeZone.Zone);
         return await requests.Entries
             .Where(request => request.ClientId == client.Id || request.DocumentNumber == client.DocumentNumber)
+            .Where(request => request.Start >= activeFrom
+                || request.AppointmentId != null
+                || (request.Status != BookingRequestStatus.Pending && request.Status != BookingRequestStatus.Rescheduled))
             .OrderByDescending(request => request.Start)
             .Select(request => new BookingRequestDto(
                 request.Id,
@@ -679,6 +687,7 @@ public class ScheduleService(
         var request = await requests.GetAsync(id, ct) ?? throw new NotFoundException("Esa solicitud no está.");
         if (request.Status is not (BookingRequestStatus.Pending or BookingRequestStatus.Rescheduled) || request.AppointmentId is not null)
             throw new BusinessRuleException("Esa solicitud ya no se puede mover.");
+        EnsureRequestActive(request);
         var slots = await AvailabilityAsync(new AvailabilityQuery(request.LocationId, Guid.Empty, request.ProfessionalId, date), ct);
         return slots.Where(slot => slot.AppointmentTypeId == request.AppointmentTypeId).ToList();
     }
@@ -737,12 +746,19 @@ public class ScheduleService(
         if (request.Status is not (BookingRequestStatus.Pending or BookingRequestStatus.Rescheduled) || request.AppointmentId is not null)
             throw new BusinessRuleException("Esa solicitud ya fue resuelta.");
         var reason = command.Reason.Trim();
+        EnsureRequestActive(request);
         if (reason.Length is < 1 or > 400)
             throw new BusinessRuleException("Escribí el motivo, en menos de 400 caracteres.");
         request.Status = BookingRequestStatus.Rejected;
         request.RejectionReason = reason;
         await requests.SaveAsync(ct);
         await audit.RecordAsync(currentUser.Id, "baja", "Turno", request.Id.ToString(), request.Name, ct);
+    }
+
+    private void EnsureRequestActive(BookingRequest request)
+    {
+        if (SchedulingRules.RequestDeactivated(request.Start, clock.GetUtcNow(), timeZone.Zone))
+            throw new BusinessRuleException($"Esa solicitud se desactivó porque lleva {SchedulingRules.ExpiredRequestDays} días vencida.");
     }
 
     private async Task<Guid> EnsureClientAsync(BookingRequest request, CancellationToken ct)

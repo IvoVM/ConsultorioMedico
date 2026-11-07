@@ -31,6 +31,16 @@ public class SchedulingRulesTests
     }
 
     [Fact]
+    public void Expired_request_is_deactivated_after_thirty_days()
+    {
+        var now = SchedulingRules.Combine(new DateOnly(2026, 10, 31), new TimeOnly(15, 0), Zone);
+
+        Assert.False(SchedulingRules.RequestDeactivated(SchedulingRules.Combine(new DateOnly(2026, 10, 2), new TimeOnly(0, 0), Zone), now, Zone));
+        Assert.True(SchedulingRules.RequestDeactivated(SchedulingRules.Combine(new DateOnly(2026, 10, 1), new TimeOnly(23, 30), Zone), now, Zone));
+        Assert.False(SchedulingRules.RequestDeactivated(SchedulingRules.Combine(new DateOnly(2026, 10, 30), new TimeOnly(9, 0), Zone), now, Zone));
+    }
+
+    [Fact]
     public void Generates_slots_and_skips_busy_ranges()
     {
         var busy = new TimeRange(At(9, 30), At(10, 0));

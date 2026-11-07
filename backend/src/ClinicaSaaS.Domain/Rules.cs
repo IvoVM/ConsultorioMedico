@@ -25,8 +25,19 @@ public static class SchedulingRules
     public static bool PatientCanCancel(AppointmentStatus status, DateTimeOffset start, DateTimeOffset now) =>
         status is AppointmentStatus.Booked or AppointmentStatus.Rescheduled && start - now >= PatientCancellationNotice;
 
+    public const int ExpiredRequestDays = 30;
+
     public static bool RequestExpired(DateTimeOffset start, DateTimeOffset now, TimeZoneInfo zone) =>
-        DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(start, zone).DateTime) < DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(now, zone).DateTime);
+        LocalDay(start, zone) < LocalDay(now, zone);
+
+    public static DateTimeOffset ActiveRequestsFrom(DateTimeOffset now, TimeZoneInfo zone) =>
+        Combine(LocalDay(now, zone).AddDays(1 - ExpiredRequestDays), TimeOnly.MinValue, zone);
+
+    public static bool RequestDeactivated(DateTimeOffset start, DateTimeOffset now, TimeZoneInfo zone) =>
+        start < ActiveRequestsFrom(now, zone);
+
+    private static DateOnly LocalDay(DateTimeOffset moment, TimeZoneInfo zone) =>
+        DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(moment, zone).DateTime);
 
     public static bool CanReschedule(AppointmentStatus status) =>
         status is AppointmentStatus.Booked or AppointmentStatus.Rescheduled or AppointmentStatus.CheckedIn;

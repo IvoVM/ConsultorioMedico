@@ -32,3 +32,14 @@ export function overdueLabel(start: string, now = new Date()) {
   const days = daysOverdue(start, now);
   return days === 1 ? 'Venció ayer' : `Venció hace ${days} días`;
 }
+
+export const expiredRequestDays = 30;
+
+export function requestDeactivated(start: string, now = new Date()) {
+  return daysOverdue(start, now) >= expiredRequestDays;
+}
+
+export function deactivationLabel(start: string, now = new Date()) {
+  const left = expiredRequestDays - daysOverdue(start, now);
+  return left === 1 ? 'Se desactiva mañana' : `Se desactiva en ${left} días`;
+}

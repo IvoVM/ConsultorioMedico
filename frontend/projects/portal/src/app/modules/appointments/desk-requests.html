@@ -12,7 +12,7 @@
   <ui-tabs class="mb-5" label="Solicitudes" [tabs]="tabs()" [(active)]="tab" />
   @if (tab() === tabKeys.Vencidas) {
     <p class="mb-4 max-w-prose text-sm leading-relaxed text-ink/70">
-      Son pedidos de un día que ya pasó. No se pueden aprobar: reprogramalos a un horario libre o denegalos.
+      Son pedidos de un día que ya pasó. No se pueden aprobar: reprogramalos a un horario libre o denegalos. A los {{ expiredRequestDays }} días de vencidos se desactivan y dejan de aparecer.
     </p>
   }
   @if (!shown().length) {
@@ -41,6 +41,7 @@
                 <td data-name="Estado">
                   @if (view === tabKeys.Vencidas) {
                     <span class="chip is-bad whitespace-nowrap">{{ overdueLabel(item.start) }}</span>
+                    <span class="mt-1 block text-xs whitespace-nowrap text-ink/55">{{ deactivationLabel(item.start) }}</span>
                   } @else {
                     {{ statusLabel(item.status) }}
                   }

@@ -1,7 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AppointmentsService, BookingRequestDto, BookingRequestStatus, SlotDto, errorMessage } from 'sdk';
-import { FechaPipe, RequestTab, TabItem, ToastService, UiActions, UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable, UiTabs, UiTone, formatFecha, localDate, overdueLabel, requestExpired, requestTabLabels } from 'ui';
+import { FechaPipe, RequestTab, TabItem, ToastService, UiActions, UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable, UiTabs, UiTone, formatFecha, deactivationLabel, expiredRequestDays, localDate, overdueLabel, requestDeactivated, requestExpired, requestTabLabels } from 'ui';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
@@ -22,9 +22,11 @@ export class AppointmentRequestsPage {
   readonly slotsLoading = signal(false);
   readonly tabKeys = RequestTab;
   readonly overdueLabel = overdueLabel;
+  readonly deactivationLabel = deactivationLabel;
+  readonly expiredRequestDays = expiredRequestDays;
   readonly tab = signal<string>(RequestTab.Vigentes);
   readonly today = localDate(new Date());
-  readonly expired = computed(() => this.requests().filter((item) => requestExpired(item.start)));
+  readonly expired = computed(() => this.requests().filter((item) => requestExpired(item.start) && !requestDeactivated(item.start)));
   readonly current = computed(() => this.requests().filter((item) => !requestExpired(item.start)));
   readonly shown = computed(() => (this.tab() === RequestTab.Vencidas ? this.expired() : this.current()));
   readonly tabs = computed((): TabItem[] => [
