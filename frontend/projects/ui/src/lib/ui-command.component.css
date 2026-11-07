@@ -1,0 +1,129 @@
+:host {
+  position: relative;
+  display: block;
+  width: 100%;
+  max-width: 24rem;
+}
+
+.box {
+  display: flex;
+  height: 2.6rem;
+  align-items: center;
+  gap: 0.6rem;
+  border-radius: 999px;
+  background: white;
+  padding: 0 0.5rem 0 0.95rem;
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.25s ease;
+}
+
+.box.is-open,
+.box:focus-within {
+  box-shadow: 0 0 0 4px rgb(34 185 104 / 0.16), var(--shadow-card);
+}
+
+.glass {
+  color: rgb(14 42 34 / 0.45);
+}
+
+input {
+  all: unset;
+  min-width: 0;
+  flex: 1;
+  font-size: 0.875rem;
+  color: var(--color-ink);
+}
+
+input::placeholder {
+  color: rgb(14 42 34 / 0.45);
+}
+
+input::-webkit-search-cancel-button {
+  display: none;
+}
+
+kbd {
+  border-radius: 0.45rem;
+  background: var(--color-mist);
+  padding: 0.15rem 0.45rem;
+  font-family: inherit;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: rgb(14 42 34 / 0.55);
+  box-shadow: inset 0 0 0 1px var(--color-rule);
+}
+
+.list {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  right: 0;
+  z-index: 40;
+  max-height: 22rem;
+  overflow-y: auto;
+  border-radius: 1rem;
+  background: white;
+  padding: 0.4rem;
+  box-shadow: var(--shadow-lift);
+  transform-origin: top center;
+  animation: list-in 0.28s cubic-bezier(0.16, 0.84, 0.32, 1) both;
+}
+
+.option {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.7rem;
+  border-radius: 0.7rem;
+  padding: 0.5rem 0.6rem;
+  font-size: 0.875rem;
+  text-align: left;
+  cursor: pointer;
+  animation: option-in 0.3s cubic-bezier(0.16, 0.84, 0.32, 1) both;
+  animation-delay: calc(var(--i, 0) * 25ms);
+}
+
+.option.is-active {
+  background: var(--color-clinic-wash);
+}
+
+.glyph {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 0.6rem;
+  background: var(--color-mist);
+  color: var(--color-clinic);
+}
+
+.option.is-active .glyph {
+  background: white;
+}
+
+.enter {
+  color: rgb(14 42 34 / 0.35);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.option.is-active .enter {
+  opacity: 1;
+}
+
+.none {
+  padding: 0.85rem;
+  font-size: 0.875rem;
+  color: rgb(14 42 34 / 0.6);
+}
+
+@keyframes list-in {
+  from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes option-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}

@@ -11,25 +11,25 @@ import { UiSpinner } from './ui-spinner.component';
       display: inline-flex;
       width: 100%;
       min-width: 10.5rem;
-      min-height: 2.75rem;
+      min-height: 2.6rem;
       cursor: pointer;
       align-items: center;
       justify-content: center;
       gap: 0.5rem;
-      border-radius: 2px;
-      padding: 0.5rem 0.875rem;
-      font-size: 1.125rem;
-      font-weight: 700;
+      border-radius: 999px;
+      padding: 0.5rem 1.15rem;
+      font-size: 0.875rem;
+      font-weight: 600;
       line-height: 1.4;
       transition:
         background-color 0.2s ease,
         color 0.2s ease,
         box-shadow 0.2s ease,
-        transform 0.2s ease;
+        transform 0.25s cubic-bezier(0.16, 0.84, 0.32, 1);
     }
 
     button:hover:not(:disabled) {
-      transform: translateY(-1px);
+      transform: translateY(-2px);
     }
 
     button:active:not(:disabled) {
@@ -41,7 +41,7 @@ import { UiSpinner } from './ui-spinner.component';
       cursor: not-allowed;
       transform: none;
       background: var(--color-mist);
-      color: rgb(23 51 44 / 0.4);
+      color: rgb(14 42 34 / 0.4);
       box-shadow: inset 0 0 0 1px var(--color-rule);
     }
 
@@ -54,10 +54,12 @@ import { UiSpinner } from './ui-spinner.component';
     .btn-primary {
       background: var(--color-clinic);
       color: white;
+      box-shadow: 0 8px 18px -10px rgb(20 99 75 / 0.8);
     }
 
     .btn-primary:hover:not(:disabled) {
       background: var(--color-clinic-deep);
+      box-shadow: 0 14px 24px -12px rgb(20 99 75 / 0.85);
     }
 
     .btn-secondary {
@@ -67,7 +69,8 @@ import { UiSpinner } from './ui-spinner.component';
     }
 
     .btn-secondary:hover:not(:disabled) {
-      background: var(--color-mist);
+      background: var(--color-clinic-wash);
+      box-shadow: inset 0 0 0 1px #bfe3cf;
     }
 
     .btn-error {

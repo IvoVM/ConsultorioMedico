@@ -1,14 +1,14 @@
-<main class="grid min-h-screen bg-paper text-ink lg:grid-cols-2">
-  <section class="flex flex-col justify-center gap-6 px-6 py-10 sm:px-12 lg:px-16 lg:py-16">
-    <p class="font-serif text-2xl text-clinic-deep">{{ clinicName() }}</p>
-    <h1 class="max-w-[14ch] font-serif text-5xl leading-tight font-medium tracking-tight xl:text-6xl">Quiero acceder a la administración</h1>
-    <div class="max-w-xl space-y-4 text-lg leading-relaxed text-ink/75">
+<main class="auth-split">
+  <section class="auth-intro">
+    <p class="auth-brand"><span class="brand-badge"><img src="logo.svg" alt="" /></span>{{ clinicName() }}</p>
+    <h1 class="auth-title">Quiero acceder a la administración</h1>
+    <div class="auth-copy">
       <p>Entrá para ordenar el consultorio: las personas, las agendas y los comprobantes.</p>
       <p>Desde acá se dan de alta los empleados y se reinicia una contraseña cuando hace falta.</p>
     </div>
   </section>
-  <section class="flex items-center border-rule px-6 py-12 sm:px-12 lg:border-l lg:px-16">
-    <form class="flex w-full max-w-md flex-col gap-5" (ngSubmit)="submit()">
+  <section class="auth-side">
+    <form class="auth-card" (ngSubmit)="submit()">
       <ui-field label="Documento"><input name="username" [(ngModel)]="documentNumber" required autocomplete="username" inputmode="numeric" autocapitalize="none" spellcheck="false" /></ui-field>
       <ui-field label="Contraseña"><ui-password><input name="password" type="password" [(ngModel)]="password" required autocomplete="current-password" /></ui-password></ui-field>
       @if (error()) { <p class="text-sm text-pulse" role="alert">{{ error() }}</p> }

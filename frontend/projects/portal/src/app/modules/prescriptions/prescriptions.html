@@ -7,7 +7,7 @@
 } @else if (prescriptions().length === 0) { <ui-empty message="Todavía no tenés recetas. Cuando el médico emita una, aparece acá." /> }
 <div id="prescriptions" class="space-y-8">
   @for (prescription of prescriptions(); track prescription.id) {
-    <article class="border border-rule bg-white px-5 py-5 sm:px-6">
+    <article class="surface surface-lift px-5 py-5 sm:px-6">
       <header class="flex flex-col gap-1 border-b border-rule pb-3 sm:flex-row sm:items-baseline sm:justify-between">
         <p class="font-serif text-xl">{{ prescription.professional }}</p>
         <p class="text-sm text-ink/60">{{ prescription.createdAt | fecha }}</p>

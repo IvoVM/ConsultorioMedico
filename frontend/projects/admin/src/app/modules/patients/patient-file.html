@@ -8,7 +8,7 @@
 @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
 
 @if (temporaryPassword()) {
-  <div class="mb-6 flex max-w-3xl flex-wrap items-center gap-x-3 gap-y-1 border border-rule bg-ochre-wash px-4 py-3 text-sm leading-relaxed" role="status">
+  <div class="mb-6 flex max-w-3xl flex-wrap items-center gap-x-3 gap-y-1 rounded-2xl bg-ochre-wash px-4 py-3 text-sm leading-relaxed" role="status">
     <p>Paciente dado de alta. Clave temporal del portal: <strong>{{ temporaryPassword() }}</strong></p>
     <button type="button" class="text-link" (click)="copyPassword()">{{ copied() ? 'Copiada' : 'Copiar' }}</button>
   </div>

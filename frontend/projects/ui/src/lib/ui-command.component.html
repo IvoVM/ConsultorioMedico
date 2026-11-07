@@ -1,0 +1,45 @@
+<label class="box" [class.is-open]="open()">
+  <ui-icon name="search" [size]="20" class="glass" />
+  <input
+    #field
+    type="search"
+    role="combobox"
+    aria-autocomplete="list"
+    aria-controls="command-list"
+    [attr.aria-expanded]="open()"
+    [attr.aria-label]="placeholder()"
+    [placeholder]="placeholder()"
+    [value]="query()"
+    (input)="onInput(field.value)"
+    (focus)="open.set(true)"
+    (keydown)="onKey($event)"
+  />
+  <kbd>{{ shortcut }}</kbd>
+</label>
+@if (open()) {
+  <div id="command-list" class="list" role="listbox">
+    @for (target of results(); track target.path; let index = $index) {
+      <button
+        type="button"
+        role="option"
+        class="option"
+        [style.--i]="index"
+        [class.is-active]="index === active()"
+        [attr.aria-selected]="index === active()"
+        (mouseenter)="active.set(index)"
+        (click)="go(target)"
+      >
+        <span class="glyph"><ui-icon [name]="target.icon" [size]="18" /></span>
+        <span class="min-w-0 flex-1">
+          <span class="block truncate font-semibold">{{ target.label }}</span>
+          @if (target.group) {
+            <span class="block truncate text-xs text-ink/50">{{ target.group }}</span>
+          }
+        </span>
+        <ui-icon name="keyboard_return" [size]="16" class="enter" />
+      </button>
+    } @empty {
+      <p class="none">No hay pantallas con ese nombre.</p>
+    }
+  </div>
+}

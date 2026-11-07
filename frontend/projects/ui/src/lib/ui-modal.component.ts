@@ -15,14 +15,17 @@ import { AfterViewInit, Component, ElementRef, OnDestroy, booleanAttribute, inje
       flex-shrink: 0;
       place-items: center;
       border-radius: 999px;
-      color: var(--color-clinic-deep);
-      font-size: 1.75rem;
+      background: var(--color-mist);
+      color: var(--color-ink);
+      font-size: 1.5rem;
       line-height: 1;
       cursor: pointer;
+      transition: background-color 0.2s ease, transform 0.3s cubic-bezier(0.16, 0.84, 0.32, 1);
     }
 
     .modal-close:hover {
       background: var(--color-clinic-wash);
+      transform: rotate(90deg);
     }
   `,
 })

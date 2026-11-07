@@ -3,21 +3,42 @@
     <button class="menu-backdrop backdrop-fade" type="button" aria-label="Cerrar menú" (click)="menuOpen.set(false)"></button>
   }
   <aside id="app-sidebar" class="app-sidebar" [class.is-open]="menuOpen()" (click)="onSidebarClick($event)">
-    <div class="flex items-center gap-3 px-5 pt-6">
-      <img src="logo.svg" alt="" class="logo-mark h-11 w-11" />
-      <div>
-        <p class="font-serif text-2xl leading-none">Clínica</p>
-        <p class="mt-1 text-sm text-white/60">{{ eyebrow() }}</p>
+    <div class="sidebar-brand">
+      <span class="brand-badge"><img src="logo.svg" alt="" /></span>
+      <div class="min-w-0">
+        <p class="truncate text-lg leading-none font-bold tracking-tight">{{ brand() }}</p>
+        <p class="mt-1 truncate text-xs text-white/55">{{ eyebrow() }}</p>
       </div>
     </div>
-    <div class="mt-8 flex min-h-0 flex-1 flex-col px-3 pb-5">
+    <p class="sidebar-section px-5">Menú</p>
+    <div class="flex min-h-0 flex-1 flex-col px-3 pb-3">
       <ng-content select="[uiNav]" />
     </div>
+    @if (userName()) {
+      <div class="mx-3 mb-4 flex items-center gap-3 rounded-2xl bg-white/6 p-2.5 ring-1 ring-white/10 rise">
+        <ui-avatar [name]="userName()" size="2.4rem" />
+        <div class="min-w-0 flex-1">
+          <p class="truncate text-sm font-semibold">{{ userName() }}</p>
+          @if (userRole()) {
+            <p class="truncate text-xs text-white/55">{{ userRole() }}</p>
+          }
+        </div>
+        <button
+          type="button"
+          class="grid h-9 w-9 shrink-0 cursor-pointer place-items-center rounded-full text-white/70 transition hover:bg-white/10 hover:text-white"
+          aria-label="Salir"
+          title="Salir"
+          (click)="logout.emit()"
+        >
+          <ui-icon name="logout" [size]="19" />
+        </button>
+      </div>
+    }
   </aside>
   <div class="brand-slot">
     <ng-content select="[uiBrand]" />
   </div>
-  <div class="frame-main">
+  <div class="frame-main min-w-0">
     <header class="shell-bar">
       <button
         class="menu-button"
@@ -29,13 +50,24 @@
       >
         <span class="menu-glyph" [class.is-open]="menuOpen()"></span>
       </button>
-      <h1 class="text-balance font-serif text-2xl leading-tight tracking-tight">{{ title() }}</h1>
+      <h1 class="sr-only">{{ title() }}</h1>
+      <ui-command class="min-w-0 flex-1" [nodes]="nodes()" />
+      <div class="ml-auto flex items-center gap-2">
+        <span class="bar-pill bar-clock" aria-label="Hora actual">
+          <span class="live-dot"></span>
+          <span class="tabular-nums">{{ clock() }}</span>
+        </span>
+        <ng-content select="[uiActions]" />
+      </div>
     </header>
     <header class="entry-bar">
-      <div>
-        <p class="font-serif text-2xl leading-none text-clinic-deep">Clínica</p>
-        <h1 class="mt-2 font-serif text-2xl tracking-tight">{{ title() }}</h1>
-        <p class="mt-1 text-sm text-ink/60">{{ eyebrow() }}</p>
+      <div class="flex items-center gap-3">
+        <span class="brand-badge"><img src="logo.svg" alt="" /></span>
+        <div>
+          <p class="text-sm font-semibold text-clinic">{{ brand() }}</p>
+          <h1 class="text-2xl font-bold tracking-tight">{{ title() }}</h1>
+          <p class="text-sm text-ink/60">{{ eyebrow() }}</p>
+        </div>
       </div>
     </header>
     <main class="page-stage">

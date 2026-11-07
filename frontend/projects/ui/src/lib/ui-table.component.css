@@ -12,8 +12,10 @@
   min-width: 0;
   flex: 1;
   overflow-x: auto;
-  border: 1px solid var(--color-rule, #d3ddd7);
+  border: 0;
+  border-radius: 1.25rem;
   background: #fff;
+  box-shadow: var(--shadow-card);
 }
 
 .arrow {
@@ -21,10 +23,12 @@
   flex: none;
   align-items: center;
   justify-content: center;
-  width: 2rem;
-  height: 2.5rem;
-  border: 1px solid var(--color-rule, #d3ddd7);
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 0;
+  border-radius: 999px;
   background: #fff;
+  box-shadow: var(--shadow-card);
   color: var(--color-clinic-deep, #124a38);
   cursor: pointer;
 }
@@ -56,5 +60,21 @@
 }
 
 :host ::ng-deep tbody tr:hover td:first-child {
-  background: var(--color-paper, #f3f6f4);
+  background: #f6faf8;
+}
+
+:host ::ng-deep tbody tr {
+  animation: table-row-in 0.45s cubic-bezier(0.16, 0.84, 0.32, 1) both;
+}
+
+:host ::ng-deep tbody tr:nth-child(2) { animation-delay: 40ms; }
+:host ::ng-deep tbody tr:nth-child(3) { animation-delay: 80ms; }
+:host ::ng-deep tbody tr:nth-child(4) { animation-delay: 120ms; }
+:host ::ng-deep tbody tr:nth-child(5) { animation-delay: 160ms; }
+:host ::ng-deep tbody tr:nth-child(6) { animation-delay: 200ms; }
+:host ::ng-deep tbody tr:nth-child(n + 7) { animation-delay: 240ms; }
+
+@keyframes table-row-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
 }

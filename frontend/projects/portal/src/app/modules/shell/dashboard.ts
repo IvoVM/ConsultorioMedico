@@ -1,13 +1,20 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { AppointmentDto, AppointmentStatus, AppointmentsService, BookingRequestDto, TenantRole, clinicaSession, errorMessage } from 'sdk';
-import { MediaWatcherService, UiBadge, UiEmpty, UiSkeleton, UiTable, formatFecha } from 'ui';
+import { BoardColumn, MediaWatcherService, UiBadge, UiBoard, UiEmpty, UiIcon, UiSkeleton, UiStat, UiTable, UiTone, formatFecha, greeting, todayLabel } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { appointmentStatusLabels } from '../appointments/models/appointment-status-labels';
 import { AppRoute } from '../../app.routes.enum';
 
+const flow: { status: AppointmentStatus; tone: UiTone }[] = [
+  { status: AppointmentStatus.Booked, tone: UiTone.Muted },
+  { status: AppointmentStatus.CheckedIn, tone: UiTone.Warn },
+  { status: AppointmentStatus.InProgress, tone: UiTone.Sky },
+  { status: AppointmentStatus.Completed, tone: UiTone.Ok },
+];
+
 @Component({
-  imports: [RouterLink, UiBadge, UiEmpty, UiSkeleton, UiTable],
+  imports: [RouterLink, UiBadge, UiBoard, UiEmpty, UiIcon, UiSkeleton, UiStat, UiTable],
   templateUrl: './dashboard.html',
 })
 export class DashboardPage {
@@ -23,7 +30,32 @@ export class DashboardPage {
   readonly requests = signal<BookingRequestDto[]>([]);
   readonly error = signal('');
   readonly loading = signal(true);
-  readonly dayLabel = new Intl.DateTimeFormat('es-AR', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
+  readonly tone = UiTone;
+  readonly dayLabel = todayLabel();
+  readonly hello = greeting(this.session.name());
+
+  readonly count = (status: AppointmentStatus) => this.appointments().filter((item) => item.status === status).length;
+  readonly missed = computed(() => this.count(AppointmentStatus.NoShow) + this.count(AppointmentStatus.Cancelled));
+  readonly next = computed(() => this.appointments().find((item) => item.status === AppointmentStatus.Booked || item.status === AppointmentStatus.CheckedIn) ?? null);
+  readonly columns = computed((): BoardColumn[] => {
+    const doctor = this.session.role() === TenantRole.Doctor;
+    return flow.map(({ status, tone }) => ({
+      key: status,
+      label: this.statusLabels[status],
+      tone,
+      items: this.appointments()
+        .filter((item) => item.status === status)
+        .map((item) => ({
+          id: item.id,
+          title: item.patient,
+          time: this.timeLabel(item.start),
+          meta: doctor ? item.visitReason || 'Consulta' : item.professional,
+          link: doctor ? AppRoute.Historia : undefined,
+          queryParams: doctor ? { paciente: item.patientId } : undefined,
+          linkLabel: 'Historia',
+        })),
+    }));
+  });
 
   constructor() {
     void this.load();

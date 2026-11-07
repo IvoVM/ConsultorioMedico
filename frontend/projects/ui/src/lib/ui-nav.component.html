@@ -1,43 +1,48 @@
 <nav class="flex flex-col gap-1" [attr.aria-label]="label()">
   @for (node of nodes(); track node.label; let index = $index) {
     @if (node.children?.length) {
-      <div [class.mt-4]="index > 0">
+      <div>
         <button
           type="button"
-          class="flex w-full cursor-pointer items-center justify-between gap-2 rounded-sm border-0 bg-transparent px-3 py-2.5 text-left text-sm text-white/75 transition duration-200 hover:bg-white/10 hover:text-white"
-          [class.bg-white/10]="isOpen(node)"
-          [class.font-bold]="containsCurrent(node)"
+          class="nav-item"
+          [style.--i]="index"
           [class.text-white]="isOpen(node) || containsCurrent(node)"
+          [class.font-semibold]="containsCurrent(node)"
           [attr.aria-expanded]="isOpen(node)"
           (click)="toggle(node)"
         >
-          <span>{{ node.label }}</span>
-          <ui-icon name="expand_more" [size]="18" class="transition-transform duration-200" [class.rotate-180]="isOpen(node)" />
+          <span class="nav-glyph"><ui-icon [name]="node.icon ?? 'folder'" [size]="20" /></span>
+          <span class="flex-1">{{ node.label }}</span>
+          <ui-icon name="expand_more" [size]="18" class="opacity-60 transition-transform duration-300" [class.rotate-180]="isOpen(node)" />
         </button>
         @if (isOpen(node)) {
-          <div class="mt-0.5 ml-3 flex flex-col border-l border-white/15 pl-1.5">
-            @for (child of node.children; track child.path) {
-              <a
-                class="nav-link"
-                [routerLink]="child.path"
-                routerLinkActive="is-current"
-                [routerLinkActiveOptions]="{ exact: !!child.exact }"
-              >
-                {{ child.label }}
-              </a>
-            }
+          <div class="group-body">
+            <div class="ml-[1.35rem] flex min-h-0 flex-col gap-0.5 overflow-hidden border-l border-white/10 py-1 pl-2">
+              @for (child of node.children; track child.path; let childIndex = $index) {
+                <a
+                  class="nav-link"
+                  [style.--i]="childIndex"
+                  [routerLink]="child.path"
+                  routerLinkActive="is-current"
+                  [routerLinkActiveOptions]="{ exact: !!child.exact }"
+                >
+                  {{ child.label }}
+                </a>
+              }
+            </div>
           </div>
         }
       </div>
     } @else if (node.path) {
       <a
-        class="nav-link"
-        [class.mt-3]="index > 0 && !!nodes()[index - 1].children?.length"
+        class="nav-item"
+        [style.--i]="index"
         [routerLink]="node.path"
         routerLinkActive="is-current"
         [routerLinkActiveOptions]="{ exact: !!node.exact }"
       >
-        {{ node.label }}
+        <span class="nav-glyph"><ui-icon [name]="node.icon ?? 'circle'" [size]="20" /></span>
+        <span class="flex-1">{{ node.label }}</span>
       </a>
     }
   }

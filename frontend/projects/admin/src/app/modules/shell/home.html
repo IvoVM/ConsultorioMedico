@@ -1,39 +1,68 @@
-<header class="mb-6">
-  <h2 class="font-serif text-3xl tracking-tight">Hoy en el consultorio</h2>
-  <p class="mt-1 text-ink/70">{{ dayLabel }}@if (!loading()) { <span> · {{ appointments().length }} {{ appointments().length === 1 ? 'turno' : 'turnos' }}</span> }</p>
-  <p class="mt-2 max-w-prose text-sm leading-relaxed text-ink/70">
-    Cada fila es un turno de este día: la hora, el paciente, el profesional y el estado de esa reserva.
-    Debajo del profesional está la cobertura elegida al reservar: particular, o la obra social con el número de afiliado.
-  </p>
+<header class="page-hero">
+  <div>
+    <p class="eyebrow">{{ dayLabel }} · Administración</p>
+    <h2>{{ hello }}</h2>
+  </div>
+  <nav class="flex flex-wrap gap-2" aria-label="Accesos rápidos">
+    <a routerLink="/historias" class="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold shadow-[var(--shadow-card)] transition hover:-translate-y-0.5 hover:bg-clinic-wash">
+      <ui-icon name="clinical_notes" [size]="18" />Historias
+    </a>
+    <a routerLink="/agendas" class="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold shadow-[var(--shadow-card)] transition hover:-translate-y-0.5 hover:bg-clinic-wash">
+      <ui-icon name="event_note" [size]="18" />Agendas
+    </a>
+    <a routerLink="/turnos/solicitudes" class="action-link"><ui-icon name="pending_actions" [size]="18" />Solicitudes</a>
+  </nav>
 </header>
-<nav class="mb-8 flex flex-wrap gap-x-6 gap-y-2">
-  <a routerLink="/pacientes" class="text-link">Pacientes</a>
-  <a routerLink="/historias" class="text-link">Historias médicas</a>
-  <a routerLink="/agendas" class="text-link">Agendas</a>
-</nav>
+
 @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
-@if (loading()) {
-  <ui-skeleton label="Cargando la agenda" />
-} @else if (!appointments().length) {
-  <ui-empty message="Hoy no hay turnos cargados." />
-} @else {
-  <ui-table>
-<table class="cards">
-    <thead><tr><th>Hora</th><th>Paciente</th><th>Profesional</th><th>Estado</th><th></th></tr></thead>
-    <tbody>
-      @for (appointment of appointments(); track appointment.id) {
-        <tr (click)="openFile(appointment.patientId, $event)">
-          <td class="whitespace-nowrap tabular-nums">{{ timeLabel(appointment.start) }}</td>
-          <td data-name="Paciente" class="font-serif text-lg leading-tight">{{ appointment.patient }}</td>
-          <td data-name="Profesional">
-            {{ appointment.professional }}
-            <span class="mt-1 block text-sm text-ink/70">{{ appointment.insurer ? appointment.insurer + (appointment.memberNumber ? ' · afiliado ' + appointment.memberNumber : '') : 'Particular' }}</span>
-          </td>
-          <td data-name="Estado"><ui-badge [tone]="appointment.status === status.Cancelled || appointment.status === status.NoShow ? 'warn' : appointment.status === status.Completed ? 'ok' : 'muted'">{{ statusLabels[appointment.status] }}</ui-badge></td>
-          <td class="whitespace-nowrap"><a class="text-link" [routerLink]="['/pacientes', appointment.patientId]">Ficha</a></td>
-        </tr>
-      }
-    </tbody>
-  </table>
-</ui-table>
+
+<div class="stat-grid stagger">
+  <ui-stat label="Turnos de hoy" icon="calendar_today" [value]="loading() ? '–' : appointments().length" [note]="loading() ? '' : count(status.Completed) + ' atendidos'" [tone]="tone.Ok" />
+  <ui-stat label="En sala de espera" icon="chair" [value]="loading() ? '–' : count(status.CheckedIn)" [note]="loading() ? '' : 'admitidos'" [tone]="tone.Warn" />
+  <ui-stat label="En consulta" icon="stethoscope" [value]="loading() ? '–' : count(status.InProgress)" [note]="loading() ? '' : 'ahora mismo'" />
+  <ui-stat label="Ausentes y cancelados" icon="event_busy" [value]="loading() ? '–' : missed()" [note]="loading() ? '' : (missed() ? 'para revisar' : 'ninguno')" [tone]="missed() ? tone.Bad : tone.Ok" />
+</div>
+
+<section class="panel rise mb-6">
+  <div class="panel-head">
+    <h3 class="panel-title"><ui-icon name="monitor_heart" [size]="20" class="text-leaf" />Flujo de pacientes</h3>
+    @if (!loading()) {
+      <span class="text-sm text-ink/55">{{ count(status.CheckedIn) }} esperando · {{ count(status.InProgress) }} en consulta</span>
+    }
+  </div>
+  @if (loading()) {
+    <ui-skeleton label="Cargando la agenda" [count]="3" height="3.5rem" [framed]="false" />
+  } @else if (!appointments().length) {
+    <ui-empty message="Hoy no hay turnos cargados." />
+  } @else {
+    <ui-board [columns]="columns()" />
+  }
+</section>
+
+@if (!loading() && appointments().length) {
+  <section class="rise">
+    <div class="panel-head">
+      <h3 class="panel-title"><ui-icon name="view_agenda" [size]="20" class="text-leaf" />Agenda del día</h3>
+      <span class="text-sm text-ink/55">Hora, paciente, profesional, cobertura y estado</span>
+    </div>
+    <ui-table>
+      <table class="cards">
+        <thead><tr><th>Hora</th><th>Paciente</th><th>Profesional</th><th>Estado</th><th></th></tr></thead>
+        <tbody>
+          @for (appointment of appointments(); track appointment.id) {
+            <tr (click)="openFile(appointment.patientId, $event)">
+              <td class="whitespace-nowrap font-semibold tabular-nums">{{ timeLabel(appointment.start) }}</td>
+              <td data-name="Paciente" class="font-semibold">{{ appointment.patient }}</td>
+              <td data-name="Profesional">
+                {{ appointment.professional }}
+                <span class="mt-0.5 block text-xs text-ink/55">{{ appointment.insurer ? appointment.insurer + (appointment.memberNumber ? ' · afiliado ' + appointment.memberNumber : '') : 'Particular' }}</span>
+              </td>
+              <td data-name="Estado"><ui-badge [tone]="appointment.status === status.Cancelled || appointment.status === status.NoShow ? 'warn' : appointment.status === status.Completed ? 'ok' : 'muted'">{{ statusLabels[appointment.status] }}</ui-badge></td>
+              <td class="whitespace-nowrap"><a class="text-link" [routerLink]="['/pacientes', appointment.patientId]">Ficha</a></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </ui-table>
+  </section>
 }

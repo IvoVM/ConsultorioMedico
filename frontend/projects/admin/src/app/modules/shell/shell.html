@@ -1,7 +1,19 @@
-<ui-page frame="shell" eyebrow="Administración" [title]="session.name() ?? 'Admin'">
-  <div uiNav class="flex h-full min-h-0 flex-col">
-    <ui-nav class="min-h-0 flex-1 overflow-y-auto" label="Administración" [nodes]="menu()" />
-    <ui-button class="mt-4 w-full shrink-0" variant="ghost" (click)="logout()"><ui-icon name="logout" />Salir</ui-button>
+<ui-page
+  frame="shell"
+  brand="Clínica"
+  eyebrow="Administración"
+  [title]="session.name() ?? 'Admin'"
+  [nodes]="menu()"
+  [userName]="session.name() ?? 'Admin'"
+  [userRole]="roleLabel()"
+  (logout)="logout()"
+>
+  <ui-nav uiNav class="min-h-0 flex-1 overflow-y-auto" label="Administración" [nodes]="menu()" />
+  <div uiActions class="flex items-center gap-2">
+    <a routerLink="/turnos/solicitudes" class="bar-icon" aria-label="Solicitudes de turnos" title="Solicitudes de turnos">
+      <ui-icon name="notifications" [size]="20" />
+    </a>
+    <a routerLink="/pacientes" class="action-link max-sm:hidden"><ui-icon name="person_search" [size]="18" />Pacientes</a>
   </div>
   <router-outlet />
 </ui-page>

@@ -31,33 +31,36 @@ import { UiModal } from 'ui';
     :host {
       position: fixed;
       z-index: 40;
-      top: 0.7rem;
       right: 1.5rem;
+      bottom: 1.5rem;
+      transition: bottom 0.3s ease;
     }
 
     .screen-help-button {
       display: grid;
-      width: 3.25rem;
-      height: 3.25rem;
+      width: 2.75rem;
+      height: 2.75rem;
       place-items: center;
       border-radius: 999px;
       background: var(--color-clinic);
       color: white;
-      font-size: 1.75rem;
+      font-size: 1.375rem;
       line-height: 1;
       cursor: pointer;
-      box-shadow: 0 10px 24px rgb(23 51 44 / 0.18);
+      box-shadow: 0 10px 24px -8px rgb(20 99 75 / 0.7);
+      transition: background-color 0.2s ease, transform 0.3s cubic-bezier(0.16, 0.84, 0.32, 1);
     }
 
     .screen-help-button:hover {
       background: var(--color-clinic-deep);
+      transform: translateY(-2px) rotate(-6deg);
     }
 
     .screen-help-copy {
       display: grid;
       gap: 0.85rem;
-      color: rgb(23 51 44 / 0.82);
-      font-size: 1.25rem;
+      color: rgb(14 42 34 / 0.82);
+      font-size: 0.95rem;
       line-height: 1.45;
     }
 
@@ -92,11 +95,11 @@ import { UiModal } from 'ui';
       cursor: pointer;
       align-items: center;
       gap: 0.5rem;
-      border-radius: 2px;
-      padding: 0.4rem 0.9rem;
+      border-radius: 999px;
+      padding: 0.4rem 1rem;
       color: var(--color-clinic-deep);
-      font-size: 1.125rem;
-      font-weight: 500;
+      font-size: 0.875rem;
+      font-weight: 600;
       box-shadow: inset 0 0 0 1.5px var(--color-clinic);
     }
 

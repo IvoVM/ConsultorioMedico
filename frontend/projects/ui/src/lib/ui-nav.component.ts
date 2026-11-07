@@ -8,12 +8,14 @@ export type NavLink = {
   label: string;
   path: string;
   exact?: boolean;
+  icon?: string;
 };
 
 export type NavNode = {
   label: string;
   path?: string;
   exact?: boolean;
+  icon?: string;
   children?: NavLink[];
 };
 
@@ -26,7 +28,24 @@ export type NavNode = {
     :host {
       overflow-y: auto;
       scrollbar-width: thin;
-      scrollbar-color: rgb(143 208 180 / 0.7) transparent;
+      scrollbar-color: rgb(143 208 180 / 0.5) transparent;
+    }
+
+    .group-body {
+      display: grid;
+      grid-template-rows: 1fr;
+      animation: group-open 0.35s cubic-bezier(0.16, 0.84, 0.32, 1) both;
+    }
+
+    @keyframes group-open {
+      from {
+        grid-template-rows: 0fr;
+        opacity: 0;
+      }
+      to {
+        grid-template-rows: 1fr;
+        opacity: 1;
+      }
     }
 
     :host::-webkit-scrollbar {

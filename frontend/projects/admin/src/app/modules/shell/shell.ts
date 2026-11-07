@@ -1,55 +1,65 @@
 import { Component, computed, inject } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { RouterLink, RouterOutlet } from '@angular/router';
 import { AuthService, clinicaSession } from 'sdk';
 import { firstValueFrom } from 'rxjs';
-import { NavNode, UiButton, UiIcon, UiNav, UiPage } from 'ui';
+import { NavNode, UiIcon, UiNav, UiPage } from 'ui';
+import { roleLabels } from '../employees/models/role-labels';
 
 @Component({
-  imports: [RouterOutlet, UiPage, UiButton, UiIcon, UiNav],
+  imports: [RouterOutlet, RouterLink, UiPage, UiIcon, UiNav],
   templateUrl: './shell.html',
 })
 export class ShellPage {
   private readonly auth = inject(AuthService);
   readonly session = clinicaSession;
+  readonly roleLabel = computed(() => {
+    const role = this.session.role();
+    return role ? roleLabels[role] : 'Administración';
+  });
   readonly menu = computed((): NavNode[] => [
-      { label: 'Inicio', path: '/inicio', exact: true },
+      { label: 'Inicio', path: '/inicio', exact: true, icon: 'monitor_heart' },
       {
         label: 'Agenda',
+        icon: 'calendar_month',
         children: [
-          { label: 'Solicitudes de turnos', path: '/turnos/solicitudes' },
-          { label: 'Historial de turnos', path: '/turnos/historial' },
-          { label: 'Agendas', path: '/agendas' },
+          { label: 'Solicitudes de turnos', path: '/turnos/solicitudes', icon: 'pending_actions' },
+          { label: 'Historial de turnos', path: '/turnos/historial', icon: 'history' },
+          { label: 'Agendas', path: '/agendas', icon: 'event_note' },
         ],
       },
       {
         label: 'Pacientes',
+        icon: 'group',
         children: [
-          { label: 'Pacientes', path: '/pacientes' },
-          { label: 'Historias médicas', path: '/historias' },
+          { label: 'Pacientes', path: '/pacientes', icon: 'person_search' },
+          { label: 'Historias médicas', path: '/historias', icon: 'clinical_notes' },
         ],
       },
       {
         label: 'Atención',
+        icon: 'stethoscope',
         children: [
-          { label: 'Especialidades', path: '/organizacion/especialidades' },
-          { label: 'Servicios', path: '/organizacion/servicios' },
+          { label: 'Especialidades', path: '/organizacion/especialidades', icon: 'medical_services' },
+          { label: 'Servicios', path: '/organizacion/servicios', icon: 'vaccines' },
         ],
       },
       {
         label: 'Facturación',
+        icon: 'receipt_long',
         children: [
-          { label: 'Obras sociales', path: '/organizacion/obras-sociales' },
-          { label: 'Comprobantes', path: '/comprobantes' },
+          { label: 'Obras sociales', path: '/organizacion/obras-sociales', icon: 'health_and_safety' },
+          { label: 'Comprobantes', path: '/comprobantes', icon: 'request_quote' },
         ],
       },
       {
         label: 'Personal',
+        icon: 'badge',
         children: [
-          { label: 'Empleados', path: '/empleados' },
-          { label: 'Usuarios', path: '/configuracion/usuarios' },
+          { label: 'Empleados', path: '/empleados', icon: 'id_card' },
+          { label: 'Usuarios', path: '/configuracion/usuarios', icon: 'manage_accounts' },
         ],
       },
-      { label: 'Auditoría', path: '/auditoria' },
+      { label: 'Auditoría', path: '/auditoria', icon: 'policy' },
     ]);
 
   logout() {

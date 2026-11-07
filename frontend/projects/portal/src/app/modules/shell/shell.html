@@ -1,19 +1,36 @@
 @if (session.token()) {
-  <ui-page frame="shell" eyebrow="Portal" [title]="session.name() ?? 'Paciente'">
-    <div uiNav class="flex h-full min-h-0 flex-col">
-      <ui-nav class="min-h-0 flex-1 overflow-y-auto" label="Portal" [nodes]="menu()" />
-      <ui-button class="mt-4 w-full shrink-0" variant="ghost" (click)="logout()"><ui-icon name="logout" />Salir</ui-button>
+  <ui-page
+    frame="shell"
+    [brand]="clinicName()"
+    eyebrow="Portal"
+    [title]="session.name() ?? 'Paciente'"
+    [nodes]="menu()"
+    [userName]="session.name() ?? 'Paciente'"
+    [userRole]="roleText()"
+    (logout)="logout()"
+  >
+    <ui-nav uiNav class="min-h-0 flex-1 overflow-y-auto" label="Portal" [nodes]="menu()" />
+    <div uiActions class="flex items-center gap-2">
+      @if (session.role() === roles.Patient) {
+        <a [routerLink]="route.MisTurnos" class="bar-icon" aria-label="Mis turnos" title="Mis turnos"><ui-icon name="event_available" [size]="20" /></a>
+        <a [routerLink]="route.Reservar" class="action-link"><ui-icon name="add" [size]="18" /><span class="max-sm:hidden">Reservar</span></a>
+      } @else if (session.role() === roles.Secretary || session.role() === roles.TenantAdmin) {
+        <a [routerLink]="route.Solicitudes" class="bar-icon" aria-label="Solicitudes" title="Solicitudes"><ui-icon name="notifications" [size]="20" /></a>
+        <a [routerLink]="route.DarTurno" class="action-link"><ui-icon name="add" [size]="18" /><span class="max-sm:hidden">Dar un turno</span></a>
+      } @else if (session.role() === roles.Doctor) {
+        <a [routerLink]="route.Medico" class="action-link"><ui-icon name="stethoscope" [size]="18" /><span class="max-sm:hidden">Atención</span></a>
+      }
     </div>
     <router-outlet />
   </ui-page>
 } @else {
   <div class="min-h-screen bg-paper text-ink">
-    <header class="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-b border-rule px-5 py-4 sm:px-8">
+    <header class="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 bg-paper/80 px-5 py-4 backdrop-blur-md sm:px-8">
       <a [routerLink]="route.Ingreso" class="flex items-center gap-3 text-ink no-underline">
-        <img src="logo.svg" alt="" class="h-11 w-11" />
-        <span class="font-serif text-2xl leading-none text-clinic-deep">{{ clinicName() }}</span>
+        <span class="brand-badge"><img src="logo.svg" alt="" /></span>
+        <span class="text-xl leading-none font-bold tracking-tight text-forest">{{ clinicName() }}</span>
       </a>
-      <p class="max-w-[42ch] text-ink/80 sm:text-right">
+      <p class="max-w-[46ch] text-sm text-ink/70 sm:text-right">
         Para ver tu historia clínica, las recetas y tus turnos, podés
         <a [routerLink]="route.Registro" class="text-link">crear una cuenta</a>
         o <a [routerLink]="route.IngresoCuenta" class="text-link">entrar</a>.

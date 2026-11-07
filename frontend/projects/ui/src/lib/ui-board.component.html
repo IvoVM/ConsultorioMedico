@@ -1,0 +1,37 @@
+<div class="board">
+  @for (column of columns(); track column.key; let columnIndex = $index) {
+    <section class="column" [attr.data-tone]="column.tone" [style.--c]="columnIndex" [attr.aria-label]="column.label">
+      <header class="column-head">
+        <span class="dot"></span>
+        <span class="flex-1 truncate">{{ column.label }}</span>
+        <span class="count tabular-nums">{{ column.items.length }}</span>
+      </header>
+      <div class="cards">
+        @for (item of column.items.slice(0, limit()); track item.id; let index = $index) {
+          <article class="card" [style.--i]="index">
+            <div class="flex items-center gap-2.5">
+              <ui-avatar [name]="item.title" size="2rem" />
+              <div class="min-w-0 flex-1">
+                <p class="truncate text-sm font-semibold">{{ item.title }}</p>
+                <p class="flex min-w-0 items-center gap-1.5 text-xs text-ink/55">
+                  <span class="mini-dot"></span>
+                  <span class="truncate"><span class="tabular-nums">{{ item.time }}</span> · {{ item.meta }}</span>
+                </p>
+              </div>
+            </div>
+            @if (item.link) {
+              <a class="card-link" [routerLink]="item.link" [queryParams]="item.queryParams ?? null">
+                <ui-icon name="arrow_forward" [size]="15" />{{ item.linkLabel ?? 'Ver' }}
+              </a>
+            }
+          </article>
+        } @empty {
+          <p class="empty">Nadie por ahora</p>
+        }
+        @if (column.items.length > limit()) {
+          <p class="more">+{{ column.items.length - limit() }} más</p>
+        }
+      </div>
+    </section>
+  }
+</div>

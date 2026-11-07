@@ -1,7 +1,7 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { AppointmentDto, AppointmentStatus, AppointmentsService, errorMessage } from 'sdk';
-import { MediaWatcherService, UiBadge, UiEmpty, UiSkeleton, UiTable } from 'ui';
+import { AppointmentDto, AppointmentStatus, AppointmentsService, clinicaSession, errorMessage } from 'sdk';
+import { BoardColumn, UiTone, MediaWatcherService, UiBadge, UiBoard, UiEmpty, UiIcon, UiSkeleton, UiStat, UiTable, greeting, todayLabel } from 'ui';
 import { firstValueFrom } from 'rxjs';
 
 const statusLabels: Record<AppointmentStatus, string> = {
@@ -14,8 +14,15 @@ const statusLabels: Record<AppointmentStatus, string> = {
   [AppointmentStatus.Rescheduled]: 'Reprogramado',
 };
 
+const flow: { status: AppointmentStatus; tone: UiTone }[] = [
+  { status: AppointmentStatus.Booked, tone: UiTone.Muted },
+  { status: AppointmentStatus.CheckedIn, tone: UiTone.Warn },
+  { status: AppointmentStatus.InProgress, tone: UiTone.Sky },
+  { status: AppointmentStatus.Completed, tone: UiTone.Ok },
+];
+
 @Component({
-  imports: [RouterLink, UiBadge, UiEmpty, UiSkeleton, UiTable],
+  imports: [RouterLink, UiBadge, UiBoard, UiEmpty, UiIcon, UiSkeleton, UiStat, UiTable],
   templateUrl: './home.html',
 })
 export class HomePage {
@@ -24,10 +31,32 @@ export class HomePage {
   private readonly router = inject(Router);
   readonly statusLabels = statusLabels;
   readonly status = AppointmentStatus;
+  readonly tone = UiTone;
   readonly appointments = signal<AppointmentDto[]>([]);
   readonly error = signal('');
   readonly loading = signal(true);
-  readonly dayLabel = new Intl.DateTimeFormat('es-AR', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
+  readonly dayLabel = todayLabel();
+  readonly hello = greeting(clinicaSession.name());
+
+  readonly count = (status: AppointmentStatus) => this.appointments().filter((item) => item.status === status).length;
+  readonly missed = computed(() => this.count(AppointmentStatus.NoShow) + this.count(AppointmentStatus.Cancelled));
+  readonly columns = computed((): BoardColumn[] =>
+    flow.map(({ status, tone }) => ({
+      key: status,
+      label: statusLabels[status],
+      tone,
+      items: this.appointments()
+        .filter((item) => item.status === status)
+        .map((item) => ({
+          id: item.id,
+          title: item.patient,
+          time: this.timeLabel(item.start),
+          meta: item.professional,
+          link: ['/pacientes', item.patientId],
+          linkLabel: 'Ficha',
+        })),
+    })),
+  );
 
   constructor() {
     void this.load();

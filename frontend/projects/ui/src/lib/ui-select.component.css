@@ -14,17 +14,19 @@
 .trigger {
   display: flex;
   width: 100%;
-  min-height: 2.75rem;
+  min-height: 2.65rem;
   cursor: pointer;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  border-radius: 2px;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 2px rgb(14 42 34 / 0.04);
+  transition: border-color 0.2s ease, box-shadow 0.25s ease;
   border: 1px solid var(--color-rule);
   background: white;
-  padding: 0.5rem 0.75rem;
+  padding: 0.5rem 0.9rem;
   color: var(--color-ink);
-  font-size: 1.125rem;
+  font-size: 0.875rem;
   text-align: left;
 }
 
@@ -44,18 +46,18 @@
 }
 
 .trigger.is-empty {
-  color: rgb(23 51 44 / 0.55);
+  color: rgb(14 42 34 / 0.55);
 }
 
 .trigger:disabled {
   cursor: not-allowed;
   background: var(--color-mist);
-  color: rgb(23 51 44 / 0.45);
+  color: rgb(14 42 34 / 0.45);
 }
 
 .trigger:focus-visible {
-  border-color: var(--color-clinic);
-  box-shadow: 0 0 0 3px rgb(27 107 82 / 0.18);
+  border-color: var(--color-leaf);
+  box-shadow: 0 0 0 4px rgb(34 185 104 / 0.16);
   outline: none;
 }
 
@@ -68,11 +70,13 @@
   max-height: 16rem;
   overflow: auto;
   margin: 0;
-  padding: 0.25rem;
+  padding: 0.35rem;
   list-style: none;
-  border: 1px solid var(--color-rule);
+  border: 0;
+  border-radius: 0.9rem;
   background: white;
-  box-shadow: 0 10px 24px rgb(23 51 44 / 0.12);
+  box-shadow: var(--shadow-lift);
+  animation: menu-in 0.24s cubic-bezier(0.16, 0.84, 0.32, 1) both;
 }
 
 .menu.is-up {
@@ -86,14 +90,15 @@
 
 .menu li {
   display: flex;
-  min-height: 2.75rem;
+  min-height: 2.4rem;
   cursor: pointer;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  padding: 0.4rem 0.6rem;
+  border-radius: 0.6rem;
+  padding: 0.4rem 0.7rem;
   color: var(--color-ink);
-  font-size: 1.125rem;
+  font-size: 0.875rem;
 }
 
 .menu li.is-active {
@@ -102,10 +107,19 @@
 
 .menu li[aria-selected='true'] {
   color: var(--color-clinic-deep);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .hint {
   cursor: default;
-  color: rgb(23 51 44 / 0.55);
+  color: rgb(14 42 34 / 0.55);
+}
+
+.trigger:hover:not(:disabled) {
+  border-color: #c9d8d0;
+}
+
+@keyframes menu-in {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to { opacity: 1; transform: none; }
 }

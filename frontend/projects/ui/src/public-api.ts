@@ -1,2 +1,2 @@
-export { FechaPipe, MediaWatcherService, ToastService, UiActions, UiBadge, UiButton, UiCalendar, UiEmpty, UiField, UiIcon, UiModal, UiNav, UiPage, UiPassword, UiSelect, UiSkeleton, UiSpinner, UiTable, UiToasts, formatFecha, formatPhone, passwordIssue } from './lib/ui';
-export type { NavLink, NavNode, SelectOption, ToastItem, ToastTone } from './lib/ui';
+export { FechaPipe, MediaWatcherService, ToastService, UiActions, UiAvatar, UiBadge, UiBoard, UiButton, UiCalendar, UiCommand, UiEmpty, UiField, UiIcon, UiModal, UiNav, UiPage, UiPassword, UiSelect, UiSkeleton, UiSpinner, UiStat, UiTable, UiToasts, UiTone, formatFecha, formatPhone, greeting, initials, passwordIssue, todayLabel } from './lib/ui';
+export type { BoardColumn, BoardItem, NavLink, NavNode, SelectOption, ToastItem, ToastTone } from './lib/ui';

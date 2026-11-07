@@ -16,18 +16,24 @@ import { Component, computed, input } from '@angular/core';
 
     .stack.is-framed {
       gap: 1px;
-      border: 1px solid var(--color-rule, #d3ddd7);
-      background: var(--color-rule, #d3ddd7);
+      overflow: hidden;
+      border-radius: 1.25rem;
+      background: var(--color-rule, #e1eae5);
+      box-shadow: var(--shadow-card);
     }
 
     .stack:not(.is-framed) {
       gap: 0.75rem;
     }
 
+    .stack:not(.is-framed) .bar {
+      border-radius: 0.85rem;
+    }
+
     .bar {
       display: block;
       background-color: white;
-      background-image: linear-gradient(90deg, transparent, rgb(230 238 234 / 0.95), transparent);
+      background-image: linear-gradient(90deg, transparent, rgb(220 243 229 / 0.9), transparent);
       background-size: 200% 100%;
       background-repeat: no-repeat;
       animation: shimmer 1.3s ease-in-out infinite;

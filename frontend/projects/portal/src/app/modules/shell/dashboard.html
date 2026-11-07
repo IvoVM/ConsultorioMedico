@@ -1,90 +1,143 @@
+<header class="page-hero">
+  <div>
+    <p class="eyebrow">{{ dayLabel }}</p>
+    <h2>{{ hello }}</h2>
+  </div>
+  @if (session.role() === roles.Secretary || session.role() === roles.TenantAdmin) {
+    <div class="flex flex-wrap gap-2">
+      <a [routerLink]="route.Solicitudes" class="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold shadow-[var(--shadow-card)] transition hover:-translate-y-0.5 hover:bg-clinic-wash">
+        <ui-icon name="pending_actions" [size]="18" />Solicitudes
+      </a>
+      <a [routerLink]="route.DarTurno" class="action-link"><ui-icon name="add" [size]="18" />Dar un turno</a>
+    </div>
+  }
+</header>
+
 @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
 
 @if (session.role() === roles.Patient) {
-  <div class="grid gap-8 border-b border-rule pb-8 md:grid-cols-2">
-    <section>
-      <h2 class="font-serif text-3xl tracking-tight">Reservar un turno</h2>
-      <p class="mt-2 max-w-[36ch] leading-relaxed text-ink/75">Elegí el especialista y el horario más próximo.</p>
-      <a [routerLink]="route.Reservar" class="action-link mt-5">Reservar</a>
-    </section>
-    <section class="md:border-l md:border-rule md:pl-8">
-      <h2 class="font-serif text-3xl tracking-tight">Historia clínica</h2>
-      <p class="mt-2 max-w-[36ch] leading-relaxed text-ink/75">Consultas, diagnósticos y lo que ya te atendieron.</p>
-      <a [routerLink]="route.Historia" class="action-link mt-5">Abrir historia</a>
-    </section>
+  <div class="grid gap-4 md:grid-cols-2 stagger">
+    <a [routerLink]="route.Reservar" class="hero-tile group surface surface-lift block overflow-hidden p-6">
+      <span class="tile-glyph"><ui-icon name="event_upcoming" [size]="24" /></span>
+      <h3 class="mt-5 text-xl font-bold tracking-tight">Reservar un turno</h3>
+      <p class="mt-1 max-w-[36ch] text-ink/65">Elegí el especialista y el horario más próximo.</p>
+      <span class="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-clinic">
+        Reservar <ui-icon name="arrow_forward" [size]="18" class="transition-transform duration-300 group-hover:translate-x-1" />
+      </span>
+    </a>
+    <a [routerLink]="route.Historia" class="hero-tile group surface surface-lift block overflow-hidden p-6">
+      <span class="tile-glyph"><ui-icon name="clinical_notes" [size]="24" /></span>
+      <h3 class="mt-5 text-xl font-bold tracking-tight">Historia clínica</h3>
+      <p class="mt-1 max-w-[36ch] text-ink/65">Consultas, diagnósticos y lo que ya te atendieron.</p>
+      <span class="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-clinic">
+        Abrir historia <ui-icon name="arrow_forward" [size]="18" class="transition-transform duration-300 group-hover:translate-x-1" />
+      </span>
+    </a>
   </div>
-  <section class="mt-8">
-    <h2 class="font-serif text-2xl tracking-tight">Próximos turnos</h2>
+  <section class="panel rise mt-6">
+    <div class="panel-head">
+      <h3 class="panel-title"><ui-icon name="event_available" [size]="20" class="text-leaf" />Próximos turnos</h3>
+      <a [routerLink]="route.MisTurnos" class="text-link">Ver todos</a>
+    </div>
     @if (loading()) {
-      <ui-skeleton class="mt-4" label="Cargando turnos" />
+      <ui-skeleton label="Cargando turnos" [count]="3" height="3.5rem" [framed]="false" />
     } @else if (!appointments().length) {
       <ui-empty message="No tenés turnos próximos. Reservá uno cuando quieras." />
     } @else {
-      <div class="mt-4">
-      <ui-table>
-<table class="cards">
-        <thead><tr><th>Cuándo</th><th>Profesional</th><th>Estado</th></tr></thead>
-        <tbody>
-          @for (appointment of appointments(); track appointment.id) {
-            <tr>
-              <td class="whitespace-nowrap tabular-nums">{{ whenLabel(appointment.start) }}</td>
-              <td data-name="Profesional">{{ appointment.professional }}</td>
-              <td data-name="Estado"><ui-badge [tone]="appointment.status === status.Completed ? 'ok' : 'muted'">{{ statusLabels[appointment.status] }}</ui-badge></td>
-            </tr>
-          }
-        </tbody>
-      </table>
-</ui-table>
-      </div>
+      <ul class="flex flex-col gap-2">
+        @for (appointment of appointments(); track appointment.id; let index = $index) {
+          <li class="upcoming rise" [style.animation-delay.ms]="index * 60 + 80">
+            <span class="upcoming-date">
+              <ui-icon name="schedule" [size]="18" />
+            </span>
+            <div class="min-w-0 flex-1">
+              <p class="truncate font-semibold tabular-nums">{{ whenLabel(appointment.start) }}</p>
+              <p class="truncate text-sm text-ink/60">{{ appointment.professional }}</p>
+            </div>
+            <ui-badge [tone]="appointment.status === status.Completed ? 'ok' : 'muted'">{{ statusLabels[appointment.status] }}</ui-badge>
+          </li>
+        }
+      </ul>
     }
   </section>
 } @else if (session.role() === roles.Doctor) {
-  <header class="mb-6">
-    <h2 class="font-serif text-3xl tracking-tight">Pacientes de hoy</h2>
-    <p class="mt-1 text-ink/70">{{ dayLabel }}@if (!loading()) { <span> · {{ appointments().length }} {{ appointments().length === 1 ? 'turno' : 'turnos' }}</span> }</p>
-  </header>
-  @if (loading()) {
-    <ui-skeleton label="Cargando la agenda" />
-  } @else if (!appointments().length) {
-    <ui-empty message="Hoy no hay pacientes en tu agenda." />
-  } @else {
-    <ui-table>
-<table class="cards">
-      <thead><tr><th>Hora</th><th>Paciente</th><th>Motivo</th><th>Estado</th><th></th></tr></thead>
-      <tbody>
-        @for (appointment of appointments(); track appointment.id) {
-          <tr (click)="openChart(appointment.patientId, $event)">
-            <td class="whitespace-nowrap tabular-nums">{{ timeLabel(appointment.start) }}</td>
-            <td data-name="Paciente" class="font-serif text-lg leading-tight">{{ appointment.patient }}</td>
-            <td data-name="Motivo">{{ appointment.visitReason || '—' }}</td>
-            <td data-name="Estado"><ui-badge [tone]="appointment.status === status.Cancelled || appointment.status === status.NoShow ? 'warn' : appointment.status === status.Completed ? 'ok' : 'muted'">{{ statusLabels[appointment.status] }}</ui-badge></td>
-            <td class="whitespace-nowrap"><a class="text-link" [routerLink]="route.Historia" [queryParams]="{ paciente: appointment.patientId }">Historia</a></td>
-          </tr>
-        }
-      </tbody>
-    </table>
-</ui-table>
+  <div class="stat-grid stagger">
+    <ui-stat label="Pacientes de hoy" icon="groups" [value]="loading() ? '–' : appointments().length" [note]="loading() ? '' : count(status.Completed) + ' atendidos'" [tone]="tone.Ok" />
+    <ui-stat label="Esperando" icon="chair" [value]="loading() ? '–' : count(status.CheckedIn)" [note]="loading() ? '' : 'en sala'" [tone]="tone.Warn" />
+    <ui-stat label="Próximo" icon="schedule" [value]="loading() ? '–' : (next() ? timeLabel(next()!.start) : '—')" [note]="next()?.patient ?? ''" />
+  </div>
+  <section class="panel rise mb-6">
+    <div class="panel-head">
+      <h3 class="panel-title"><ui-icon name="monitor_heart" [size]="20" class="text-leaf" />Pacientes de hoy</h3>
+      <a [routerLink]="route.Medico" class="text-link">Ir a atención</a>
+    </div>
+    @if (loading()) {
+      <ui-skeleton label="Cargando la agenda" [count]="3" height="3.5rem" [framed]="false" />
+    } @else if (!appointments().length) {
+      <ui-empty message="Hoy no hay pacientes en tu agenda." />
+    } @else {
+      <ui-board [columns]="columns()" />
+    }
+  </section>
+  @if (!loading() && appointments().length) {
+    <section class="rise">
+      <ui-table>
+        <table class="cards">
+          <thead><tr><th>Hora</th><th>Paciente</th><th>Motivo</th><th>Estado</th><th></th></tr></thead>
+          <tbody>
+            @for (appointment of appointments(); track appointment.id) {
+              <tr (click)="openChart(appointment.patientId, $event)">
+                <td class="whitespace-nowrap font-semibold tabular-nums">{{ timeLabel(appointment.start) }}</td>
+                <td data-name="Paciente" class="font-semibold">{{ appointment.patient }}</td>
+                <td data-name="Motivo">{{ appointment.visitReason || '—' }}</td>
+                <td data-name="Estado"><ui-badge [tone]="appointment.status === status.Cancelled || appointment.status === status.NoShow ? 'warn' : appointment.status === status.Completed ? 'ok' : 'muted'">{{ statusLabels[appointment.status] }}</ui-badge></td>
+                <td class="whitespace-nowrap"><a class="text-link" [routerLink]="route.Historia" [queryParams]="{ paciente: appointment.patientId }">Historia</a></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </ui-table>
+    </section>
   }
 } @else {
-  <header class="mb-8">
-    <h2 class="font-serif text-3xl tracking-tight">Hoy en el consultorio</h2>
-    <p class="mt-1 text-ink/70">
-      {{ dayLabel }}
-      @if (!loading()) {
-        <span> · {{ appointments().length }} {{ appointments().length === 1 ? 'turno' : 'turnos' }}</span>
-        <span> · {{ requests().length }} {{ requests().length === 1 ? 'solicitud pendiente' : 'solicitudes pendientes' }}</span>
+  <div class="stat-grid stagger">
+    <ui-stat label="Turnos de hoy" icon="calendar_today" [value]="loading() ? '–' : appointments().length" [note]="loading() ? '' : count(status.Completed) + ' atendidos'" [tone]="tone.Ok" />
+    <ui-stat label="En sala de espera" icon="chair" [value]="loading() ? '–' : count(status.CheckedIn)" [note]="loading() ? '' : 'admitidos'" [tone]="tone.Warn" />
+    <ui-stat
+      label="Solicitudes en línea"
+      icon="pending_actions"
+      [value]="loading() ? '–' : requests().length"
+      [note]="loading() ? '' : (requests().length ? 'para confirmar' : 'al día')"
+      [tone]="requests().length ? tone.Warn : tone.Ok"
+    />
+    <ui-stat label="Ausentes y cancelados" icon="event_busy" [value]="loading() ? '–' : missed()" [note]="loading() ? '' : (missed() ? 'para revisar' : 'ninguno')" [tone]="missed() ? tone.Bad : tone.Ok" />
+  </div>
+
+  <div class="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_20rem]">
+    <section class="panel rise min-w-0">
+      <div class="panel-head">
+        <h3 class="panel-title"><ui-icon name="monitor_heart" [size]="20" class="text-leaf" />Flujo de pacientes</h3>
+        @if (!loading()) {
+          <span class="text-sm text-ink/55">{{ count(status.CheckedIn) }} esperando · {{ count(status.InProgress) }} en consulta</span>
+        }
+      </div>
+      @if (loading()) {
+        <ui-skeleton label="Cargando la agenda" [count]="3" height="3.5rem" [framed]="false" />
+      } @else if (!appointments().length) {
+        <ui-empty message="Hoy no hay turnos cargados." />
+      } @else {
+        <ui-board [columns]="columns()" />
       }
-    </p>
-  </header>
-  <nav class="mb-10 grid gap-8 border-b border-rule pb-8 md:grid-cols-2">
-    <section>
-      <h2 class="font-serif text-2xl tracking-tight">Dar un turno</h2>
-      <p class="mt-2 max-w-[36ch] leading-relaxed text-ink/75">Buscás al paciente por documento y le confirmás el horario.</p>
-      <a [routerLink]="route.DarTurno" class="action-link mt-5">Dar un turno</a>
     </section>
-    <section class="md:border-l md:border-rule md:pl-8">
-      <h2 class="font-serif text-2xl tracking-tight">Solicitudes</h2>
-      <p class="mt-2 max-w-[36ch] leading-relaxed text-ink/75">
+
+    <aside class="panel rise self-start">
+      <div class="panel-head">
+        <h3 class="panel-title"><ui-icon name="inbox" [size]="20" class="text-leaf" />Solicitudes</h3>
+        @if (!loading()) {
+          <span class="chip" [class.is-warn]="requests().length" [class.is-ok]="!requests().length">{{ requests().length }}</span>
+        }
+      </div>
+      <p class="text-sm leading-relaxed text-ink/65">
         @if (loading()) {
           Los pedidos que llegaron en línea.
         } @else if (requests().length) {
@@ -93,33 +146,11 @@
           No hay pedidos esperando confirmación.
         }
       </p>
-      <a [routerLink]="route.Solicitudes" class="action-link mt-5">Ver solicitudes</a>
-    </section>
-  </nav>
-  <section>
-    <h2 class="font-serif text-2xl tracking-tight">Turnos de hoy</h2>
-    @if (loading()) {
-      <ui-skeleton class="mt-4" label="Cargando la agenda" />
-    } @else if (!appointments().length) {
-      <ui-empty message="Hoy no hay turnos cargados." />
-    } @else {
-      <div class="mt-4">
-        <ui-table>
-<table class="cards">
-          <thead><tr><th>Hora</th><th>Paciente</th><th>Profesional</th><th>Estado</th></tr></thead>
-          <tbody>
-            @for (appointment of appointments(); track appointment.id) {
-              <tr>
-                <td class="whitespace-nowrap tabular-nums">{{ timeLabel(appointment.start) }}</td>
-                <td data-name="Paciente" class="font-serif text-lg leading-tight">{{ appointment.patient }}</td>
-                <td data-name="Profesional">{{ appointment.professional }}</td>
-                <td data-name="Estado"><ui-badge [tone]="appointment.status === status.Cancelled || appointment.status === status.NoShow ? 'warn' : appointment.status === status.Completed ? 'ok' : 'muted'">{{ statusLabels[appointment.status] }}</ui-badge></td>
-              </tr>
-            }
-          </tbody>
-        </table>
-</ui-table>
-      </div>
-    }
-  </section>
+      <a [routerLink]="route.Solicitudes" class="action-link mt-4 w-full">Ver solicitudes</a>
+      <hr class="my-5 border-rule" />
+      <h4 class="text-sm font-bold">Dar un turno</h4>
+      <p class="mt-1 text-sm leading-relaxed text-ink/65">Buscás al paciente por documento y le confirmás el horario.</p>
+      <a [routerLink]="route.DarTurno" class="text-link mt-3 inline-block">Empezar</a>
+    </aside>
+  </div>
 }
