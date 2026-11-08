@@ -71,11 +71,14 @@
   }
 }
 <ui-modal [open]="denying() !== null" title="Motivo de la denegación" (closed)="denying.set(null)">
-  <form class="flex flex-col gap-4" (ngSubmit)="confirmDeny()">
+  <form id="deny-form" class="flex flex-col gap-4" (ngSubmit)="confirmDeny()">
     <p class="text-sm text-ink/75">{{ denying()?.name }} va a ver este texto y puede pedir otro turno.</p>
     <ui-field label="Motivo">
       <textarea name="reason" rows="4" [(ngModel)]="reason" required maxlength="400"></textarea>
     </ui-field>
-    <ui-button type="submit" variant="error" [loading]="pending().startsWith('deny:')">Denegar solicitud</ui-button>
   </form>
+  <div uiModalFooter class="flex flex-wrap gap-3">
+    <ui-button type="submit" form="deny-form" variant="error" [loading]="pending().startsWith('deny:')">Denegar solicitud</ui-button>
+    <ui-button variant="outlined" [disabled]="pending().startsWith('deny:')" (click)="denying.set(null)">Cancelar</ui-button>
+  </div>
 </ui-modal>

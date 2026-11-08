@@ -93,7 +93,7 @@
 
 @if (addingBlock()) {
   <ui-modal [open]="true" title="Crear horario" (closed)="addingBlock.set(false)">
-    <form class="grid gap-4" (ngSubmit)="addBlock()">
+    <form id="add-block-form" class="grid gap-4" (ngSubmit)="addBlock()">
       <ui-field label="Día">
         <ui-select name="day" [(ngModel)]="day" [options]="dayOptions" />
       </ui-field>
@@ -105,25 +105,25 @@
       @if (!typeOptions().length) {
         <p class="text-sm text-ink/70">Este médico no tiene prestaciones. Cargalas en su especialidad.</p>
       }
-      <div class="flex flex-wrap gap-3">
-        <ui-button type="submit">Crear</ui-button>
-        <ui-button variant="outlined" (click)="addingBlock.set(false)">Cancelar</ui-button>
-      </div>
     </form>
+    <div uiModalFooter class="flex flex-wrap gap-3">
+      <ui-button type="submit" form="add-block-form">Crear</ui-button>
+      <ui-button variant="outlined" (click)="addingBlock.set(false)">Cancelar</ui-button>
+    </div>
   </ui-modal>
 }
 
 @if (addingBlockout()) {
   <ui-modal [open]="true" title="Crear bloqueo" (closed)="addingBlockout.set(false)">
-    <form class="grid gap-4" (ngSubmit)="createBlockout()">
+    <form id="create-blockout-form" class="grid gap-4" (ngSubmit)="createBlockout()">
       <ui-field label="Inicio del bloqueo"><input name="blockoutStart" type="datetime-local" [(ngModel)]="blockoutStart" required /></ui-field>
       <ui-field label="Fin"><input name="blockoutEnd" type="datetime-local" [(ngModel)]="blockoutEnd" required /></ui-field>
       <ui-field label="Motivo"><input name="reason" [(ngModel)]="reason" required /></ui-field>
       @if (error()) { <p class="text-sm text-pulse" role="alert">{{ error() }}</p> }
-      <div class="flex flex-wrap gap-3">
-        <ui-button type="submit" [loading]="blocking()">Crear</ui-button>
-        <ui-button variant="outlined" [disabled]="blocking()" (click)="addingBlockout.set(false)">Cancelar</ui-button>
-      </div>
     </form>
+    <div uiModalFooter class="flex flex-wrap gap-3">
+      <ui-button type="submit" form="create-blockout-form" [loading]="blocking()">Crear</ui-button>
+      <ui-button variant="outlined" [disabled]="blocking()" (click)="addingBlockout.set(false)">Cancelar</ui-button>
+    </div>
   </ui-modal>
 }

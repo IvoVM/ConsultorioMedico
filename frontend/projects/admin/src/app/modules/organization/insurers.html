@@ -47,14 +47,14 @@
 
 @if (creating()) {
   <ui-modal [open]="true" title="Agregar obra social" (closed)="creating.set(false)">
-    <form class="flex flex-col gap-4" (ngSubmit)="create()">
+    <form id="create-form" class="flex flex-col gap-4" (ngSubmit)="create()">
       <p class="text-sm text-ink/70">Queda permitida. Después, en el empleado médico, se marca si está afiliado.</p>
       <ui-field label="Nombre"><input name="name" required maxlength="120" [(ngModel)]="name" /></ui-field>
       @if (error()) { <p class="text-sm text-pulse" role="alert">{{ error() }}</p> }
-      <div class="flex flex-wrap gap-3">
-        <ui-button type="submit" [loading]="saving()">Agregar</ui-button>
-        <ui-button variant="outlined" [disabled]="saving()" (click)="creating.set(false)">Cancelar</ui-button>
-      </div>
     </form>
+    <div uiModalFooter class="flex flex-wrap gap-3">
+      <ui-button type="submit" form="create-form" [loading]="saving()">Agregar</ui-button>
+      <ui-button variant="outlined" [disabled]="saving()" (click)="creating.set(false)">Cancelar</ui-button>
+    </div>
   </ui-modal>
 }

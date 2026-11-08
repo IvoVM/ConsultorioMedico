@@ -85,6 +85,7 @@ import { UiSpinner } from './ui-spinner.component';
 })
 export class UiButton {
   readonly type = input<'button' | 'submit'>('button');
+  readonly form = input<string | null>(null);
   readonly variant = input<'primary' | 'secondary' | 'error' | 'ghost' | 'danger' | 'outlined'>('primary');
   readonly disabled = input(false);
   readonly loading = input(false);

@@ -17,7 +17,7 @@ import { UiModal } from 'ui';
         }
       </div>
       @if (nextScreen()) {
-        <div class="help-nav" [class.is-back]="page() === 1">
+        <div uiModalFooter class="help-nav" [class.is-back]="page() === 1">
           @if (page() === 0) {
             <button type="button" class="help-switch" (click)="page.set(1)">{{ nextScreen() }} <span aria-hidden="true">→</span></button>
           } @else {
@@ -81,8 +81,8 @@ import { UiModal } from 'ui';
 
     .help-nav {
       display: flex;
+      width: 100%;
       justify-content: flex-end;
-      margin-top: 1.5rem;
     }
 
     .help-nav.is-back {

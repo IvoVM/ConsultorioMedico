@@ -22,10 +22,6 @@
       @if (error()) {
         <p class="text-sm text-pulse" role="alert">{{ error() }}</p>
       }
-      <div class="flex flex-wrap gap-2">
-        <ui-button [loading]="saving()" (click)="confirm()"><ui-icon name="check" [size]="18" />Confirmar</ui-button>
-        <ui-button variant="secondary" [disabled]="saving()" (click)="back()">Elegir otro</ui-button>
-      </div>
     </section>
   } @else {
     <div class="pick">
@@ -81,6 +77,12 @@
           }
         </div>
       </div>
+    </div>
+  }
+  @if (chosen()) {
+    <div uiModalFooter class="flex flex-wrap gap-3">
+      <ui-button [loading]="saving()" (click)="confirm()"><ui-icon name="check" [size]="18" />Confirmar</ui-button>
+      <ui-button variant="secondary" [disabled]="saving()" (click)="back()">Elegir otro</ui-button>
     </div>
   }
 </ui-modal>
