@@ -1,0 +1,37 @@
+<div class="month" [class.is-loading]="loading()">
+  <div class="nav">
+    <button type="button" class="arrow" [disabled]="!canGoBack() || loading()" (click)="shift.emit(-1)" aria-label="Mes anterior">
+      <ui-icon name="chevron_left" />
+    </button>
+    <p class="title" aria-live="polite">{{ title() }}</p>
+    <button type="button" class="arrow" [disabled]="loading()" (click)="shift.emit(1)" aria-label="Mes siguiente">
+      <ui-icon name="chevron_right" />
+    </button>
+  </div>
+  <div class="weekdays" aria-hidden="true"><span>Lu</span><span>Ma</span><span>Mi</span><span>Ju</span><span>Vi</span><span>Sá</span><span>Do</span></div>
+  @for (key of [year() * 100 + month()]; track key) {
+    <div class="grid">
+      @for (cell of cells(); track $index; let index = $index) {
+        @if (cell) {
+          <button
+            type="button"
+            class="day"
+            [style.--i]="index"
+            [class.is-open]="cell.open"
+            [class.is-past]="cell.past"
+            [class.is-today]="cell.today"
+            [class.is-selected]="cell.iso === selected()"
+            [disabled]="!cell.open || loading()"
+            [attr.aria-pressed]="cell.iso === selected()"
+            [attr.aria-label]="cell.day + (cell.open ? ', con horarios libres' : ', sin horarios')"
+            (click)="pick.emit(cell.iso)"
+          >
+            {{ cell.day }}
+          </button>
+        } @else {
+          <span></span>
+        }
+      }
+    </div>
+  }
+</div>

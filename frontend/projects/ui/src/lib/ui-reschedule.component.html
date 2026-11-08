@@ -1,0 +1,86 @@
+<ui-modal [open]="true" [wide]="true" [title]="title()" (closed)="closed.emit()">
+  @if (chosen(); as slot) {
+    <section class="confirm" aria-live="polite">
+      <p class="eyebrow">
+        @if (origin() === origins.Nearest) {
+          <ui-icon name="bolt" [size]="16" /> Este es el turno libre más cercano
+        } @else {
+          <ui-icon name="event_available" [size]="16" /> Elegiste este horario
+        }
+      </p>
+      <div class="ticket">
+        <span class="ticket-icon"><ui-icon name="event" [size]="26" /></span>
+        <div class="min-w-0">
+          <p class="ticket-day">{{ dayLabel(slot.start) }}</p>
+          <p class="ticket-time tabular-nums">{{ timeLabel(slot.start) }} hs</p>
+          @if (detail()) {
+            <p class="ticket-detail">{{ detail() }}</p>
+          }
+        </div>
+      </div>
+      <p class="text-sm text-ink/65">¿Confirmás la reprogramación a este día y horario?</p>
+      @if (error()) {
+        <p class="text-sm text-pulse" role="alert">{{ error() }}</p>
+      }
+      <div class="flex flex-wrap gap-2">
+        <ui-button [loading]="saving()" (click)="confirm()"><ui-icon name="check" [size]="18" />Confirmar</ui-button>
+        <ui-button variant="secondary" [disabled]="saving()" (click)="back()">Elegir otro</ui-button>
+      </div>
+    </section>
+  } @else {
+    <div class="pick">
+      <div class="nearest">
+        <div class="min-w-0">
+          <p class="text-sm font-semibold">¿Apurado?</p>
+          <p class="text-sm text-ink/60">Buscamos el primer día y horario libre para {{ detail() || 'esta prestación' }}.</p>
+        </div>
+        <ui-button [loading]="searching()" (click)="findNearest()"><ui-icon name="bolt" [size]="18" />Turno más cercano</ui-button>
+      </div>
+
+      @if (error()) {
+        <p class="text-sm text-pulse" role="alert">{{ error() }}</p>
+      }
+
+      <div class="split">
+        <ui-month
+          [year]="year()"
+          [month]="month()"
+          [openDays]="days()"
+          [selected]="day()"
+          [loading]="loadingDays()"
+          (pick)="pickDay($event)"
+          (shift)="shift($event)"
+        />
+        <div class="times">
+          @if (!day()) {
+            <div class="hint">
+              <ui-icon name="touch_app" [size]="22" />
+              <p>
+                @if (loadingDays()) {
+                  Buscando días con horarios libres…
+                } @else if (days().length) {
+                  Elegí un día marcado en verde para ver sus horarios.
+                } @else {
+                  Este mes no tiene horarios libres. Probá con el siguiente.
+                }
+              </p>
+            </div>
+          } @else {
+            <p class="times-title">{{ dayLabel(day()) }}</p>
+            @if (loadingSlots()) {
+              <p class="text-sm text-ink/60">Buscando horarios…</p>
+            } @else if (!slots().length) {
+              <p class="text-sm text-ink/60">Ese día ya no tiene horarios libres.</p>
+            } @else {
+              <div class="slot-grid">
+                @for (slot of slots(); track slot.start; let index = $index) {
+                  <button type="button" class="slot" [style.--i]="index" (click)="choose(slot)">{{ timeLabel(slot.start) }}</button>
+                }
+              </div>
+            }
+          }
+        </div>
+      </div>
+    </div>
+  }
+</ui-modal>

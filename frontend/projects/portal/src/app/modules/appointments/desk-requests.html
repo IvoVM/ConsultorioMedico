@@ -66,27 +66,9 @@
   }
 }
 @if (moving(); as item) {
-  <ui-modal [open]="true" [wide]="true" [title]="'Reprogramar a ' + item.name" (closed)="cancelMove()">
-    <form (ngSubmit)="loadSlots()">
-      <p class="text-sm text-ink/70">{{ item.professional }} · {{ item.appointmentType }}. Elegí un día y un horario libre.</p>
-      <ui-field class="mt-4 sm:w-64" label="Día">
-        <input name="moveDate" type="date" [min]="today" [(ngModel)]="moveDate" (ngModelChange)="loadSlots()" required />
-      </ui-field>
-      @if (slotsError()) {
-        <p class="mt-4 text-sm text-pulse" role="alert">{{ slotsError() }}</p>
-      } @else if (slotsLoading()) {
-        <p class="mt-4 text-sm text-ink/60">Buscando horarios…</p>
-      } @else if (!slots().length) {
-        <p class="mt-4 text-sm text-ink/70">Ese día no tiene horarios libres para esta prestación.</p>
-      } @else {
-        <div class="mt-4 flex flex-wrap gap-2">
-          @for (slot of slots(); track slot.start) {
-            <ui-button type="button" variant="outlined" [loading]="pending() === 'move:' + item.id" (click)="moveTo(slot)">{{ slot.start | fecha:'hora' }}</ui-button>
-          }
-        </div>
-      }
-    </form>
-  </ui-modal>
+  @if (moveSource; as source) {
+    <ui-reschedule [title]="'Reprogramar a ' + item.name" [detail]="item.professional + ' · ' + item.appointmentType" [source]="source" (closed)="cancelMove()" />
+  }
 }
 <ui-modal [open]="denying() !== null" title="Motivo de la denegación" (closed)="denying.set(null)">
   <form class="flex flex-col gap-4" (ngSubmit)="confirmDeny()">

@@ -1,31 +1,27 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { AppointmentsService, BookingRequestDto, BookingRequestStatus, SlotDto, errorMessage } from 'sdk';
-import { FechaPipe, RequestTab, TabItem, ToastService, UiActions, UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable, UiTabs, UiTone, formatFecha, deactivationLabel, expiredRequestDays, localDate, overdueLabel, requestDeactivated, requestExpired, requestTabLabels } from 'ui';
-import { firstValueFrom } from 'rxjs';
+import { AppointmentsService, BookingRequestDto, BookingRequestStatus, errorMessage } from 'sdk';
+import { FechaPipe, RequestTab, RescheduleSource, TabItem, ToastService, UiActions, UiButton, UiEmpty, UiField, UiModal, UiReschedule, UiSkeleton, UiTable, UiTabs, UiTone, formatFecha, deactivationLabel, expiredRequestDays, overdueLabel, requestDeactivated, requestExpired, requestTabLabels } from 'ui';
+import { Observable, firstValueFrom } from 'rxjs';
 
 @Component({
-  imports: [FormsModule, FechaPipe, UiActions, UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable, UiTabs],
+  imports: [FormsModule, FechaPipe, UiActions, UiButton, UiEmpty, UiField, UiModal, UiReschedule, UiSkeleton, UiTable, UiTabs],
   templateUrl: './requests.html',
 })
 export class AppointmentRequestsPage {
   private readonly appointments = inject(AppointmentsService);
   private readonly toasts = inject(ToastService);
   readonly requests = signal<BookingRequestDto[]>([]);
-  readonly slots = signal<SlotDto[]>([]);
   readonly moving = signal<BookingRequestDto | null>(null);
   readonly denying = signal<BookingRequestDto | null>(null);
   readonly error = signal('');
-  readonly slotsError = signal('');
   readonly loading = signal(true);
   readonly pending = signal('');
-  readonly slotsLoading = signal(false);
   readonly tabKeys = RequestTab;
   readonly overdueLabel = overdueLabel;
   readonly deactivationLabel = deactivationLabel;
   readonly expiredRequestDays = expiredRequestDays;
   readonly tab = signal<string>(RequestTab.Vigentes);
-  readonly today = localDate(new Date());
   readonly expired = computed(() => this.requests().filter((item) => requestExpired(item.start) && !requestDeactivated(item.start)));
   readonly current = computed(() => this.requests().filter((item) => !requestExpired(item.start)));
   readonly shown = computed(() => (this.tab() === RequestTab.Vencidas ? this.expired() : this.current()));
@@ -33,7 +29,7 @@ export class AppointmentRequestsPage {
     { key: RequestTab.Vigentes, label: requestTabLabels[RequestTab.Vigentes], icon: 'pending_actions', count: this.current().length, tone: UiTone.Warn },
     { key: RequestTab.Vencidas, label: requestTabLabels[RequestTab.Vencidas], icon: 'event_busy', count: this.expired().length, tone: UiTone.Bad },
   ]);
-  moveDate = localDate(new Date());
+  moveSource: RescheduleSource | null = null;
   reason = '';
 
   constructor() {
@@ -78,50 +74,31 @@ export class AppointmentRequestsPage {
     }
   }
 
-  async startMove(item: BookingRequestDto) {
+  startMove(item: BookingRequestDto) {
+    this.moveSource = {
+      days: (year, month) => this.call(this.appointments.requestDays(item.id, year, month)),
+      slots: (date) => this.call(this.appointments.requestSlots(item.id, date)),
+      nearest: () => this.call(this.appointments.nearestRequestSlot(item.id)),
+      confirm: async (start) => {
+        await this.call(this.appointments.rescheduleRequest(item.id, { start }));
+        this.toasts.success('Turno reprogramado', `${item.name} quedó para el ${formatFecha(start)}.`);
+        this.cancelMove();
+        await this.load();
+      },
+    };
     this.moving.set(item);
-    this.moveDate = requestExpired(item.start) ? this.today : item.start.slice(0, 10);
-    this.slots.set([]);
-    this.slotsError.set('');
-    await this.loadSlots();
   }
 
   cancelMove() {
     this.moving.set(null);
-    this.slots.set([]);
-    this.slotsError.set('');
+    this.moveSource = null;
   }
 
-  async loadSlots() {
-    const item = this.moving();
-    if (!item || !this.moveDate) return;
-    this.slotsLoading.set(true);
-    this.slotsError.set('');
+  private async call<T>(request: Observable<T>) {
     try {
-      const now = Date.now();
-      const slots = await firstValueFrom(this.appointments.requestSlots(item.id, this.moveDate));
-      this.slots.set(slots.filter((slot) => new Date(slot.start).getTime() > now));
+      return await firstValueFrom(request);
     } catch (error) {
-      this.slots.set([]);
-      this.slotsError.set(errorMessage(error));
-    } finally {
-      this.slotsLoading.set(false);
-    }
-  }
-
-  async moveTo(slot: SlotDto) {
-    const item = this.moving();
-    if (!item) return;
-    this.pending.set(`move:${item.id}`);
-    try {
-      await firstValueFrom(this.appointments.rescheduleRequest(item.id, { start: slot.start }));
-      this.toasts.success('Turno reprogramado', `${item.name} quedó para el ${formatFecha(slot.start)}.`);
-      this.cancelMove();
-      await this.load();
-    } catch (error) {
-      this.toasts.error('No se pudo reprogramar', errorMessage(error));
-    } finally {
-      this.pending.set('');
+      throw new Error(errorMessage(error));
     }
   }
 

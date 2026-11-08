@@ -1,0 +1,125 @@
+:host {
+  display: block;
+}
+
+.month {
+  border-radius: 1.1rem;
+  background: var(--color-mist);
+  padding: 0.85rem;
+  transition: opacity 0.2s ease;
+}
+
+.month.is-loading {
+  opacity: 0.6;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.title {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+.arrow {
+  display: grid;
+  width: 2.2rem;
+  height: 2.2rem;
+  place-items: center;
+  border-radius: 999px;
+  background: white;
+  color: var(--color-clinic);
+  box-shadow: var(--shadow-card);
+  cursor: pointer;
+  transition: transform 0.25s cubic-bezier(0.16, 0.84, 0.32, 1), background-color 0.2s ease;
+}
+
+.arrow:hover:not(:disabled) {
+  background: var(--color-clinic-wash);
+  transform: scale(1.06);
+}
+
+.arrow:disabled {
+  cursor: default;
+  opacity: 0.35;
+  box-shadow: none;
+}
+
+.weekdays,
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.3rem;
+}
+
+.weekdays {
+  margin-top: 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+  color: rgb(14 42 34 / 0.45);
+}
+
+.grid {
+  margin-top: 0.4rem;
+}
+
+.day {
+  position: relative;
+  aspect-ratio: 1;
+  max-height: 2.9rem;
+  border-radius: 0.7rem;
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+  color: rgb(14 42 34 / 0.3);
+  animation: day-in 0.35s cubic-bezier(0.16, 0.84, 0.32, 1) both;
+  animation-delay: calc(var(--i, 0) * 8ms);
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.25s cubic-bezier(0.16, 0.84, 0.32, 1), box-shadow 0.2s ease;
+}
+
+.day.is-past {
+  text-decoration: line-through;
+  text-decoration-color: rgb(14 42 34 / 0.2);
+}
+
+.day.is-today::after {
+  content: '';
+  position: absolute;
+  bottom: 0.3rem;
+  left: 50%;
+  width: 0.25rem;
+  height: 0.25rem;
+  border-radius: 999px;
+  background: currentColor;
+  transform: translateX(-50%);
+}
+
+.day.is-open {
+  background: white;
+  color: var(--color-ink);
+  font-weight: 650;
+  box-shadow: inset 0 0 0 1.5px rgb(34 185 104 / 0.55);
+  cursor: pointer;
+}
+
+.day.is-open:hover:not(.is-selected) {
+  background: var(--color-clinic-wash);
+  transform: translateY(-1px);
+}
+
+.day.is-selected {
+  background: var(--color-forest);
+  color: white;
+  box-shadow: 0 8px 16px -8px rgb(15 59 47 / 0.8);
+  transform: scale(1.04);
+}
+
+@keyframes day-in {
+  from { opacity: 0; transform: scale(0.85); }
+  to { opacity: 1; transform: none; }
+}

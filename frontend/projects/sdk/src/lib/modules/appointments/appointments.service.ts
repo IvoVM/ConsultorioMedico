@@ -105,6 +105,14 @@ export class AppointmentsService extends ApiClient {
     return this.http.get<SlotDto[]>(`${this.base}/api/solicitudes/${id}/horarios?date=${date}`);
   }
 
+  requestDays(id: string, year: number, month: number) {
+    return this.http.get<string[]>(`${this.base}/api/solicitudes/${id}/dias?year=${year}&month=${month}`);
+  }
+
+  nearestRequestSlot(id: string) {
+    return this.http.get<SlotDto>(`${this.base}/api/solicitudes/${id}/cercano`);
+  }
+
   rescheduleRequest(id: string, body: { start: string }) {
     return this.http.post<BookingRequestDto>(`${this.base}/api/solicitudes/${id}/reprogramar`, body);
   }

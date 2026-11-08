@@ -682,14 +682,57 @@ public class ScheduleService(
             .ToListAsync(ct);
     }
 
+    public const int NearestSlotSearchDays = 60;
+
     public async Task<IReadOnlyList<SlotDto>> RequestSlotsAsync(Guid id, DateOnly date, CancellationToken ct)
+    {
+        var request = await MovableRequestAsync(id, ct);
+        return await FreeRequestSlotsAsync(request, date, ct);
+    }
+
+    public async Task<IReadOnlyList<DateOnly>> RequestOpenDaysAsync(Guid id, int year, int month, CancellationToken ct)
+    {
+        if (month is < 1 or > 12)
+            throw new BusinessRuleException("Ese mes no existe.");
+        var request = await MovableRequestAsync(id, ct);
+        var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(clock.GetUtcNow(), timeZone.Zone).DateTime);
+        var first = new DateOnly(year, month, 1);
+        var open = new List<DateOnly>();
+        for (var date = first < today ? today : first; date.Month == month && date.Year == year; date = date.AddDays(1))
+        {
+            if ((await FreeRequestSlotsAsync(request, date, ct)).Count > 0)
+                open.Add(date);
+        }
+        return open;
+    }
+
+    public async Task<SlotDto> NearestRequestSlotAsync(Guid id, CancellationToken ct)
+    {
+        var request = await MovableRequestAsync(id, ct);
+        var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(clock.GetUtcNow(), timeZone.Zone).DateTime);
+        for (var day = 0; day < NearestSlotSearchDays; day++)
+        {
+            var slot = (await FreeRequestSlotsAsync(request, today.AddDays(day), ct)).MinBy(item => item.Start);
+            if (slot is not null)
+                return slot;
+        }
+        throw new NotFoundException($"No hay horarios libres en los próximos {NearestSlotSearchDays} días.");
+    }
+
+    private async Task<BookingRequest> MovableRequestAsync(Guid id, CancellationToken ct)
     {
         var request = await requests.GetAsync(id, ct) ?? throw new NotFoundException("Esa solicitud no está.");
         if (request.Status is not (BookingRequestStatus.Pending or BookingRequestStatus.Rescheduled) || request.AppointmentId is not null)
             throw new BusinessRuleException("Esa solicitud ya no se puede mover.");
         EnsureRequestActive(request);
+        return request;
+    }
+
+    private async Task<IReadOnlyList<SlotDto>> FreeRequestSlotsAsync(BookingRequest request, DateOnly date, CancellationToken ct)
+    {
+        var now = clock.GetUtcNow();
         var slots = await AvailabilityAsync(new AvailabilityQuery(request.LocationId, Guid.Empty, request.ProfessionalId, date), ct);
-        return slots.Where(slot => slot.AppointmentTypeId == request.AppointmentTypeId).ToList();
+        return slots.Where(slot => slot.AppointmentTypeId == request.AppointmentTypeId && slot.Start > now).ToList();
     }
 
     public async Task<BookingRequestDto> RescheduleRequestAsync(Guid id, RescheduleBookingRequestCommand command, CancellationToken ct)

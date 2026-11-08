@@ -35,6 +35,16 @@ public class BookingRequestsController(ScheduleService schedule) : ApiController
         Run(() => schedule.RequestSlotsAsync(id, date, ct));
 
     [Authorize(Roles = $"{AppRoles.Secretary},{AppRoles.TenantAdmin}")]
+    [HttpGet("{id:guid}/dias")]
+    public Task<IActionResult> OpenDays(Guid id, int year, int month, CancellationToken ct) =>
+        Run(() => schedule.RequestOpenDaysAsync(id, year, month, ct));
+
+    [Authorize(Roles = $"{AppRoles.Secretary},{AppRoles.TenantAdmin}")]
+    [HttpGet("{id:guid}/cercano")]
+    public Task<IActionResult> Nearest(Guid id, CancellationToken ct) =>
+        Run(() => schedule.NearestRequestSlotAsync(id, ct));
+
+    [Authorize(Roles = $"{AppRoles.Secretary},{AppRoles.TenantAdmin}")]
     [HttpPost("{id:guid}/reprogramar")]
     public Task<IActionResult> Reschedule(Guid id, RescheduleBookingRequestCommand command, CancellationToken ct) =>
         Run(() => schedule.RescheduleRequestAsync(id, command, ct));
