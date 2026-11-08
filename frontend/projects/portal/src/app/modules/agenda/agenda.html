@@ -47,6 +47,11 @@
     @if (filtering()) {
       <button type="button" class="ag-clear" (click)="clearFilters()"><ui-icon name="filter_alt_off" [size]="18" />Limpiar filtros</button>
     }
+    <ul class="ag-legend" aria-label="Qué significa cada color">
+      @for (item of legend; track item.tone) {
+        <li [attr.data-tone]="item.tone"><i aria-hidden="true"></i>{{ item.label }}</li>
+      }
+    </ul>
   </div>
 
   @if (error()) {

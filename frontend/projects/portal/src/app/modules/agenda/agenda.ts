@@ -5,6 +5,7 @@ import {
   AgendaProfessionalDto,
   AgendaService,
   AppointmentDto,
+  AppointmentStatus,
   AppointmentsService,
   BookingRequestDto,
   errorMessage,
@@ -77,6 +78,13 @@ export class AgendaPage {
   readonly kinds = DropKind;
   readonly labels = appointmentStatusLabels;
   readonly tones = statusTone;
+  // One entry per color, naming every status that shares it (e.g. "Ausente / Cancelado").
+  readonly legend = (Object.keys(statusTone) as AppointmentStatus[]).reduce<{ tone: string; label: string }[]>((items, status) => {
+    const same = items.find((item) => item.tone === statusTone[status]);
+    if (same) same.label += ` / ${appointmentStatusLabels[status]}`;
+    else items.push({ tone: statusTone[status], label: appointmentStatusLabels[status] });
+    return items;
+  }, []);
   readonly ppm = PX_PER_MINUTE;
   readonly rowHeight = ROW_MINUTES * PX_PER_MINUTE;
   readonly day = signal(localDate(new Date()));
