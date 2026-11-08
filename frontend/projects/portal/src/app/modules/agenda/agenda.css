@@ -175,6 +175,13 @@
   }
 }
 
+.ag-col.is-off {
+  opacity: 0.4;
+  filter: grayscale(0.6);
+  cursor: not-allowed;
+  transition: opacity 0.2s ease, filter 0.2s ease;
+}
+
 .ag-error {
   margin: 0.75rem 1.25rem 0;
   font-size: 0.875rem;
@@ -580,6 +587,15 @@
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: rgb(14 42 34 / 0.5);
+}
+
+.ag-route em {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.8125rem;
+  font-style: normal;
+  font-weight: 600;
+  color: rgb(14 42 34 / 0.7);
 }
 
 .ag-route strong {

@@ -99,6 +99,7 @@
               class="ag-col"
               [attr.data-id]="professional.id"
               [class.is-editable]="canEdit()"
+              [class.is-off]="!accepts(professional)"
               [style.height.px]="height()"
               (pointerdown)="startCreate($event, professional)"
             >
@@ -191,16 +192,16 @@
       @if (pending.kind === kinds.Move && pending.appointment; as appointment) {
         <p>Vas a mover el turno de <strong>{{ appointment.patient }}</strong>.</p>
         <div class="ag-route">
-          <div><span>Antes</span><strong>{{ clock(minuteOf(appointment.start)) }}</strong><small>{{ appointment.professional }}</small></div>
+          <div><span>Antes</span><em>{{ dayTitle(appointment.start.slice(0, 10)) }}</em><strong>{{ clock(minuteOf(appointment.start)) }}</strong><small>{{ appointment.professional }}</small></div>
           <ui-icon name="arrow_forward" />
-          <div><span>Después</span><strong>{{ clock(pending.start) }}</strong><small>{{ pending.professional.name }}</small></div>
+          <div><span>Después</span><em>{{ title() }}</em><strong>{{ clock(pending.start) }}</strong><small>{{ pending.professional.name }}</small></div>
         </div>
       } @else if (pending.kind === kinds.Request && pending.request; as request) {
         <p>Vas a darle el turno a <strong>{{ request.name }}</strong> ({{ request.appointmentType }}).</p>
         <div class="ag-route">
           <div><span>Pidió</span><strong>{{ when(request.start) }}</strong><small>{{ request.professional }}</small></div>
           <ui-icon name="arrow_forward" />
-          <div><span>Queda</span><strong>{{ title() }}, {{ clock(pending.start) }}</strong><small>{{ pending.professional.name }}</small></div>
+          <div><span>Queda</span><em>{{ title() }}</em><strong>{{ clock(pending.start) }}</strong><small>{{ pending.professional.name }}</small></div>
         </div>
       } @else {
         <p>Vas a crear un turno con <strong>{{ pending.professional.name }}</strong> el {{ title() }} a las <strong>{{ clock(pending.start) }}</strong>. En el siguiente paso elegís al paciente y la prestación.</p>

@@ -103,6 +103,7 @@ export class AgendaPage {
   readonly open = signal<AppointmentDto | null>(null);
 
   readonly title = computed(() => dayTitle(this.day()));
+  readonly dayTitle = dayTitle;
   readonly isToday = computed(() => this.day() === localDate(new Date()));
   readonly canEdit = computed(() => this.data()?.canEdit ?? false);
   readonly allProfessionals = computed(() => this.data()?.professionals ?? []);
@@ -306,12 +307,25 @@ export class AgendaPage {
       this.drag.set({ ...drag, moved, start, duration: end - start });
       return;
     }
-    const professional = this.columnAt(event.clientX) ?? drag.professionalId;
+    const hovered = this.allProfessionals().find((item) => item.id === this.columnAt(event.clientX));
+    const professional = hovered && this.serves(hovered, drag) ? hovered.id : drag.professionalId;
     const minute = this.minuteAt(event.clientY, professional);
     if (minute === null) return;
     const latest = this.range().end - drag.duration;
     const start = Math.max(this.range().start, Math.min(latest, this.snap(minute - drag.grab)));
     this.drag.set({ ...drag, moved, professionalId: professional, start });
+  }
+
+  // While dragging an appointment or a request, only professionals who give that service (same specialty) can take it.
+  accepts(professional: AgendaProfessionalDto) {
+    const drag = this.drag();
+    return !drag?.moved || this.serves(professional, drag);
+  }
+
+  private serves(professional: AgendaProfessionalDto, drag: Drag) {
+    if (drag.appointment) return professional.types.some((type) => type.id === drag.appointment!.appointmentTypeId);
+    if (drag.request) return professional.specialty === drag.request.specialty;
+    return true;
   }
 
   @HostListener('document:pointerup')
