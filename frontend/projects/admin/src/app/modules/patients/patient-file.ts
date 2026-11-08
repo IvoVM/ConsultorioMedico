@@ -1,19 +1,18 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { ClinicalHistoryDto, ClinicalService, DiagnosisDto, MedicalRecordDto, MedicalRecordsService, errorMessage } from 'sdk';
-import { UiButton, UiEmpty, UiField, UiSkeleton, formatFecha, formatPhone } from 'ui';
+import { MedicalRecordDto, MedicalRecordsService, errorMessage } from 'sdk';
+import { UiButton, UiField, UiSkeleton, formatPhone } from 'ui';
 import { ScreenNote } from '../../screen-note';
 import { firstValueFrom } from 'rxjs';
 import { BLOOD_TYPES, MedicalRecordForm, age, shortDate, toForm } from '../medical-records/models/medical-record-form';
 
 @Component({
-  imports: [FormsModule, RouterLink, ScreenNote, UiButton, UiEmpty, UiField, UiSkeleton],
+  imports: [FormsModule, RouterLink, ScreenNote, UiButton, UiField, UiSkeleton],
   templateUrl: './patient-file.html',
 })
 export class PatientFilePage {
   private readonly recordsApi = inject(MedicalRecordsService);
-  private readonly clinical = inject(ClinicalService);
   private readonly patientId = inject(ActivatedRoute).snapshot.paramMap.get('patientId') ?? '';
   readonly bloodTypes = BLOOD_TYPES;
   readonly shortDate = shortDate;
@@ -26,7 +25,6 @@ export class PatientFilePage {
     { id: 'emergency', label: 'Contacto de emergencia' },
     { id: 'clinical', label: 'Datos clínicos' },
     { id: 'history', label: 'Antecedentes' },
-    { id: 'attention', label: 'Atención clínica' },
   ];
 
   readonly record = signal<MedicalRecordDto | null>(null);
@@ -36,8 +34,6 @@ export class PatientFilePage {
   readonly saving = signal(false);
   readonly saved = signal(false);
   readonly version = signal(0);
-  readonly historyData = signal<ClinicalHistoryDto | null>(null);
-  readonly historyError = signal('');
 
   readonly dirty = computed(() => {
     this.version();
@@ -52,7 +48,6 @@ export class PatientFilePage {
 
   constructor() {
     void this.loadRecord();
-    void this.loadHistory();
   }
 
   touch() {
@@ -82,14 +77,6 @@ export class PatientFilePage {
     } catch {
       this.copied.set(false);
     }
-  }
-
-  diagnosesText(diagnoses: DiagnosisDto[]) {
-    return diagnoses.map((item) => `${item.code} ${item.name}`).join(', ');
-  }
-
-  when(value: string) {
-    return formatFecha(value);
   }
 
   normalizePhone(key: 'phone' | 'emergencyPhone') {
@@ -128,14 +115,6 @@ export class PatientFilePage {
       this.apply(await firstValueFrom(this.recordsApi.medicalRecord(this.patientId)));
     } catch (error) {
       this.error.set(errorMessage(error));
-    }
-  }
-
-  private async loadHistory() {
-    try {
-      this.historyData.set(await firstValueFrom(this.clinical.clinicalHistory({ patientId: this.patientId })));
-    } catch (error) {
-      this.historyError.set(errorMessage(error));
     }
   }
 

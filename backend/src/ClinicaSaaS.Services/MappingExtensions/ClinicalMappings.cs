@@ -23,6 +23,7 @@ public static class ClinicalMappings
             e.AppointmentId,
             e.ClientId,
             e.ProfessionalId,
+            e.SpecialtyId,
             e.Note,
             e.BloodPressure,
             e.HeartRate,

@@ -1,11 +1,11 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { ClinicalHistoryDto, ClinicalService, DiagnosisDto, TenantRole, clinicaSession, errorMessage } from 'sdk';
-import { FechaPipe, UiEmpty, UiSkeleton } from 'ui';
+import { FechaPipe, TabItem, UiEmpty, UiSkeleton, UiTabs } from 'ui';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
-  imports: [FechaPipe, UiEmpty, UiSkeleton],
+  imports: [FechaPipe, UiEmpty, UiSkeleton, UiTabs],
   templateUrl: './clinical-history.html',
 })
 export class ClinicalHistoryPage {
@@ -16,6 +16,9 @@ export class ClinicalHistoryPage {
   readonly history = signal<ClinicalHistoryDto | null>(null);
   readonly error = signal('');
   readonly loading = signal(false);
+  readonly tabs = computed((): TabItem[] =>
+    (this.history()?.specialties ?? []).map((item) => ({ key: item.id, label: item.name, count: item.encounters })),
+  );
   patientId = '';
 
   constructor() {
@@ -24,17 +27,22 @@ export class ClinicalHistoryPage {
     if (clinicaSession.role() === TenantRole.Patient || paciente) void this.load();
   }
 
-  async load() {
+  async load(specialtyId?: string) {
     this.error.set('');
     this.loading.set(true);
     try {
-      const query = clinicaSession.role() === TenantRole.Patient ? {} : { patientId: this.patientId };
+      const patient = clinicaSession.role() === TenantRole.Patient ? {} : { patientId: this.patientId };
+      const query = specialtyId ? { ...patient, specialtyId } : patient;
       this.history.set(await firstValueFrom(this.clinical.clinicalHistory(query)));
     } catch (error) {
       this.error.set(errorMessage(error));
     } finally {
       this.loading.set(false);
     }
+  }
+
+  pick(specialtyId: string) {
+    if (specialtyId !== this.history()?.specialty?.id) void this.load(specialtyId);
   }
 
   diagnosesText(diagnoses: DiagnosisDto[]) {

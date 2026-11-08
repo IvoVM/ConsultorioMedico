@@ -96,8 +96,11 @@ export type Prescription = {
   createdAt: string;
   items: { medication: string; dose: string; frequency: string; duration: string }[];
 };
+export type HistorySpecialty = { id: string; name: string; encounters: number };
 export type History = {
   patient: { id: string; name: string; documentNumber: string; birthDate: string; phone: string };
+  specialty?: HistorySpecialty | null;
+  specialties: HistorySpecialty[];
   encounters: Encounter[];
   prescriptions: Prescription[];
 };
@@ -307,7 +310,7 @@ export const api = {
   prescribe: (body: { encounterId: string; instructions?: string | null; items: Prescription['items'] }) =>
     request<Prescription>('/api/recetas', { method: 'POST', body: JSON.stringify(body) }),
   myPrescriptions: () => request<Prescription[]>('/api/recetas/mias'),
-  history: (patientId?: string) => request<History>(`/api/historia${query({ patientId })}`),
+  history: (patientId?: string, specialtyId?: string) => request<History>(`/api/historia${query({ patientId, specialtyId })}`),
   searchPatients: (q: string) => request<PatientCard[]>(`/api/pacientes${query({ q })}`),
   createPatient: (body: { email: string; firstName: string; lastName: string; documentNumber: string; birthDate: string; phone: string; healthInsurance?: string; memberNumber?: string; emergencyContact?: string; emergencyPhone?: string }) =>
     request<{ patient: MedicalRecord; temporaryPassword: string }>('/api/pacientes', { method: 'POST', body: JSON.stringify(body) }),

@@ -71,6 +71,16 @@ public class MedicalRecordsService(
         return new CreatedPatientDto(await GetAsync(client.Id, ct), password);
     }
 
+    public async Task<PatientLookupDto> FindAsync(Guid patientId, CancellationToken ct)
+    {
+        var card = await clients.Clients
+            .Where(client => client.Id == patientId)
+            .ToClientCards()
+            .FirstOrDefaultAsync(ct)
+            ?? throw new NotFoundException("Paciente no encontrado.");
+        return ToLookup(card);
+    }
+
     public async Task<PatientLookupDto> FindByDocumentAsync(string? number, CancellationToken ct)
     {
         var document = DocumentRules.Normalize(number);
@@ -81,7 +91,11 @@ public class MedicalRecordsService(
             .ToClientCards()
             .FirstOrDefaultAsync(ct)
             ?? throw new NotFoundException("No hay un paciente con ese documento.");
-        return new PatientLookupDto(
+        return ToLookup(card);
+    }
+
+    private static PatientLookupDto ToLookup(ClientCard card) =>
+        new(
             card.ClientId,
             card.FirstName,
             card.LastName,
@@ -92,7 +106,6 @@ public class MedicalRecordsService(
             card.MemberNumber,
             card.EmergencyContact,
             card.EmergencyPhone);
-    }
 
     public async Task<IReadOnlyList<PatientLookupDto>> SearchAsync(string? query, CancellationToken ct)
     {

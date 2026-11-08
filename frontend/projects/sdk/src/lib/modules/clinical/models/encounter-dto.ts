@@ -6,6 +6,7 @@ export interface EncounterDto {
   appointmentId: string;
   patientId: string;
   professionalId: string;
+  specialtyId?: string | null;
   note?: string | null;
   bloodPressure?: string | null;
   heartRate?: number | null;

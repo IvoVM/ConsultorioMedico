@@ -12,6 +12,10 @@ export class PatientsService extends ApiClient {
     return this.http.get<PatientLookupDto[]>(`${this.base}/api/pacientes${queryString(query)}`);
   }
 
+  patient(patientId: string) {
+    return this.http.get<PatientLookupDto>(`${this.base}/api/pacientes/${patientId}`);
+  }
+
   patientByDocument(number: string) {
     return this.http.get<PatientLookupDto>(`${this.base}/api/pacientes/documento${queryString({ number })}`);
   }

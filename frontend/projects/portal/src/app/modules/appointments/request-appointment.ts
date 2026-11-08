@@ -6,6 +6,7 @@ import {
   ClinicalService,
   InsurerDto,
   OrganizationService,
+  PatientsService,
   ScheduleService,
   AppointmentKind,
   TenantRole,
@@ -33,6 +34,7 @@ export class RequestAppointmentPage {
   private readonly schedule = inject(ScheduleService);
   private readonly appointments = inject(AppointmentsService);
   private readonly clinical = inject(ClinicalService);
+  private readonly patients = inject(PatientsService);
   private readonly activated = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private deskPatientId: string | null = null;
@@ -550,11 +552,9 @@ export class RequestAppointmentPage {
   private async loadDeskPatient(patientId: string) {
     this.deskPatientId = patientId;
     this.forDesk.set(true);
-    const history = await firstValueFrom(this.clinical.clinicalHistory({ patientId }));
-    const patient = history.patient;
-    const parts = patient.name.trim().split(/\s+/);
-    this.firstName = parts[0] ?? '';
-    this.lastName = parts.slice(1).join(' ');
+    const patient = await firstValueFrom(this.patients.patient(patientId));
+    this.firstName = patient.firstName;
+    this.lastName = patient.lastName;
     this.phone = formatPhone(patient.phone) ?? patient.phone;
     this.documentNumber = patient.documentNumber;
     this.chart = {

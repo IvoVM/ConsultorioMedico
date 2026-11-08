@@ -15,7 +15,6 @@ const links: Record<string, { href: string; label: string }[]> = {
   ],
   Secretary: [
     { href: '/(tabs)/secretaria', label: 'Mostrador' },
-    { href: '/(tabs)/historia', label: 'Historia clínica' },
   ],
   TenantAdmin: [
     { href: '/(tabs)/secretaria', label: 'Mostrador' },

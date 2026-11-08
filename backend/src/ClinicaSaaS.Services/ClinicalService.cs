@@ -11,6 +11,7 @@ public class ClinicalService(
     IClientStore clients,
     IBillingStore billing,
     IOrganizationStore organization,
+    IEmployeeStore employees,
     ICurrentUser currentUser,
     IAuditStore audit,
     IValidator<SaveEncounterCommand> encounterValidator,
@@ -41,6 +42,7 @@ public class ClinicalService(
                 AppointmentId = appointment.Id,
                 ClientId = appointment.ClientId,
                 ProfessionalId = appointment.ProfessionalId,
+                SpecialtyId = await SpecialtyForAsync(appointment, ct),
                 CreatedAt = clock.GetUtcNow()
             };
             encounter = await clinical.AddEncounterAsync(encounter, ct);
@@ -116,50 +118,125 @@ public class ClinicalService(
     {
         var prescription = await clinical.Prescriptions.Where(p => p.Id == id).ToPrescriptionDtos().FirstOrDefaultAsync(ct)
             ?? throw new NotFoundException("Receta no encontrada.");
+        if (currentUser.Role == TenantRole.Doctor.ToString())
+        {
+            var own = await OwnSpecialtyAsync(ct);
+            Guid? filter = own.Id == Guid.Empty ? null : own.Id;
+            if (!await clinical.Prescriptions.AnyAsync(p => p.Id == id && p.Encounter.SpecialtyId == filter, ct))
+                throw new BusinessRuleException("Solo podés ver recetas de tu especialidad.");
+            return prescription;
+        }
         await EnsurePatientAccessAsync(prescription.PatientId, ct);
         return prescription;
     }
 
-    public async Task<ClinicalHistoryDto> HistoryAsync(Guid? patientId, CancellationToken ct)
+    // A patient has one history per specialty. The professional only opens the one of their own specialty;
+    // the patient can switch between all of theirs. Guid.Empty is the history of visits without a specialty.
+    public async Task<ClinicalHistoryDto> HistoryAsync(Guid? patientId, Guid? specialtyId, CancellationToken ct)
     {
-        Guid clientId;
-        if (currentUser.Role == TenantRole.Patient.ToString())
+        var clientId = await ResolvePatientAsync(patientId, ct);
+        var summary = await clients.Clients.Where(c => c.Id == clientId).ToPatientSummaries().FirstAsync(ct);
+
+        var groups = await clinical.Encounters
+            .Where(e => e.ClientId == clientId)
+            .GroupBy(e => e.SpecialtyId)
+            .Select(g => new { SpecialtyId = g.Key, Count = g.Count(), Last = g.Max(e => e.CreatedAt) })
+            .ToListAsync(ct);
+        var ids = groups.Where(g => g.SpecialtyId != null).Select(g => g.SpecialtyId!.Value).ToList();
+        var names = await organization.Specialties
+            .Where(s => ids.Contains(s.Id))
+            .ToDictionaryAsync(s => s.Id, s => s.Name, ct);
+        var available = groups
+            .OrderByDescending(g => g.Last)
+            .Select(g => new HistorySpecialtyDto(
+                g.SpecialtyId ?? Guid.Empty,
+                g.SpecialtyId is Guid id && names.TryGetValue(id, out var name) ? name : NoSpecialty,
+                g.Count))
+            .ToList();
+
+        HistorySpecialtyDto? chosen;
+        if (currentUser.Role == TenantRole.Doctor.ToString())
         {
-            clientId = await clients.Clients
-                .Where(c => c.UserId == (currentUser.Id ?? Guid.Empty))
-                .Select(c => c.Id)
-                .FirstOrDefaultAsync(ct);
-            if (clientId == Guid.Empty)
-                throw new NotFoundException("No hay un paciente asociado a esta cuenta.");
+            var own = await OwnSpecialtyAsync(ct);
+            if (specialtyId is Guid asked && asked != own.Id)
+                throw new BusinessRuleException("Solo podés ver la historia de tu especialidad.");
+            chosen = available.FirstOrDefault(s => s.Id == own.Id) ?? own;
+            available = [chosen];
         }
         else
         {
-            if (patientId is null)
-                throw new BusinessRuleException("Indicá el paciente.");
-            clientId = patientId.Value;
-            if (!await clients.Clients.AnyAsync(c => c.Id == clientId, ct))
-                throw new NotFoundException("Paciente no encontrado.");
+            chosen = specialtyId is Guid asked
+                ? available.FirstOrDefault(s => s.Id == asked) ?? throw new NotFoundException("No hay historia en esa especialidad.")
+                : available.FirstOrDefault();
         }
 
-        var summary = await clients.Clients.Where(c => c.Id == clientId).ToPatientSummaries().FirstAsync(ct);
+        if (chosen is null)
+            return new ClinicalHistoryDto(summary, null, available, [], []);
+
+        Guid? filter = chosen.Id == Guid.Empty ? null : chosen.Id;
         var encounters = await clinical.Encounters
-            .Where(e => e.ClientId == clientId)
+            .Where(e => e.ClientId == clientId && e.SpecialtyId == filter)
             .OrderByDescending(e => e.CreatedAt)
             .ToEncounterDtos()
             .ToListAsync(ct);
         var prescriptions = await clinical.Prescriptions
-            .Where(p => p.ClientId == clientId)
+            .Where(p => p.ClientId == clientId && p.Encounter.SpecialtyId == filter)
             .OrderByDescending(p => p.CreatedAt)
             .ToPrescriptionDtos()
             .ToListAsync(ct);
-        return new ClinicalHistoryDto(summary, encounters, prescriptions);
+        return new ClinicalHistoryDto(summary, chosen, available, encounters, prescriptions);
     }
 
     public async Task<IReadOnlyList<PrescriptionDto>> MyPrescriptionsAsync(CancellationToken ct)
     {
-        var history = await HistoryAsync(null, ct);
-        return history.Prescriptions;
+        var clientId = await ResolvePatientAsync(null, ct);
+        return await clinical.Prescriptions
+            .Where(p => p.ClientId == clientId)
+            .OrderByDescending(p => p.CreatedAt)
+            .ToPrescriptionDtos()
+            .ToListAsync(ct);
     }
+
+    private const string NoSpecialty = "Sin especialidad";
+
+    private async Task<Guid> ResolvePatientAsync(Guid? patientId, CancellationToken ct)
+    {
+        if (currentUser.Role == TenantRole.Patient.ToString())
+        {
+            var own = await clients.Clients
+                .Where(c => c.UserId == (currentUser.Id ?? Guid.Empty))
+                .Select(c => c.Id)
+                .FirstOrDefaultAsync(ct);
+            return own == Guid.Empty ? throw new NotFoundException("No hay un paciente asociado a esta cuenta.") : own;
+        }
+        if (currentUser.Role != TenantRole.Doctor.ToString())
+            throw new BusinessRuleException("Solo el profesional puede ver la historia clínica.");
+        if (patientId is not Guid clientId)
+            throw new BusinessRuleException("Indicá el paciente.");
+        if (!await clients.Clients.AnyAsync(c => c.Id == clientId, ct))
+            throw new NotFoundException("Paciente no encontrado.");
+        return clientId;
+    }
+
+    private async Task<HistorySpecialtyDto> OwnSpecialtyAsync(CancellationToken ct)
+    {
+        var userId = currentUser.Id ?? Guid.Empty;
+        var own = await employees.Employees
+            .Where(e => e.UserId == userId && e.SpecialtyId != null)
+            .Select(e => new { Id = e.SpecialtyId!.Value, e.Specialty!.Name })
+            .FirstOrDefaultAsync(ct);
+        return own is null ? new HistorySpecialtyDto(Guid.Empty, NoSpecialty, 0) : new HistorySpecialtyDto(own.Id, own.Name, 0);
+    }
+
+    private async Task<Guid?> SpecialtyForAsync(Appointment appointment, CancellationToken ct) =>
+        await organization.AppointmentTypes
+            .Where(t => t.Id == appointment.AppointmentTypeId)
+            .Select(t => t.SpecialtyId)
+            .FirstOrDefaultAsync(ct)
+        ?? await employees.Employees
+            .Where(e => e.UserId == appointment.ProfessionalId)
+            .Select(e => e.SpecialtyId)
+            .FirstOrDefaultAsync(ct);
 
     private async Task CreateInvoiceIfMissingAsync(Appointment appointment, CancellationToken ct)
     {
@@ -204,7 +281,7 @@ public class ClinicalService(
     private async Task EnsurePatientAccessAsync(Guid patientId, CancellationToken ct)
     {
         if (currentUser.Role != TenantRole.Patient.ToString())
-            return;
+            throw new BusinessRuleException("Solo el profesional puede ver la historia clínica.");
         var clientId = await clients.Clients
             .Where(c => c.UserId == (currentUser.Id ?? Guid.Empty))
             .Select(c => (Guid?)c.Id)

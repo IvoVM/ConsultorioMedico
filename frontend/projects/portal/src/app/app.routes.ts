@@ -33,7 +33,7 @@ export const routes: Routes = [
           },
           {
             path: routePath(AppRoute.Historia),
-            canActivate: [roleGuard(TenantRole.Patient, TenantRole.Doctor, TenantRole.Secretary, TenantRole.TenantAdmin)],
+            canActivate: [roleGuard(TenantRole.Patient, TenantRole.Doctor)],
             loadComponent: () => import('./modules/clinical/clinical-history').then((m) => m.ClinicalHistoryPage),
           },
           {

@@ -29,6 +29,7 @@ public class ClinicalController(ClinicalService clinical) : ApiController
     public Task<IActionResult> CreatePrescription(CreatePrescriptionCommand command, CancellationToken ct) =>
         Run(() => clinical.CreatePrescriptionAsync(command, ct));
 
+    [Authorize(Roles = $"{AppRoles.Doctor},{AppRoles.Patient}")]
     [HttpGet("recetas/{id:guid}")]
     public Task<IActionResult> GetPrescription(Guid id, CancellationToken ct) =>
         Run(() => clinical.GetPrescriptionAsync(id, ct));
@@ -37,7 +38,8 @@ public class ClinicalController(ClinicalService clinical) : ApiController
     [HttpGet("recetas/mias")]
     public Task<IActionResult> MyPrescriptions(CancellationToken ct) => Run(() => clinical.MyPrescriptionsAsync(ct));
 
+    [Authorize(Roles = $"{AppRoles.Doctor},{AppRoles.Patient}")]
     [HttpGet("historia")]
-    public Task<IActionResult> History([FromQuery] Guid? patientId, CancellationToken ct) =>
-        Run(() => clinical.HistoryAsync(patientId, ct));
+    public Task<IActionResult> History([FromQuery] Guid? patientId, [FromQuery] Guid? specialtyId, CancellationToken ct) =>
+        Run(() => clinical.HistoryAsync(patientId, specialtyId, ct));
 }

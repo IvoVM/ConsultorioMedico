@@ -121,6 +121,7 @@ public record EncounterDto(
     Guid AppointmentId,
     Guid PatientId,
     Guid ProfessionalId,
+    Guid? SpecialtyId,
     string? Note,
     string? BloodPressure,
     int? HeartRate,
@@ -142,7 +143,13 @@ public record PrescriptionDto(
     DateTimeOffset CreatedAt,
     IReadOnlyList<PrescriptionItemDto> Items);
 
-public record ClinicalHistoryDto(PatientSummaryDto Patient, IReadOnlyList<EncounterDto> Encounters, IReadOnlyList<PrescriptionDto> Prescriptions);
+public record ClinicalHistoryDto(
+    PatientSummaryDto Patient,
+    HistorySpecialtyDto? Specialty,
+    IReadOnlyList<HistorySpecialtyDto> Specialties,
+    IReadOnlyList<EncounterDto> Encounters,
+    IReadOnlyList<PrescriptionDto> Prescriptions);
+public record HistorySpecialtyDto(Guid Id, string Name, int Encounters);
 public record PatientSummaryDto(Guid Id, string Name, string DocumentNumber, DateOnly BirthDate, string Phone, string? HealthInsurance, string? MemberNumber);
 
 public record CreatePatientCommand(

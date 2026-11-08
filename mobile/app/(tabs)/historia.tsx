@@ -13,7 +13,8 @@ export default function Historia() {
   const [history, setHistory] = useState<History | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const staff = current && current.role !== TenantRole.Patient;
+  const staff = current?.role === TenantRole.Doctor;
+  const patientRole = current?.role === TenantRole.Patient;
 
   useEffect(() => {
     if (!current || current.role !== TenantRole.Patient) return;
@@ -34,11 +35,11 @@ export default function Historia() {
     };
   }, [current]);
 
-  async function open(patientId: string) {
+  async function open(patientId?: string, specialtyId?: string) {
     setError('');
     setLoading(true);
     try {
-      setHistory(await api.history(patientId));
+      setHistory(await api.history(patientId, specialtyId));
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'No se pudo abrir la historia.');
     } finally {
@@ -68,6 +69,17 @@ export default function Historia() {
         <>
           <Text style={{ fontFamily: type.serif, fontSize: 24, color: colors.deep }}>{history.patient.name}</Text>
           <Text style={{ fontFamily: type.sans, color: colors.ink }}>{history.patient.documentNumber} · {history.patient.phone}</Text>
+          {history.specialty ? <Text style={{ fontFamily: type.sansBold, color: colors.deep }}>Historia de {history.specialty.name}</Text> : null}
+          {patientRole && history.specialties.length > 1
+            ? history.specialties.map((item) => (
+                <Button
+                  key={item.id}
+                  tone={item.id === history.specialty?.id ? undefined : 'ghost'}
+                  label={`${item.name} (${item.encounters})`}
+                  onPress={() => void open(undefined, item.id)}
+                />
+              ))
+            : null}
           {history.encounters.length === 0 ? <Empty text="Todavía no hay encuentros." /> : null}
           {history.encounters.map((item) => (
             <Card key={item.id}>

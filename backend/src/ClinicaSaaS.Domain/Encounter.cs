@@ -8,6 +8,7 @@ public class Encounter
     public Guid AppointmentId { get; set; }
     public Guid ClientId { get; set; }
     public Guid ProfessionalId { get; set; }
+    public Guid? SpecialtyId { get; set; }
     public string? Note { get; set; }
     public string? BloodPressure { get; set; }
     public int? HeartRate { get; set; }
@@ -20,6 +21,7 @@ public class Encounter
     public virtual Appointment Appointment { get; set; } = null!;
     public virtual Client Client { get; set; } = null!;
     public virtual TenantUser Professional { get; set; } = null!;
+    public virtual Specialty? Specialty { get; set; }
     public virtual List<EncounterDiagnosis> Diagnoses { get; set; } = [];
     public virtual ICollection<Prescription> Prescriptions { get; set; } = [];
 }

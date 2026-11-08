@@ -14,6 +14,10 @@ public class PatientsController(MedicalRecordsService records) : ApiController
     public Task<IActionResult> Search([FromQuery] string q, CancellationToken ct) =>
         Run(() => records.SearchAsync(q, ct));
 
+    [HttpGet("{patientId:guid}")]
+    public Task<IActionResult> Get(Guid patientId, CancellationToken ct) =>
+        Run(() => records.FindAsync(patientId, ct));
+
     [HttpGet("documento")]
     public Task<IActionResult> ByDocument([FromQuery] string number, CancellationToken ct) =>
         Run(() => records.FindByDocumentAsync(number, ct));

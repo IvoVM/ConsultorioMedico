@@ -181,6 +181,7 @@ public class TenantDbContext(DbContextOptions<TenantDbContext> options)
             e.HasOne(x => x.Appointment).WithOne(a => a.Encounter).HasForeignKey<Encounter>(x => x.AppointmentId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.Client).WithMany(c => c.Encounters).HasForeignKey(x => x.ClientId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.Professional).WithMany(u => u.Encounters).HasForeignKey(x => x.ProfessionalId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Specialty).WithMany(s => s.Encounters).HasForeignKey(x => x.SpecialtyId).OnDelete(DeleteBehavior.Restrict);
         });
         builder.Entity<EncounterDiagnosis>(e =>
         {

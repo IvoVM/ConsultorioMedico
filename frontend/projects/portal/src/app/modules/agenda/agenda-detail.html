@@ -33,9 +33,11 @@
           </div>
           <div class="sm:col-span-2"><dt>Motivo</dt><dd>{{ item.visitReason || 'Sin motivo cargado' }}</dd></div>
         </dl>
-        <a class="text-link inline-flex items-center gap-1" [routerLink]="route.Historia" [queryParams]="{ paciente: item.patientId }">
-          <ui-icon name="clinical_notes" [size]="18" />Ver historia clínica
-        </a>
+        @if (canSeeHistory()) {
+          <a class="text-link inline-flex items-center gap-1" [routerLink]="route.Historia" [queryParams]="{ paciente: item.patientId }">
+            <ui-icon name="clinical_notes" [size]="18" />Ver historia clínica
+          </a>
+        }
       </div>
     }
     @case (modes.Edit) {

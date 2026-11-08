@@ -263,7 +263,7 @@
     "/api/historia": {
       "get": {
         "operationId": "clinicalHistory",
-        "parameters": [{ "name": "patientId", "in": "query", "schema": { "type": "string" } }],
+        "parameters": [{ "name": "patientId", "in": "query", "schema": { "type": "string" } }, { "name": "specialtyId", "in": "query", "schema": { "type": "string" } }],
         "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ClinicalHistoryDto" } } } } }
       }
     },
@@ -277,6 +277,13 @@
         "operationId": "createPatient",
         "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreatePatientCommand" } } } },
         "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreatedPatientDto" } } } } }
+      }
+    },
+    "/api/pacientes/{patientId}": {
+      "get": {
+        "operationId": "patient",
+        "parameters": [{ "name": "patientId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PatientLookupDto" } } } } }
       }
     },
     "/api/historias-medicas": {
@@ -372,12 +379,13 @@
       "AssignWaitlistEntryCommand": { "type": "object", "required": ["start", "appointmentTypeId"], "properties": { "start": { "type": "string" }, "appointmentTypeId": { "type": "string" } } },
       "DiagnosisDto": { "type": "object", "required": ["id", "code", "name"], "properties": { "id": { "type": "string" }, "code": { "type": "string" }, "name": { "type": "string" } } },
       "SaveEncounterCommand": { "type": "object", "required": ["appointmentId", "diagnosisIds"], "properties": { "appointmentId": { "type": "string" }, "note": { "type": "string", "nullable": true }, "bloodPressure": { "type": "string", "nullable": true }, "heartRate": { "type": "integer", "nullable": true }, "temperature": { "type": "number", "nullable": true }, "weightKg": { "type": "number", "nullable": true }, "diagnosisIds": { "type": "array", "items": { "type": "string" } } } },
-      "EncounterDto": { "type": "object", "required": ["id", "appointmentId", "patientId", "professionalId", "isClosed", "createdAt", "diagnoses"], "properties": { "id": { "type": "string" }, "appointmentId": { "type": "string" }, "patientId": { "type": "string" }, "professionalId": { "type": "string" }, "note": { "type": "string", "nullable": true }, "bloodPressure": { "type": "string", "nullable": true }, "heartRate": { "type": "integer", "nullable": true }, "temperature": { "type": "number", "nullable": true }, "weightKg": { "type": "number", "nullable": true }, "isClosed": { "type": "boolean" }, "createdAt": { "type": "string" }, "diagnoses": { "type": "array", "items": { "$ref": "#/components/schemas/DiagnosisDto" } } } },
+      "EncounterDto": { "type": "object", "required": ["id", "appointmentId", "patientId", "professionalId", "isClosed", "createdAt", "diagnoses"], "properties": { "id": { "type": "string" }, "appointmentId": { "type": "string" }, "patientId": { "type": "string" }, "professionalId": { "type": "string" }, "specialtyId": { "type": "string", "nullable": true }, "note": { "type": "string", "nullable": true }, "bloodPressure": { "type": "string", "nullable": true }, "heartRate": { "type": "integer", "nullable": true }, "temperature": { "type": "number", "nullable": true }, "weightKg": { "type": "number", "nullable": true }, "isClosed": { "type": "boolean" }, "createdAt": { "type": "string" }, "diagnoses": { "type": "array", "items": { "$ref": "#/components/schemas/DiagnosisDto" } } } },
       "PrescriptionItemDto": { "type": "object", "required": ["medication", "dose", "frequency", "duration"], "properties": { "medication": { "type": "string" }, "dose": { "type": "string" }, "frequency": { "type": "string" }, "duration": { "type": "string" } } },
       "CreatePrescriptionCommand": { "type": "object", "required": ["encounterId", "items"], "properties": { "encounterId": { "type": "string" }, "instructions": { "type": "string", "nullable": true }, "items": { "type": "array", "items": { "$ref": "#/components/schemas/PrescriptionItemDto" } } } },
       "PrescriptionDto": { "type": "object", "required": ["id", "encounterId", "patientId", "professionalId", "professional", "createdAt", "items"], "properties": { "id": { "type": "string" }, "encounterId": { "type": "string" }, "patientId": { "type": "string" }, "professionalId": { "type": "string" }, "professional": { "type": "string" }, "instructions": { "type": "string", "nullable": true }, "createdAt": { "type": "string" }, "items": { "type": "array", "items": { "$ref": "#/components/schemas/PrescriptionItemDto" } } } },
       "PatientSummaryDto": { "type": "object", "required": ["id", "name", "documentNumber", "birthDate", "phone"], "properties": { "id": { "type": "string" }, "name": { "type": "string" }, "documentNumber": { "type": "string" }, "birthDate": { "type": "string" }, "phone": { "type": "string" } } },
-      "ClinicalHistoryDto": { "type": "object", "required": ["patient", "encounters", "prescriptions"], "properties": { "patient": { "$ref": "#/components/schemas/PatientSummaryDto" }, "encounters": { "type": "array", "items": { "$ref": "#/components/schemas/EncounterDto" } }, "prescriptions": { "type": "array", "items": { "$ref": "#/components/schemas/PrescriptionDto" } } } },
+      "HistorySpecialtyDto": { "type": "object", "required": ["id", "name", "encounters"], "properties": { "id": { "type": "string" }, "name": { "type": "string" }, "encounters": { "type": "integer" } } },
+      "ClinicalHistoryDto": { "type": "object", "required": ["patient", "specialties", "encounters", "prescriptions"], "properties": { "patient": { "$ref": "#/components/schemas/PatientSummaryDto" }, "specialty": { "allOf": [{ "$ref": "#/components/schemas/HistorySpecialtyDto" }], "nullable": true }, "specialties": { "type": "array", "items": { "$ref": "#/components/schemas/HistorySpecialtyDto" } }, "encounters": { "type": "array", "items": { "$ref": "#/components/schemas/EncounterDto" } }, "prescriptions": { "type": "array", "items": { "$ref": "#/components/schemas/PrescriptionDto" } } } },
       "CreatePatientCommand": { "type": "object", "required": ["firstName", "lastName", "documentNumber", "birthDate", "phone"], "properties": { "firstName": { "type": "string" }, "lastName": { "type": "string" }, "documentNumber": { "type": "string" }, "birthDate": { "type": "string" }, "phone": { "type": "string" }, "healthInsurance": { "type": "string", "nullable": true }, "memberNumber": { "type": "string", "nullable": true }, "emergencyContact": { "type": "string", "nullable": true }, "emergencyPhone": { "type": "string", "nullable": true } } },
       "CreatedPatientDto": { "type": "object", "required": ["patient", "temporaryPassword"], "properties": { "patient": { "$ref": "#/components/schemas/MedicalRecordDto" }, "temporaryPassword": { "type": "string" } } },
       "PatientLookupDto": { "type": "object", "required": ["patientId", "firstName", "lastName", "documentNumber", "birthDate", "phone"], "properties": { "patientId": { "type": "string" }, "firstName": { "type": "string" }, "lastName": { "type": "string" }, "documentNumber": { "type": "string" }, "birthDate": { "type": "string" }, "phone": { "type": "string" }, "healthInsurance": { "type": "string", "nullable": true }, "memberNumber": { "type": "string", "nullable": true }, "emergencyContact": { "type": "string", "nullable": true }, "emergencyPhone": { "type": "string", "nullable": true } } },

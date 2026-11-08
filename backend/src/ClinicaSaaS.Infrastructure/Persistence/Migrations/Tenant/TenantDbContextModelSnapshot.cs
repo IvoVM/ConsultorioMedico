@@ -371,6 +371,9 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                     b.Property<Guid>("ProfessionalId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("SpecialtyId")
+                        .HasColumnType("uuid");
+
                     b.Property<decimal?>("Temperature")
                         .HasPrecision(4, 1)
                         .HasColumnType("numeric(4,1)");
@@ -387,6 +390,8 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                     b.HasIndex("ClientId");
 
                     b.HasIndex("ProfessionalId");
+
+                    b.HasIndex("SpecialtyId");
 
                     b.ToTable("Encounters");
                 });
@@ -1243,11 +1248,18 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("ClinicaSaaS.Domain.Specialty", "Specialty")
+                        .WithMany("Encounters")
+                        .HasForeignKey("SpecialtyId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Appointment");
 
                     b.Navigation("Client");
 
                     b.Navigation("Professional");
+
+                    b.Navigation("Specialty");
                 });
 
             modelBuilder.Entity("ClinicaSaaS.Domain.EncounterDiagnosis", b =>
@@ -1588,6 +1600,8 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                     b.Navigation("AppointmentTypes");
 
                     b.Navigation("Employees");
+
+                    b.Navigation("Encounters");
 
                     b.Navigation("WaitlistEntries");
                 });

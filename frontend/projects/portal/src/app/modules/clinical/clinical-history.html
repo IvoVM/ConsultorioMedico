@@ -1,5 +1,5 @@
 @if (session.role() !== roles.Patient && !patientId) {
-  <ui-empty message="Abrí la ficha desde la búsqueda de secretaría o desde el turno del médico." />
+  <ui-empty message="Abrí la historia desde un turno de tu agenda." />
 }
 @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
 @if (loading() && !history()) {
@@ -13,7 +13,13 @@
       {{ data.patient.healthInsurance || 'Particular' }}
       @if (data.patient.memberNumber) { <span>· afiliado {{ data.patient.memberNumber }}</span> }
     </p>
+    @if (data.specialty) {
+      <p class="mt-2 text-sm font-semibold text-clinic">Historia de {{ data.specialty.name }}</p>
+    }
   </header>
+  @if (session.role() === roles.Patient && tabs().length > 1) {
+    <ui-tabs class="my-4" label="Especialidades" [tabs]="tabs()" [active]="data.specialty?.id ?? ''" (activeChange)="pick($event)" />
+  }
   @for (encounter of data.encounters; track encounter.id) {
     <article class="border-t border-rule py-5">
       <p class="text-sm text-ink/60">{{ encounter.createdAt | fecha }}</p>
@@ -41,5 +47,7 @@
       }
     </article>
   }
-  @if (data.encounters.length === 0) { <ui-empty message="Esta historia todavía no tiene consultas." /> }
+  @if (data.encounters.length === 0) {
+    <ui-empty [message]="data.specialty ? 'La historia de ' + data.specialty.name + ' todavía no tiene consultas.' : 'Esta historia todavía no tiene consultas.'" />
+  }
 }

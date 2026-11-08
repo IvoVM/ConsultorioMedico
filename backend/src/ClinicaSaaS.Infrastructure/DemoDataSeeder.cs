@@ -343,6 +343,8 @@ public class DemoDataSeeder(TenantDbContext db, UserManager<TenantUser> users)
             AppointmentId = appointment.Id,
             ClientId = patient.Id,
             ProfessionalId = professional.Id,
+            SpecialtyId = db.AppointmentTypes.Local.FirstOrDefault(t => t.Id == typeId)?.SpecialtyId
+                ?? db.Employees.Local.FirstOrDefault(e => e.UserId == professional.Id)?.SpecialtyId,
             Note = chart.Note,
             BloodPressure = chart.BloodPressure,
             HeartRate = chart.HeartRate,

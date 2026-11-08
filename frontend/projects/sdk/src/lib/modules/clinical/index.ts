@@ -7,4 +7,5 @@ export * from './models/prescription-item-dto';
 export * from './models/create-prescription-command';
 export * from './models/prescription-dto';
 export * from './models/patient-summary-dto';
+export * from './models/history-specialty-dto';
 export * from './models/clinical-history-dto';

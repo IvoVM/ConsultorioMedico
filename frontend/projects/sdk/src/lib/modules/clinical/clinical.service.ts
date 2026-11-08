@@ -35,7 +35,7 @@ export class ClinicalService extends ApiClient {
     return this.http.get<PrescriptionDto>(`${this.base}/api/recetas/${id}`);
   }
 
-  clinicalHistory(query?: { patientId?: string }) {
+  clinicalHistory(query?: { patientId?: string; specialtyId?: string }) {
     return this.http.get<ClinicalHistoryDto>(`${this.base}/api/historia${queryString(query)}`);
   }
 }
