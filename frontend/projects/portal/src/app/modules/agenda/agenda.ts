@@ -103,6 +103,7 @@ export class AgendaPage {
   readonly draft = signal<Draft | null>(null);
   readonly open = signal<AppointmentDto | null>(null);
   readonly openRequest = signal<BookingRequestDto | null>(null);
+  readonly helpOpen = signal(false);
 
   readonly title = computed(() => dayTitle(this.day()));
   readonly dayTitle = dayTitle;

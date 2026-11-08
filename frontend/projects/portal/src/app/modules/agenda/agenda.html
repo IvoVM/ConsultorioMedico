@@ -159,8 +159,11 @@
 
     @if (canEdit() && requests().length) {
       <aside class="ag-side">
-        <p class="ag-side-title"><ui-icon name="inbox" [size]="18" />Solicitudes <span class="ag-side-count">{{ requests().length }}</span></p>
-        <p class="ag-side-hint">Tocá una para aprobarla, reprogramarla o rechazarla, o arrastrala a la grilla para darle el turno en ese horario.</p>
+        <p class="ag-side-title">
+          <ui-icon name="inbox" [size]="18" />Solicitudes
+          <button type="button" class="ag-help" aria-label="Cómo usar las solicitudes" (click)="helpOpen.set(true)"><ui-icon name="help" [size]="18" /></button>
+          <span class="ag-side-count">{{ requests().length }}</span>
+        </p>
         <div class="ag-side-list">
           @for (request of requests(); track request.id; let index = $index) {
             <div class="ag-request" [style.--i]="index" [class.is-hidden]="drop()?.request?.id === request.id" role="button"
@@ -232,6 +235,12 @@
 @if (open(); as appointment) {
   <agenda-detail [appointment]="appointment" [professionals]="allProfessionals()" [canEdit]="canEdit()" (changed)="afterChange()" (closed)="open.set(null)" />
 }
+
+<ui-modal [open]="helpOpen()" title="Solicitudes" (closed)="helpOpen.set(false)">
+  <p class="text-sm leading-relaxed text-ink/75">
+    Tocá una solicitud para aprobarla, reprogramarla o rechazarla. También podés arrastrarla a la grilla para darle el turno en ese horario.
+  </p>
+</ui-modal>
 
 @if (openRequest(); as request) {
   <agenda-request [request]="request" (changed)="afterChange()" (closed)="openRequest.set(null)" />

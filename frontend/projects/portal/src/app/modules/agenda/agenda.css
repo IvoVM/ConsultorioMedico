@@ -493,6 +493,23 @@
   font-weight: 700;
 }
 
+.ag-help {
+  display: inline-flex;
+  width: 1.75rem;
+  height: 1.75rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: rgb(14 42 34 / 0.45);
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.ag-help:hover {
+  background: var(--color-mist);
+  color: var(--color-clinic);
+}
+
 .ag-side-title .ag-side-count {
   margin-left: auto;
   border-radius: 999px;
@@ -500,11 +517,6 @@
   padding: 0 0.5rem;
   font-size: 0.75rem;
   color: var(--color-ochre);
-}
-
-.ag-side-hint {
-  font-size: 0.75rem;
-  color: rgb(14 42 34 / 0.55);
 }
 
 .ag-side-list {
