@@ -113,44 +113,19 @@
     <ui-stat label="Ausentes y cancelados" icon="event_busy" [value]="loading() ? '–' : missed()" [note]="loading() ? '' : (missed() ? 'para revisar' : 'ninguno')" [tone]="missed() ? tone.Bad : tone.Ok" />
   </div>
 
-  <div class="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_20rem]">
-    <section class="panel rise min-w-0">
-      <div class="panel-head">
-        <h3 class="panel-title"><ui-icon name="monitor_heart" [size]="20" class="text-leaf" />Flujo de pacientes</h3>
-        @if (!loading()) {
-          <span class="text-sm text-ink/55">{{ count(status.CheckedIn) }} esperando · {{ count(status.InProgress) }} en consulta</span>
-        }
-      </div>
-      @if (loading()) {
-        <ui-skeleton label="Cargando la agenda" [count]="3" height="3.5rem" [framed]="false" />
-      } @else if (!appointments().length) {
-        <ui-empty message="Hoy no hay turnos cargados." />
-      } @else {
-        <ui-board [columns]="columns()" />
+  <section class="panel rise min-w-0">
+    <div class="panel-head">
+      <h3 class="panel-title"><ui-icon name="monitor_heart" [size]="20" class="text-leaf" />Flujo de pacientes</h3>
+      @if (!loading()) {
+        <span class="text-sm text-ink/55">{{ count(status.CheckedIn) }} esperando · {{ count(status.InProgress) }} en consulta</span>
       }
-    </section>
-
-    <aside class="panel rise self-start">
-      <div class="panel-head">
-        <h3 class="panel-title"><ui-icon name="inbox" [size]="20" class="text-leaf" />Solicitudes</h3>
-        @if (!loading()) {
-          <span class="chip" [class.is-warn]="requests().length" [class.is-ok]="!requests().length">{{ requests().length }}</span>
-        }
-      </div>
-      <p class="text-sm leading-relaxed text-ink/65">
-        @if (loading()) {
-          Los pedidos que llegaron en línea.
-        } @else if (requests().length) {
-          Hay {{ requests().length }} {{ requests().length === 1 ? 'pedido' : 'pedidos' }} para confirmar.
-        } @else {
-          No hay pedidos esperando confirmación.
-        }
-      </p>
-      <a [routerLink]="route.Solicitudes" class="action-link mt-4 w-full">Ver solicitudes</a>
-      <hr class="my-5 border-rule" />
-      <h4 class="text-sm font-bold">Dar un turno</h4>
-      <p class="mt-1 text-sm leading-relaxed text-ink/65">Buscás al paciente por documento y le confirmás el horario.</p>
-      <a [routerLink]="route.DarTurno" class="text-link mt-3 inline-block">Empezar</a>
-    </aside>
-  </div>
+    </div>
+    @if (loading()) {
+      <ui-skeleton label="Cargando la agenda" [count]="3" height="3.5rem" [framed]="false" />
+    } @else if (!appointments().length) {
+      <ui-empty message="Hoy no hay turnos cargados." />
+    } @else {
+      <ui-board [columns]="columns()" />
+    }
+  </section>
 }
