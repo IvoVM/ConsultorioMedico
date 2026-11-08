@@ -124,8 +124,6 @@ public class ClinicalService(
             Guid? filter = own.Id == Guid.Empty ? null : own.Id;
             if (!await clinical.Prescriptions.AnyAsync(p => p.Id == id && p.Encounter.SpecialtyId == filter, ct))
                 throw new BusinessRuleException("Solo podés ver recetas de tu especialidad.");
-            if (!await IsOwnPatientAsync(prescription.PatientId, ct))
-                throw new BusinessRuleException("Solo podés ver recetas de tus pacientes.");
             return prescription;
         }
         await EnsurePatientAccessAsync(prescription.PatientId, ct);
@@ -217,18 +215,7 @@ public class ClinicalService(
             throw new BusinessRuleException("Indicá el paciente.");
         if (!await clients.Clients.AnyAsync(c => c.Id == clientId, ct))
             throw new NotFoundException("Paciente no encontrado.");
-        if (!await IsOwnPatientAsync(clientId, ct))
-            throw new BusinessRuleException("Solo podés ver la historia de tus pacientes.");
         return clientId;
-    }
-
-    // A patient belongs to a professional once they attended them or hold a live appointment with them.
-    // An appointment moved to someone else leaves with the move, so the first professional never "knew" the patient.
-    private async Task<bool> IsOwnPatientAsync(Guid clientId, CancellationToken ct)
-    {
-        var me = currentUser.Id ?? Guid.Empty;
-        return await clinical.Encounters.AnyAsync(e => e.ClientId == clientId && e.ProfessionalId == me, ct)
-            || await appointments.Appointments.AnyAsync(a => a.ClientId == clientId && a.ProfessionalId == me && a.Status != AppointmentStatus.Cancelled, ct);
     }
 
     private async Task<HistorySpecialtyDto> OwnSpecialtyAsync(CancellationToken ct)
