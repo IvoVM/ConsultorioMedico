@@ -105,6 +105,45 @@
   animation: pop 0.3s var(--ease-out-soft) both;
 }
 
+.ag-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--color-rule);
+  padding: 0.65rem 1.25rem;
+}
+
+.ag-filter {
+  width: 15rem;
+  max-width: 100%;
+}
+
+.ag-clear {
+  display: inline-flex;
+  height: 2.4rem;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 999px;
+  padding: 0 0.95rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-clinic);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.ag-clear:hover {
+  background: var(--color-clinic-wash);
+}
+
+@media (max-width: 640px) {
+  .ag-filter {
+    flex: 1 1 100%;
+    width: auto;
+  }
+}
+
 .ag-error {
   margin: 0.75rem 1.25rem 0;
   font-size: 0.875rem;

@@ -9,7 +9,8 @@ import {
   BookingRequestDto,
   errorMessage,
 } from 'sdk';
-import { ToastService, UiAvatar, UiButton, UiIcon, UiModal, UiMonth, formatFecha, localDate } from 'ui';
+import { FormsModule } from '@angular/forms';
+import { SelectOption, ToastService, UiAvatar, UiButton, UiIcon, UiModal, UiMonth, UiSelect, formatFecha, localDate } from 'ui';
 import { appointmentStatusLabels } from '../appointments/models/appointment-status-labels';
 import {
   PX_PER_MINUTE,
@@ -64,7 +65,7 @@ type Drop = {
 type Draft = { professional: AgendaProfessionalDto; start: number };
 
 @Component({
-  imports: [UiAvatar, UiButton, UiIcon, UiModal, UiMonth, AgendaCreate, AgendaDetail],
+  imports: [FormsModule, UiAvatar, UiButton, UiIcon, UiModal, UiMonth, UiSelect, AgendaCreate, AgendaDetail],
   templateUrl: './agenda.html',
 })
 export class AgendaPage {
@@ -96,7 +97,31 @@ export class AgendaPage {
   readonly title = computed(() => dayTitle(this.day()));
   readonly isToday = computed(() => this.day() === localDate(new Date()));
   readonly canEdit = computed(() => this.data()?.canEdit ?? false);
-  readonly professionals = computed(() => this.data()?.professionals ?? []);
+  readonly allProfessionals = computed(() => this.data()?.professionals ?? []);
+  readonly specialtyFilter = signal('');
+  readonly professionalFilter = signal('');
+  // Every professional seen while browsing days, so a chosen filter keeps its option on a day they don't show up.
+  private readonly seen = signal(new Map<string, { name: string; specialty: string }>());
+  readonly filtering = computed(() => !!this.specialtyFilter() || !!this.professionalFilter());
+  readonly professionals = computed(() => {
+    const specialty = this.specialtyFilter();
+    const professional = this.professionalFilter();
+    return this.allProfessionals().filter(
+      (item) => (!specialty || item.specialty === specialty) && (!professional || item.id === professional),
+    );
+  });
+  readonly specialtyOptions = computed((): SelectOption[] => {
+    const names = new Set([...this.seen().values()].map((item) => item.specialty).filter(Boolean));
+    return [{ value: '', label: 'Todas las especialidades' }, ...[...names].sort((a, b) => a.localeCompare(b, 'es')).map((name) => ({ value: name, label: name }))];
+  });
+  readonly professionalOptions = computed((): SelectOption[] => {
+    const specialty = this.specialtyFilter();
+    const options = [...this.seen()]
+      .filter(([, item]) => !specialty || item.specialty === specialty)
+      .map(([id, item]) => ({ value: id, label: item.name }))
+      .sort((a, b) => a.label.localeCompare(b.label, 'es'));
+    return [{ value: '', label: specialty ? `Todos los de ${specialty}` : 'Todos los profesionales' }, ...options];
+  });
   readonly range = computed(() => bounds());
   readonly height = computed(() => (this.range().end - this.range().start) * PX_PER_MINUTE);
   readonly rows = computed(() => {
@@ -358,11 +383,29 @@ export class AgendaPage {
     await this.load();
   }
 
+  pickSpecialty(specialty: string) {
+    this.specialtyFilter.set(specialty);
+    const chosen = this.seen().get(this.professionalFilter());
+    if (specialty && chosen && chosen.specialty !== specialty) this.professionalFilter.set('');
+  }
+
+  pickProfessional(id: string) {
+    this.professionalFilter.set(id);
+    const chosen = this.seen().get(id);
+    if (chosen?.specialty) this.specialtyFilter.set(chosen.specialty);
+  }
+
+  clearFilters() {
+    this.specialtyFilter.set('');
+    this.professionalFilter.set('');
+  }
+
   async load() {
     this.loading.set(true);
     this.error.set('');
     try {
       this.data.set(await firstValueFrom(this.agendaApi.day(this.day())));
+      this.remember(this.data()?.professionals ?? []);
       if (this.data()?.canEdit) this.requests.set(await firstValueFrom(this.appointmentsApi.pendingRequests()));
     } catch (error) {
       this.data.set(null);
@@ -371,6 +414,15 @@ export class AgendaPage {
       this.loading.set(false);
       setTimeout(() => this.focusTime());
     }
+  }
+
+  private remember(professionals: AgendaProfessionalDto[]) {
+    if (professionals.every((item) => this.seen().has(item.id))) return;
+    this.seen.update((current) => {
+      const next = new Map(current);
+      for (const item of professionals) next.set(item.id, { name: item.name, specialty: item.specialty ?? '' });
+      return next;
+    });
   }
 
   private focusTime() {

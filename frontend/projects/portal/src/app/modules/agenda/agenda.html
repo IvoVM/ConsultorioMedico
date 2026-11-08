@@ -29,6 +29,26 @@
     </div>
   </header>
 
+  <div class="ag-filters">
+    <ui-select
+      class="ag-filter"
+      [ngModel]="specialtyFilter()"
+      (ngModelChange)="pickSpecialty($event)"
+      [options]="specialtyOptions()"
+      placeholder="Todas las especialidades"
+    />
+    <ui-select
+      class="ag-filter"
+      [ngModel]="professionalFilter()"
+      (ngModelChange)="pickProfessional($event)"
+      [options]="professionalOptions()"
+      placeholder="Todos los profesionales"
+    />
+    @if (filtering()) {
+      <button type="button" class="ag-clear" (click)="clearFilters()"><ui-icon name="filter_alt_off" [size]="18" />Limpiar filtros</button>
+    }
+  </div>
+
   @if (error()) {
     <p class="ag-error" role="alert">{{ error() }}</p>
   }
@@ -38,7 +58,7 @@
         <div class="ag-grid" [style.--cols]="professionals().length || 1">
           <div class="ag-corner"></div>
           @if (!professionals().length) {
-            <div class="ag-head text-ink/50">{{ loading() ? "Cargando agenda…" : "Sin profesionales para mostrar" }}</div>
+            <div class="ag-head text-ink/50">{{ loading() ? "Cargando agenda…" : filtering() && allProfessionals().length ? "Ningún profesional coincide con los filtros este día" : "Sin profesionales para mostrar" }}</div>
           }
           @for (professional of professionals(); track professional.id) {
             <div class="ag-head">
@@ -199,7 +219,7 @@
 }
 
 @if (open(); as appointment) {
-  <agenda-detail [appointment]="appointment" [professionals]="professionals()" [canEdit]="canEdit()" (changed)="afterChange()" (closed)="open.set(null)" />
+  <agenda-detail [appointment]="appointment" [professionals]="allProfessionals()" [canEdit]="canEdit()" (changed)="afterChange()" (closed)="open.set(null)" />
 }
 
 @if (draft(); as creating) {
