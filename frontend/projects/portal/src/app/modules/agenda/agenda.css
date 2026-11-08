@@ -137,12 +137,6 @@
   opacity: 0.55;
 }
 
-.ag-empty {
-  padding: 3rem 1.25rem;
-  text-align: center;
-  color: rgb(14 42 34 / 0.6);
-}
-
 .ag-grid {
   display: grid;
   grid-template-columns: 4.25rem repeat(var(--cols, 1), minmax(11.5rem, 1fr));

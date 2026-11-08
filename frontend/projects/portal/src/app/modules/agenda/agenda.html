@@ -35,11 +35,11 @@
 
   <div class="ag-body" [class.has-side]="canEdit() && requests().length">
     <div #scroller class="ag-scroller" [class.is-loading]="loading()">
-      @if (!professionals().length && !loading()) {
-        <p class="ag-empty">No hay profesionales activos para mostrar.</p>
-      } @else {
-        <div class="ag-grid" [style.--cols]="professionals().length">
+        <div class="ag-grid" [style.--cols]="professionals().length || 1">
           <div class="ag-corner"></div>
+          @if (!professionals().length) {
+            <div class="ag-head text-ink/50">{{ loading() ? "Cargando agenda…" : "Sin profesionales para mostrar" }}</div>
+          }
           @for (professional of professionals(); track professional.id) {
             <div class="ag-head">
               <ui-avatar [name]="professional.name" size="2rem" />
@@ -58,6 +58,16 @@
             }
           </div>
 
+          @if (!professionals().length) {
+            <div class="ag-col is-empty" [style.height.px]="height()">
+              @for (row of rows(); track row) {
+                <div class="ag-cell" [style.top.px]="top(row)" [style.height.px]="rowHeight"></div>
+              }
+              @if (nowLine() !== null) {
+                <div class="ag-now" [style.top.px]="nowLine()"></div>
+              }
+            </div>
+          }
           @for (professional of professionals(); track professional.id) {
             @let col = column(professional);
             <div
@@ -119,7 +129,6 @@
             </div>
           }
         </div>
-      }
     </div>
 
     @if (canEdit() && requests().length) {

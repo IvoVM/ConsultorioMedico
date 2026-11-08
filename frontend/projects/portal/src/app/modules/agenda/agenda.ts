@@ -97,7 +97,7 @@ export class AgendaPage {
   readonly isToday = computed(() => this.day() === localDate(new Date()));
   readonly canEdit = computed(() => this.data()?.canEdit ?? false);
   readonly professionals = computed(() => this.data()?.professionals ?? []);
-  readonly range = computed(() => bounds(this.professionals(), this.data()?.appointments ?? []));
+  readonly range = computed(() => bounds());
   readonly height = computed(() => (this.range().end - this.range().start) * PX_PER_MINUTE);
   readonly rows = computed(() => {
     const rows: number[] = [];
@@ -363,26 +363,26 @@ export class AgendaPage {
     this.error.set('');
     try {
       this.data.set(await firstValueFrom(this.agendaApi.day(this.day())));
-      setTimeout(() => this.focusTime());
       if (this.data()?.canEdit) this.requests.set(await firstValueFrom(this.appointmentsApi.pendingRequests()));
     } catch (error) {
       this.data.set(null);
       this.error.set(errorMessage(error));
     } finally {
       this.loading.set(false);
+      setTimeout(() => this.focusTime());
     }
   }
 
   private focusTime() {
     const element = this.scroller()?.nativeElement;
-    const data = this.data();
-    if (!element || !data) return;
+    if (!element) return;
+    const data = this.data() ?? { appointments: [], professionals: [] };
     const now = new Date();
     const firsts = [
       ...data.appointments.map((item) => minutesOf(item.start)),
       ...data.professionals.flatMap((item) => spans(item.ranges).map((range) => range.from)),
     ];
-    const target = this.isToday() ? now.getHours() * 60 + now.getMinutes() - 60 : firsts.length ? Math.min(...firsts) - 30 : this.range().start;
+    const target = this.isToday() ? now.getHours() * 60 + now.getMinutes() - 60 : firsts.length ? Math.min(...firsts) - 30 : 7 * 60 + 30;
     element.scrollTo({ top: Math.max(0, this.top(target)), behavior: 'smooth' });
   }
 

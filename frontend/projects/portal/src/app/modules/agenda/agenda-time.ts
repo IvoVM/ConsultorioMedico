@@ -3,8 +3,8 @@ import { AgendaProfessionalDto, AgendaRangeDto, AppointmentDto, AppointmentStatu
 export const SNAP_MINUTES = 5;
 export const ROW_MINUTES = 30;
 export const PX_PER_MINUTE = 1.7;
-export const DEFAULT_DAY_START = 8 * 60;
-export const DEFAULT_DAY_END = 20 * 60;
+export const DAY_START = 0;
+export const DAY_END = 24 * 60;
 
 export enum AgendaTone {
   Booked = 'booked',
@@ -76,18 +76,6 @@ export function durationOf(appointment: AppointmentDto) {
   return Math.max(SNAP_MINUTES, Math.round((new Date(appointment.end).getTime() - new Date(appointment.start).getTime()) / 60000));
 }
 
-export function bounds(professionals: AgendaProfessionalDto[], appointments: AppointmentDto[]) {
-  let start = DEFAULT_DAY_START;
-  let end = DEFAULT_DAY_END;
-  for (const professional of professionals) {
-    for (const range of spans(professional.ranges)) {
-      start = Math.min(start, range.from);
-      end = Math.max(end, range.to);
-    }
-  }
-  for (const appointment of appointments) {
-    start = Math.min(start, minutesOf(appointment.start));
-    end = Math.max(end, minutesOf(appointment.start) + durationOf(appointment));
-  }
-  return { start: Math.floor(start / 60) * 60, end: Math.min(24 * 60, Math.ceil(end / 60) * 60) };
+export function bounds() {
+  return { start: DAY_START, end: DAY_END };
 }

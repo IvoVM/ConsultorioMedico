@@ -94,7 +94,7 @@ export class AgendaDetail {
       .filter((item) => item.professionalId === target.id && item.id !== own.id && item.status !== AppointmentStatus.Cancelled && item.status !== AppointmentStatus.NoShow)
       .map((item) => ({ from: minutesOf(item.start), to: minutesOf(item.start) + durationOf(item) }));
     const offs = spans(target.blockouts);
-    const range = bounds(data.professionals, data.appointments);
+    const range = bounds();
     const length = this.duration();
     const options: TimeOption[] = [];
     for (let start = range.start; start + length <= range.end; start += STEP) {
