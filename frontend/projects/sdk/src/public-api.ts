@@ -14,3 +14,4 @@ export * from './lib/modules/medical-records';
 export * from './lib/modules/billing';
 export * from './lib/modules/audit';
 export * from './lib/modules/users';
+export * from './lib/modules/agenda';

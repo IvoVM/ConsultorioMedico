@@ -1,0 +1,198 @@
+<section class="ag-window rise" [class.is-dragging]="drag()?.moved">
+  <header class="ag-bar">
+    <span class="ag-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+    <h2 class="ag-title">Agenda — {{ title() }}</h2>
+    <div class="ag-nav">
+      <button type="button" class="ag-arrow" aria-label="Día anterior" (click)="go(-1)"><ui-icon name="chevron_left" /></button>
+      <div class="ag-pick">
+        <button type="button" class="ag-date" [attr.aria-expanded]="picking()" (click)="togglePicker()">
+          <ui-icon name="calendar_month" [size]="18" />Elegir fecha
+        </button>
+        @if (picking()) {
+          <div class="ag-popover">
+            <ui-month
+              [year]="pickYear()"
+              [month]="pickMonth()"
+              [openDays]="monthDays()"
+              [selected]="day()"
+              [allowPast]="true"
+              (pick)="pickDay($event)"
+              (shift)="shiftPicker($event)"
+            />
+          </div>
+        }
+      </div>
+      <button type="button" class="ag-arrow" aria-label="Día siguiente" (click)="go(1)"><ui-icon name="chevron_right" /></button>
+      @if (!isToday()) {
+        <button type="button" class="ag-today" (click)="today()">Hoy</button>
+      }
+    </div>
+  </header>
+
+  @if (error()) {
+    <p class="ag-error" role="alert">{{ error() }}</p>
+  }
+
+  <div class="ag-body" [class.has-side]="canEdit() && requests().length">
+    <div #scroller class="ag-scroller" [class.is-loading]="loading()">
+      @if (!professionals().length && !loading()) {
+        <p class="ag-empty">No hay profesionales activos para mostrar.</p>
+      } @else {
+        <div class="ag-grid" [style.--cols]="professionals().length">
+          <div class="ag-corner"></div>
+          @for (professional of professionals(); track professional.id) {
+            <div class="ag-head">
+              <ui-avatar [name]="professional.name" size="2rem" />
+              <div class="min-w-0">
+                <p class="truncate font-semibold">{{ professional.name }}</p>
+                @if (professional.specialty) {
+                  <p class="truncate text-xs text-ink/55">{{ professional.specialty }}</p>
+                }
+              </div>
+            </div>
+          }
+
+          <div class="ag-times" [style.height.px]="height()">
+            @for (row of rows(); track row) {
+              <span [style.top.px]="top(row)">{{ clock(row) }}</span>
+            }
+          </div>
+
+          @for (professional of professionals(); track professional.id) {
+            @let col = column(professional);
+            <div
+              class="ag-col"
+              [attr.data-id]="professional.id"
+              [class.is-editable]="canEdit()"
+              [style.height.px]="height()"
+              (pointerdown)="startCreate($event, professional)"
+            >
+              @for (row of rows(); track row) {
+                <div class="ag-cell" [class.is-open]="inAgenda(professional, row)" [style.top.px]="top(row)" [style.height.px]="rowHeight"></div>
+              }
+              @for (range of col.blockouts; track $index) {
+                <div class="ag-off" [style.top.px]="range.top" [style.height.px]="range.height"><span>Bloqueo</span></div>
+              }
+              @if (nowLine() !== null) {
+                <div class="ag-now" [style.top.px]="nowLine()"></div>
+              }
+              @for (card of col.cards; track card.appointment.id; let index = $index) {
+                <button
+                  type="button"
+                  class="ag-card"
+                  [attr.data-tone]="tones[card.appointment.status]"
+                  [class.is-overbook]="card.appointment.isOverbook"
+                  [class.is-hidden]="hidden(card.appointment)"
+                  [class.is-bounce]="bounce() === card.appointment.id"
+                  [class.is-fixed]="!canEdit() || !movable(card.appointment.status)"
+                  [class.is-short]="card.duration < 25"
+                  [style.top.px]="card.top"
+                  [style.height.px]="card.height"
+                  [style.--i]="index"
+                  [attr.aria-label]="card.appointment.patient + ', ' + clock(card.from) + ', ' + labels[card.appointment.status]"
+                  (pointerdown)="startCard($event, card.appointment)"
+                  (keydown.enter)="open.set(card.appointment)"
+                >
+                  <span class="ag-card-name">{{ card.appointment.patient }}</span>
+                  <span class="ag-card-meta">{{ clock(card.from) }}–{{ clock(card.from + card.duration) }} · {{ card.appointment.appointmentType }}</span>
+                  @if (card.appointment.isOverbook) {
+                    <span class="ag-tag">Sobreturno</span>
+                  }
+                </button>
+              }
+              @if (ghostIn(professional); as ghost) {
+                <div
+                  class="ag-ghost"
+                  [attr.data-kind]="ghost.kind"
+                  [class.is-overbook]="ghostOverbook(professional, ghost.start, ghost.duration)"
+                  [class.is-pending]="!!drop()"
+                  [style.top.px]="top(ghost.start)"
+                  [style.height.px]="ghost.duration * ppm"
+                >
+                  <span class="ag-card-name">{{ ghost.appointment?.patient ?? ghost.request?.name ?? 'Nuevo turno' }}</span>
+                  <span class="ag-card-meta">{{ clock(ghost.start) }}–{{ clock(ghost.start + ghost.duration) }}</span>
+                  @if (ghostOverbook(professional, ghost.start, ghost.duration)) {
+                    <span class="ag-tag">Sobreturno</span>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    @if (canEdit() && requests().length) {
+      <aside class="ag-side">
+        <p class="ag-side-title"><ui-icon name="inbox" [size]="18" />Solicitudes <span>{{ requests().length }}</span></p>
+        <p class="ag-side-hint">Arrastrá una a la grilla para darle el turno en ese horario.</p>
+        <div class="ag-side-list">
+          @for (request of requests(); track request.id; let index = $index) {
+            <div class="ag-request" [style.--i]="index" [class.is-hidden]="drop()?.request?.id === request.id" (pointerdown)="startRequest($event, request)">
+              <ui-icon name="drag_indicator" [size]="18" class="ag-grip" />
+              <div class="min-w-0">
+                <p class="truncate text-sm font-semibold">{{ request.name }}</p>
+                <p class="truncate text-xs text-ink/55">{{ request.appointmentType }} · {{ request.professional }}</p>
+                <p class="truncate text-xs text-ink/45">Pidió {{ when(request.start) }}</p>
+              </div>
+            </div>
+          }
+        </div>
+      </aside>
+    }
+  </div>
+
+  <p class="ag-hint">
+    @if (canEdit()) {
+      Arrastrá un turno para moverlo, o arrastrá sobre un espacio libre para crear uno. Siempre te pedimos confirmación antes de guardar.
+    } @else {
+      Tocá un turno para ver todos sus datos.
+    }
+  </p>
+</section>
+
+@if (drop(); as pending) {
+  <ui-modal [open]="true" [title]="pending.kind === kinds.Move ? 'Mover turno' : pending.kind === kinds.Request ? 'Dar turno a la solicitud' : 'Nuevo turno'" (closed)="cancelDrop()">
+    <div class="ag-confirm">
+      @if (pending.kind === kinds.Move && pending.appointment; as appointment) {
+        <p>Vas a mover el turno de <strong>{{ appointment.patient }}</strong>.</p>
+        <div class="ag-route">
+          <div><span>Antes</span><strong>{{ clock(minuteOf(appointment.start)) }}</strong><small>{{ appointment.professional }}</small></div>
+          <ui-icon name="arrow_forward" />
+          <div><span>Después</span><strong>{{ clock(pending.start) }}</strong><small>{{ pending.professional.name }}</small></div>
+        </div>
+      } @else if (pending.kind === kinds.Request && pending.request; as request) {
+        <p>Vas a darle el turno a <strong>{{ request.name }}</strong> ({{ request.appointmentType }}).</p>
+        <div class="ag-route">
+          <div><span>Pidió</span><strong>{{ when(request.start) }}</strong><small>{{ request.professional }}</small></div>
+          <ui-icon name="arrow_forward" />
+          <div><span>Queda</span><strong>{{ title() }}, {{ clock(pending.start) }}</strong><small>{{ pending.professional.name }}</small></div>
+        </div>
+      } @else {
+        <p>Vas a crear un turno con <strong>{{ pending.professional.name }}</strong> el {{ title() }} a las <strong>{{ clock(pending.start) }}</strong>. En el siguiente paso elegís al paciente y la prestación.</p>
+      }
+      @if (dropOverbook()) {
+        <p class="ag-warn"><ui-icon name="more_time" [size]="18" /><span>Está fuera de la agenda de {{ pending.professional.name }}: queda como <strong>sobreturno</strong>.</span></p>
+      }
+      @if (dropPast()) {
+        <p class="ag-bad"><ui-icon name="history" [size]="18" /><span>Ese horario ya pasó. Elegí uno más adelante.</span></p>
+      } @else if (pending.kind !== kinds.Create) {
+        <p class="text-sm text-ink/60">Si se superpone con otro turno, no se guarda y vuelve a como estaba.</p>
+      }
+    </div>
+    <div uiModalFooter class="flex flex-wrap gap-3">
+      <ui-button [loading]="saving()" [disabled]="dropPast()" (click)="confirmDrop()">
+        <ui-icon name="check" [size]="18" />{{ pending.kind === kinds.Create ? 'Continuar' : 'Confirmar' }}
+      </ui-button>
+      <ui-button variant="outlined" [disabled]="saving()" (click)="cancelDrop()">Cancelar</ui-button>
+    </div>
+  </ui-modal>
+}
+
+@if (open(); as appointment) {
+  <agenda-detail [appointment]="appointment" [professionals]="professionals()" [canEdit]="canEdit()" (changed)="afterChange()" (closed)="open.set(null)" />
+}
+
+@if (draft(); as creating) {
+  <agenda-create [professional]="creating.professional" [day]="day()" [start]="creating.start" (created)="afterChange()" (closed)="draft.set(null)" />
+}

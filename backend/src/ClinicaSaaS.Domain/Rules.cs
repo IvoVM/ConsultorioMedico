@@ -39,6 +39,30 @@ public static class SchedulingRules
     private static DateOnly LocalDay(DateTimeOffset moment, TimeZoneInfo zone) =>
         DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(moment, zone).DateTime);
 
+    public static IReadOnlyList<TimeRange> MergeRanges(IEnumerable<TimeRange> ranges)
+    {
+        var merged = new List<TimeRange>();
+        foreach (var range in ranges.Where(r => r.End > r.Start).OrderBy(r => r.Start))
+        {
+            if (merged.Count > 0 && range.Start <= merged[^1].End)
+            {
+                var last = merged[^1];
+                merged[^1] = new TimeRange(last.Start, range.End > last.End ? range.End : last.End);
+            }
+            else
+            {
+                merged.Add(range);
+            }
+        }
+        return merged;
+    }
+
+    public static bool IsOverbook(IEnumerable<TimeRange> agenda, TimeRange candidate) =>
+        !MergeRanges(agenda).Any(range => range.Start <= candidate.Start && candidate.End <= range.End);
+
+    public static bool CanMoveOnAgenda(AppointmentStatus status) =>
+        status is AppointmentStatus.Booked or AppointmentStatus.Rescheduled or AppointmentStatus.CheckedIn;
+
     public static bool CanReschedule(AppointmentStatus status) =>
         status is AppointmentStatus.Booked or AppointmentStatus.Rescheduled or AppointmentStatus.CheckedIn;
 

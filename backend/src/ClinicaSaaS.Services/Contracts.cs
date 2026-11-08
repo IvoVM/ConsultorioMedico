@@ -88,7 +88,8 @@ public record AppointmentDto(
     string? VisitReason,
     string? Insurer,
     string? MemberNumber,
-    bool? CoverageAccepted);
+    bool? CoverageAccepted,
+    bool IsOverbook = false);
 public record RescheduleAppointmentCommand(DateTimeOffset Start);
 
 public record WaitlistEntryDto(
@@ -231,3 +232,29 @@ public record SpecialtyRowDto(Guid Id, string Name, int Professionals);
 public record AppointmentTypeRowDto(Guid Id, string Name, int DurationMinutes, string Specialty, int Professionals);
 public record FeeRowDto(Guid AppointmentTypeId, string Service, decimal? Amount, DateOnly? EffectiveFrom);
 public record MedicalRecordPageDto(IReadOnlyList<MedicalRecordDto> Items, int Total, int Page, int PageSize, int All, int Allergies, int Incomplete);
+
+public record AgendaRangeDto(DateTimeOffset Start, DateTimeOffset End);
+public record AgendaTypeDto(Guid Id, string Name, int DurationMinutes);
+public record AgendaProfessionalDto(
+    Guid Id,
+    string Name,
+    string? Specialty,
+    IReadOnlyList<AgendaRangeDto> Ranges,
+    IReadOnlyList<AgendaRangeDto> Blockouts,
+    IReadOnlyList<AgendaTypeDto> Types,
+    IReadOnlyList<InsurerDto> Insurers);
+public record AgendaDayDto(DateOnly Date, bool CanEdit, IReadOnlyList<AgendaProfessionalDto> Professionals, IReadOnlyList<AppointmentDto> Appointments);
+public record MoveAppointmentCommand(Guid ProfessionalId, DateTimeOffset Start);
+public record AgendaBookCommand(
+    string DocumentNumber,
+    string? FirstName,
+    string? LastName,
+    string? Phone,
+    Guid ProfessionalId,
+    Guid AppointmentTypeId,
+    DateTimeOffset Start,
+    string? VisitReason,
+    Guid? InsurerId,
+    string? MemberNumber);
+public record PlaceRequestCommand(Guid ProfessionalId, DateTimeOffset Start);
+public record EditAppointmentCommand(string? VisitReason, Guid? InsurerId, string? MemberNumber);

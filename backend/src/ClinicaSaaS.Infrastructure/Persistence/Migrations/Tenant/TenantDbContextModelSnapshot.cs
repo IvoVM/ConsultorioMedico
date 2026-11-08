@@ -43,6 +43,9 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                     b.Property<Guid?>("InsurerId")
                         .HasColumnType("uuid");
 
+                    b.Property<bool>("IsOverbook")
+                        .HasColumnType("boolean");
+
                     b.Property<Guid>("LocationId")
                         .HasColumnType("uuid");
 

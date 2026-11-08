@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ClinicaSaaS.Services;
 
-public class ScheduleService(
+public partial class ScheduleService(
     IScheduleStore schedules,
     IOrganizationStore organization,
     IAppointmentStore appointments,

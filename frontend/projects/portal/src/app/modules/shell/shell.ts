@@ -23,6 +23,7 @@ export class ShellPage {
     const role = this.session.role();
     const nodes: NavNode[] = [];
     if (this.session.token()) nodes.push({ label: 'Inicio', path: AppRoute.Panel, exact: true, icon: 'monitor_heart' });
+    if (role === TenantRole.Secretary || role === TenantRole.TenantAdmin || role === TenantRole.Doctor) nodes.push({ label: 'Agenda', path: AppRoute.Agenda, icon: 'calendar_view_week' });
     if (role === TenantRole.Patient) {
       nodes.push({
         label: 'Turnos',

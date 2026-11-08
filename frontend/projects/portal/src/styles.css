@@ -2,3 +2,4 @@
 @import '../../ui/src/lib/theme.css';
 @import '../../ui/src/lib/cards.css';
 @source '../../ui/src';
+@import './app/modules/agenda/agenda.css';

@@ -1,0 +1,72 @@
+<ui-modal [open]="true" [wide]="true" [title]="step() === steps.Review ? 'Revisar el turno' : 'Nuevo turno'" (closed)="closed.emit()">
+  @if (step() === steps.Form) {
+    <p class="mb-4 text-sm text-ink/65">
+      Con <strong>{{ professional().name }}</strong>, {{ dayTitle(day()) }} a las <strong>{{ clock(start()) }}</strong>.
+    </p>
+    <form id="agenda-create-form" class="flex flex-col gap-4" (ngSubmit)="review()">
+      <div class="flex flex-wrap items-end gap-3">
+        <ui-field class="min-w-0 flex-1" label="Documento del paciente">
+          <input name="document" required inputmode="numeric" autocomplete="off" [(ngModel)]="documentNumber" (blur)="lookup()" />
+        </ui-field>
+        <ui-button variant="secondary" [loading]="looking()" (click)="lookup()"><ui-icon name="search" [size]="18" />Buscar</ui-button>
+      </div>
+      @if (patient(); as found) {
+        <p class="ag-found"><ui-icon name="person_check" [size]="20" />{{ found.firstName }} {{ found.lastName }} · {{ found.phone }}</p>
+      }
+      @if (unknown()) {
+        <p class="text-sm text-ink/65">No hay un paciente con ese documento. Se crea su ficha con estos datos.</p>
+        <div class="grid gap-4 sm:grid-cols-3">
+          <ui-field label="Nombre"><input name="firstName" required maxlength="80" [(ngModel)]="firstName" /></ui-field>
+          <ui-field label="Apellido"><input name="lastName" required maxlength="80" [(ngModel)]="lastName" /></ui-field>
+          <ui-field label="Teléfono"><input name="phone" type="tel" inputmode="tel" required maxlength="30" placeholder="+54 11 00000000" [(ngModel)]="phone" /></ui-field>
+        </div>
+      }
+      <ui-field label="Prestación">
+        <ui-select name="type" [ngModel]="typeId()" (ngModelChange)="typeId.set($event)" [options]="typeOptions()" placeholder="Elegir prestación" />
+      </ui-field>
+      @if (!typeOptions().length) {
+        <p class="text-sm text-pulse">Este profesional no tiene prestaciones cargadas en su especialidad.</p>
+      }
+      <ui-field label="Motivo (opcional)">
+        <textarea name="reason" rows="2" maxlength="500" [(ngModel)]="reason"></textarea>
+      </ui-field>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <ui-field label="Cobertura">
+          <ui-select name="insurer" [(ngModel)]="insurerId" [options]="insurerOptions()" />
+        </ui-field>
+        @if (insurerId) {
+          <ui-field label="N.º de afiliado"><input name="member" maxlength="40" [(ngModel)]="memberNumber" /></ui-field>
+        }
+      </div>
+    </form>
+  } @else {
+    <div class="ag-confirm">
+      <div class="ag-ticket">
+        <p class="text-sm opacity-75">{{ dayTitle(day()) }}</p>
+        <p class="ag-ticket-time">{{ clock(start()) }}–{{ clock(end()) }}</p>
+        <p class="font-semibold">{{ patientName() }}</p>
+        <p class="text-sm opacity-75">{{ type()?.name }} · {{ professional().name }}</p>
+      </div>
+      @if (overbook()) {
+        <p class="ag-warn"><ui-icon name="more_time" [size]="18" /><span>Está fuera de la agenda: se crea como <strong>sobreturno</strong>.</span></p>
+      }
+      @if (past()) {
+        <p class="ag-bad"><ui-icon name="history" [size]="18" /><span>Ese horario ya pasó.</span></p>
+      } @else {
+        <p class="text-sm text-ink/60">Si se superpone con otro turno, no se crea. ¿Confirmás?</p>
+      }
+    </div>
+  }
+  @if (error()) {
+    <p class="mt-3 text-sm text-pulse" role="alert">{{ error() }}</p>
+  }
+  <div uiModalFooter class="flex flex-wrap gap-3">
+    @if (step() === steps.Form) {
+      <ui-button type="submit" form="agenda-create-form">Revisar</ui-button>
+      <ui-button variant="outlined" (click)="closed.emit()">Cancelar</ui-button>
+    } @else {
+      <ui-button [loading]="saving()" [disabled]="past()" (click)="create()"><ui-icon name="check" [size]="18" />Crear turno</ui-button>
+      <ui-button variant="outlined" [disabled]="saving()" (click)="step.set(steps.Form)">Volver</ui-button>
+    }
+  </div>
+</ui-modal>

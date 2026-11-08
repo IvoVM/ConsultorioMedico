@@ -16,6 +16,7 @@ export class UiMonth {
   readonly openDays = input<string[]>([]);
   readonly selected = input('');
   readonly loading = input(false);
+  readonly allowPast = input(false);
   readonly pick = output<string>();
   readonly shift = output<number>();
 
@@ -25,6 +26,7 @@ export class UiMonth {
   });
 
   readonly canGoBack = computed(() => {
+    if (this.allowPast()) return true;
     const today = new Date();
     return this.year() > today.getFullYear() || (this.year() === today.getFullYear() && this.month() > today.getMonth() + 1);
   });
@@ -38,7 +40,7 @@ export class UiMonth {
     const cells: Array<Cell | null> = Array.from({ length: lead }, () => null);
     for (let day = 1; day <= count; day++) {
       const iso = `${this.year()}-${String(this.month()).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      cells.push({ iso, day, open: open.has(iso), past: iso < today, today: iso === today });
+      cells.push({ iso, day, open: open.has(iso), past: !this.allowPast() && iso < today, today: iso === today });
     }
     return cells;
   });

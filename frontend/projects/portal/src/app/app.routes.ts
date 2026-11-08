@@ -27,6 +27,11 @@ export const routes: Routes = [
             loadComponent: () => import('./modules/appointments/my-appointments').then((m) => m.MyAppointmentsPage),
           },
           {
+            path: routePath(AppRoute.Agenda),
+            canActivate: [roleGuard(TenantRole.Secretary, TenantRole.TenantAdmin, TenantRole.Doctor)],
+            loadComponent: () => import('./modules/agenda/agenda').then((m) => m.AgendaPage),
+          },
+          {
             path: routePath(AppRoute.Historia),
             canActivate: [roleGuard(TenantRole.Patient, TenantRole.Doctor, TenantRole.Secretary, TenantRole.TenantAdmin)],
             loadComponent: () => import('./modules/clinical/clinical-history').then((m) => m.ClinicalHistoryPage),

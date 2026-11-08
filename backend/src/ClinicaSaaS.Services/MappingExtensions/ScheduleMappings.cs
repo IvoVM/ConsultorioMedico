@@ -51,7 +51,8 @@ public static class ScheduleMappings
             a.VisitReason,
             a.Insurer != null ? a.Insurer.Name : null,
             a.MemberNumber,
-            a.CoverageAccepted));
+            a.CoverageAccepted,
+            a.IsOverbook));
 
     public static IQueryable<WaitlistEntryDto> ToWaitlistDtos(this IQueryable<WaitlistEntry> query) =>
         query.Select(w => new WaitlistEntryDto(

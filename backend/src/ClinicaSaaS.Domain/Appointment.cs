@@ -16,6 +16,7 @@ public class Appointment
     public Guid? InsurerId { get; set; }
     public string? MemberNumber { get; set; }
     public bool? CoverageAccepted { get; set; }
+    public bool IsOverbook { get; set; }
 
 
     public virtual Client Client { get; set; } = null!;

@@ -41,6 +41,23 @@ public class SchedulingRulesTests
     }
 
     [Fact]
+    public void Turn_outside_the_agenda_is_an_overbook()
+    {
+        var agenda = new[]
+        {
+            new TimeRange(At(9, 0), At(10, 0)),
+            new TimeRange(At(10, 0), At(12, 0)),
+            new TimeRange(At(15, 0), At(17, 0)),
+        };
+
+        Assert.False(SchedulingRules.IsOverbook(agenda, new TimeRange(At(9, 45), At(10, 15))));
+        Assert.False(SchedulingRules.IsOverbook(agenda, new TimeRange(At(15, 0), At(17, 0))));
+        Assert.True(SchedulingRules.IsOverbook(agenda, new TimeRange(At(11, 45), At(12, 15))));
+        Assert.True(SchedulingRules.IsOverbook(agenda, new TimeRange(At(13, 0), At(13, 30))));
+        Assert.True(SchedulingRules.IsOverbook([], new TimeRange(At(9, 0), At(9, 30))));
+    }
+
+    [Fact]
     public void Generates_slots_and_skips_busy_ranges()
     {
         var busy = new TimeRange(At(9, 30), At(10, 0));

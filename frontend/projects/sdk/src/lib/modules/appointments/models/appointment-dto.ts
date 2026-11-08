@@ -18,4 +18,5 @@ export interface AppointmentDto {
   insurer?: string | null;
   memberNumber?: string | null;
   coverageAccepted?: boolean | null;
+  isOverbook?: boolean;
 }
