@@ -4,14 +4,13 @@ import { AppointmentDto, AppointmentStatus, AppointmentsService, BookingRequestD
 import { BoardColumn, MediaWatcherService, UiBadge, UiBoard, UiEmpty, UiIcon, UiSkeleton, UiStat, UiTable, UiTone, formatFecha, greeting, todayLabel } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { appointmentStatusLabels } from '../appointments/models/appointment-status-labels';
+import { appointmentStatusTones } from '../appointments/models/appointment-status-tones';
 import { AppRoute } from '../../app.routes.enum';
 
-const flow: { status: AppointmentStatus; tone: UiTone }[] = [
-  { status: AppointmentStatus.Booked, tone: UiTone.Muted },
-  { status: AppointmentStatus.CheckedIn, tone: UiTone.Warn },
-  { status: AppointmentStatus.InProgress, tone: UiTone.Sky },
-  { status: AppointmentStatus.Completed, tone: UiTone.Ok },
-];
+const flow = [AppointmentStatus.Booked, AppointmentStatus.CheckedIn, AppointmentStatus.InProgress, AppointmentStatus.Completed].map((status) => ({
+  status,
+  tone: appointmentStatusTones[status],
+}));
 
 @Component({
   imports: [RouterLink, UiBadge, UiBoard, UiEmpty, UiIcon, UiSkeleton, UiStat, UiTable],

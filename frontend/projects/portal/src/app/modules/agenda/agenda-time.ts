@@ -6,24 +6,7 @@ export const PX_PER_MINUTE = 1.7;
 export const DAY_START = 0;
 export const DAY_END = 24 * 60;
 
-export enum AgendaTone {
-  Booked = 'booked',
-  Moved = 'moved',
-  Waiting = 'waiting',
-  Consult = 'consult',
-  Done = 'done',
-  Missed = 'missed',
-}
-
-export const statusTone: Record<AppointmentStatus, AgendaTone> = {
-  [AppointmentStatus.Booked]: AgendaTone.Booked,
-  [AppointmentStatus.Rescheduled]: AgendaTone.Moved,
-  [AppointmentStatus.CheckedIn]: AgendaTone.Waiting,
-  [AppointmentStatus.InProgress]: AgendaTone.Consult,
-  [AppointmentStatus.Completed]: AgendaTone.Done,
-  [AppointmentStatus.NoShow]: AgendaTone.Missed,
-  [AppointmentStatus.Cancelled]: AgendaTone.Missed,
-};
+export { appointmentStatusTones as statusTone } from '../appointments/models/appointment-status-tones';
 
 export function movable(status: AppointmentStatus) {
   return status === AppointmentStatus.Booked || status === AppointmentStatus.Rescheduled || status === AppointmentStatus.CheckedIn;

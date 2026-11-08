@@ -335,12 +335,14 @@
   cursor: pointer;
 }
 
-.ag-card[data-tone='moved'] { --tone: var(--color-sky); --tint: #e8f0fd; --ink: #1d4fa6; }
-.ag-card[data-tone='waiting'] { --tone: #e08a1e; --tint: #fff2df; --ink: #8a4b06; }
-.ag-card[data-tone='consult'] { --tone: #7c5cd6; --tint: #efe9fc; --ink: #4b2fa0; }
-.ag-card[data-tone='done'] { --tone: #8aa79a; --tint: #eef3f0; --ink: #3f5a4e; }
-.ag-card[data-tone='missed'] { --tone: #b9b9b9; --tint: #f3f3f3; --ink: #6b6b6b; }
-.ag-card[data-tone='missed'] .ag-card-name { text-decoration: line-through; }
+/* Same tones as the patient flow board (UiTone). */
+:is(.ag-card, .ag-detail-head)[data-tone='muted'] { --tone: #8a9a93; --tint: #eef2f0; --ink: #3f4f49; }
+:is(.ag-card, .ag-detail-head)[data-tone='warn'] { --tone: #e08a1e; --tint: #fff2df; --ink: #8a4b06; }
+:is(.ag-card, .ag-detail-head)[data-tone='sky'] { --tone: var(--color-sky); --tint: #e8f0fd; --ink: #1d4fa6; }
+:is(.ag-card, .ag-detail-head)[data-tone='ok'] { --tone: var(--color-leaf); --tint: #e6f7ee; --ink: #0f5a3d; }
+:is(.ag-card, .ag-detail-head)[data-tone='bad'] { --tone: var(--color-pulse); --tint: var(--color-pulse-wash); --ink: var(--color-pulse-deep); }
+.ag-card[data-tone='bad'] { opacity: 0.75; }
+.ag-card[data-tone='bad'] .ag-card-name { text-decoration: line-through; }
 
 .ag-card.is-overbook {
   background:
@@ -617,13 +619,15 @@
   align-items: center;
   gap: 0.85rem;
   border-radius: 1rem;
-  background: var(--color-mist);
+  background: var(--tint, var(--color-mist));
+  box-shadow: inset 4px 0 0 var(--tone, transparent);
   padding: 0.85rem 1rem;
 }
 
 .ag-status {
   border-radius: 999px;
   background: white;
+  color: var(--ink, inherit);
   padding: 0.15rem 0.6rem;
   font-size: 0.75rem;
   font-weight: 700;
