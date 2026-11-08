@@ -32,6 +32,7 @@ import {
 } from './agenda-time';
 import { AgendaCreate } from './agenda-create';
 import { AgendaDetail } from './agenda-detail';
+import { AgendaRequest } from './agenda-request';
 
 enum DropKind {
   Move = 'move',
@@ -66,7 +67,7 @@ type Drop = {
 type Draft = { professional: AgendaProfessionalDto; start: number };
 
 @Component({
-  imports: [FormsModule, UiAvatar, UiButton, UiIcon, UiModal, UiMonth, UiSelect, AgendaCreate, AgendaDetail],
+  imports: [FormsModule, UiAvatar, UiButton, UiIcon, UiModal, UiMonth, UiSelect, AgendaCreate, AgendaDetail, AgendaRequest],
   templateUrl: './agenda.html',
 })
 export class AgendaPage {
@@ -101,6 +102,7 @@ export class AgendaPage {
   readonly bounce = signal('');
   readonly draft = signal<Draft | null>(null);
   readonly open = signal<AppointmentDto | null>(null);
+  readonly openRequest = signal<BookingRequestDto | null>(null);
 
   readonly title = computed(() => dayTitle(this.day()));
   readonly dayTitle = dayTitle;
@@ -256,13 +258,12 @@ export class AgendaPage {
   startRequest(event: PointerEvent, request: BookingRequestDto) {
     if (event.button !== 0 || !this.canEdit()) return;
     event.preventDefault();
-    const first = this.professionals()[0];
-    if (!first) return;
-    const type = first.types.find((item) => item.name === request.appointmentType);
+    const first = this.professionals().find((item) => item.specialty === request.specialty);
+    const type = first?.types.find((item) => item.name === request.appointmentType);
     this.drag.set({
       kind: DropKind.Request,
       request,
-      professionalId: first.id,
+      professionalId: first?.id ?? '',
       start: this.range().start,
       duration: type?.durationMinutes ?? 30,
       anchor: this.range().start,
@@ -333,6 +334,10 @@ export class AgendaPage {
     const drag = this.drag();
     if (!drag) return;
     this.drag.set(null);
+    if (!drag.moved && drag.kind === DropKind.Request && drag.request) {
+      this.openRequest.set(drag.request);
+      return;
+    }
     const professional = this.professionals().find((item) => item.id === drag.professionalId);
     if (!professional) return;
     if (!drag.moved) {
@@ -401,6 +406,7 @@ export class AgendaPage {
 
   async afterChange() {
     this.open.set(null);
+    this.openRequest.set(null);
     this.draft.set(null);
     await this.load();
   }

@@ -493,7 +493,7 @@
   font-weight: 700;
 }
 
-.ag-side-title span {
+.ag-side-title .ag-side-count {
   margin-left: auto;
   border-radius: 999px;
   background: var(--color-ochre-wash);
@@ -536,6 +536,11 @@
 .ag-request:hover {
   transform: translateX(-2px);
   box-shadow: inset 0 0 0 1.5px #e08a1e, 0 8px 18px -12px rgb(14 42 34 / 0.5);
+}
+
+.ag-request:focus-visible {
+  outline: 2px solid var(--color-clinic);
+  outline-offset: 2px;
 }
 
 .ag-request.is-hidden {

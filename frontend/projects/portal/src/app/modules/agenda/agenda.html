@@ -159,11 +159,16 @@
 
     @if (canEdit() && requests().length) {
       <aside class="ag-side">
-        <p class="ag-side-title"><ui-icon name="inbox" [size]="18" />Solicitudes <span>{{ requests().length }}</span></p>
-        <p class="ag-side-hint">Arrastrá una a la grilla para darle el turno en ese horario.</p>
+        <p class="ag-side-title"><ui-icon name="inbox" [size]="18" />Solicitudes <span class="ag-side-count">{{ requests().length }}</span></p>
+        <p class="ag-side-hint">Tocá una para aprobarla, reprogramarla o rechazarla, o arrastrala a la grilla para darle el turno en ese horario.</p>
         <div class="ag-side-list">
           @for (request of requests(); track request.id; let index = $index) {
-            <div class="ag-request" [style.--i]="index" [class.is-hidden]="drop()?.request?.id === request.id" (pointerdown)="startRequest($event, request)">
+            <div class="ag-request" [style.--i]="index" [class.is-hidden]="drop()?.request?.id === request.id" role="button"
+              tabindex="0"
+              [attr.aria-label]="'Solicitud de ' + request.name"
+              (pointerdown)="startRequest($event, request)"
+              (keydown.enter)="openRequest.set(request)"
+              (keydown.space)="$event.preventDefault(); openRequest.set(request)">
               <ui-icon name="drag_indicator" [size]="18" class="ag-grip" />
               <div class="min-w-0">
                 <p class="truncate text-sm font-semibold">{{ request.name }}</p>
@@ -226,6 +231,10 @@
 
 @if (open(); as appointment) {
   <agenda-detail [appointment]="appointment" [professionals]="allProfessionals()" [canEdit]="canEdit()" (changed)="afterChange()" (closed)="open.set(null)" />
+}
+
+@if (openRequest(); as request) {
+  <agenda-request [request]="request" (changed)="afterChange()" (closed)="openRequest.set(null)" />
 }
 
 @if (draft(); as creating) {

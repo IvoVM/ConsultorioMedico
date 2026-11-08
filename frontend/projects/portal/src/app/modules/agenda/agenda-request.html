@@ -1,0 +1,56 @@
+@let item = request();
+@if (mode() === modes.Move && source) {
+  <ui-reschedule [title]="'Reprogramar a ' + item.name" [detail]="item.professional + ' · ' + item.appointmentType" [source]="source" (closed)="back()" />
+} @else {
+  <ui-modal [open]="true" [title]="mode() === modes.Deny ? 'Motivo de la denegación' : 'Solicitud de turno'" (closed)="closed.emit()">
+    @if (mode() === modes.Deny) {
+      <form id="agenda-deny-form" class="flex flex-col gap-4" (ngSubmit)="deny()">
+        <p class="text-sm text-ink/75">{{ item.name }} va a ver este texto y puede pedir otro turno.</p>
+        <ui-field label="Motivo">
+          <textarea name="reason" rows="4" [(ngModel)]="reason" required maxlength="400"></textarea>
+        </ui-field>
+      </form>
+    } @else {
+      <div class="ag-detail">
+        <div class="ag-detail-head" data-tone="warn">
+          <div class="min-w-0 flex-1">
+            <p class="truncate text-lg font-bold tracking-tight">{{ item.name }}</p>
+            <p class="text-sm text-ink/60">Pidió {{ when(item.start) }}</p>
+          </div>
+          <span class="ag-status">{{ expired() ? overdue() : statusText() }}</span>
+        </div>
+        <dl class="ag-facts">
+          <div><dt>Especialidad</dt><dd>{{ item.specialty }}</dd></div>
+          <div><dt>Profesional</dt><dd>{{ item.professional }}</dd></div>
+          <div><dt>Prestación</dt><dd>{{ item.appointmentType }}</dd></div>
+          <div>
+            <dt>Cobertura</dt>
+            <dd>{{ item.insurer || 'Particular' }}@if (item.memberNumber) { · afiliado {{ item.memberNumber }} }</dd>
+          </div>
+          <div><dt>Documento</dt><dd>{{ item.documentNumber }}</dd></div>
+          <div><dt>Teléfono</dt><dd>{{ item.phone }}</dd></div>
+          @if (item.previousStart) {
+            <div class="sm:col-span-2"><dt>Horario anterior</dt><dd>{{ when(item.previousStart) }}</dd></div>
+          }
+        </dl>
+        @if (expired()) {
+          <p class="text-sm text-ink/60">Es de un día que ya pasó: no se puede aprobar, reprogramala o denegala.</p>
+        } @else {
+          <p class="text-sm text-ink/60">También podés arrastrarla a la grilla para darle el turno en otro horario.</p>
+        }
+      </div>
+    }
+    <div uiModalFooter class="flex flex-wrap gap-2">
+      @if (mode() === modes.Deny) {
+        <ui-button type="submit" form="agenda-deny-form" variant="error" [loading]="saving()">Denegar solicitud</ui-button>
+        <ui-button variant="outlined" [disabled]="saving()" (click)="back()">Volver</ui-button>
+      } @else {
+        @if (!expired()) {
+          <ui-button [loading]="saving()" (click)="approve()">Aprobar</ui-button>
+        }
+        <ui-button [variant]="expired() ? 'primary' : 'secondary'" [disabled]="saving()" (click)="startMove()">Reprogramar</ui-button>
+        <ui-button variant="error" [disabled]="saving()" (click)="startDeny()">Rechazar</ui-button>
+      }
+    </div>
+  </ui-modal>
+}
