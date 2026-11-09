@@ -116,7 +116,7 @@
                 <button
                   type="button"
                   class="ag-card"
-                  [attr.data-tone]="tones[card.appointment.status]"
+                  [attr.data-tone]="tones[shown(card.appointment)]"
                   [class.is-overbook]="card.appointment.isOverbook"
                   [class.is-hidden]="hidden(card.appointment)"
                   [class.is-bounce]="bounce() === card.appointment.id"
@@ -125,7 +125,7 @@
                   [style.top.px]="card.top"
                   [style.height.px]="card.height"
                   [style.--i]="index"
-                  [attr.aria-label]="card.appointment.patient + ', ' + clock(card.from) + ', ' + labels[card.appointment.status]"
+                  [attr.aria-label]="card.appointment.patient + ', ' + clock(card.from) + ', ' + labels[shown(card.appointment)]"
                   (pointerdown)="startCard($event, card.appointment)"
                   (keydown.enter)="open.set(card.appointment)"
                 >

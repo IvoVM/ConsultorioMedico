@@ -12,6 +12,12 @@ export function movable(status: AppointmentStatus) {
   return status === AppointmentStatus.Booked || status === AppointmentStatus.Rescheduled || status === AppointmentStatus.CheckedIn;
 }
 
+// A booking whose time ended without the patient being admitted reads as absent on the agenda.
+export function shownStatus(appointment: AppointmentDto) {
+  const waiting = appointment.status === AppointmentStatus.Booked || appointment.status === AppointmentStatus.Rescheduled;
+  return waiting && new Date(appointment.end).getTime() <= Date.now() ? AppointmentStatus.NoShow : appointment.status;
+}
+
 export function minutesOf(iso: string) {
   const date = new Date(iso);
   return date.getHours() * 60 + date.getMinutes();

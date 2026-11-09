@@ -27,6 +27,7 @@ import {
   minutesOf,
   movable,
   shiftDay,
+  shownStatus,
   spans,
   statusTone,
 } from './agenda-time';
@@ -79,6 +80,7 @@ export class AgendaPage {
   readonly kinds = DropKind;
   readonly labels = appointmentStatusLabels;
   readonly tones = statusTone;
+  readonly shown = shownStatus;
   // One entry per color, naming every status that shares it (e.g. "Ausente / Cancelado").
   readonly legend = (Object.keys(statusTone) as AppointmentStatus[]).reduce<{ tone: string; label: string }[]>((items, status) => {
     const same = items.find((item) => item.tone === statusTone[status]);
