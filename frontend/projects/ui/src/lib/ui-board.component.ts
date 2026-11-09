@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { UiAvatar } from './ui-avatar.component';
 import { UiIcon } from './ui-icon.component';
@@ -37,4 +37,7 @@ export type BoardColumn = {
 export class UiBoard {
   readonly columns = input<BoardColumn[]>([]);
   readonly limit = input(6);
+  // When set, each card without a link acts as a button and reports its id.
+  readonly selectable = input(false);
+  readonly pick = output<string>();
 }

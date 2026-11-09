@@ -1,8 +1,8 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { AppointmentDto, AppointmentStatus, AppointmentsService, BookingRequestDto, TenantRole, clinicaSession, errorMessage } from 'sdk';
-import { BoardColumn, MediaWatcherService, UiBadge, UiBoard, UiEmpty, UiIcon, UiSkeleton, UiStat, UiTable, UiTone, formatFecha, greeting, todayLabel } from 'ui';
-import { firstValueFrom } from 'rxjs';
+import { BoardColumn, MediaWatcherService, ToastService, UiBadge, UiBoard, UiButton, UiEmpty, UiIcon, UiModal, UiSkeleton, UiStat, UiTable, UiTone, formatFecha, greeting, todayLabel } from 'ui';
+import { Observable, firstValueFrom } from 'rxjs';
 import { appointmentStatusLabels } from '../appointments/models/appointment-status-labels';
 import { appointmentStatusTones } from '../appointments/models/appointment-status-tones';
 import { AppRoute } from '../../app.routes.enum';
@@ -13,13 +13,14 @@ const flow = [AppointmentStatus.Booked, AppointmentStatus.CheckedIn, Appointment
 }));
 
 @Component({
-  imports: [RouterLink, UiBadge, UiBoard, UiEmpty, UiIcon, UiSkeleton, UiStat, UiTable],
+  imports: [RouterLink, UiBadge, UiBoard, UiButton, UiEmpty, UiIcon, UiModal, UiSkeleton, UiStat, UiTable],
   templateUrl: './dashboard.html',
 })
 export class DashboardPage {
   private readonly appointmentsApi = inject(AppointmentsService);
   private readonly media = inject(MediaWatcherService);
   private readonly router = inject(Router);
+  private readonly toasts = inject(ToastService);
   readonly session = clinicaSession;
   readonly roles = TenantRole;
   readonly status = AppointmentStatus;
@@ -32,6 +33,15 @@ export class DashboardPage {
   readonly tone = UiTone;
   readonly dayLabel = todayLabel();
   readonly hello = greeting(this.session.name());
+  readonly desk = computed(() => this.session.role() === TenantRole.Secretary || this.session.role() === TenantRole.TenantAdmin);
+  readonly picked = signal<AppointmentDto | null>(null);
+  readonly confirmingCancel = signal(false);
+  readonly saving = signal(false);
+  readonly actionError = signal('');
+  readonly canChange = computed(() => {
+    const status = this.picked()?.status;
+    return status === AppointmentStatus.Booked || status === AppointmentStatus.Rescheduled;
+  });
 
   readonly count = (status: AppointmentStatus) => this.appointments().filter((item) => item.status === status).length;
   readonly missed = computed(() => this.count(AppointmentStatus.NoShow) + this.count(AppointmentStatus.Cancelled));
@@ -67,6 +77,29 @@ export class DashboardPage {
     void this.router.navigate([AppRoute.Historia], { queryParams: { paciente: patientId } });
   }
 
+  pick(id: string) {
+    this.picked.set(this.appointments().find((item) => item.id === id) ?? null);
+    this.confirmingCancel.set(false);
+    this.actionError.set('');
+  }
+
+  closePick() {
+    if (this.saving()) return;
+    this.picked.set(null);
+  }
+
+  checkIn() {
+    const item = this.picked();
+    if (!item) return;
+    void this.change(this.appointmentsApi.checkInAppointment(item.id), 'En sala de espera', `${item.patient} está en sala de espera.`);
+  }
+
+  cancel() {
+    const item = this.picked();
+    if (!item) return;
+    void this.change(this.appointmentsApi.cancelAppointment(item.id), 'Turno cancelado', `El horario de las ${this.timeLabel(item.start)} quedó libre.`);
+  }
+
   timeLabel(start: string) {
     return start.slice(11, 16);
   }
@@ -80,6 +113,21 @@ export class DashboardPage {
     const month = String(now.getMonth() + 1).padStart(2, '0');
     const day = String(now.getDate()).padStart(2, '0');
     return `${now.getFullYear()}-${month}-${day}`;
+  }
+
+  private async change(request: Observable<AppointmentDto>, title: string, message: string) {
+    this.saving.set(true);
+    this.actionError.set('');
+    try {
+      const updated = await firstValueFrom(request);
+      this.appointments.update((list) => list.map((item) => (item.id === updated.id ? updated : item)));
+      this.toasts.success(title, message);
+      this.picked.set(null);
+    } catch (error) {
+      this.actionError.set(errorMessage(error));
+    } finally {
+      this.saving.set(false);
+    }
   }
 
   private async load() {

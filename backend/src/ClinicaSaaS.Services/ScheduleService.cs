@@ -317,7 +317,7 @@ public partial class ScheduleService(
                 a.AppointmentType.Name.ToLower().Contains(term) ||
                 a.Location.Name.ToLower().Contains(term) ||
                 (a.Status == AppointmentStatus.Booked ? "reservado"
-                    : a.Status == AppointmentStatus.CheckedIn ? "admitido"
+                    : a.Status == AppointmentStatus.CheckedIn ? "en sala de espera"
                     : a.Status == AppointmentStatus.InProgress ? "en atención"
                     : a.Status == AppointmentStatus.Completed ? "atendido"
                     : a.Status == AppointmentStatus.Cancelled ? "cancelado"
@@ -400,7 +400,7 @@ public partial class ScheduleService(
     {
         var appointment = await appointments.GetAsync(id, ct) ?? throw new NotFoundException("Turno no encontrado.");
         if (appointment.Status is not (AppointmentStatus.Booked or AppointmentStatus.Rescheduled))
-            throw new BusinessRuleException("Solo se puede admitir un turno reservado.");
+            throw new BusinessRuleException("Solo se puede pasar a sala de espera un turno reservado.");
         appointment.Status = AppointmentStatus.CheckedIn;
         await appointments.SaveAsync(ct);
         await audit.RecordAsync(currentUser.Id, "admision", "Turno", appointment.Id.ToString(), null, ct);

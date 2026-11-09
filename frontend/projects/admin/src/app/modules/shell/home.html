@@ -20,7 +20,7 @@
 
 <div class="stat-grid stagger">
   <ui-stat label="Turnos de hoy" icon="calendar_today" [value]="loading() ? '–' : appointments().length" [note]="loading() ? '' : count(status.Completed) + ' atendidos'" [tone]="tone.Ok" />
-  <ui-stat label="En sala de espera" icon="chair" [value]="loading() ? '–' : count(status.CheckedIn)" [note]="loading() ? '' : 'admitidos'" [tone]="tone.Warn" />
+  <ui-stat label="En sala de espera" icon="chair" [value]="loading() ? '–' : count(status.CheckedIn)" [note]="loading() ? '' : 'pacientes'" [tone]="tone.Warn" />
   <ui-stat label="En consulta" icon="stethoscope" [value]="loading() ? '–' : count(status.InProgress)" [note]="loading() ? '' : 'ahora mismo'" />
   <ui-stat label="Ausentes y cancelados" icon="event_busy" [value]="loading() ? '–' : missed()" [note]="loading() ? '' : (missed() ? 'para revisar' : 'ninguno')" [tone]="missed() ? tone.Bad : tone.Ok" />
 </div>

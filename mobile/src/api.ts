@@ -332,7 +332,7 @@ export const api = {
 
 export const statusLabel: Record<string, string> = {
   Booked: 'Reservado',
-  CheckedIn: 'Admitido',
+  CheckedIn: 'En sala de espera',
   InProgress: 'En atención',
   Completed: 'Atendido',
   Cancelled: 'Cancelado',

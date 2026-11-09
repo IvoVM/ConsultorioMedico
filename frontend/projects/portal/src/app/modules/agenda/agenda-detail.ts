@@ -192,12 +192,12 @@ export class AgendaDetail {
 
   checkIn() {
     this.ask({
-      title: 'Admitir paciente',
+      title: 'Pasar a sala de espera',
       message: `${this.appointment().patient} queda en sala de espera.`,
       back: DetailMode.Info,
       run: async () => {
         await this.call(this.appointmentsApi.checkInAppointment(this.appointment().id));
-        this.toasts.success('Paciente admitido', `${this.appointment().patient} está en sala de espera.`);
+        this.toasts.success('En sala de espera', `${this.appointment().patient} está en sala de espera.`);
       },
     });
   }
