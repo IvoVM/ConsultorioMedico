@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, OnDestroy, booleanAttribute, effect, inject, input, output, signal } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, HostListener, OnDestroy, booleanAttribute, effect, inject, input, output, signal } from '@angular/core';
 import { UiIcon } from './ui-icon.component';
 
 @Component({
@@ -33,6 +33,16 @@ export class UiModal implements AfterViewInit, OnDestroy {
   ngOnDestroy() {
     this.observer?.disconnect();
     this.host.nativeElement.remove();
+  }
+
+  // Escape closes only the modal on top; a select or other control that handled the key first wins.
+  @HostListener('document:keydown.escape', ['$event'])
+  onEscape(event: Event) {
+    if (!this.open() || event.defaultPrevented) return;
+    const dialogs = document.querySelectorAll('ui-modal .modal-dialog');
+    if (dialogs[dialogs.length - 1] !== this.host.nativeElement.querySelector('.modal-dialog')) return;
+    event.preventDefault();
+    this.closed.emit();
   }
 
   onScroll(event: Event) {

@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostListener, computed, forwardRef, inject, input, signal, viewChild } from '@angular/core';
+import { Component, ElementRef, HostListener, OnDestroy, computed, forwardRef, inject, input, signal, viewChild } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { UiIcon } from './ui-icon.component';
 
@@ -14,7 +14,7 @@ export interface SelectOption {
   styleUrl: './ui-select.component.css',
   providers: [{ provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => UiSelect), multi: true }],
 })
-export class UiSelect implements ControlValueAccessor {
+export class UiSelect implements ControlValueAccessor, OnDestroy {
   private readonly host = inject(ElementRef<HTMLElement>);
 
   private readonly list = viewChild<ElementRef<HTMLUListElement>>('list');
@@ -34,6 +34,9 @@ export class UiSelect implements ControlValueAccessor {
   readonly label = computed(() => this.options().find((option) => option.value === this.current())?.label ?? '');
   readonly empty = computed(() => !this.label());
   readonly up = signal(false);
+  // The menu lives in the browser's top layer, so a modal's scroll area or overflow cannot clip it.
+  readonly place = signal<{ top: number | null; bottom: number | null; left: number; width: number; maxHeight: number }>({ top: 0, bottom: null, left: 0, width: 0, maxHeight: 256 });
+  private readonly follow = () => this.position();
 
   writeValue(value: string | null) {
     this.current.set(value ?? '');
@@ -97,6 +100,7 @@ export class UiSelect implements ControlValueAccessor {
       if (option) this.choose(option);
     } else if (event.key === 'Escape') {
       event.preventDefault();
+      event.stopPropagation();
       this.close(true);
     } else if (event.key.length === 1 && event.key !== ' ') {
       this.typeAhead(event.key);
@@ -121,17 +125,44 @@ export class UiSelect implements ControlValueAccessor {
     if (this.disabled()) return;
     const selected = this.options().findIndex((option) => option.value === this.current());
     this.active.set(selected >= 0 ? selected : 0);
-    const trigger = this.trigger()?.nativeElement;
-    if (trigger) {
-      const rect = trigger.getBoundingClientRect();
-      const below = window.innerHeight - rect.bottom;
-      this.up.set(below < 160 && rect.top > below + 80);
-    }
+    this.position();
     this.open.set(true);
+    window.addEventListener('scroll', this.follow, true);
+    window.addEventListener('resize', this.follow);
     queueMicrotask(() => {
-      this.list()?.nativeElement.focus();
+      const list = this.list()?.nativeElement;
+      if (list && 'showPopover' in list && !list.matches(':popover-open')) list.showPopover();
+      list?.focus();
       this.revealActive();
     });
+  }
+
+  ngOnDestroy() {
+    this.stopFollowing();
+  }
+
+  private position() {
+    const trigger = this.trigger()?.nativeElement;
+    if (!trigger) return;
+    const rect = trigger.getBoundingClientRect();
+    const gap = 4;
+    const margin = 8;
+    const below = window.innerHeight - rect.bottom - gap - margin;
+    const above = rect.top - gap - margin;
+    const up = below < 160 && above > below;
+    this.up.set(up);
+    this.place.set({
+      top: up ? null : rect.bottom + gap,
+      bottom: up ? window.innerHeight - rect.top + gap : null,
+      left: rect.left,
+      width: rect.width,
+      maxHeight: Math.max(120, Math.min(256, up ? above : below)),
+    });
+  }
+
+  private stopFollowing() {
+    window.removeEventListener('scroll', this.follow, true);
+    window.removeEventListener('resize', this.follow);
   }
 
   private revealActive() {
@@ -145,6 +176,7 @@ export class UiSelect implements ControlValueAccessor {
   }
 
   private close(focusTrigger = false) {
+    this.stopFollowing();
     this.open.set(false);
     this.onTouched();
     if (focusTrigger) queueMicrotask(() => this.trigger()?.nativeElement.focus());

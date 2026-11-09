@@ -19,7 +19,13 @@
     <ul
       #list
       class="menu"
+      popover="manual"
       role="listbox"
+      [style.top.px]="place().top"
+      [style.bottom.px]="place().bottom"
+      [style.left.px]="place().left"
+      [style.width.px]="place().width"
+      [style.max-height.px]="place().maxHeight"
       tabindex="-1"
       [id]="listId"
       [class.is-up]="up()"
