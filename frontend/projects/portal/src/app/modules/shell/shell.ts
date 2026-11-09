@@ -49,6 +49,7 @@ export class ShellPage {
         children: [
           { label: 'Dar un turno', path: AppRoute.DarTurno, icon: 'add_circle' },
           { label: 'Solicitudes', path: AppRoute.Solicitudes, icon: 'pending_actions' },
+          { label: 'Historial', path: AppRoute.HistorialTurnos, icon: 'history' },
         ],
       });
     } else if (this.session.token()) {

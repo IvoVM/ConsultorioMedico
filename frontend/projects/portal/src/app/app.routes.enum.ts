@@ -14,6 +14,7 @@ export enum AppRoute {
   ReservarPaciente = '/reservar/paciente',
   DarTurno = '/dar-turno',
   Solicitudes = '/solicitudes',
+  HistorialTurnos = '/historial-turnos',
   Secretaria = '/secretaria',
   Medico = '/medico',
   Agenda = '/agenda',

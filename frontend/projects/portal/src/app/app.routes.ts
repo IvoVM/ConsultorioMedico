@@ -57,6 +57,11 @@ export const routes: Routes = [
             loadComponent: () => import('./modules/appointments/desk-requests').then((m) => m.DeskRequestsPage),
           },
           {
+            path: routePath(AppRoute.HistorialTurnos),
+            canActivate: [roleGuard(TenantRole.Secretary, TenantRole.TenantAdmin)],
+            loadComponent: () => import('./modules/appointments/appointment-history').then((m) => m.AppointmentHistoryPage),
+          },
+          {
             path: routePath(AppRoute.ReservarPaciente),
             canActivate: [roleGuard(TenantRole.Secretary, TenantRole.TenantAdmin)],
             loadComponent: () => import('./modules/appointments/request-appointment').then((m) => m.RequestAppointmentPage),
