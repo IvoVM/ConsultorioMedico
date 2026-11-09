@@ -4,12 +4,14 @@
     <h2>{{ hello }}</h2>
   </div>
   <nav class="flex flex-wrap gap-2" aria-label="Accesos rápidos">
-    <a routerLink="/historias" class="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold shadow-[var(--shadow-card)] transition hover:-translate-y-0.5 hover:bg-clinic-wash">
-      <ui-icon name="clinical_notes" [size]="18" />Historias
-    </a>
-    <a routerLink="/agendas" class="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold shadow-[var(--shadow-card)] transition hover:-translate-y-0.5 hover:bg-clinic-wash">
-      <ui-icon name="event_note" [size]="18" />Agendas
-    </a>
+    @if (isAdmin) {
+      <a routerLink="/historias" class="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold shadow-[var(--shadow-card)] transition hover:-translate-y-0.5 hover:bg-clinic-wash">
+        <ui-icon name="clinical_notes" [size]="18" />Historias
+      </a>
+      <a routerLink="/agendas" class="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold shadow-[var(--shadow-card)] transition hover:-translate-y-0.5 hover:bg-clinic-wash">
+        <ui-icon name="event_note" [size]="18" />Agendas
+      </a>
+    }
     <a routerLink="/turnos/solicitudes" class="action-link"><ui-icon name="pending_actions" [size]="18" />Solicitudes</a>
   </nav>
 </header>
@@ -57,8 +59,8 @@
                 {{ appointment.professional }}
                 <span class="mt-0.5 block text-xs text-ink/55">{{ appointment.insurer ? appointment.insurer + (appointment.memberNumber ? ' · afiliado ' + appointment.memberNumber : '') : 'Particular' }}</span>
               </td>
-              <td data-name="Estado"><ui-badge [tone]="appointment.status === status.Cancelled || appointment.status === status.NoShow ? 'warn' : appointment.status === status.Completed ? 'ok' : 'muted'">{{ statusLabels[appointment.status] }}</ui-badge></td>
-              <td class="whitespace-nowrap"><a class="text-link" [routerLink]="['/pacientes', appointment.patientId]">Ficha</a></td>
+              <td data-name="Estado"><ui-badge [tone]="statusTone(appointment.status)">{{ statusLabels[appointment.status] }}</ui-badge></td>
+              <td class="whitespace-nowrap">@if (isAdmin) { <a class="text-link" [routerLink]="['/pacientes', appointment.patientId]">Ficha</a> }</td>
             </tr>
           }
         </tbody>

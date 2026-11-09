@@ -52,7 +52,22 @@ public static class ScheduleMappings
             a.Insurer != null ? a.Insurer.Name : null,
             a.MemberNumber,
             a.CoverageAccepted,
-            a.IsOverbook));
+            a.IsOverbook,
+            a.AppointmentType.Specialty != null ? a.AppointmentType.Specialty.Name : null,
+            a.CreatedAt,
+            a.CreatedByUser != null ? (a.CreatedByUser.FirstName + " " + a.CreatedByUser.LastName).Trim() : null,
+            a.UpdatedAt,
+            a.UpdatedByUser != null ? (a.UpdatedByUser.FirstName + " " + a.UpdatedByUser.LastName).Trim() : null));
+
+    public static IQueryable<AppointmentChangeDto> ToAppointmentChangeDtos(this IQueryable<AppointmentChange> query) =>
+        query.Select(c => new AppointmentChangeDto(
+            c.Id,
+            c.Status,
+            c.Start,
+            c.End,
+            (c.Professional.FirstName + " " + c.Professional.LastName).Trim(),
+            c.CreatedAt,
+            c.CreatedByUser != null ? (c.CreatedByUser.FirstName + " " + c.CreatedByUser.LastName).Trim() : null));
 
     public static IQueryable<WaitlistEntryDto> ToWaitlistDtos(this IQueryable<WaitlistEntry> query) =>
         query.Select(w => new WaitlistEntryDto(

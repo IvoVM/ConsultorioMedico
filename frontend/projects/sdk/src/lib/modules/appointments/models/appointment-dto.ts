@@ -19,4 +19,9 @@ export interface AppointmentDto {
   memberNumber?: string | null;
   coverageAccepted?: boolean | null;
   isOverbook?: boolean;
+  specialty?: string | null;
+  createdAt?: string | null;
+  createdBy?: string | null;
+  updatedAt?: string | null;
+  updatedBy?: string | null;
 }

@@ -269,6 +269,8 @@ public class AppointmentStore(TenantDbContext db) : IAppointmentStore
 {
     public IQueryable<Appointment> Appointments => db.Appointments.AsNoTracking();
 
+    public IQueryable<AppointmentChange> Changes => db.AppointmentChanges.AsNoTracking();
+
     public Task<Appointment?> GetAsync(Guid id, CancellationToken ct) => db.Appointments.FirstOrDefaultAsync(a => a.Id == id, ct);
 
     public async Task<Appointment> BookAsync(Appointment appointment, CancellationToken ct)

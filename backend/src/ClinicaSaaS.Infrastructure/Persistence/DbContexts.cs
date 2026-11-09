@@ -21,6 +21,7 @@ public class TenantDbContext(DbContextOptions<TenantDbContext> options)
     public DbSet<Client> Clients => Set<Client>();
     public DbSet<MedicalRecord> MedicalRecords => Set<MedicalRecord>();
     public DbSet<Appointment> Appointments => Set<Appointment>();
+    public DbSet<AppointmentChange> AppointmentChanges => Set<AppointmentChange>();
     public DbSet<BookingRequest> BookingRequests => Set<BookingRequest>();
     public DbSet<WaitlistEntry> WaitlistEntries => Set<WaitlistEntry>();
     public DbSet<Diagnosis> Diagnoses => Set<Diagnosis>();
@@ -127,8 +128,17 @@ public class TenantDbContext(DbContextOptions<TenantDbContext> options)
             e.HasIndex(r => r.ClientId).IsUnique();
             e.HasOne(r => r.Client).WithOne(c => c.Record).HasForeignKey<MedicalRecord>(r => r.ClientId).OnDelete(DeleteBehavior.Cascade);
         });
+        builder.Entity<AppointmentChange>(e =>
+        {
+            Audited(e);
+            e.Property(c => c.Status).HasConversion<string>().HasMaxLength(20);
+            e.HasIndex(c => c.AppointmentId);
+            e.HasOne(c => c.Appointment).WithMany(a => a.Changes).HasForeignKey(c => c.AppointmentId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(c => c.Professional).WithMany().HasForeignKey(c => c.ProfessionalId).OnDelete(DeleteBehavior.Restrict);
+        });
         builder.Entity<Appointment>(e =>
         {
+            Audited(e);
             e.Property(a => a.Status).HasConversion<string>().HasMaxLength(20);
             e.Property(a => a.VisitReason).HasMaxLength(500);
             e.Property(a => a.MemberNumber).HasMaxLength(40);
@@ -238,6 +248,12 @@ public class TenantDbContext(DbContextOptions<TenantDbContext> options)
             e.HasIndex(s => s.UserId);
             e.HasOne(s => s.User).WithMany(u => u.RefreshSessions).HasForeignKey(s => s.UserId).OnDelete(DeleteBehavior.Cascade);
         });
+    }
+
+    private static void Audited<T>(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<T> e) where T : Auditable
+    {
+        e.HasOne(x => x.CreatedByUser).WithMany().HasForeignKey(x => x.CreatedBy).OnDelete(DeleteBehavior.SetNull);
+        e.HasOne(x => x.UpdatedByUser).WithMany().HasForeignKey(x => x.UpdatedBy).OnDelete(DeleteBehavior.SetNull);
     }
 }
 

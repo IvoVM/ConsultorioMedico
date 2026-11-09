@@ -1,22 +1,56 @@
 <header class="mb-6">
   <h2 class="font-serif text-2xl tracking-tight">Historial de turnos</h2>
   <p class="mt-2 max-w-prose text-sm leading-relaxed text-ink/70">
-    Cada fila es un turno del consultorio, del más reciente al más antiguo. El estado dice si está reservado, reprogramado, admitido, atendido, cancelado o ausente.
+    Cada fila es un turno del consultorio, del más reciente al más antiguo. Filtrá por especialidad, profesional, paciente o estado, y abrí el detalle para ver quién lo reservó, canceló o marcó ausente, y cuándo.
   </p>
 </header>
 
 @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
 
-<div class="mb-6">
-  <ui-field class="sm:w-80" label="Buscar">
-    <input type="search" name="query" [ngModel]="query()" (ngModelChange)="onSearch($event)" placeholder="Paciente, profesional o estado" />
+<div class="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+  <ui-field label="Especialidad">
+    <ui-select [ngModel]="specialtyId()" (ngModelChange)="setSpecialty($event)" [ngModelOptions]="{ standalone: true }" [options]="specialtyOptions()" placeholder="Todas" />
   </ui-field>
+  <ui-field label="Profesional">
+    <ui-select [ngModel]="professionalId()" (ngModelChange)="setProfessional($event)" [ngModelOptions]="{ standalone: true }" [options]="professionalOptions()" placeholder="Todos" />
+  </ui-field>
+  <ui-field label="Paciente">
+    <input
+      type="search"
+      name="patient"
+      list="history-patients"
+      autocomplete="off"
+      [ngModel]="patientText()"
+      (ngModelChange)="onPatient($event)"
+      placeholder="Nombre o documento"
+    />
+    <datalist id="history-patients">
+      @for (item of patientMatches(); track item.patientId) {
+        <option [value]="patientLabel(item)"></option>
+      }
+    </datalist>
+  </ui-field>
+  <ui-field label="Estado">
+    <ui-select [ngModel]="statusFilter()" (ngModelChange)="setStatus($event)" [ngModelOptions]="{ standalone: true }" [options]="statusOptions" placeholder="Todos" />
+  </ui-field>
+  <ui-field label="Buscar">
+    <input type="search" name="query" [ngModel]="query()" (ngModelChange)="onSearch($event)" placeholder="Prestación, sede o texto libre" />
+  </ui-field>
+  <div class="flex items-end gap-4 pb-2">
+    <label class="flex items-center gap-2 text-sm">
+      <input type="checkbox" [checked]="past()" (change)="setPast($any($event.target).checked)" />
+      Solo turnos pasados
+    </label>
+    @if (filtered()) {
+      <ui-button variant="ghost" (click)="clearFilters()">Limpiar filtros</ui-button>
+    }
+  </div>
 </div>
 
 @if (loading()) {
   <ui-skeleton label="Cargando turnos" />
 } @else if (!total()) {
-  <ui-empty [message]="query() ? 'Ningún turno coincide con esa búsqueda.' : 'Todavía no hay turnos.'" />
+  <ui-empty [message]="filtered() ? 'Ningún turno coincide con esos filtros.' : past() ? 'Todavía no hay turnos pasados.' : 'Todavía no hay turnos.'" />
 } @else {
   <ui-table>
 <table class="cards">
@@ -36,11 +70,19 @@
           <td data-name="Paciente" class="font-serif text-lg leading-tight">{{ item.patient }}</td>
           <td data-name="Profesional">
             {{ item.professional }}
-            <span class="mt-1 block text-sm text-ink/70">{{ item.appointmentType }} · {{ item.location }}</span>
+            <span class="mt-1 block text-sm text-ink/70">{{ item.specialty ? item.specialty + ' · ' : '' }}{{ item.appointmentType }} · {{ item.location }}</span>
           </td>
-          <td data-name="Estado"><ui-badge [tone]="item.status === status.Cancelled || item.status === status.NoShow ? 'warn' : item.status === status.Completed ? 'ok' : 'muted'">{{ statusLabels[item.status] }}</ui-badge></td>
+          <td data-name="Estado">
+            <ui-badge [tone]="statusTone(item.status)">{{ statusLabels[item.status] }}</ui-badge>
+            @if (item.updatedBy && item.updatedAt) {
+              <span class="mt-1 block text-xs text-ink/60">por {{ item.updatedBy }}</span>
+            }
+          </td>
           <td class="whitespace-nowrap">
-            <a class="text-link" [routerLink]="['/pacientes', item.patientId]">Ficha</a>
+            <ui-button variant="ghost" (click)="openDetail(item)">Detalle</ui-button>
+            @if (canOpenFile) {
+              <a class="text-link ml-3" [routerLink]="['/pacientes', item.patientId]">Ficha</a>
+            }
             @if (canMove(item)) {
               <ui-button class="ml-3" variant="ghost" (click)="startMove(item)">Reprogramar</ui-button>
             }
@@ -51,27 +93,78 @@
   </table>
 </ui-table>
   <table-pager [total]="total()" [page]="page()" (pageChange)="go($event)" />
-  @if (moving(); as item) {
-    <ui-modal [open]="true" [wide]="true" [title]="'Reprogramar a ' + item.patient" (closed)="cancelMove()">
-      <form (ngSubmit)="loadSlots()">
-        <p class="text-sm text-ink/70">{{ item.professional }} · {{ item.appointmentType }}. Elegí un día y un horario libre.</p>
-        <ui-field class="mt-4 sm:w-64" label="Día">
-          <input name="moveDate" type="date" [(ngModel)]="moveDate" (ngModelChange)="loadSlots()" required />
-        </ui-field>
-        @if (slotsError()) {
-          <p class="mt-4 text-sm text-pulse" role="alert">{{ slotsError() }}</p>
-        } @else if (slotsLoading()) {
-          <p class="mt-4 text-sm text-ink/60">Buscando horarios…</p>
-        } @else if (!slots().length) {
-          <p class="mt-4 text-sm text-ink/70">Ese día no tiene horarios libres para esta prestación.</p>
-        } @else {
-          <div class="mt-4 flex flex-wrap gap-2">
-            @for (slot of slots(); track slot.start) {
-              <ui-button type="button" variant="outlined" [loading]="pending() === item.id" (click)="moveTo(slot)">{{ slot.start | fecha:'hora' }}</ui-button>
+}
+
+@if (detail(); as item) {
+  <ui-modal [open]="true" [wide]="true" [title]="'Turno de ' + item.patient" (closed)="closeDetail()">
+    <div class="flex flex-wrap items-center gap-3">
+      <ui-badge [tone]="statusTone(item.status)">{{ statusLabels[item.status] }}</ui-badge>
+      <span class="text-sm text-ink/70">{{ item.start | fecha }}</span>
+    </div>
+    <dl class="mt-4 grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
+      <div><dt class="font-semibold text-ink/70">Profesional</dt><dd>{{ item.professional }}</dd></div>
+      <div><dt class="font-semibold text-ink/70">Especialidad</dt><dd>{{ item.specialty || 'Sin especialidad' }}</dd></div>
+      <div><dt class="font-semibold text-ink/70">Prestación</dt><dd>{{ item.appointmentType }} · {{ item.location }}</dd></div>
+      @if (item.insurer) {
+        <div><dt class="font-semibold text-ink/70">Cobertura</dt><dd>{{ item.insurer }}{{ item.memberNumber ? ' · ' + item.memberNumber : '' }}</dd></div>
+      }
+      @if (item.visitReason) {
+        <div class="sm:col-span-2"><dt class="font-semibold text-ink/70">Motivo</dt><dd>{{ item.visitReason }}</dd></div>
+      }
+      @if (item.createdAt) {
+        <div><dt class="font-semibold text-ink/70">Creado</dt><dd>{{ item.createdAt | fecha }} · {{ item.createdBy || 'Sistema' }}</dd></div>
+      }
+      @if (item.updatedAt) {
+        <div><dt class="font-semibold text-ink/70">Última modificación</dt><dd>{{ item.updatedAt | fecha }} · {{ item.updatedBy || 'Sistema' }}</dd></div>
+      }
+    </dl>
+
+    <h3 class="mt-6 text-sm font-bold">Movimientos</h3>
+    @if (changesLoading()) {
+      <p class="mt-2 text-sm text-ink/60">Cargando movimientos…</p>
+    } @else if (changesError()) {
+      <p class="mt-2 text-sm text-pulse" role="alert">{{ changesError() }}</p>
+    } @else if (!changes().length) {
+      <p class="mt-2 text-sm text-ink/70">Este turno todavía no tiene movimientos registrados.</p>
+    } @else {
+      <ol class="mt-3 space-y-3 border-l-2 border-rule pl-4">
+        @for (change of changes(); track change.id; let index = $index) {
+          <li class="text-sm">
+            <div class="flex flex-wrap items-center gap-2">
+              <ui-badge [tone]="statusTone(change.status)">{{ statusLabels[change.status] }}</ui-badge>
+              <span class="font-semibold">{{ stepLabel(change, index) }}</span>
+            </div>
+            @if (movedSlot(change, index)) {
+              <p class="mt-1 text-ink/70">Turno: {{ change.start | fecha }} con {{ change.professional }}</p>
             }
-          </div>
+            <p class="mt-1 text-xs text-ink/60">{{ change.at | fecha }} · {{ change.by || 'Sistema' }}</p>
+          </li>
         }
-      </form>
-    </ui-modal>
-  }
+      </ol>
+    }
+  </ui-modal>
+}
+
+@if (moving(); as item) {
+  <ui-modal [open]="true" [wide]="true" [title]="'Reprogramar a ' + item.patient" (closed)="cancelMove()">
+    <form (ngSubmit)="loadSlots()">
+      <p class="text-sm text-ink/70">{{ item.professional }} · {{ item.appointmentType }}. Elegí un día y un horario libre.</p>
+      <ui-field class="mt-4 sm:w-64" label="Día">
+        <input name="moveDate" type="date" [(ngModel)]="moveDate" (ngModelChange)="loadSlots()" required />
+      </ui-field>
+      @if (slotsError()) {
+        <p class="mt-4 text-sm text-pulse" role="alert">{{ slotsError() }}</p>
+      } @else if (slotsLoading()) {
+        <p class="mt-4 text-sm text-ink/60">Buscando horarios…</p>
+      } @else if (!slots().length) {
+        <p class="mt-4 text-sm text-ink/70">Ese día no tiene horarios libres para esta prestación.</p>
+      } @else {
+        <div class="mt-4 flex flex-wrap gap-2">
+          @for (slot of slots(); track slot.start) {
+            <ui-button type="button" variant="outlined" [loading]="pending() === item.id" (click)="moveTo(slot)">{{ slot.start | fecha:'hora' }}</ui-button>
+          }
+        </div>
+      }
+    </form>
+  </ui-modal>
 }

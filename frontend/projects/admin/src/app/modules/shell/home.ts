@@ -1,18 +1,9 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { AppointmentDto, AppointmentStatus, AppointmentsService, clinicaSession, errorMessage } from 'sdk';
+import { AppointmentDto, AppointmentStatus, AppointmentsService, TenantRole, clinicaSession, errorMessage } from 'sdk';
 import { BoardColumn, UiTone, MediaWatcherService, UiBadge, UiBoard, UiEmpty, UiIcon, UiSkeleton, UiStat, UiTable, greeting, todayLabel } from 'ui';
 import { firstValueFrom } from 'rxjs';
-
-const statusLabels: Record<AppointmentStatus, string> = {
-  [AppointmentStatus.Booked]: 'Reservado',
-  [AppointmentStatus.CheckedIn]: 'Admitido',
-  [AppointmentStatus.InProgress]: 'En atención',
-  [AppointmentStatus.Completed]: 'Atendido',
-  [AppointmentStatus.Cancelled]: 'Cancelado',
-  [AppointmentStatus.NoShow]: 'Ausente',
-  [AppointmentStatus.Rescheduled]: 'Reprogramado',
-};
+import { appointmentStatusLabels as statusLabels, appointmentStatusTone } from '../appointments/models/appointment-status-labels';
 
 const flow: { status: AppointmentStatus; tone: UiTone }[] = [
   { status: AppointmentStatus.Booked, tone: UiTone.Muted },
@@ -30,6 +21,7 @@ export class HomePage {
   private readonly media = inject(MediaWatcherService);
   private readonly router = inject(Router);
   readonly statusLabels = statusLabels;
+  readonly statusTone = appointmentStatusTone;
   readonly status = AppointmentStatus;
   readonly tone = UiTone;
   readonly appointments = signal<AppointmentDto[]>([]);
@@ -37,6 +29,8 @@ export class HomePage {
   readonly loading = signal(true);
   readonly dayLabel = todayLabel();
   readonly hello = greeting(clinicaSession.name());
+  // Patient files, records and schedules are admin-only screens, so front desk does not get links to them.
+  readonly isAdmin = clinicaSession.role() === TenantRole.TenantAdmin;
 
   readonly count = (status: AppointmentStatus) => this.appointments().filter((item) => item.status === status).length;
   readonly missed = computed(() => this.count(AppointmentStatus.NoShow) + this.count(AppointmentStatus.Cancelled));
@@ -52,8 +46,7 @@ export class HomePage {
           title: item.patient,
           time: this.timeLabel(item.start),
           meta: item.professional,
-          link: ['/pacientes', item.patientId],
-          linkLabel: 'Ficha',
+          ...(this.isAdmin ? { link: ['/pacientes', item.patientId], linkLabel: 'Ficha' } : {}),
         })),
     })),
   );
@@ -63,7 +56,7 @@ export class HomePage {
   }
 
   openFile(patientId: string, event: Event) {
-    if (!this.media.mobile()) return;
+    if (!this.isAdmin || !this.media.mobile()) return;
     const target = event.target;
     if (target instanceof Element && target.closest('a, button, ui-button')) return;
     void this.router.navigate(['/pacientes', patientId]);

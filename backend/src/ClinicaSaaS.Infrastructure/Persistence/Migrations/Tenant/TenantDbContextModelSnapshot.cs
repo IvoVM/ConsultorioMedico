@@ -37,6 +37,12 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                     b.Property<bool?>("CoverageAccepted")
                         .HasColumnType("boolean");
 
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTimeOffset>("End")
                         .HasColumnType("timestamp with time zone");
 
@@ -64,6 +70,12 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("VisitReason")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
@@ -74,13 +86,65 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
 
                     b.HasIndex("ClientId");
 
+                    b.HasIndex("CreatedBy");
+
                     b.HasIndex("InsurerId");
 
                     b.HasIndex("LocationId");
 
+                    b.HasIndex("UpdatedBy");
+
                     b.HasIndex("ProfessionalId", "Start");
 
                     b.ToTable("Appointments");
+                });
+
+            modelBuilder.Entity("ClinicaSaaS.Domain.AppointmentChange", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AppointmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("End")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ProfessionalId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("Start")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppointmentId");
+
+                    b.HasIndex("CreatedBy");
+
+                    b.HasIndex("ProfessionalId");
+
+                    b.HasIndex("UpdatedBy");
+
+                    b.ToTable("AppointmentChanges");
                 });
 
             modelBuilder.Entity("ClinicaSaaS.Domain.AppointmentType", b =>
@@ -1106,6 +1170,11 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("ClinicaSaaS.Infrastructure.Identity.TenantUser", "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("ClinicaSaaS.Domain.Insurer", "Insurer")
                         .WithMany()
                         .HasForeignKey("InsurerId")
@@ -1123,15 +1192,57 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("ClinicaSaaS.Infrastructure.Identity.TenantUser", "UpdatedByUser")
+                        .WithMany()
+                        .HasForeignKey("UpdatedBy")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.Navigation("AppointmentType");
 
                     b.Navigation("Client");
+
+                    b.Navigation("CreatedByUser");
 
                     b.Navigation("Insurer");
 
                     b.Navigation("Location");
 
                     b.Navigation("Professional");
+
+                    b.Navigation("UpdatedByUser");
+                });
+
+            modelBuilder.Entity("ClinicaSaaS.Domain.AppointmentChange", b =>
+                {
+                    b.HasOne("ClinicaSaaS.Domain.Appointment", "Appointment")
+                        .WithMany("Changes")
+                        .HasForeignKey("AppointmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ClinicaSaaS.Infrastructure.Identity.TenantUser", "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("ClinicaSaaS.Infrastructure.Identity.TenantUser", "Professional")
+                        .WithMany()
+                        .HasForeignKey("ProfessionalId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ClinicaSaaS.Infrastructure.Identity.TenantUser", "UpdatedByUser")
+                        .WithMany()
+                        .HasForeignKey("UpdatedBy")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Appointment");
+
+                    b.Navigation("CreatedByUser");
+
+                    b.Navigation("Professional");
+
+                    b.Navigation("UpdatedByUser");
                 });
 
             modelBuilder.Entity("ClinicaSaaS.Domain.AppointmentType", b =>
@@ -1533,6 +1644,8 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
 
             modelBuilder.Entity("ClinicaSaaS.Domain.Appointment", b =>
                 {
+                    b.Navigation("Changes");
+
                     b.Navigation("Encounter");
 
                     b.Navigation("Invoice");

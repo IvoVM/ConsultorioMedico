@@ -207,7 +207,9 @@ public static class DependencyInjection
     {
         var connection = configuration.GetConnectionString("Clinic")
             ?? throw new InvalidOperationException("Falta ConnectionStrings:Clinic.");
-        services.AddDbContext<TenantDbContext>(options => options.UseNpgsql(connection));
+        services.AddScoped<AuditInterceptor>();
+        services.AddDbContext<TenantDbContext>((provider, options) =>
+            options.UseNpgsql(connection).AddInterceptors(provider.GetRequiredService<AuditInterceptor>()));
         services.AddSingleton<ICurrentTenant, ConfiguredClinic>();
 
         services.AddIdentityCore<TenantUser>(options =>

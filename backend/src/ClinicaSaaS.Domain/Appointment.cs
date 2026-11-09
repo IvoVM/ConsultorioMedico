@@ -2,7 +2,7 @@ using ClinicaSaaS.Infrastructure.Identity;
 
 namespace ClinicaSaaS.Domain;
 
-public class Appointment
+public class Appointment : Auditable
 {
     public Guid Id { get; set; }
     public Guid ClientId { get; set; }
@@ -26,4 +26,5 @@ public class Appointment
     public virtual AppointmentType AppointmentType { get; set; } = null!;
     public virtual Encounter? Encounter { get; set; }
     public virtual Invoice? Invoice { get; set; }
+    public virtual ICollection<AppointmentChange> Changes { get; set; } = [];
 }

@@ -4,6 +4,8 @@ import { ApiClient } from '../../core/api-client';
 import { queryString } from '../../core/query-string';
 import type { ListParams, PageDto } from '../../core/page';
 import type { AppointmentDto } from './models/appointment-dto';
+import type { AppointmentChangeDto } from './models/appointment-change-dto';
+import type { AppointmentHistoryFilter } from './models/appointment-history-filter';
 import type { AssignWaitlistEntryCommand } from './models/assign-waitlist-entry-command';
 import type { BookAppointmentCommand } from './models/book-appointment-command';
 import type { CreateWaitlistEntryCommand } from './models/create-waitlist-entry-command';
@@ -14,8 +16,12 @@ import type { WaitlistEntryDto } from './models/waitlist-entry-dto';
 
 @Injectable({ providedIn: 'root' })
 export class AppointmentsService extends ApiClient {
-  appointmentsPage(query: ListParams) {
+  appointmentsPage(query: ListParams & AppointmentHistoryFilter) {
     return this.http.get<PageDto<AppointmentDto>>(`${this.base}/api/turnos/historial${queryString(query)}`);
+  }
+
+  appointmentChanges(id: string) {
+    return this.http.get<AppointmentChangeDto[]>(`${this.base}/api/turnos/${id}/cambios`);
   }
 
   appointmentsForDay(query: { date: string; professionalId?: string }) {

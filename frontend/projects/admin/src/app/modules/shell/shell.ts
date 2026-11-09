@@ -1,8 +1,8 @@
 import { Component, computed, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { AuthService, clinicaSession } from 'sdk';
+import { AuthService, TenantRole, clinicaSession } from 'sdk';
 import { firstValueFrom } from 'rxjs';
-import { NavNode, UiNav, UiPage } from 'ui';
+import { NavLink, NavNode, UiNav, UiPage } from 'ui';
 import { roleLabels } from '../employees/models/role-labels';
 
 @Component({
@@ -16,16 +16,20 @@ export class ShellPage {
     const role = this.session.role();
     return role ? roleLabels[role] : 'Administración';
   });
-  readonly menu = computed((): NavNode[] => [
-      { label: 'Inicio', path: '/inicio', exact: true, icon: 'monitor_heart' },
+  // Front desk only reaches the appointment screens; everything else in the admin stays with the clinic admin.
+  readonly menu = computed((): NavNode[] => (this.session.role() === TenantRole.Secretary ? this.deskMenu : this.adminMenu));
+  private readonly home: NavLink = { label: 'Inicio', path: '/inicio', exact: true, icon: 'monitor_heart' };
+  private readonly turnos: NavLink[] = [
+    { label: 'Solicitudes de turnos', path: '/turnos/solicitudes', icon: 'pending_actions' },
+    { label: 'Historial de turnos', path: '/turnos/historial', icon: 'history' },
+  ];
+  private readonly deskMenu: NavNode[] = [this.home, { label: 'Agenda', icon: 'calendar_month', children: this.turnos }];
+  private readonly adminMenu: NavNode[] = [
+      this.home,
       {
         label: 'Agenda',
         icon: 'calendar_month',
-        children: [
-          { label: 'Solicitudes de turnos', path: '/turnos/solicitudes', icon: 'pending_actions' },
-          { label: 'Historial de turnos', path: '/turnos/historial', icon: 'history' },
-          { label: 'Agendas', path: '/agendas', icon: 'event_note' },
-        ],
+        children: [...this.turnos, { label: 'Agendas', path: '/agendas', icon: 'event_note' }],
       },
       {
         label: 'Pacientes',
@@ -60,7 +64,7 @@ export class ShellPage {
         ],
       },
       { label: 'Auditoría', path: '/auditoria', icon: 'policy' },
-    ]);
+    ];
 
   logout() {
     void firstValueFrom(this.auth.logout()).finally(() => {

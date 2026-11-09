@@ -89,8 +89,32 @@ public record AppointmentDto(
     string? Insurer,
     string? MemberNumber,
     bool? CoverageAccepted,
-    bool IsOverbook = false);
+    bool IsOverbook = false,
+    string? Specialty = null,
+    DateTimeOffset? CreatedAt = null,
+    string? CreatedBy = null,
+    DateTimeOffset? UpdatedAt = null,
+    string? UpdatedBy = null);
 public record RescheduleAppointmentCommand(DateTimeOffset Start);
+
+public sealed class AppointmentHistoryFilter
+{
+    public Guid? SpecialtyId { get; set; }
+    public Guid? ProfessionalId { get; set; }
+    public Guid? PatientId { get; set; }
+    public AppointmentStatus? Status { get; set; }
+    public bool Past { get; set; }
+}
+
+// One step in an appointment's life; By is null when the system made it (seed, import).
+public record AppointmentChangeDto(
+    Guid Id,
+    AppointmentStatus Status,
+    DateTimeOffset Start,
+    DateTimeOffset End,
+    string Professional,
+    DateTimeOffset At,
+    string? By);
 
 public record WaitlistEntryDto(
     Guid Id,

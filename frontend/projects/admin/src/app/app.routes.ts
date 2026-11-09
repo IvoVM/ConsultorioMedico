@@ -44,7 +44,7 @@ export const routes: Routes = [
       { path: 'agendas', canActivate: [roleGuard(TenantRole.TenantAdmin)], loadComponent: () => import('./modules/schedules/schedules').then((m) => m.SchedulesPage) },
       {
         path: 'turnos',
-        canActivate: [roleGuard(TenantRole.TenantAdmin)],
+        canActivate: [roleGuard(TenantRole.TenantAdmin, TenantRole.Secretary)],
         loadComponent: () => import('./modules/appointments/turnos').then((m) => m.TurnosPage),
         children: [
           { path: '', pathMatch: 'full', redirectTo: 'historial' },

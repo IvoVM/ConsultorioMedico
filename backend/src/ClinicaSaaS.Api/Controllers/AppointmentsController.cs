@@ -25,10 +25,14 @@ public class AppointmentsController(ScheduleService schedule) : ApiController
     public Task<IActionResult> ForDay([FromQuery] DateOnly date, [FromQuery] Guid? professionalId, CancellationToken ct) =>
         Run(() => schedule.ForDayAsync(date, professionalId, ct));
 
-    [Authorize(Roles = AppRoles.TenantAdmin)]
+    [Authorize(Roles = $"{AppRoles.Secretary},{AppRoles.TenantAdmin}")]
     [HttpGet("historial")]
-    public Task<IActionResult> History([FromQuery] ListQuery query, CancellationToken ct) =>
-        Run(() => schedule.HistoryAsync(query, ct));
+    public Task<IActionResult> History([FromQuery] ListQuery query, [FromQuery] AppointmentHistoryFilter filter, CancellationToken ct) =>
+        Run(() => schedule.HistoryAsync(query, filter, ct));
+
+    [Authorize(Roles = $"{AppRoles.Secretary},{AppRoles.TenantAdmin}")]
+    [HttpGet("{id:guid}/cambios")]
+    public Task<IActionResult> Changes(Guid id, CancellationToken ct) => Run(() => schedule.ChangesAsync(id, ct));
 
     [Authorize(Roles = AppRoles.Patient)]
     [HttpGet("mios")]
