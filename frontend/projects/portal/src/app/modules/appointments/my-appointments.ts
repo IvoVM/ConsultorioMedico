@@ -31,6 +31,8 @@ export class MyAppointmentsPage {
   readonly requests = signal<BookingRequestDto[]>([]);
   readonly reasonFor = signal<BookingRequestDto | null>(null);
   readonly trailOf = signal<AppointmentDto | null>(null);
+  // Cancelling cannot be undone, so the patient confirms it first.
+  readonly confirming = signal<AppointmentDto | null>(null);
   readonly tabKeys = MyAppointmentsTab;
   readonly tab = signal<string>(MyAppointmentsTab.Turnos);
   readonly tabs = computed((): TabItem[] => [
@@ -115,6 +117,7 @@ export class MyAppointmentsPage {
     this.pending.set(appointment.id);
     try {
       await firstValueFrom(this.appointmentsApi.cancelAppointment(appointment.id));
+      this.confirming.set(null);
       await this.load();
     } catch (error) {
       this.error.set(errorMessage(error));

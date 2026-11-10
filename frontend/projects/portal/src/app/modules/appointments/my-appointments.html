@@ -59,7 +59,7 @@
               <td class="whitespace-nowrap">
                 <ui-button variant="ghost" (click)="trailOf.set(appointment)">Historial</ui-button>
                 @if (appointment.status === status.Booked || appointment.status === status.Rescheduled) {
-                  <ui-button variant="ghost" [loading]="pending() === appointment.id" (click)="cancel(appointment)">Cancelar</ui-button>
+                  <ui-button variant="ghost" (click)="confirming.set(appointment)">Cancelar</ui-button>
                 }
               </td>
             </tr>
@@ -114,7 +114,7 @@
               <td class="whitespace-nowrap">
                 <ui-button variant="ghost" (click)="trailOf.set(appointment)">Historial</ui-button>
                 @if (appointment.status === status.Booked || appointment.status === status.Rescheduled) {
-                  <ui-button variant="ghost" [loading]="pending() === appointment.id" (click)="cancel(appointment)">Cancelar</ui-button>
+                  <ui-button variant="ghost" (click)="confirming.set(appointment)">Cancelar</ui-button>
                 }
               </td>
             </tr>
@@ -135,6 +135,17 @@
     <a class="action-link" [routerLink]="route.Reservar" (click)="reasonFor.set(null)">Pedir otro turno</a>
   </div>
 </ui-modal>
+@if (confirming(); as appointment) {
+  <ui-modal [open]="true" title="Cancelar turno" (closed)="confirming.set(null)">
+    <p class="max-w-prose leading-relaxed">¿Cancelás el turno del {{ appointment.start | fecha }} con {{ appointment.professional }}?</p>
+    <p class="mt-3 max-w-prose leading-relaxed text-ink/75">El horario queda libre para otra persona y no se puede deshacer. Si querés volver, tenés que pedir un turno nuevo.</p>
+    @if (error()) { <p class="mt-3 text-sm text-pulse" role="alert">{{ error() }}</p> }
+    <div uiModalFooter class="flex flex-wrap gap-3">
+      <ui-button variant="error" [loading]="pending() === appointment.id" (click)="cancel(appointment)">Sí, cancelar turno</ui-button>
+      <ui-button variant="outlined" [disabled]="pending() === appointment.id" (click)="confirming.set(null)">Volver</ui-button>
+    </div>
+  </ui-modal>
+}
 @if (trailOf(); as appointment) {
   <ui-modal [open]="true" [title]="'Turno del ' + (appointment.start | fecha)" (closed)="trailOf.set(null)">
     <p class="text-sm text-ink/70">{{ appointment.professional }} · {{ appointment.appointmentType }} · {{ appointment.location }}</p>

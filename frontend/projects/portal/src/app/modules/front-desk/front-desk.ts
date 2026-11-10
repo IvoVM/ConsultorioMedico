@@ -44,6 +44,8 @@ export class FrontDeskPage {
   readonly loading = signal(true);
   readonly refreshing = signal(false);
   readonly pending = signal('');
+  // Removing a booking cannot be undone, so front desk confirms it first.
+  readonly confirming = signal<AppointmentDto | null>(null);
   readonly slotsLoading = signal(false);
   readonly searchError = signal('');
   readonly searching = signal(false);
@@ -143,6 +145,7 @@ export class FrontDeskPage {
 
   async cancel(appointment: AppointmentDto) {
     await this.run(`cancel:${appointment.id}`, () => this.appointmentsApi.cancelAppointment(appointment.id));
+    this.confirming.set(null);
   }
 
   async startMove(appointment: AppointmentDto) {

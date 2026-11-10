@@ -82,7 +82,7 @@
                   <ui-button variant="ghost" [loading]="pending() === 'absent:' + appointment.id" (click)="absent(appointment)">No se presentó</ui-button>
                 }
                 @if (appointment.status === status.Booked || appointment.status === status.Rescheduled || appointment.status === status.CheckedIn) {
-                  <ui-button variant="ghost" [loading]="pending() === 'cancel:' + appointment.id" (click)="cancel(appointment)">Eliminar</ui-button>
+                  <ui-button variant="ghost" (click)="confirming.set(appointment)">Eliminar</ui-button>
                 }
                 @if (charge(appointment); as bill) {
                   @if (bill.status === invoice.Pending) {
@@ -155,3 +155,12 @@
     }
   </div>
 </section>
+@if (confirming(); as appointment) {
+  <ui-modal [open]="true" title="Eliminar turno" (closed)="confirming.set(null)">
+    <p class="max-w-prose leading-relaxed">Se elimina el turno de {{ appointment.patient }} del {{ appointment.start | fecha }}: sale de la agenda y el horario queda libre. No se puede deshacer.</p>
+    <div uiModalFooter class="flex flex-wrap gap-3">
+      <ui-button variant="error" [loading]="pending() === 'cancel:' + appointment.id" (click)="cancel(appointment)">Sí, eliminar turno</ui-button>
+      <ui-button variant="outlined" [disabled]="pending() === 'cancel:' + appointment.id" (click)="confirming.set(null)">Volver</ui-button>
+    </div>
+  </ui-modal>
+}
