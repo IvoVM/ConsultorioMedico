@@ -262,6 +262,10 @@ public partial class ScheduleService(
             source = source.Where(a => a.ClientId == patientId);
         if (filter.Status is AppointmentStatus status)
             source = source.Where(a => a.Status == status);
+        else
+            source = filter.Cancelled
+                ? source.Where(a => a.Status == AppointmentStatus.Cancelled)
+                : source.Where(a => a.Status != AppointmentStatus.Cancelled);
         if (filter.Past)
         {
             var now = clock.GetUtcNow();
@@ -278,7 +282,7 @@ public partial class ScheduleService(
                     : a.Status == AppointmentStatus.CheckedIn ? "en sala de espera"
                     : a.Status == AppointmentStatus.InProgress ? "en atención"
                     : a.Status == AppointmentStatus.Completed ? "atendido"
-                    : a.Status == AppointmentStatus.Cancelled ? "cancelado"
+                    : a.Status == AppointmentStatus.Cancelled ? "eliminado"
                     : a.Status == AppointmentStatus.Rescheduled ? "reprogramado"
                     : "ausente").Contains(term));
         var ordered = (query.Sort, query.Desc) switch

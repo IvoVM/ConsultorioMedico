@@ -6,7 +6,7 @@ export const appointmentStatusLabels: Record<AppointmentStatus, string> = {
   [AppointmentStatus.CheckedIn]: 'En sala de espera',
   [AppointmentStatus.InProgress]: 'En atención',
   [AppointmentStatus.Completed]: 'Atendido',
-  [AppointmentStatus.Cancelled]: 'Cancelado',
+  [AppointmentStatus.Cancelled]: 'Eliminado',
   [AppointmentStatus.NoShow]: 'Ausente',
   [AppointmentStatus.Rescheduled]: 'Reprogramado',
 };

@@ -7,4 +7,5 @@ export interface AppointmentHistoryFilter {
   patientId?: string;
   status?: AppointmentStatus;
   past?: boolean;
+  cancelled?: boolean;
 }

@@ -15,7 +15,7 @@ import {
   clinicaSession,
   errorMessage,
 } from 'sdk';
-import { FechaPipe, SelectOption, UiBadge, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable } from 'ui';
+import { FechaPipe, SelectOption, UiBadge, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable, UiTabs, HistoryTab, historyTabLabels, TabItem } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { appointmentStatusLabels } from './models/appointment-status-labels';
 import { AppointmentChanges } from './appointment-changes';
@@ -25,7 +25,7 @@ const pageSize = 10;
 const searchDelay = 300;
 
 @Component({
-  imports: [FormsModule, AppointmentChanges, FechaPipe, UiBadge, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable],
+  imports: [FormsModule, UiTabs, AppointmentChanges, FechaPipe, UiBadge, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable],
   templateUrl: './appointment-history.html',
 })
 export class AppointmentHistoryPage {
@@ -56,6 +56,12 @@ export class AppointmentHistoryPage {
   readonly patientId = signal('');
   readonly patientText = signal('');
   readonly statusFilter = signal('');
+  readonly tab = signal<string>(HistoryTab.Turnos);
+  readonly removed = computed(() => this.tab() === HistoryTab.Eliminados);
+  readonly tabs: TabItem[] = [
+    { key: HistoryTab.Turnos, label: historyTabLabels[HistoryTab.Turnos], icon: 'event' },
+    { key: HistoryTab.Eliminados, label: historyTabLabels[HistoryTab.Eliminados], icon: 'delete' },
+  ];
   readonly past = signal(true);
 
   readonly specialtyOptions = computed<SelectOption[]>(() => [
@@ -70,7 +76,10 @@ export class AppointmentHistoryPage {
   ]);
   readonly statusOptions: SelectOption[] = [
     { value: '', label: 'Todos' },
-    ...(Object.keys(appointmentStatusLabels) as AppointmentStatus[]).map((status) => ({ value: status, label: appointmentStatusLabels[status] })),
+    ...(Object.keys(appointmentStatusLabels) as AppointmentStatus[])
+      // Removed bookings have their own tab, so the state picker only offers the ones still in the flow.
+      .filter((status) => status !== AppointmentStatus.Cancelled)
+      .map((status) => ({ value: status, label: appointmentStatusLabels[status] })),
   ];
   readonly filtered = computed(() => !!(this.query() || this.specialtyId() || this.professionalId() || this.patientId() || this.statusFilter()));
 
@@ -113,6 +122,12 @@ export class AppointmentHistoryPage {
 
   setStatus(value: string) {
     this.statusFilter.set(value);
+    this.reload();
+  }
+
+  setTab(value: string) {
+    this.tab.set(value);
+    this.statusFilter.set('');
     this.reload();
   }
 
@@ -221,6 +236,7 @@ export class AppointmentHistoryPage {
         patientId: this.patientId() || undefined,
         status: (this.statusFilter() as AppointmentStatus) || undefined,
         past: this.past() || undefined,
+      cancelled: this.removed() || undefined,
       }));
       this.rows.set(result.items);
       this.total.set(result.total);

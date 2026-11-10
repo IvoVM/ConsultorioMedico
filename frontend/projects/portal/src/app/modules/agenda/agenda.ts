@@ -81,8 +81,9 @@ export class AgendaPage {
   readonly labels = appointmentStatusLabels;
   readonly tones = statusTone;
   readonly shown = shownStatus;
-  // One entry per color, naming every status that shares it (e.g. "Ausente / Cancelado").
-  readonly legend = (Object.keys(statusTone) as AppointmentStatus[]).reduce<{ tone: string; label: string }[]>((items, status) => {
+  // One entry per color, naming every status that shares it (e.g. "Reservado / Reprogramado").
+  // A removed booking leaves the agenda, so its state has no place in the legend.
+  readonly legend = (Object.keys(statusTone) as AppointmentStatus[]).filter((status) => status !== AppointmentStatus.Cancelled).reduce<{ tone: string; label: string }[]>((items, status) => {
     const same = items.find((item) => item.tone === statusTone[status]);
     if (same) same.label += ` / ${appointmentStatusLabels[status]}`;
     else items.push({ tone: statusTone[status], label: appointmentStatusLabels[status] });

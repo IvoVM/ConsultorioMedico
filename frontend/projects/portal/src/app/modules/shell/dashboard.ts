@@ -103,7 +103,7 @@ export class DashboardPage {
   cancel() {
     const item = this.picked();
     if (!item) return;
-    void this.change(this.appointmentsApi.cancelAppointment(item.id), 'Turno cancelado', `El horario de las ${this.timeLabel(item.start)} quedó libre.`);
+    void this.change(this.appointmentsApi.cancelAppointment(item.id), 'Turno eliminado', `El horario de las ${this.timeLabel(item.start)} quedó libre.`);
   }
 
   timeLabel(start: string) {

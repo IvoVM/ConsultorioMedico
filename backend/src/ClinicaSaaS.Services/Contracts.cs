@@ -104,6 +104,8 @@ public sealed class AppointmentHistoryFilter
     public Guid? PatientId { get; set; }
     public AppointmentStatus? Status { get; set; }
     public bool Past { get; set; }
+    // A cancelled booking leaves the agenda, so the history lists it apart: true shows only those, false leaves them out.
+    public bool Cancelled { get; set; }
 }
 
 // One step in an appointment's life; By and ByRole are null when the system made it (seed, import).

@@ -28,6 +28,7 @@ export { UiStat } from './ui-stat.component';
 export { greeting, todayLabel } from './greeting';
 export { UiTabs } from './ui-tabs.component';
 export type { TabItem } from './ui-tabs.component';
+export { HistoryTab, historyTabLabels } from './history-tabs';
 export { RequestTab, daysOverdue, localDate, deactivationLabel, expiredRequestDays, overdueLabel, requestDeactivated, requestExpired, requestTabLabels, startOfToday } from './request-tabs';
 export { UiMonth } from './ui-month.component';
 export { RescheduleOrigin, UiReschedule } from './ui-reschedule.component';
