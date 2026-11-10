@@ -1,6 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { ClinicalHistoryDto, ClinicalService, DiagnosisDto, TenantRole, clinicaSession, errorMessage } from 'sdk';
+import { RouteParam } from '../../app.routes.enum';
 import { FechaPipe, TabItem, UiEmpty, UiSkeleton, UiTabs } from 'ui';
 import { firstValueFrom } from 'rxjs';
 
@@ -22,7 +23,7 @@ export class ClinicalHistoryPage {
   patientId = '';
 
   constructor() {
-    const paciente = this.route.snapshot.queryParamMap.get('paciente');
+    const paciente = this.route.snapshot.queryParamMap.get(RouteParam.Paciente);
     if (paciente) this.patientId = paciente;
     if (clinicaSession.role() === TenantRole.Patient || paciente) void this.load();
   }

@@ -12,6 +12,7 @@ import {
   PatientLookupDto,
   PatientsService,
   ProfessionalDto,
+  SaveAppointmentChangeCommand,
   ScheduleService,
   SlotDto,
   SpecialtyDto,
@@ -26,6 +27,25 @@ import { SortCol, SortState, nextSort } from '../../table-sort';
 import { appointmentStatusLabels, appointmentStatusTone } from './models/appointment-status-labels';
 
 const anyOption: SelectOption = { value: '', label: 'Todos' };
+
+// A datetime-local input speaks the browser's wall clock without an offset; the API speaks ISO instants.
+function toLocalInput(iso: string) {
+  const date = new Date(iso);
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+}
+
+function fromLocalInput(value: string) {
+  return new Date(value).toISOString();
+}
+
+interface ChangeDraft {
+  id: string | null;
+  status: AppointmentStatus;
+  start: string;
+  end: string;
+  professionalId: string;
+  at: string;
+}
 
 @Component({
   imports: [FormsModule, RouterLink, FechaPipe, SortCol, TablePager, UiBadge, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable],
@@ -84,6 +104,17 @@ export class AppointmentHistoryPage {
   readonly changes = signal<AppointmentChangeDto[]>([]);
   readonly changesLoading = signal(false);
   readonly changesError = signal('');
+  // The admin may write over the trail however they want; front desk only reads it.
+  readonly canEditTrail = clinicaSession.role() === TenantRole.TenantAdmin;
+  readonly draft = signal<ChangeDraft | null>(null);
+  readonly savingChange = signal(false);
+  readonly changeStatusOptions: SelectOption[] = (Object.keys(appointmentStatusLabels) as AppointmentStatus[]).map((status) => ({
+    value: status,
+    label: appointmentStatusLabels[status],
+  }));
+  readonly changeProfessionalOptions = computed<SelectOption[]>(() =>
+    this.professionals().map((item) => ({ value: item.id, label: `${item.firstName} ${item.lastName}`.trim() })),
+  );
 
   readonly moving = signal<AppointmentDto | null>(null);
   readonly slots = signal<SlotDto[]>([]);
@@ -196,6 +227,77 @@ export class AppointmentHistoryPage {
 
   closeDetail() {
     this.detail.set(null);
+    this.draft.set(null);
+  }
+
+  editChange(change: AppointmentChangeDto) {
+    this.draft.set({
+      id: change.id,
+      status: change.status,
+      start: toLocalInput(change.start),
+      end: toLocalInput(change.end),
+      professionalId: change.professionalId,
+      at: toLocalInput(change.at),
+    });
+  }
+
+  newChange() {
+    const item = this.detail();
+    if (!item) return;
+    const last = this.changes().at(-1);
+    this.draft.set({
+      id: null,
+      status: last?.status ?? item.status,
+      start: toLocalInput(last?.start ?? item.start),
+      end: toLocalInput(last?.end ?? item.end),
+      professionalId: last?.professionalId ?? item.professionalId,
+      at: toLocalInput(new Date().toISOString()),
+    });
+  }
+
+  patchDraft(patch: Partial<ChangeDraft>) {
+    this.draft.update((current) => (current ? { ...current, ...patch } : current));
+  }
+
+  async saveChange() {
+    const item = this.detail();
+    const draft = this.draft();
+    if (!item || !draft) return;
+    const body: SaveAppointmentChangeCommand = {
+      status: draft.status,
+      start: fromLocalInput(draft.start),
+      end: fromLocalInput(draft.end),
+      professionalId: draft.professionalId,
+      at: fromLocalInput(draft.at),
+    };
+    this.savingChange.set(true);
+    try {
+      const call = draft.id
+        ? this.appointments.updateAppointmentChange(item.id, draft.id, body)
+        : this.appointments.addAppointmentChange(item.id, body);
+      this.changes.set(await firstValueFrom(call));
+      this.draft.set(null);
+      this.toasts.success('Historial actualizado', draft.id ? 'El movimiento quedó modificado.' : 'El movimiento quedó agregado.');
+    } catch (error) {
+      this.toasts.error('No se pudo guardar el movimiento', errorMessage(error));
+    } finally {
+      this.savingChange.set(false);
+    }
+  }
+
+  async deleteChange(change: AppointmentChangeDto) {
+    const item = this.detail();
+    if (!item || !confirm('¿Borrar este movimiento del historial?')) return;
+    this.savingChange.set(true);
+    try {
+      this.changes.set(await firstValueFrom(this.appointments.deleteAppointmentChange(item.id, change.id)));
+      if (this.draft()?.id === change.id) this.draft.set(null);
+      this.toasts.success('Historial actualizado', 'El movimiento quedó borrado.');
+    } catch (error) {
+      this.toasts.error('No se pudo borrar el movimiento', errorMessage(error));
+    } finally {
+      this.savingChange.set(false);
+    }
   }
 
   // A step that only moved the slot reads as a move, not as the same status twice.

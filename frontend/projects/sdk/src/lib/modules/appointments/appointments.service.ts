@@ -10,6 +10,7 @@ import type { AssignWaitlistEntryCommand } from './models/assign-waitlist-entry-
 import type { BookAppointmentCommand } from './models/book-appointment-command';
 import type { CreateWaitlistEntryCommand } from './models/create-waitlist-entry-command';
 import type { RescheduleAppointmentCommand } from './models/reschedule-appointment-command';
+import type { SaveAppointmentChangeCommand } from './models/save-appointment-change-command';
 import type { SlotDto } from '../schedule/models/slot-dto';
 import type { BookingRequestDto, CreateBookingRequestCommand } from './models/booking-request-dto';
 import type { WaitlistEntryDto } from './models/waitlist-entry-dto';
@@ -22,6 +23,18 @@ export class AppointmentsService extends ApiClient {
 
   appointmentChanges(id: string) {
     return this.http.get<AppointmentChangeDto[]>(`${this.base}/api/turnos/${id}/cambios`);
+  }
+
+  addAppointmentChange(id: string, body: SaveAppointmentChangeCommand) {
+    return this.http.post<AppointmentChangeDto[]>(`${this.base}/api/turnos/${id}/cambios`, body);
+  }
+
+  updateAppointmentChange(id: string, changeId: string, body: SaveAppointmentChangeCommand) {
+    return this.http.put<AppointmentChangeDto[]>(`${this.base}/api/turnos/${id}/cambios/${changeId}`, body);
+  }
+
+  deleteAppointmentChange(id: string, changeId: string) {
+    return this.http.delete<AppointmentChangeDto[]>(`${this.base}/api/turnos/${id}/cambios/${changeId}`);
   }
 
   appointmentsForDay(query: { date: string; professionalId?: string }) {

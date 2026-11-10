@@ -67,7 +67,8 @@ public static class ScheduleMappings
             c.End,
             (c.Professional.FirstName + " " + c.Professional.LastName).Trim(),
             c.CreatedAt,
-            c.CreatedByUser != null ? (c.CreatedByUser.FirstName + " " + c.CreatedByUser.LastName).Trim() : null));
+            c.CreatedByUser != null ? (c.CreatedByUser.FirstName + " " + c.CreatedByUser.LastName).Trim() : null,
+            c.ProfessionalId));
 
     public static IQueryable<WaitlistEntryDto> ToWaitlistDtos(this IQueryable<WaitlistEntry> query) =>
         query.Select(w => new WaitlistEntryDto(

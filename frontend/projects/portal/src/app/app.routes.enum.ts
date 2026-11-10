@@ -23,3 +23,12 @@ export enum AppRoute {
 export function routePath(route: AppRoute): string {
   return route.slice(1);
 }
+
+// Query parameters several screens pass to each other.
+export enum RouteParam {
+  Paciente = 'paciente',
+}
+
+export function patientParams(patientId: string) {
+  return { [RouteParam.Paciente]: patientId };
+}

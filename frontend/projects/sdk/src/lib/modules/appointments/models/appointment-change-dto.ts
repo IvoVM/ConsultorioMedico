@@ -9,4 +9,5 @@ export interface AppointmentChangeDto {
   professional: string;
   at: string;
   by?: string | null;
+  professionalId: string;
 }

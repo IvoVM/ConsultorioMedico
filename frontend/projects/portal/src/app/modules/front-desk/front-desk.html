@@ -22,7 +22,8 @@
             </p>
           </div>
           <div class="flex gap-4">
-            <a class="text-link" [routerLink]="route.ReservarPaciente" [queryParams]="{ paciente: patient.patientId }">Reservar</a>
+            <a class="text-link" [routerLink]="route.ReservarPaciente" [queryParams]="patientParams(patient.patientId)">Reservar</a>
+            <a class="text-link" [routerLink]="route.HistorialTurnos" [queryParams]="patientParams(patient.patientId)">Historial</a>
           </div>
         </li>
       }

@@ -5,9 +5,10 @@ import { appointmentStatusLabels } from './models/appointment-status-labels';
 import { FechaPipe, UiBadge, UiButton, UiEmpty, UiModal, UiSkeleton, UiTable } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { AppRoute } from '../../app.routes.enum';
+import { AppointmentChanges } from './appointment-changes';
 
 @Component({
-  imports: [RouterLink, FechaPipe, UiTable, UiBadge, UiButton, UiEmpty, UiModal, UiSkeleton],
+  imports: [RouterLink, AppointmentChanges, FechaPipe, UiTable, UiBadge, UiButton, UiEmpty, UiModal, UiSkeleton],
   templateUrl: './my-appointments.html',
 })
 export class MyAppointmentsPage {
@@ -19,6 +20,7 @@ export class MyAppointmentsPage {
   readonly appointments = signal<AppointmentDto[]>([]);
   readonly requests = signal<BookingRequestDto[]>([]);
   readonly reasonFor = signal<BookingRequestDto | null>(null);
+  readonly trailOf = signal<AppointmentDto | null>(null);
   readonly hasReason = computed(() => this.requests().some((request) => request.status === BookingRequestStatus.Rejected));
   readonly requestStatus: Record<BookingRequestStatus, string> = {
     [BookingRequestStatus.Pending]: 'Pendiente',

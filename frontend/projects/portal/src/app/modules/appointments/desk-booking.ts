@@ -5,7 +5,7 @@ import { Router } from '@angular/router';
 import { PatientsService, errorMessage } from 'sdk';
 import { UiButton, UiField, formatPhone } from 'ui';
 import { firstValueFrom } from 'rxjs';
-import { AppRoute } from '../../app.routes.enum';
+import { AppRoute, patientParams } from '../../app.routes.enum';
 
 export interface DeskPatient {
   documentNumber: string;
@@ -35,7 +35,7 @@ export class DeskBookingPage {
     this.looking.set(true);
     try {
       const patient = await firstValueFrom(this.patients.patientByDocument(this.documentNumber.trim()));
-      await this.router.navigate([AppRoute.ReservarPaciente], { queryParams: { paciente: patient.patientId } });
+      await this.router.navigate([AppRoute.ReservarPaciente], { queryParams: patientParams(patient.patientId) });
     } catch (error) {
       if (error instanceof HttpErrorResponse && error.status === 404) this.unknown.set(true);
       else this.error.set(errorMessage(error));

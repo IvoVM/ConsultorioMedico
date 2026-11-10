@@ -19,7 +19,7 @@ import {
 import { UiButton, UiEmpty, UiField, UiModal, UiSkeleton, formatFecha, formatPhone } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { Coverage, Intent, Offer, Step } from './request-appointment.enums';
-import { AppRoute, routePath } from '../../app.routes.enum';
+import { AppRoute, RouteParam, routePath } from '../../app.routes.enum';
 import { AuthFrom } from '../auth/auth-from';
 import { DeskPatient } from './desk-booking';
 
@@ -491,7 +491,7 @@ export class RequestAppointmentPage {
       this.types.set(types);
       this.locationIds.set(locations.filter((location) => location.isActive).map((location) => location.id));
       const staff = clinicaSession.role() === TenantRole.Secretary || clinicaSession.role() === TenantRole.TenantAdmin;
-      const requested = this.activated.snapshot.queryParamMap.get('paciente');
+      const requested = this.activated.snapshot.queryParamMap.get(RouteParam.Paciente);
       const draft = history.state as Partial<DeskPatient> | null;
       const onDeskRoute = this.activated.snapshot.routeConfig?.path === routePath(AppRoute.ReservarPaciente);
       if (staff && onDeskRoute && !requested && !(draft?.documentNumber && draft.firstName && draft.lastName && draft.phone)) {

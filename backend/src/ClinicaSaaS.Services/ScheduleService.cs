@@ -252,7 +252,7 @@ public partial class ScheduleService(
 
     public async Task<PageDto<AppointmentDto>> HistoryAsync(ListQuery query, AppointmentHistoryFilter filter, CancellationToken ct)
     {
-        var source = appointments.Appointments.AsQueryable();
+        var source = await ReadableAppointmentsAsync(ct);
         if (filter.SpecialtyId is Guid specialtyId)
             source = source.Where(a => a.AppointmentType.SpecialtyId == specialtyId);
         if (filter.ProfessionalId is Guid professionalId)
@@ -269,6 +269,7 @@ public partial class ScheduleService(
         if (query.Term is string term)
             source = source.Where(a =>
                 (a.Client.FirstName + " " + a.Client.LastName).ToLower().Contains(term) ||
+                a.Client.DocumentNumber.Contains(term) ||
                 (a.Professional.FirstName + " " + a.Professional.LastName).ToLower().Contains(term) ||
                 a.AppointmentType.Name.ToLower().Contains(term) ||
                 a.Location.Name.ToLower().Contains(term) ||
@@ -291,17 +292,6 @@ public partial class ScheduleService(
             _ => source.OrderByDescending(a => a.Start),
         };
         return await Pages.Materialize(ordered.ToAppointmentDtos(), query, ct);
-    }
-
-    public async Task<IReadOnlyList<AppointmentChangeDto>> ChangesAsync(Guid id, CancellationToken ct)
-    {
-        if (!await appointments.Appointments.AnyAsync(a => a.Id == id, ct))
-            throw new NotFoundException("Turno no encontrado.");
-        return await appointments.Changes
-            .Where(c => c.AppointmentId == id)
-            .OrderBy(c => c.CreatedAt)
-            .ToAppointmentChangeDtos()
-            .ToListAsync(ct);
     }
 
     public async Task<IReadOnlyList<AppointmentDto>> ForDayAsync(DateOnly date, Guid? professionalId, CancellationToken ct)

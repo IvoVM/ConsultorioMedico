@@ -58,7 +58,7 @@ export const routes: Routes = [
           },
           {
             path: routePath(AppRoute.HistorialTurnos),
-            canActivate: [roleGuard(TenantRole.Secretary, TenantRole.TenantAdmin)],
+            canActivate: [roleGuard(TenantRole.Secretary, TenantRole.TenantAdmin, TenantRole.Doctor)],
             loadComponent: () => import('./modules/appointments/appointment-history').then((m) => m.AppointmentHistoryPage),
           },
           {

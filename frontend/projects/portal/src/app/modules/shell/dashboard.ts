@@ -5,7 +5,7 @@ import { BoardColumn, MediaWatcherService, ToastService, UiBadge, UiBoard, UiBut
 import { Observable, firstValueFrom } from 'rxjs';
 import { appointmentStatusLabels } from '../appointments/models/appointment-status-labels';
 import { appointmentStatusTones } from '../appointments/models/appointment-status-tones';
-import { AppRoute } from '../../app.routes.enum';
+import { AppRoute, patientParams } from '../../app.routes.enum';
 
 const flow = [AppointmentStatus.Booked, AppointmentStatus.CheckedIn, AppointmentStatus.InProgress, AppointmentStatus.Completed].map((status) => ({
   status,
@@ -25,6 +25,7 @@ export class DashboardPage {
   readonly roles = TenantRole;
   readonly status = AppointmentStatus;
   readonly route = AppRoute;
+  readonly patientParams = patientParams;
   readonly statusLabels = appointmentStatusLabels;
   readonly appointments = signal<AppointmentDto[]>([]);
   readonly requests = signal<BookingRequestDto[]>([]);
@@ -60,7 +61,7 @@ export class DashboardPage {
           time: this.timeLabel(item.start),
           meta: doctor ? item.visitReason || 'Consulta' : item.professional,
           link: doctor ? AppRoute.Historia : undefined,
-          queryParams: doctor ? { paciente: item.patientId } : undefined,
+          queryParams: doctor ? patientParams(item.patientId) : undefined,
           linkLabel: 'Historia',
         })),
     }));
@@ -79,7 +80,7 @@ export class DashboardPage {
     if (!this.media.mobile()) return;
     const target = event.target;
     if (target instanceof Element && target.closest('a, button, ui-button')) return;
-    void this.router.navigate([AppRoute.Historia], { queryParams: { paciente: patientId } });
+    void this.router.navigate([AppRoute.Historia], { queryParams: patientParams(patientId) });
   }
 
   pick(id: string) {

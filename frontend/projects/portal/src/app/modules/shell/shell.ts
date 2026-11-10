@@ -62,6 +62,7 @@ export class ShellPage {
         children: [
           { label: 'Atención', path: AppRoute.Medico, icon: 'stethoscope' },
           { label: 'Historia', path: AppRoute.Historia, icon: 'clinical_notes' },
+          { label: 'Turnos', path: AppRoute.HistorialTurnos, icon: 'history' },
         ],
       });
     }

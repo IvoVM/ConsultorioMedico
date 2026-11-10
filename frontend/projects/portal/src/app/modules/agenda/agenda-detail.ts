@@ -4,7 +4,7 @@ import { RouterLink } from '@angular/router';
 import { Observable, firstValueFrom } from 'rxjs';
 import { AgendaDayDto, AgendaProfessionalDto, AgendaService, AppointmentDto, AppointmentStatus, AppointmentsService, TenantRole, clinicaSession, errorMessage } from 'sdk';
 import { SelectOption, ToastService, UiAvatar, UiButton, UiField, UiIcon, UiModal, UiMonth, UiSelect, formatFecha, localDate } from 'ui';
-import { AppRoute } from '../../app.routes.enum';
+import { AppRoute, patientParams } from '../../app.routes.enum';
 import { appointmentStatusLabels } from '../appointments/models/appointment-status-labels';
 import { bounds, clock, dayTitle, durationOf, inPast, isOverbook, isoAt, minutesOf, movable, spans, statusTone } from './agenda-time';
 
@@ -45,6 +45,7 @@ export class AgendaDetail {
 
   readonly modes = DetailMode;
   readonly route = AppRoute;
+  readonly patientParams = patientParams;
   readonly canSeeHistory = computed(() => clinicaSession.role() === TenantRole.Doctor);
   readonly status = AppointmentStatus;
   readonly labels = appointmentStatusLabels;

@@ -286,6 +286,13 @@ public class AppointmentStore(TenantDbContext db) : IAppointmentStore
 
     public Task<Appointment?> GetAsync(Guid id, CancellationToken ct) => db.Appointments.FirstOrDefaultAsync(a => a.Id == id, ct);
 
+    public Task<AppointmentChange?> GetChangeAsync(Guid appointmentId, Guid changeId, CancellationToken ct) =>
+        db.AppointmentChanges.FirstOrDefaultAsync(c => c.Id == changeId && c.AppointmentId == appointmentId, ct);
+
+    public void AddChange(AppointmentChange change) => db.AppointmentChanges.Add(change);
+
+    public void RemoveChange(AppointmentChange change) => db.AppointmentChanges.Remove(change);
+
     public async Task<Appointment> BookAsync(Appointment appointment, CancellationToken ct)
     {
         // Joins the use case's transaction when there is one; the overlap constraint in the database is the final guard either way.

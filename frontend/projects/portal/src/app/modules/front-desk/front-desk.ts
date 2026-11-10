@@ -6,7 +6,7 @@ import { FechaPipe, ToastService, UiActions, UiBadge, UiButton, UiCalendar, UiEm
 import { Observable, firstValueFrom } from 'rxjs';
 import { appointmentStatusLabels } from '../appointments/models/appointment-status-labels';
 import { invoiceStatusLabels } from './models/invoice-labels';
-import { AppRoute } from '../../app.routes.enum';
+import { AppRoute, patientParams } from '../../app.routes.enum';
 
 const paymentLabels: Record<PaymentMethod, string> = {
   [PaymentMethod.Cash]: 'efectivo',
@@ -20,6 +20,7 @@ const paymentLabels: Record<PaymentMethod, string> = {
 })
 export class FrontDeskPage {
   readonly route = AppRoute;
+  readonly patientParams = patientParams;
   readonly status = AppointmentStatus;
   readonly invoice = InvoiceStatus;
   readonly payment = PaymentMethod;

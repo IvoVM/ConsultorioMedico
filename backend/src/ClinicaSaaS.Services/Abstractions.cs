@@ -103,6 +103,9 @@ public interface IAppointmentStore
     IQueryable<Appointment> Appointments { get; }
     IQueryable<AppointmentChange> Changes { get; }
     Task<Appointment?> GetAsync(Guid id, CancellationToken ct);
+    Task<AppointmentChange?> GetChangeAsync(Guid appointmentId, Guid changeId, CancellationToken ct);
+    void AddChange(AppointmentChange change);
+    void RemoveChange(AppointmentChange change);
     Task<Appointment> BookAsync(Appointment appointment, CancellationToken ct);
     Task SaveAsync(CancellationToken ct);
 }

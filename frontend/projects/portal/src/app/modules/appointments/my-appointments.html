@@ -57,7 +57,8 @@
               <span class="mt-1 block text-sm text-ink/70">{{ appointment.insurer ? appointment.insurer + (appointment.memberNumber ? ' · ' + appointment.memberNumber : '') : 'Particular' }}</span>
             </td>
             <td data-name="Estado"><ui-badge [tone]="appointment.status === status.Cancelled ? 'warn' : appointment.status === status.Rescheduled ? 'muted' : 'ok'">{{ statusLabels[appointment.status] }}</ui-badge></td>
-            <td>
+            <td class="whitespace-nowrap">
+              <ui-button variant="ghost" (click)="trailOf.set(appointment)">Historial</ui-button>
               @if (appointment.status === status.Booked || appointment.status === status.Rescheduled) {
                 <ui-button variant="ghost" [loading]="pending() === appointment.id" (click)="cancel(appointment)">Cancelar</ui-button>
               }
@@ -79,3 +80,9 @@
     <a class="action-link" [routerLink]="route.Reservar" (click)="reasonFor.set(null)">Pedir otro turno</a>
   </div>
 </ui-modal>
+@if (trailOf(); as appointment) {
+  <ui-modal [open]="true" [title]="'Turno del ' + (appointment.start | fecha)" (closed)="trailOf.set(null)">
+    <p class="text-sm text-ink/70">{{ appointment.professional }} · {{ appointment.appointmentType }} · {{ appointment.location }}</p>
+    <appointment-changes [appointmentId]="appointment.id" />
+  </ui-modal>
+}

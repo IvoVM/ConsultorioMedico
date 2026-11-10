@@ -1,7 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import {
-  AppointmentChangeDto,
   AppointmentDto,
   AppointmentStatus,
   AppointmentsService,
@@ -11,17 +11,21 @@ import {
   PatientsService,
   ProfessionalDto,
   SpecialtyDto,
+  TenantRole,
+  clinicaSession,
   errorMessage,
 } from 'sdk';
 import { FechaPipe, SelectOption, UiBadge, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { appointmentStatusLabels } from './models/appointment-status-labels';
+import { AppointmentChanges } from './appointment-changes';
+import { RouteParam } from '../../app.routes.enum';
 
 const pageSize = 10;
 const searchDelay = 300;
 
 @Component({
-  imports: [FormsModule, FechaPipe, UiBadge, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable],
+  imports: [FormsModule, AppointmentChanges, FechaPipe, UiBadge, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable],
   templateUrl: './appointment-history.html',
 })
 export class AppointmentHistoryPage {
@@ -32,6 +36,8 @@ export class AppointmentHistoryPage {
   private searchTimer?: ReturnType<typeof setTimeout>;
   private patientTimer?: ReturnType<typeof setTimeout>;
   readonly statusLabels = appointmentStatusLabels;
+  // The professional only gets the appointments they attend, so the specialty, professional and patient pickers are front desk's.
+  readonly doctor = clinicaSession.role() === TenantRole.Doctor;
   readonly rows = signal<AppointmentDto[]>([]);
   readonly total = signal(0);
   readonly page = signal(1);
@@ -69,13 +75,17 @@ export class AppointmentHistoryPage {
   readonly filtered = computed(() => !!(this.query() || this.specialtyId() || this.professionalId() || this.patientId() || this.statusFilter()));
 
   readonly detail = signal<AppointmentDto | null>(null);
-  readonly changes = signal<AppointmentChangeDto[]>([]);
-  readonly changesLoading = signal(false);
-  readonly changesError = signal('');
 
   constructor() {
+    // Front desk lands here from a patient search with the patient already picked, and sees every appointment of theirs.
+    const requested = inject(ActivatedRoute).snapshot.queryParamMap.get(RouteParam.Paciente);
+    if (requested && !this.doctor) {
+      this.patientId.set(requested);
+      this.past.set(false);
+      void this.loadPatient(requested);
+    }
     void this.load();
-    void this.loadFilters();
+    if (!this.doctor) void this.loadFilters();
   }
 
   tone(status: AppointmentStatus): 'ok' | 'warn' | 'muted' {
@@ -155,40 +165,27 @@ export class AppointmentHistoryPage {
     void this.load();
   }
 
-  async openDetail(item: AppointmentDto) {
+  openDetail(item: AppointmentDto) {
     this.detail.set(item);
-    this.changes.set([]);
-    this.changesError.set('');
-    this.changesLoading.set(true);
-    try {
-      this.changes.set(await firstValueFrom(this.appointments.appointmentChanges(item.id)));
-    } catch (error) {
-      this.changesError.set(errorMessage(error));
-    } finally {
-      this.changesLoading.set(false);
-    }
   }
 
   closeDetail() {
     this.detail.set(null);
   }
 
-  // A step that only moved the slot reads as a move, not as the same status twice.
-  stepLabel(change: AppointmentChangeDto, index: number) {
-    const previous = index > 0 ? this.changes()[index - 1] : null;
-    if (!previous) return `Turno dado como ${appointmentStatusLabels[change.status].toLowerCase()}`;
-    if (previous.status === change.status) return 'Cambio de horario o profesional';
-    return `Pasó a ${appointmentStatusLabels[change.status].toLowerCase()}`;
-  }
-
-  movedSlot(change: AppointmentChangeDto, index: number) {
-    const previous = index > 0 ? this.changes()[index - 1] : null;
-    return !previous || previous.start !== change.start || previous.professional !== change.professional;
-  }
-
   private reload() {
     this.page.set(1);
     void this.load();
+  }
+
+  private async loadPatient(id: string) {
+    try {
+      const patient = await firstValueFrom(this.patientsApi.patient(id));
+      this.patientMatches.set([patient]);
+      this.patientText.set(this.patientLabel(patient));
+    } catch (error) {
+      this.error.set(errorMessage(error));
+    }
   }
 
   private async searchPatients(term: string) {

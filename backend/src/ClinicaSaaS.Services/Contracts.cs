@@ -114,7 +114,16 @@ public record AppointmentChangeDto(
     DateTimeOffset End,
     string Professional,
     DateTimeOffset At,
-    string? By);
+    string? By,
+    Guid ProfessionalId);
+
+// What the admin writes over a step of the trail: any status, slot, professional and moment, whatever really happened.
+public record SaveAppointmentChangeCommand(
+    AppointmentStatus Status,
+    DateTimeOffset Start,
+    DateTimeOffset End,
+    Guid ProfessionalId,
+    DateTimeOffset At);
 
 public record WaitlistEntryDto(
     Guid Id,

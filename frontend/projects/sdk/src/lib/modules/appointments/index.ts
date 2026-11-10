@@ -5,6 +5,7 @@ export * from './models/waitlist-status';
 export * from './models/book-appointment-command';
 export * from './models/appointment-dto';
 export * from './models/appointment-change-dto';
+export * from './models/save-appointment-change-command';
 export * from './models/appointment-history-filter';
 export * from './models/reschedule-appointment-command';
 export * from './models/waitlist-entry-dto';
