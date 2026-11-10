@@ -92,6 +92,12 @@ public interface IScheduleStore
     Task DeleteBlockoutAsync(Guid id, CancellationToken ct);
 }
 
+// Runs a use case in one database transaction, so a failure halfway leaves nothing half-saved.
+public interface IUnitOfWork
+{
+    Task<T> InTransactionAsync<T>(Func<Task<T>> work, CancellationToken ct);
+}
+
 public interface IAppointmentStore
 {
     IQueryable<Appointment> Appointments { get; }

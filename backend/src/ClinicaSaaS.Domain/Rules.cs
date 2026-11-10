@@ -28,15 +28,16 @@ public static class SchedulingRules
     public const int ExpiredRequestDays = 30;
 
     public static bool RequestExpired(DateTimeOffset start, DateTimeOffset now, TimeZoneInfo zone) =>
-        LocalDay(start, zone) < LocalDay(now, zone);
+        LocalDate(start, zone) < LocalDate(now, zone);
 
     public static DateTimeOffset ActiveRequestsFrom(DateTimeOffset now, TimeZoneInfo zone) =>
-        Combine(LocalDay(now, zone).AddDays(1 - ExpiredRequestDays), TimeOnly.MinValue, zone);
+        Combine(LocalDate(now, zone).AddDays(1 - ExpiredRequestDays), TimeOnly.MinValue, zone);
 
     public static bool RequestDeactivated(DateTimeOffset start, DateTimeOffset now, TimeZoneInfo zone) =>
         start < ActiveRequestsFrom(now, zone);
 
-    private static DateOnly LocalDay(DateTimeOffset moment, TimeZoneInfo zone) =>
+    // The clinic's calendar day for a moment, whatever offset the caller sent it with.
+    public static DateOnly LocalDate(DateTimeOffset moment, TimeZoneInfo zone) =>
         DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(moment, zone).DateTime);
 
     public static IReadOnlyList<TimeRange> MergeRanges(IEnumerable<TimeRange> ranges)
@@ -65,6 +66,28 @@ public static class SchedulingRules
 
     public static bool CanReschedule(AppointmentStatus status) =>
         status is AppointmentStatus.Booked or AppointmentStatus.Rescheduled or AppointmentStatus.CheckedIn;
+
+    // A patient already in the waiting room stays there when front desk moves the slot or the professional.
+    public static AppointmentStatus StatusAfterMove(AppointmentStatus current) =>
+        current == AppointmentStatus.CheckedIn ? AppointmentStatus.CheckedIn : AppointmentStatus.Rescheduled;
+
+    // How long a booking may stay unattended after its end before the system records the patient as absent.
+    public static readonly TimeSpan NoShowGrace = TimeSpan.FromHours(1);
+
+    public static bool BecomesNoShow(AppointmentStatus status, DateTimeOffset end, DateTimeOffset now) =>
+        status is AppointmentStatus.Booked or AppointmentStatus.Rescheduled && end + NoShowGrace <= now;
+
+    // Someone marked absent who shows up late the same day can still go to the waiting room.
+    public static bool CanCheckIn(AppointmentStatus status, DateTimeOffset start, DateTimeOffset now, TimeZoneInfo zone) =>
+        status is AppointmentStatus.Booked or AppointmentStatus.Rescheduled
+        || (status == AppointmentStatus.NoShow && LocalDate(start, zone) == LocalDate(now, zone));
+
+    // A public request keeps its slot only for a while; after that the slot opens again and front desk has to re-place it.
+    public static readonly TimeSpan RequestHold = TimeSpan.FromHours(12);
+
+    public static DateTimeOffset HoldsSince(DateTimeOffset now) => now - RequestHold;
+
+    public const int MaxOpenRequestsPerPerson = 2;
 
     public static IReadOnlyList<TimeRange> GenerateSlots(
         DateOnly date,

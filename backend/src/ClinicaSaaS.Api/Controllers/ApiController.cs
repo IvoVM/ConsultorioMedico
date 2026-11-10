@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using ClinicaSaaS.Services;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
@@ -38,6 +40,9 @@ internal static class ErrorMap
         NotFoundException notFound => new(StatusCodes.Status404NotFound, notFound.Message),
         ConflictException conflict => new(StatusCodes.Status409Conflict, conflict.Message),
         BusinessRuleException rule => new(StatusCodes.Status400BadRequest, rule.Message),
+        // The database refuses two active appointments of one professional at the same time (EX_Appointments_NoOverlap).
+        DbUpdateException { InnerException: PostgresException { SqlState: PostgresErrorCodes.ExclusionViolation } } =>
+            new(StatusCodes.Status409Conflict, "Ese horario se acaba de ocupar. Elegí otro."),
         _ => null
     };
 }

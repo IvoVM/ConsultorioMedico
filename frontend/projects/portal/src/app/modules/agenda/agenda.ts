@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostListener, computed, inject, signal, viewChild } from '@angular/core';
+import { Component, DestroyRef, ElementRef, HostListener, computed, inject, signal, viewChild } from '@angular/core';
 import { Observable, firstValueFrom } from 'rxjs';
 import {
   AgendaDayDto,
@@ -156,6 +156,28 @@ export class AgendaPage {
 
   constructor() {
     void this.load();
+    // Other people change the agenda too: refresh quietly while the tab is visible and nobody is mid-action here.
+    const timer = setInterval(() => void this.refresh(), 30000);
+    inject(DestroyRef).onDestroy(() => clearInterval(timer));
+  }
+
+  private busy() {
+    return this.loading() || this.saving() || this.picking() || !!this.drag() || !!this.drop() || !!this.draft() || !!this.open() || !!this.openRequest();
+  }
+
+  async refresh() {
+    if (document.hidden || this.busy()) return;
+    const day = this.day();
+    try {
+      const data = await firstValueFrom(this.agendaApi.day(day));
+      const requests = data.canEdit ? await firstValueFrom(this.appointmentsApi.pendingRequests()) : [];
+      if (day !== this.day() || this.busy()) return;
+      this.data.set(data);
+      this.remember(data.professionals);
+      if (data.canEdit) this.requests.set(requests);
+    } catch {
+      // A failed background refresh keeps what is on screen; the next tick or any action tries again.
+    }
   }
 
   readonly clock = clock;

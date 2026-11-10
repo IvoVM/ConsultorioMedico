@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { AppointmentDto, AppointmentStatus, AppointmentsService, BookingRequestDto, TenantRole, clinicaSession, errorMessage } from 'sdk';
 import { BoardColumn, MediaWatcherService, ToastService, UiBadge, UiBoard, UiButton, UiEmpty, UiIcon, UiModal, UiSkeleton, UiStat, UiTable, UiTone, formatFecha, greeting, todayLabel } from 'ui';
@@ -68,6 +68,11 @@ export class DashboardPage {
 
   constructor() {
     void this.load();
+    // Front desk and doctors change appointments all day; refresh the board quietly while the tab is visible.
+    const timer = setInterval(() => {
+      if (!document.hidden && !this.picked() && !this.saving() && this.session.role() !== TenantRole.Patient) void this.load(true);
+    }, 30000);
+    inject(DestroyRef).onDestroy(() => clearInterval(timer));
   }
 
   openChart(patientId: string, event: Event) {
@@ -130,7 +135,7 @@ export class DashboardPage {
     }
   }
 
-  private async load() {
+  private async load(quiet = false) {
     const role = this.session.role();
     try {
       if (role === TenantRole.Patient) {
@@ -151,7 +156,7 @@ export class DashboardPage {
         }
       }
     } catch (error) {
-      this.error.set(errorMessage(error));
+      if (!quiet) this.error.set(errorMessage(error));
     } finally {
       this.loading.set(false);
     }

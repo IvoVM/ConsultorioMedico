@@ -265,6 +265,19 @@ public class ScheduleStore(TenantDbContext db) : IScheduleStore
     }
 }
 
+public class UnitOfWork(TenantDbContext db) : IUnitOfWork
+{
+    public async Task<T> InTransactionAsync<T>(Func<Task<T>> work, CancellationToken ct)
+    {
+        if (db.Database.CurrentTransaction is not null)
+            return await work();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
+        var result = await work();
+        await tx.CommitAsync(ct);
+        return result;
+    }
+}
+
 public class AppointmentStore(TenantDbContext db) : IAppointmentStore
 {
     public IQueryable<Appointment> Appointments => db.Appointments.AsNoTracking();
@@ -275,7 +288,9 @@ public class AppointmentStore(TenantDbContext db) : IAppointmentStore
 
     public async Task<Appointment> BookAsync(Appointment appointment, CancellationToken ct)
     {
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
+        // Joins the use case's transaction when there is one; the overlap constraint in the database is the final guard either way.
+        var own = db.Database.CurrentTransaction is null;
+        await using var tx = own ? await db.Database.BeginTransactionAsync(ct) : null;
         var existing = await db.Appointments
             .AsNoTracking()
             .Where(a => a.ProfessionalId == appointment.ProfessionalId && a.Start < appointment.End && a.End > appointment.Start)
@@ -286,7 +301,8 @@ public class AppointmentStore(TenantDbContext db) : IAppointmentStore
             throw new ConflictException("El horario ya no está disponible.");
         db.Appointments.Add(appointment);
         await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        if (tx is not null)
+            await tx.CommitAsync(ct);
         return appointment;
     }
 

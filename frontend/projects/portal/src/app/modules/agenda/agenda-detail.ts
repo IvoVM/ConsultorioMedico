@@ -75,7 +75,11 @@ export class AgendaDetail {
     ...(this.professional()?.insurers ?? []).map((insurer) => ({ value: insurer.id, label: insurer.name })),
   ]);
   readonly canMove = computed(() => this.canEdit() && movable(this.appointment().status));
-  readonly canCheckIn = computed(() => this.canEdit() && (this.appointment().status === AppointmentStatus.Booked || this.appointment().status === AppointmentStatus.Rescheduled));
+  readonly canCheckIn = computed(() => this.canEdit() && (this.booked() || this.lateArrival()));
+  readonly canMarkAbsent = computed(() => this.canEdit() && this.booked());
+  private readonly booked = computed(() => this.appointment().status === AppointmentStatus.Booked || this.appointment().status === AppointmentStatus.Rescheduled);
+  // The system marks unattended bookings absent; a patient who still shows up that day can go to the waiting room.
+  private readonly lateArrival = computed(() => this.appointment().status === AppointmentStatus.NoShow && this.day() === localDate(new Date()));
   readonly canEditData = computed(() => this.canEdit() && this.appointment().status !== AppointmentStatus.Completed);
   readonly openDays = computed(() => {
     const today = localDate(new Date());

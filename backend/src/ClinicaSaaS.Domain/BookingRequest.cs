@@ -2,7 +2,7 @@ using ClinicaSaaS.Infrastructure.Identity;
 
 namespace ClinicaSaaS.Domain;
 
-public class BookingRequest
+public class BookingRequest : Auditable
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = "";
@@ -21,7 +21,6 @@ public class BookingRequest
     public BookingRequestStatus Status { get; set; } = BookingRequestStatus.Pending;
     public string? RejectionReason { get; set; }
     public DateTimeOffset? PreviousStart { get; set; }
-    public DateTimeOffset CreatedAt { get; set; }
 
     public virtual Specialty Specialty { get; set; } = null!;
     public virtual TenantUser Professional { get; set; } = null!;

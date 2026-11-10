@@ -228,6 +228,9 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("DocumentNumber")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -277,6 +280,12 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
                     b.HasIndex("AppointmentId");
@@ -284,6 +293,8 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                     b.HasIndex("AppointmentTypeId");
 
                     b.HasIndex("ClientId");
+
+                    b.HasIndex("CreatedBy");
 
                     b.HasIndex("DocumentNumber");
 
@@ -294,6 +305,8 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                     b.HasIndex("ProfessionalId");
 
                     b.HasIndex("SpecialtyId");
+
+                    b.HasIndex("UpdatedBy");
 
                     b.HasIndex("Status", "Start");
 
@@ -1273,6 +1286,11 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                         .HasForeignKey("ClientId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("ClinicaSaaS.Infrastructure.Identity.TenantUser", "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("ClinicaSaaS.Domain.Insurer", "Insurer")
                         .WithMany()
                         .HasForeignKey("InsurerId")
@@ -1296,11 +1314,18 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("ClinicaSaaS.Infrastructure.Identity.TenantUser", "UpdatedByUser")
+                        .WithMany()
+                        .HasForeignKey("UpdatedBy")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.Navigation("Appointment");
 
                     b.Navigation("AppointmentType");
 
                     b.Navigation("Client");
+
+                    b.Navigation("CreatedByUser");
 
                     b.Navigation("Insurer");
 
@@ -1309,6 +1334,8 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                     b.Navigation("Professional");
 
                     b.Navigation("Specialty");
+
+                    b.Navigation("UpdatedByUser");
                 });
 
             modelBuilder.Entity("ClinicaSaaS.Domain.Client", b =>

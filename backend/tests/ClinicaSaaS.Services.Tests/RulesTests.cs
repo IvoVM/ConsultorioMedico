@@ -21,6 +21,49 @@ public class SchedulingRulesTests
     }
 
     [Fact]
+    public void Local_date_uses_the_clinic_zone_whatever_offset_arrives()
+    {
+        // 22:00 in Buenos Aires is 01:00 UTC of the next day.
+        var utc = new DateTimeOffset(2026, 11, 10, 1, 0, 0, TimeSpan.Zero);
+
+        Assert.Equal(new DateOnly(2026, 11, 9), SchedulingRules.LocalDate(utc, Zone));
+        Assert.Equal(new DateOnly(2026, 11, 9), SchedulingRules.LocalDate(utc.ToOffset(TimeSpan.FromHours(-3)), Zone));
+    }
+
+    [Fact]
+    public void Moving_keeps_a_patient_in_the_waiting_room()
+    {
+        Assert.Equal(AppointmentStatus.CheckedIn, SchedulingRules.StatusAfterMove(AppointmentStatus.CheckedIn));
+        Assert.Equal(AppointmentStatus.Rescheduled, SchedulingRules.StatusAfterMove(AppointmentStatus.Booked));
+        Assert.Equal(AppointmentStatus.Rescheduled, SchedulingRules.StatusAfterMove(AppointmentStatus.Rescheduled));
+    }
+
+    [Fact]
+    public void Unattended_booking_becomes_absent_after_the_grace()
+    {
+        var end = At(10, 0);
+
+        Assert.False(SchedulingRules.BecomesNoShow(AppointmentStatus.Booked, end, end + SchedulingRules.NoShowGrace - TimeSpan.FromMinutes(1)));
+        Assert.True(SchedulingRules.BecomesNoShow(AppointmentStatus.Booked, end, end + SchedulingRules.NoShowGrace));
+        Assert.True(SchedulingRules.BecomesNoShow(AppointmentStatus.Rescheduled, end, end.AddHours(5)));
+        Assert.False(SchedulingRules.BecomesNoShow(AppointmentStatus.CheckedIn, end, end.AddHours(5)));
+        Assert.False(SchedulingRules.BecomesNoShow(AppointmentStatus.Completed, end, end.AddHours(5)));
+    }
+
+    [Fact]
+    public void Absent_patient_arriving_the_same_day_can_still_check_in()
+    {
+        var start = SchedulingRules.Combine(new DateOnly(2026, 11, 9), new TimeOnly(9, 0), Zone);
+        var sameDay = SchedulingRules.Combine(new DateOnly(2026, 11, 9), new TimeOnly(18, 0), Zone);
+        var nextDay = SchedulingRules.Combine(new DateOnly(2026, 11, 10), new TimeOnly(8, 0), Zone);
+
+        Assert.True(SchedulingRules.CanCheckIn(AppointmentStatus.NoShow, start, sameDay, Zone));
+        Assert.False(SchedulingRules.CanCheckIn(AppointmentStatus.NoShow, start, nextDay, Zone));
+        Assert.True(SchedulingRules.CanCheckIn(AppointmentStatus.Booked, start, nextDay, Zone));
+        Assert.False(SchedulingRules.CanCheckIn(AppointmentStatus.Cancelled, start, sameDay, Zone));
+    }
+
+    [Fact]
     public void Request_expires_once_its_day_has_passed_in_the_clinic_zone()
     {
         var now = SchedulingRules.Combine(new DateOnly(2026, 10, 5), new TimeOnly(15, 0), Zone);

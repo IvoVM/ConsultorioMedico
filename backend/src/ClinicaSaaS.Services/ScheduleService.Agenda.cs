@@ -69,88 +69,97 @@ public partial class ScheduleService
 
     public async Task<AppointmentDto> MoveOnAgendaAsync(Guid id, MoveAppointmentCommand command, CancellationToken ct)
     {
-        var appointment = await appointments.GetAsync(id, ct) ?? throw new NotFoundException("Turno no encontrado.");
-        if (!SchedulingRules.CanMoveOnAgenda(appointment.Status))
-            throw new BusinessRuleException("Ese turno ya no se puede mover.");
-        var placement = await PlaceAsync(command.ProfessionalId, appointment.AppointmentTypeId, command.Start, appointment.Id, ct);
-        appointment.ProfessionalId = command.ProfessionalId;
-        appointment.LocationId = placement.LocationId;
-        appointment.Start = command.Start;
-        appointment.End = placement.End;
-        appointment.IsOverbook = placement.Overbook;
-        if (appointment.InsurerId is Guid insurerId && !await AcceptsInsurerAsync(command.ProfessionalId, insurerId, ct))
+        return await unitOfWork.InTransactionAsync(async () =>
         {
-            appointment.InsurerId = null;
-            appointment.MemberNumber = null;
-            appointment.CoverageAccepted = null;
-        }
-        appointment.Status = AppointmentStatus.Rescheduled;
-        await appointments.SaveAsync(ct);
-        await audit.RecordAsync(currentUser.Id, "reprogramacion", "Turno", appointment.Id.ToString(), appointment.Start.ToString("O"), ct);
-        return await LoadAppointmentAsync(appointment.Id, ct);
+            var appointment = await appointments.GetAsync(id, ct) ?? throw new NotFoundException("Turno no encontrado.");
+            if (!SchedulingRules.CanMoveOnAgenda(appointment.Status))
+                throw new BusinessRuleException("Ese turno ya no se puede mover.");
+            var placement = await PlaceAsync(command.ProfessionalId, appointment.AppointmentTypeId, command.Start, appointment.Id, null, ct);
+            appointment.ProfessionalId = command.ProfessionalId;
+            appointment.LocationId = placement.LocationId;
+            appointment.Start = command.Start;
+            appointment.End = placement.End;
+            appointment.IsOverbook = placement.Overbook;
+            if (appointment.InsurerId is Guid insurerId && !await AcceptsInsurerAsync(command.ProfessionalId, insurerId, ct))
+            {
+                appointment.InsurerId = null;
+                appointment.MemberNumber = null;
+                appointment.CoverageAccepted = null;
+            }
+            appointment.Status = SchedulingRules.StatusAfterMove(appointment.Status);
+            await appointments.SaveAsync(ct);
+            await audit.RecordAsync(currentUser.Id, "reprogramacion", "Turno", appointment.Id.ToString(), appointment.Start.ToString("O"), ct);
+            return await LoadAppointmentAsync(appointment.Id, ct);
+        }, ct);
     }
 
     public async Task<AppointmentDto> BookOnAgendaAsync(AgendaBookCommand command, CancellationToken ct)
     {
-        var placement = await PlaceAsync(command.ProfessionalId, command.AppointmentTypeId, command.Start, null, ct);
+        var placement = await PlaceAsync(command.ProfessionalId, command.AppointmentTypeId, command.Start, null, null, ct);
         var (insurerId, memberNumber) = await CoverageAsync(command.ProfessionalId, command.InsurerId, command.MemberNumber, ct);
-        var clientId = await ClientForDocumentAsync(command.DocumentNumber, command.FirstName, command.LastName, command.Phone, ct);
-        var reason = command.VisitReason?.Trim();
-        if (reason is { Length: > 500 })
-            throw new BusinessRuleException("El motivo tiene que tener menos de 500 caracteres.");
-        var appointment = await appointments.BookAsync(new Appointment
+        return await unitOfWork.InTransactionAsync(async () =>
         {
-            Id = Guid.NewGuid(),
-            ClientId = clientId,
-            ProfessionalId = command.ProfessionalId,
-            LocationId = placement.LocationId,
-            AppointmentTypeId = command.AppointmentTypeId,
-            Start = command.Start,
-            End = placement.End,
-            Status = AppointmentStatus.Booked,
-            VisitReason = string.IsNullOrEmpty(reason) ? null : reason,
-            InsurerId = insurerId,
-            MemberNumber = memberNumber,
-            IsOverbook = placement.Overbook
+            var clientId = await ClientForDocumentAsync(command.DocumentNumber, command.FirstName, command.LastName, command.Phone, ct);
+            var reason = command.VisitReason?.Trim();
+            if (reason is { Length: > 500 })
+                throw new BusinessRuleException("El motivo tiene que tener menos de 500 caracteres.");
+            var appointment = await appointments.BookAsync(new Appointment
+            {
+                Id = Guid.NewGuid(),
+                ClientId = clientId,
+                ProfessionalId = command.ProfessionalId,
+                LocationId = placement.LocationId,
+                AppointmentTypeId = command.AppointmentTypeId,
+                Start = command.Start,
+                End = placement.End,
+                Status = AppointmentStatus.Booked,
+                VisitReason = string.IsNullOrEmpty(reason) ? null : reason,
+                InsurerId = insurerId,
+                MemberNumber = memberNumber,
+                IsOverbook = placement.Overbook
+            }, ct);
+            await audit.RecordAsync(currentUser.Id, placement.Overbook ? "sobreturno" : "reserva", "Turno", appointment.Id.ToString(), appointment.Start.ToString("O"), ct);
+            return await LoadAppointmentAsync(appointment.Id, ct);
         }, ct);
-        await audit.RecordAsync(currentUser.Id, placement.Overbook ? "sobreturno" : "reserva", "Turno", appointment.Id.ToString(), appointment.Start.ToString("O"), ct);
-        return await LoadAppointmentAsync(appointment.Id, ct);
     }
 
     public async Task<AppointmentDto> PlaceRequestOnAgendaAsync(Guid id, PlaceRequestCommand command, CancellationToken ct)
     {
         var request = await MovableRequestAsync(id, ct);
-        var placement = await PlaceAsync(command.ProfessionalId, request.AppointmentTypeId, command.Start, null, ct);
-        var clientId = await EnsureClientAsync(request, ct);
-        var keepsCoverage = request.InsurerId is Guid insurerId && await AcceptsInsurerAsync(command.ProfessionalId, insurerId, ct);
-        var appointment = await appointments.BookAsync(new Appointment
+        var placement = await PlaceAsync(command.ProfessionalId, request.AppointmentTypeId, command.Start, null, request.Id, ct);
+        return await unitOfWork.InTransactionAsync(async () =>
         {
-            Id = Guid.NewGuid(),
-            ClientId = clientId,
-            ProfessionalId = command.ProfessionalId,
-            LocationId = placement.LocationId,
-            AppointmentTypeId = request.AppointmentTypeId,
-            Start = command.Start,
-            End = placement.End,
-            Status = AppointmentStatus.Booked,
-            InsurerId = keepsCoverage ? request.InsurerId : null,
-            MemberNumber = keepsCoverage ? request.MemberNumber : null,
-            IsOverbook = placement.Overbook
+            var clientId = await EnsureClientAsync(request, ct);
+            var keepsCoverage = request.InsurerId is Guid insurerId && await AcceptsInsurerAsync(command.ProfessionalId, insurerId, ct);
+            var appointment = await appointments.BookAsync(new Appointment
+            {
+                Id = Guid.NewGuid(),
+                ClientId = clientId,
+                ProfessionalId = command.ProfessionalId,
+                LocationId = placement.LocationId,
+                AppointmentTypeId = request.AppointmentTypeId,
+                Start = command.Start,
+                End = placement.End,
+                Status = AppointmentStatus.Booked,
+                InsurerId = keepsCoverage ? request.InsurerId : null,
+                MemberNumber = keepsCoverage ? request.MemberNumber : null,
+                IsOverbook = placement.Overbook
+            }, ct);
+            if (request.Start != command.Start)
+                request.PreviousStart ??= request.Start;
+            request.Start = command.Start;
+            request.End = placement.End;
+            request.ProfessionalId = command.ProfessionalId;
+            if (request.Status == BookingRequestStatus.Pending && request.PreviousStart is null)
+                request.Status = BookingRequestStatus.Approved;
+            else
+                request.Status = BookingRequestStatus.Rescheduled;
+            request.ClientId = clientId;
+            request.AppointmentId = appointment.Id;
+            await requests.SaveAsync(ct);
+            await audit.RecordAsync(currentUser.Id, "alta", "Turno", appointment.Id.ToString(), request.Name, ct);
+            return await LoadAppointmentAsync(appointment.Id, ct);
         }, ct);
-        if (request.Start != command.Start)
-            request.PreviousStart ??= request.Start;
-        request.Start = command.Start;
-        request.End = placement.End;
-        request.ProfessionalId = command.ProfessionalId;
-        if (request.Status == BookingRequestStatus.Pending && request.PreviousStart is null)
-            request.Status = BookingRequestStatus.Approved;
-        else
-            request.Status = BookingRequestStatus.Rescheduled;
-        request.ClientId = clientId;
-        request.AppointmentId = appointment.Id;
-        await requests.SaveAsync(ct);
-        await audit.RecordAsync(currentUser.Id, "alta", "Turno", appointment.Id.ToString(), request.Name, ct);
-        return await LoadAppointmentAsync(appointment.Id, ct);
     }
 
     public async Task<AppointmentDto> EditOnAgendaAsync(Guid id, EditAppointmentCommand command, CancellationToken ct)
@@ -172,7 +181,8 @@ public partial class ScheduleService
         return await LoadAppointmentAsync(appointment.Id, ct);
     }
 
-    private async Task<Placement> PlaceAsync(Guid professionalId, Guid appointmentTypeId, DateTimeOffset start, Guid? movingId, CancellationToken ct)
+    // The one check every agenda write goes through. requestId is the public request being placed, whose own hold must not block it.
+    private async Task<Placement> PlaceAsync(Guid professionalId, Guid appointmentTypeId, DateTimeOffset start, Guid? movingId, Guid? requestId, CancellationToken ct)
     {
         if (start <= clock.GetUtcNow())
             throw new BusinessRuleException("No se puede dar un turno en un horario que ya pasó.");
@@ -200,6 +210,15 @@ public partial class ScheduleService
             .ToListAsync(ct);
         if (SchedulingRules.HasOverlap(busy.Select(a => (new TimeRange(a.Start, a.End), a.Status)), candidate))
             throw new ConflictException("Se superpone con otro turno de ese profesional.");
+        var holdsSince = SchedulingRules.HoldsSince(clock.GetUtcNow());
+        var held = await requests.Entries
+            .Where(r => r.ProfessionalId == professionalId && r.Id != requestId && r.Start < candidate.End && r.End > candidate.Start)
+            .Where(r => r.Status == BookingRequestStatus.Pending || (r.Status == BookingRequestStatus.Rescheduled && r.AppointmentId == null))
+            .Where(r => r.UpdatedAt >= holdsSince)
+            .Select(r => r.Name)
+            .FirstOrDefaultAsync(ct);
+        if (held is not null)
+            throw new ConflictException($"Ese horario lo pidió {held} y está esperando confirmación. Ubicá o rechazá esa solicitud primero.");
 
         var date = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(start, timeZone.Zone).DateTime);
         var blocks = await schedules.Blocks
@@ -207,7 +226,13 @@ public partial class ScheduleService
             .Select(b => new { b.StartTime, b.EndTime, b.LocationId })
             .ToListAsync(ct);
         var agenda = blocks.Select(b => new TimeRange(SchedulingRules.Combine(date, b.StartTime, timeZone.Zone), SchedulingRules.Combine(date, b.EndTime, timeZone.Zone)));
-        var location = blocks.Select(b => (Guid?)b.LocationId).FirstOrDefault()
+        // The site comes from the block the slot falls in, or the closest one for an overbook, not just the first block of the day.
+        var local = TimeOnly.FromDateTime(TimeZoneInfo.ConvertTime(start, timeZone.Zone).DateTime);
+        var location = blocks
+                .OrderBy(b => b.StartTime <= local && local < b.EndTime ? 0 : 1)
+                .ThenBy(b => Math.Min(Math.Abs((b.StartTime - local).TotalMinutes), Math.Abs((b.EndTime - local).TotalMinutes)))
+                .Select(b => (Guid?)b.LocationId)
+                .FirstOrDefault()
             ?? await organization.Locations.Where(l => l.IsActive).Select(l => (Guid?)l.Id).FirstOrDefaultAsync(ct)
             ?? throw new BusinessRuleException("No hay una sede activa.");
         return new Placement(candidate.End, location, SchedulingRules.IsOverbook(agenda, candidate));
@@ -240,11 +265,7 @@ public partial class ScheduleService
         var document = DocumentRules.Normalize(documentNumber);
         if (!DocumentRules.IsValid(document))
             throw new BusinessRuleException("El documento no es válido.");
-        var known = await clients.Clients
-            .Where(client => client.DocumentNumber == document || client.DocumentNumber.ToLower() == document.ToLower())
-            .Select(client => (Guid?)client.Id)
-            .FirstOrDefaultAsync(ct);
-        if (known is Guid found)
+        if (await FindClientIdAsync(document, ct) is Guid found)
             return found;
 
         var first = firstName?.Trim() ?? "";

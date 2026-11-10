@@ -151,6 +151,7 @@ public class TenantDbContext(DbContextOptions<TenantDbContext> options)
         });
         builder.Entity<BookingRequest>(e =>
         {
+            Audited(e);
             e.Property(r => r.Status).HasConversion<string>().HasMaxLength(20);
             e.Property(r => r.Name).HasMaxLength(160);
             e.Property(r => r.Phone).HasMaxLength(30);

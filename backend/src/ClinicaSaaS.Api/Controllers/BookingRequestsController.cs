@@ -2,6 +2,7 @@ using ClinicaSaaS.Services;
 using ClinicaSaaS.Services.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace ClinicaSaaS.Api.Controllers;
 
@@ -10,6 +11,7 @@ namespace ClinicaSaaS.Api.Controllers;
 public class BookingRequestsController(ScheduleService schedule) : ApiController
 {
     [AllowAnonymous]
+    [EnableRateLimiting(RateLimits.PublicRequests)]
     [HttpPost]
     public Task<IActionResult> Create(CreateBookingRequestCommand command, CancellationToken ct) =>
         Run(() => schedule.CreateRequestAsync(command, ct));

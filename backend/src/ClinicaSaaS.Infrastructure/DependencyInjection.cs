@@ -226,6 +226,7 @@ public static class DependencyInjection
         services.AddScoped<IOrganizationStore, OrganizationStore>();
         services.AddScoped<IScheduleStore, ScheduleStore>();
         services.AddScoped<IAppointmentStore, AppointmentStore>();
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IClientStore, ClientStore>();
         services.AddScoped<IMedicalRecordStore, MedicalRecordStore>();
         services.AddScoped<IBookingRequestStore, BookingRequestStore>();

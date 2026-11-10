@@ -20,6 +20,7 @@ public partial class ScheduleService(
     ICurrentUser currentUser,
     IAuditStore audit,
     IValidator<BookAppointmentCommand> bookingValidator,
+    IUnitOfWork unitOfWork,
     TimeProvider clock)
 {
     public async Task<IReadOnlyList<ScheduleBlockDto>> GetScheduleAsync(Guid professionalId, CancellationToken ct) =>
@@ -154,9 +155,11 @@ public partial class ScheduleService(
             .Where(b => ids.Contains(b.ProfessionalId) && b.Start < dayEnd && b.End > dayStart)
             .Select(b => new BusyInterval { ProfessionalId = b.ProfessionalId, Start = b.Start, End = b.End })
             .ToListAsync(ct);
+        var holdsSince = SchedulingRules.HoldsSince(clock.GetUtcNow());
         var holds = await requests.Entries
             .Where(r => ids.Contains(r.ProfessionalId) && r.Start < dayEnd && r.End > dayStart)
             .Where(r => r.Status == BookingRequestStatus.Pending || (r.Status == BookingRequestStatus.Rescheduled && r.AppointmentId == null))
+            .Where(r => r.UpdatedAt >= holdsSince)
             .Select(r => new BusyInterval { ProfessionalId = r.ProfessionalId, Start = r.Start, End = r.End })
             .ToListAsync(ct);
 
@@ -201,29 +204,11 @@ public partial class ScheduleService(
             throw new ValidationException(result.Errors);
 
         var client = await ResolveClientAsync(command.PatientId, ct);
-        var slots = await AvailabilityAsync(new AvailabilityQuery(command.LocationId, Guid.Empty, command.ProfessionalId, DateOnly.FromDateTime(command.Start.DateTime)), ct);
+        var slots = await AvailabilityAsync(new AvailabilityQuery(command.LocationId, Guid.Empty, command.ProfessionalId, SchedulingRules.LocalDate(command.Start, timeZone.Zone)), ct);
         var slot = slots.FirstOrDefault(s => s.ProfessionalId == command.ProfessionalId && s.AppointmentTypeId == command.AppointmentTypeId && s.Start.UtcDateTime == command.Start.UtcDateTime)
             ?? throw new ConflictException("Ese horario ya no está disponible.");
 
-        Guid? insurerId = null;
-        string? memberNumber = null;
-        if (command.InsurerId is Guid chosenInsurer)
-        {
-            memberNumber = command.MemberNumber?.Trim() ?? "";
-            if (memberNumber.Length == 0 || memberNumber.Length > 40)
-                throw new BusinessRuleException("Si usás obra social, el número de afiliado es obligatorio.");
-            var allowed = await employees.Employees
-                .Where(e => e.UserId == command.ProfessionalId && e.IsActive && e.User.Role == TenantRole.Doctor)
-                .SelectMany(e => e.Insurers)
-                .AnyAsync(i => i.Id == chosenInsurer && i.Enabled, ct);
-            if (!allowed)
-                throw new BusinessRuleException("Ese profesional no atiende por esa obra social.");
-            insurerId = chosenInsurer;
-        }
-        else if (!string.IsNullOrWhiteSpace(command.MemberNumber))
-        {
-            throw new BusinessRuleException("El número de afiliado es para cuando elegís obra social.");
-        }
+        var (insurerId, memberNumber) = await CoverageAsync(command.ProfessionalId, command.InsurerId, command.MemberNumber, ct);
 
         var appointment = await appointments.BookAsync(new Appointment
         {
@@ -245,53 +230,24 @@ public partial class ScheduleService(
 
     public async Task<AppointmentDto> BookAtDeskAsync(DeskAppointmentCommand command, CancellationToken ct)
     {
-        var document = DocumentRules.Normalize(command.DocumentNumber);
-        if (!DocumentRules.IsValid(document))
-            throw new BusinessRuleException("El documento no es válido.");
         var firstName = command.FirstName?.Trim() ?? "";
         var lastName = command.LastName?.Trim() ?? "";
         if (firstName.Length == 0 || lastName.Length == 0 || firstName.Length > 80 || lastName.Length > 80)
             throw new BusinessRuleException("Nombre y apellido son obligatorios.");
-        var phone = PhoneRules.Require(command.Phone);
-        var known = await clients.Clients
-            .Where(client => client.DocumentNumber == document || client.DocumentNumber.ToLower() == document.ToLower())
-            .Select(client => (Guid?)client.Id)
-            .FirstOrDefaultAsync(ct);
-        Guid clientId;
-        if (known is Guid found)
+        PhoneRules.Require(command.Phone);
+        return await unitOfWork.InTransactionAsync(async () =>
         {
-            clientId = found;
-        }
-        else
-        {
-            var client = await clients.AddAsync(new Client
-            {
-                Id = Guid.NewGuid(),
-                FirstName = firstName,
-                LastName = lastName,
-                DocumentNumber = document,
-                Phone = phone
-            }, ct);
-            records.Add(new MedicalRecord
-            {
-                Id = Guid.NewGuid(),
-                ClientId = client.Id,
-                UpdatedAt = clock.GetUtcNow(),
-                UpdatedBy = currentUser.Id
-            });
-            await records.SaveAsync(ct);
-            clientId = client.Id;
-        }
-
-        return await BookAsync(new BookAppointmentCommand(
-            clientId,
-            command.ProfessionalId,
-            command.LocationId,
-            command.AppointmentTypeId,
-            command.Start,
-            null,
-            command.InsurerId,
-            command.MemberNumber), ct);
+            var clientId = await ClientForDocumentAsync(command.DocumentNumber, firstName, lastName, command.Phone, ct);
+            return await BookAsync(new BookAppointmentCommand(
+                clientId,
+                command.ProfessionalId,
+                command.LocationId,
+                command.AppointmentTypeId,
+                command.Start,
+                null,
+                command.InsurerId,
+                command.MemberNumber), ct);
+        }, ct);
     }
 
     public async Task<PageDto<AppointmentDto>> HistoryAsync(ListQuery query, AppointmentHistoryFilter filter, CancellationToken ct)
@@ -399,8 +355,8 @@ public partial class ScheduleService(
     public async Task<AppointmentDto> CheckInAsync(Guid id, CancellationToken ct)
     {
         var appointment = await appointments.GetAsync(id, ct) ?? throw new NotFoundException("Turno no encontrado.");
-        if (appointment.Status is not (AppointmentStatus.Booked or AppointmentStatus.Rescheduled))
-            throw new BusinessRuleException("Solo se puede pasar a sala de espera un turno reservado.");
+        if (!SchedulingRules.CanCheckIn(appointment.Status, appointment.Start, clock.GetUtcNow(), timeZone.Zone))
+            throw new BusinessRuleException("Solo se puede pasar a sala de espera un turno reservado, o uno marcado ausente si el paciente llega ese mismo día.");
         appointment.Status = AppointmentStatus.CheckedIn;
         await appointments.SaveAsync(ct);
         await audit.RecordAsync(currentUser.Id, "admision", "Turno", appointment.Id.ToString(), null, ct);
@@ -433,32 +389,34 @@ public partial class ScheduleService(
 
     public async Task<AppointmentDto> RescheduleAsync(Guid id, RescheduleAppointmentCommand command, CancellationToken ct)
     {
-        var appointment = await appointments.GetAsync(id, ct) ?? throw new NotFoundException("Turno no encontrado.");
-        if (!SchedulingRules.CanReschedule(appointment.Status))
-            throw new BusinessRuleException("Ese turno no se puede reprogramar.");
-        var date = DateOnly.FromDateTime(command.Start.DateTime);
-        var slots = await AvailabilityAsync(new AvailabilityQuery(appointment.LocationId, Guid.Empty, appointment.ProfessionalId, date), ct);
-        var slot = slots.FirstOrDefault(s => s.Start.UtcDateTime == command.Start.UtcDateTime && s.AppointmentTypeId == appointment.AppointmentTypeId)
-            ?? throw new ConflictException("Ese horario ya no está disponible.");
-        appointment.Start = slot.Start;
-        appointment.End = slot.End;
-        if (appointment.Status is AppointmentStatus.Booked or AppointmentStatus.Rescheduled or AppointmentStatus.CheckedIn)
-            appointment.Status = AppointmentStatus.Rescheduled;
-        await appointments.SaveAsync(ct);
-        var linkedId = await requests.Entries
-            .Where(request => request.AppointmentId == appointment.Id)
-            .Select(request => (Guid?)request.Id)
-            .FirstOrDefaultAsync(ct);
-        if (linkedId is Guid requestId && await requests.GetAsync(requestId, ct) is { } linked)
+        return await unitOfWork.InTransactionAsync(async () =>
         {
-            linked.PreviousStart ??= linked.Start;
-            linked.Start = slot.Start;
-            linked.End = slot.End;
-            linked.Status = BookingRequestStatus.Rescheduled;
-            await requests.SaveAsync(ct);
-        }
-        await audit.RecordAsync(currentUser.Id, "reprogramacion", "Turno", appointment.Id.ToString(), appointment.Start.ToString("O"), ct);
-        return await LoadAppointmentAsync(appointment.Id, ct);
+            var appointment = await appointments.GetAsync(id, ct) ?? throw new NotFoundException("Turno no encontrado.");
+            if (!SchedulingRules.CanReschedule(appointment.Status))
+                throw new BusinessRuleException("Ese turno no se puede reprogramar.");
+            var date = SchedulingRules.LocalDate(command.Start, timeZone.Zone);
+            var slots = await AvailabilityAsync(new AvailabilityQuery(appointment.LocationId, Guid.Empty, appointment.ProfessionalId, date), ct);
+            var slot = slots.FirstOrDefault(s => s.Start.UtcDateTime == command.Start.UtcDateTime && s.AppointmentTypeId == appointment.AppointmentTypeId)
+                ?? throw new ConflictException("Ese horario ya no está disponible.");
+            appointment.Start = slot.Start;
+            appointment.End = slot.End;
+            appointment.Status = SchedulingRules.StatusAfterMove(appointment.Status);
+            await appointments.SaveAsync(ct);
+            var linkedId = await requests.Entries
+                .Where(request => request.AppointmentId == appointment.Id)
+                .Select(request => (Guid?)request.Id)
+                .FirstOrDefaultAsync(ct);
+            if (linkedId is Guid requestId && await requests.GetAsync(requestId, ct) is { } linked)
+            {
+                linked.PreviousStart ??= linked.Start;
+                linked.Start = slot.Start;
+                linked.End = slot.End;
+                linked.Status = BookingRequestStatus.Rescheduled;
+                await requests.SaveAsync(ct);
+            }
+            await audit.RecordAsync(currentUser.Id, "reprogramacion", "Turno", appointment.Id.ToString(), appointment.Start.ToString("O"), ct);
+            return await LoadAppointmentAsync(appointment.Id, ct);
+        }, ct);
     }
 
     public async Task<WaitlistEntryDto> JoinWaitlistAsync(CreateWaitlistEntryCommand command, CancellationToken ct)
@@ -601,29 +559,19 @@ public partial class ScheduleService(
         if (command.Start <= clock.GetUtcNow())
             throw new BusinessRuleException("Ese horario ya pasó.");
 
-        var slots = await AvailabilityAsync(new AvailabilityQuery(command.LocationId, command.SpecialtyId, command.ProfessionalId, DateOnly.FromDateTime(command.Start.DateTime)), ct);
+        var now = clock.GetUtcNow();
+        var open = await requests.Entries
+            .Where(r => r.DocumentNumber == document || r.Phone == phone)
+            .Where(r => r.Status == BookingRequestStatus.Pending || (r.Status == BookingRequestStatus.Rescheduled && r.AppointmentId == null))
+            .CountAsync(r => r.Start > now, ct);
+        if (open >= SchedulingRules.MaxOpenRequestsPerPerson)
+            throw new BusinessRuleException("Ya tenés solicitudes esperando confirmación. Te vamos a contactar; si necesitás cambiarlas, llamá al consultorio.");
+
+        var slots = await AvailabilityAsync(new AvailabilityQuery(command.LocationId, command.SpecialtyId, command.ProfessionalId, SchedulingRules.LocalDate(command.Start, timeZone.Zone)), ct);
         var slot = slots.FirstOrDefault(item => item.ProfessionalId == command.ProfessionalId && item.AppointmentTypeId == command.AppointmentTypeId && item.Start.UtcDateTime == command.Start.UtcDateTime)
             ?? throw new ConflictException("Ese horario ya no está disponible.");
 
-        Guid? insurerId = null;
-        string? memberNumber = null;
-        if (command.InsurerId is Guid chosen)
-        {
-            memberNumber = command.MemberNumber?.Trim() ?? "";
-            if (memberNumber.Length == 0 || memberNumber.Length > 40)
-                throw new BusinessRuleException("Si usás obra social, el número de afiliado es obligatorio.");
-            var allowed = await employees.Employees
-                .Where(employee => employee.UserId == command.ProfessionalId && employee.IsActive && employee.User.Role == TenantRole.Doctor)
-                .SelectMany(employee => employee.Insurers)
-                .AnyAsync(insurer => insurer.Id == chosen && insurer.Enabled, ct);
-            if (!allowed)
-                throw new BusinessRuleException("Ese profesional no atiende por esa obra social.");
-            insurerId = chosen;
-        }
-        else if (!string.IsNullOrWhiteSpace(command.MemberNumber))
-        {
-            throw new BusinessRuleException("El número de afiliado es para cuando elegís obra social.");
-        }
+        var (insurerId, memberNumber) = await CoverageAsync(slot.ProfessionalId, command.InsurerId, command.MemberNumber, ct);
 
         Guid? clientId = null;
         if (currentUser.Role == TenantRole.Patient.ToString() && currentUser.Id is Guid userId)
@@ -764,7 +712,7 @@ public partial class ScheduleService(
         var request = await requests.GetAsync(id, ct) ?? throw new NotFoundException("Esa solicitud no está.");
         if (request.Status is not (BookingRequestStatus.Pending or BookingRequestStatus.Rescheduled) || request.AppointmentId is not null)
             throw new BusinessRuleException("Esa solicitud ya no se puede mover.");
-        var slots = await RequestSlotsAsync(id, DateOnly.FromDateTime(command.Start.DateTime), ct);
+        var slots = await RequestSlotsAsync(id, SchedulingRules.LocalDate(command.Start, timeZone.Zone), ct);
         var slot = slots.FirstOrDefault(item => item.Start.UtcDateTime == command.Start.UtcDateTime)
             ?? throw new ConflictException("Ese horario ya no está disponible.");
         request.PreviousStart ??= request.Start;
@@ -784,27 +732,30 @@ public partial class ScheduleService(
         if (SchedulingRules.RequestExpired(request.Start, clock.GetUtcNow(), timeZone.Zone))
             throw new BusinessRuleException("Esa solicitud ya venció. Reprogramala a un horario libre.");
 
-        var clientId = await EnsureClientAsync(request, ct);
-        var appointment = await appointments.BookAsync(new Appointment
+        return await unitOfWork.InTransactionAsync(async () =>
         {
-            Id = Guid.NewGuid(),
-            ClientId = clientId,
-            ProfessionalId = request.ProfessionalId,
-            LocationId = request.LocationId,
-            AppointmentTypeId = request.AppointmentTypeId,
-            Start = request.Start,
-            End = request.End,
-            Status = request.Status == BookingRequestStatus.Rescheduled ? AppointmentStatus.Rescheduled : AppointmentStatus.Booked,
-            InsurerId = request.InsurerId,
-            MemberNumber = request.MemberNumber
+            var clientId = await EnsureClientAsync(request, ct);
+            var appointment = await appointments.BookAsync(new Appointment
+            {
+                Id = Guid.NewGuid(),
+                ClientId = clientId,
+                ProfessionalId = request.ProfessionalId,
+                LocationId = request.LocationId,
+                AppointmentTypeId = request.AppointmentTypeId,
+                Start = request.Start,
+                End = request.End,
+                Status = request.Status == BookingRequestStatus.Rescheduled ? AppointmentStatus.Rescheduled : AppointmentStatus.Booked,
+                InsurerId = request.InsurerId,
+                MemberNumber = request.MemberNumber
+            }, ct);
+            if (request.Status == BookingRequestStatus.Pending)
+                request.Status = BookingRequestStatus.Approved;
+            request.ClientId = clientId;
+            request.AppointmentId = appointment.Id;
+            await requests.SaveAsync(ct);
+            await audit.RecordAsync(currentUser.Id, "alta", "Turno", appointment.Id.ToString(), request.Name, ct);
+            return await LoadAppointmentAsync(appointment.Id, ct);
         }, ct);
-        if (request.Status == BookingRequestStatus.Pending)
-            request.Status = BookingRequestStatus.Approved;
-        request.ClientId = clientId;
-        request.AppointmentId = appointment.Id;
-        await requests.SaveAsync(ct);
-        await audit.RecordAsync(currentUser.Id, "alta", "Turno", appointment.Id.ToString(), request.Name, ct);
-        return await LoadAppointmentAsync(appointment.Id, ct);
     }
 
     public async Task RejectRequestAsync(Guid id, RejectBookingRequestCommand command, CancellationToken ct)
@@ -834,11 +785,7 @@ public partial class ScheduleService(
             return linked;
 
         var document = request.DocumentNumber;
-        var known = await clients.Clients
-            .Where(client => client.DocumentNumber == document)
-            .Select(client => (Guid?)client.Id)
-            .FirstOrDefaultAsync(ct);
-        if (known is Guid found)
+        if (await FindClientIdAsync(document, ct) is Guid found)
             return found;
 
         var phone = request.Phone.Trim();
@@ -899,6 +846,35 @@ public partial class ScheduleService(
         if (patientId is null || patientId == Guid.Empty)
             throw new BusinessRuleException("Indicá el paciente.");
         return await clients.GetAsync(patientId.Value, ct) ?? throw new NotFoundException("Paciente no encontrado.");
+    }
+
+    private Task<Guid?> FindClientIdAsync(string document, CancellationToken ct) =>
+        clients.Clients
+            .Where(client => client.DocumentNumber == document || client.DocumentNumber.ToLower() == document.ToLower())
+            .Select(client => (Guid?)client.Id)
+            .FirstOrDefaultAsync(ct);
+
+    // Bookings nobody attended an hour after they ended become absent, so every screen and report agrees.
+    public async Task<int> MarkOverdueNoShowsAsync(CancellationToken ct)
+    {
+        var now = clock.GetUtcNow();
+        var cutoff = now - SchedulingRules.NoShowGrace;
+        var overdue = await appointments.Appointments
+            .Where(a => (a.Status == AppointmentStatus.Booked || a.Status == AppointmentStatus.Rescheduled) && a.End <= cutoff)
+            .Select(a => a.Id)
+            .ToListAsync(ct);
+        var marked = 0;
+        foreach (var id in overdue)
+        {
+            var appointment = await appointments.GetAsync(id, ct);
+            if (appointment is null || !SchedulingRules.BecomesNoShow(appointment.Status, appointment.End, now))
+                continue;
+            appointment.Status = AppointmentStatus.NoShow;
+            marked++;
+        }
+        if (marked > 0)
+            await appointments.SaveAsync(ct);
+        return marked;
     }
 
     private Task<AppointmentDto> LoadAppointmentAsync(Guid id, CancellationToken ct) =>

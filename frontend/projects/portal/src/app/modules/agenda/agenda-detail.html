@@ -120,6 +120,8 @@
           }
           @if (canCheckIn()) {
             <ui-button variant="secondary" (click)="checkIn()"><ui-icon name="chair" [size]="18" />Sala de espera</ui-button>
+          }
+          @if (canMarkAbsent()) {
             <ui-button variant="secondary" (click)="noShow()"><ui-icon name="person_off" [size]="18" />Ausente</ui-button>
           }
           @if (canMove()) {
