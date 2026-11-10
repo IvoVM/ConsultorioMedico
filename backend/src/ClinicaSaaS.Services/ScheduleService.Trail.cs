@@ -88,7 +88,7 @@ public partial class ScheduleService
     private async Task<IReadOnlyList<AppointmentChangeDto>> TrailAsync(Guid appointmentId, CancellationToken ct) =>
         await appointments.Changes
             .Where(c => c.AppointmentId == appointmentId)
-            .OrderBy(c => c.CreatedAt)
+            .OrderByDescending(c => c.CreatedAt)
             .ToAppointmentChangeDtos()
             .ToListAsync(ct);
 }

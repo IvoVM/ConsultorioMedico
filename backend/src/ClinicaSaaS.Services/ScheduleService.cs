@@ -220,7 +220,8 @@ public partial class ScheduleService(
             Start = slot.Start,
             End = slot.End,
             Status = AppointmentStatus.Booked,
-            VisitReason = command.VisitReason?.Trim(),
+            // Only the patient tells the reason when booking; front desk booking for them never stores one.
+            VisitReason = currentUser.Role == TenantRole.Patient.ToString() ? command.VisitReason?.Trim() : null,
             InsurerId = insurerId,
             MemberNumber = memberNumber
         }, ct);
@@ -291,7 +292,7 @@ public partial class ScheduleService(
             ("start", false) => source.OrderBy(a => a.Start),
             _ => source.OrderByDescending(a => a.Start),
         };
-        return await Pages.Materialize(ordered.ToAppointmentDtos(), query, ct);
+        return await Pages.Materialize(ordered.ToAppointmentDtos(currentUser.Id), query, ct);
     }
 
     public async Task<IReadOnlyList<AppointmentDto>> ForDayAsync(DateOnly date, Guid? professionalId, CancellationToken ct)
@@ -303,7 +304,7 @@ public partial class ScheduleService(
         var query = appointments.Appointments.Where(a => a.Start >= start && a.Start < end);
         if (professionalId is Guid id)
             query = query.Where(a => a.ProfessionalId == id);
-        return await query.OrderBy(a => a.Start).ToAppointmentDtos().ToListAsync(ct);
+        return await query.OrderBy(a => a.Start).ToAppointmentDtos(currentUser.Id).ToListAsync(ct);
     }
 
     public async Task<IReadOnlyList<AppointmentDto>> MineAsync(CancellationToken ct)
@@ -315,7 +316,7 @@ public partial class ScheduleService(
         return await appointments.Appointments
             .Where(a => a.ClientId == clientId)
             .OrderByDescending(a => a.Start)
-            .ToAppointmentDtos()
+            .ToAppointmentDtos(currentUser.Id)
             .ToListAsync(ct);
     }
 
@@ -868,5 +869,5 @@ public partial class ScheduleService(
     }
 
     private Task<AppointmentDto> LoadAppointmentAsync(Guid id, CancellationToken ct) =>
-        appointments.Appointments.Where(a => a.Id == id).ToAppointmentDtos().FirstAsync(ct);
+        appointments.Appointments.Where(a => a.Id == id).ToAppointmentDtos(currentUser.Id).FirstAsync(ct);
 }

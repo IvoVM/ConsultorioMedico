@@ -31,7 +31,9 @@
               }
             </dd>
           </div>
-          <div class="sm:col-span-2"><dt>Motivo</dt><dd>{{ item.visitReason || 'Sin motivo cargado' }}</dd></div>
+          @if (canSeeHistory()) {
+            <div class="sm:col-span-2"><dt>Motivo</dt><dd>{{ item.visitReason || 'Sin motivo cargado' }}</dd></div>
+          }
         </dl>
         @if (canSeeHistory()) {
           <a class="text-link inline-flex items-center gap-1" [routerLink]="route.Historia" [queryParams]="patientParams(item.patientId)">
@@ -42,9 +44,6 @@
     }
     @case (modes.Edit) {
       <form id="agenda-edit-form" class="flex flex-col gap-4" (ngSubmit)="reviewEdit()">
-        <ui-field label="Motivo de la consulta">
-          <textarea name="reason" rows="3" maxlength="500" [(ngModel)]="reason"></textarea>
-        </ui-field>
         <div class="grid gap-4 sm:grid-cols-2">
           <ui-field label="Cobertura">
             <ui-select name="insurer" [(ngModel)]="insurerId" [options]="insurerOptions()" />

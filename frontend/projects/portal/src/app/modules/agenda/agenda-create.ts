@@ -40,7 +40,6 @@ export class AgendaCreate {
   firstName = '';
   lastName = '';
   phone = '';
-  reason = '';
   insurerId = '';
   memberNumber = '';
 
@@ -122,7 +121,6 @@ export class AgendaCreate {
         professionalId: this.professional().id,
         appointmentTypeId: type.id,
         start: isoAt(this.day(), this.start()),
-        visitReason: this.reason.trim() || null,
         insurerId: this.insurerId || null,
         memberNumber: this.insurerId ? this.memberNumber.trim() : null,
       }));

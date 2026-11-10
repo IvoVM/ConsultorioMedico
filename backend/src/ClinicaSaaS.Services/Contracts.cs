@@ -106,7 +106,7 @@ public sealed class AppointmentHistoryFilter
     public bool Past { get; set; }
 }
 
-// One step in an appointment's life; By is null when the system made it (seed, import).
+// One step in an appointment's life; By and ByRole are null when the system made it (seed, import).
 public record AppointmentChangeDto(
     Guid Id,
     AppointmentStatus Status,
@@ -115,7 +115,8 @@ public record AppointmentChangeDto(
     string Professional,
     DateTimeOffset At,
     string? By,
-    Guid ProfessionalId);
+    Guid ProfessionalId,
+    TenantRole? ByRole);
 
 // What the admin writes over a step of the trail: any status, slot, professional and moment, whatever really happened.
 public record SaveAppointmentChangeCommand(
@@ -293,8 +294,7 @@ public record AgendaBookCommand(
     Guid ProfessionalId,
     Guid AppointmentTypeId,
     DateTimeOffset Start,
-    string? VisitReason,
     Guid? InsurerId,
     string? MemberNumber);
 public record PlaceRequestCommand(Guid ProfessionalId, DateTimeOffset Start);
-public record EditAppointmentCommand(string? VisitReason, Guid? InsurerId, string? MemberNumber);
+public record EditAppointmentCommand(Guid? InsurerId, string? MemberNumber);

@@ -108,9 +108,6 @@
       @if (item.insurer) {
         <div><dt class="font-semibold text-ink/70">Cobertura</dt><dd>{{ item.insurer }}{{ item.memberNumber ? ' · ' + item.memberNumber : '' }}</dd></div>
       }
-      @if (item.visitReason) {
-        <div class="sm:col-span-2"><dt class="font-semibold text-ink/70">Motivo</dt><dd>{{ item.visitReason }}</dd></div>
-      }
       @if (item.createdAt) {
         <div><dt class="font-semibold text-ink/70">Creado</dt><dd>{{ item.createdAt | fecha }} · {{ item.createdBy || 'Sistema' }}</dd></div>
       }

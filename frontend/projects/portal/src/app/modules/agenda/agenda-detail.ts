@@ -55,7 +55,6 @@ export class AgendaDetail {
   readonly saving = signal(false);
   readonly error = signal('');
 
-  reason = '';
   insurerId = '';
   memberNumber = '';
 
@@ -117,7 +116,6 @@ export class AgendaDetail {
 
   edit() {
     const appointment = this.appointment();
-    this.reason = appointment.visitReason ?? '';
     const insurer = this.professional()?.insurers.find((item) => item.name === appointment.insurer);
     this.insurerId = insurer?.id ?? '';
     this.memberNumber = appointment.memberNumber ?? '';
@@ -128,11 +126,10 @@ export class AgendaDetail {
   reviewEdit() {
     this.ask({
       title: 'Guardar cambios',
-      message: `Se actualizan el motivo y la cobertura del turno de ${this.appointment().patient}.`,
+      message: `Se actualiza la cobertura del turno de ${this.appointment().patient}.`,
       back: DetailMode.Edit,
       run: async () => {
         await this.call(this.agendaApi.edit(this.appointment().id, {
-          visitReason: this.reason.trim() || null,
           insurerId: this.insurerId || null,
           memberNumber: this.insurerId ? this.memberNumber.trim() : null,
         }));

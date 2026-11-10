@@ -42,7 +42,6 @@ export interface AgendaBookCommand {
   professionalId: string;
   appointmentTypeId: string;
   start: string;
-  visitReason?: string | null;
   insurerId?: string | null;
   memberNumber?: string | null;
 }
@@ -53,7 +52,6 @@ export interface PlaceRequestCommand {
 }
 
 export interface EditAppointmentCommand {
-  visitReason?: string | null;
   insurerId?: string | null;
   memberNumber?: string | null;
 }

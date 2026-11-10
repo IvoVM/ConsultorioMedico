@@ -48,7 +48,7 @@ public partial class ScheduleService
         var shown = await appointments.Appointments
             .Where(a => ids.Contains(a.ProfessionalId) && a.Start >= dayStart && a.Start < dayEnd && a.Status != AppointmentStatus.Cancelled)
             .OrderBy(a => a.Start)
-            .ToAppointmentDtos()
+            .ToAppointmentDtos(currentUser.Id)
             .ToListAsync(ct);
 
         var professionals = people.Select(p => new AgendaProfessionalDto(
@@ -100,9 +100,6 @@ public partial class ScheduleService
         return await unitOfWork.InTransactionAsync(async () =>
         {
             var clientId = await ClientForDocumentAsync(command.DocumentNumber, command.FirstName, command.LastName, command.Phone, ct);
-            var reason = command.VisitReason?.Trim();
-            if (reason is { Length: > 500 })
-                throw new BusinessRuleException("El motivo tiene que tener menos de 500 caracteres.");
             var appointment = await appointments.BookAsync(new Appointment
             {
                 Id = Guid.NewGuid(),
@@ -113,7 +110,6 @@ public partial class ScheduleService
                 Start = command.Start,
                 End = placement.End,
                 Status = AppointmentStatus.Booked,
-                VisitReason = string.IsNullOrEmpty(reason) ? null : reason,
                 InsurerId = insurerId,
                 MemberNumber = memberNumber,
                 IsOverbook = placement.Overbook
@@ -167,13 +163,9 @@ public partial class ScheduleService
         var appointment = await appointments.GetAsync(id, ct) ?? throw new NotFoundException("Turno no encontrado.");
         if (appointment.Status is AppointmentStatus.Cancelled or AppointmentStatus.Completed)
             throw new BusinessRuleException("Ese turno ya no se puede editar.");
-        var reason = command.VisitReason?.Trim();
-        if (reason is { Length: > 500 })
-            throw new BusinessRuleException("El motivo tiene que tener menos de 500 caracteres.");
         var (insurerId, memberNumber) = await CoverageAsync(appointment.ProfessionalId, command.InsurerId, command.MemberNumber, ct);
         if (insurerId != appointment.InsurerId)
             appointment.CoverageAccepted = null;
-        appointment.VisitReason = string.IsNullOrEmpty(reason) ? null : reason;
         appointment.InsurerId = insurerId;
         appointment.MemberNumber = memberNumber;
         await appointments.SaveAsync(ct);

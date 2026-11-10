@@ -34,7 +34,8 @@ public static class ScheduleMappings
             Status = a.Status
         });
 
-    public static IQueryable<AppointmentDto> ToAppointmentDtos(this IQueryable<Appointment> query) =>
+    // The visit reason is between the patient and the professional who attends them: anyone else gets it empty.
+    public static IQueryable<AppointmentDto> ToAppointmentDtos(this IQueryable<Appointment> query, Guid? viewer) =>
         query.Select(a => new AppointmentDto(
             a.Id,
             a.ClientId,
@@ -48,7 +49,7 @@ public static class ScheduleMappings
             a.Start,
             a.End,
             a.Status,
-            a.VisitReason,
+            viewer != null && (a.ProfessionalId == viewer || a.Client.UserId == viewer) ? a.VisitReason : null,
             a.Insurer != null ? a.Insurer.Name : null,
             a.MemberNumber,
             a.CoverageAccepted,
@@ -68,7 +69,8 @@ public static class ScheduleMappings
             (c.Professional.FirstName + " " + c.Professional.LastName).Trim(),
             c.CreatedAt,
             c.CreatedByUser != null ? (c.CreatedByUser.FirstName + " " + c.CreatedByUser.LastName).Trim() : null,
-            c.ProfessionalId));
+            c.ProfessionalId,
+            c.CreatedByUser != null ? (TenantRole?)c.CreatedByUser.Role : null));
 
     public static IQueryable<WaitlistEntryDto> ToWaitlistDtos(this IQueryable<WaitlistEntry> query) =>
         query.Select(w => new WaitlistEntryDto(

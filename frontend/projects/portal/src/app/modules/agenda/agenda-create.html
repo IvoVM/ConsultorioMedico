@@ -27,9 +27,6 @@
       @if (!typeOptions().length) {
         <p class="text-sm text-pulse">Este profesional no tiene prestaciones cargadas en su especialidad.</p>
       }
-      <ui-field label="Motivo (opcional)">
-        <textarea name="reason" rows="2" maxlength="500" [(ngModel)]="reason"></textarea>
-      </ui-field>
       <div class="grid gap-4 sm:grid-cols-2">
         <ui-field label="Cobertura">
           <ui-select name="insurer" [(ngModel)]="insurerId" [options]="insurerOptions()" />

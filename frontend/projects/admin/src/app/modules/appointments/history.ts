@@ -25,6 +25,7 @@ import { firstValueFrom } from 'rxjs';
 import { TablePager, listParams, queueSearch } from '../../table-pager';
 import { SortCol, SortState, nextSort } from '../../table-sort';
 import { appointmentStatusLabels, appointmentStatusTone } from './models/appointment-status-labels';
+import { appointmentCreationLabels, systemCreationLabel } from './models/appointment-creation-labels';
 
 const anyOption: SelectOption = { value: '', label: 'Todos' };
 
@@ -244,7 +245,7 @@ export class AppointmentHistoryPage {
   newChange() {
     const item = this.detail();
     if (!item) return;
-    const last = this.changes().at(-1);
+    const last = this.changes().at(0);
     this.draft.set({
       id: null,
       status: last?.status ?? item.status,
@@ -300,16 +301,16 @@ export class AppointmentHistoryPage {
     }
   }
 
-  // A step that only moved the slot reads as a move, not as the same status twice.
+  // Newest step first, so the one before each step is the next in the list. A step that only moved the slot reads as a move.
   stepLabel(change: AppointmentChangeDto, index: number) {
-    const previous = index > 0 ? this.changes()[index - 1] : null;
-    if (!previous) return `Turno dado como ${appointmentStatusLabels[change.status].toLowerCase()}`;
+    const previous = this.changes()[index + 1] ?? null;
+    if (!previous) return change.byRole ? appointmentCreationLabels[change.byRole] : systemCreationLabel;
     if (previous.status === change.status) return 'Cambio de horario o profesional';
     return `Pasó a ${appointmentStatusLabels[change.status].toLowerCase()}`;
   }
 
   movedSlot(change: AppointmentChangeDto, index: number) {
-    const previous = index > 0 ? this.changes()[index - 1] : null;
+    const previous = this.changes()[index + 1] ?? null;
     return !previous || previous.start !== change.start || previous.professional !== change.professional;
   }
 
