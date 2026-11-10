@@ -8,6 +8,8 @@ import {
   AppointmentStatus,
   AppointmentsService,
   BookingRequestDto,
+  TenantRole,
+  clinicaSession,
   errorMessage,
 } from 'sdk';
 import { FormsModule } from '@angular/forms';
@@ -78,6 +80,8 @@ export class AgendaPage {
   private readonly scroller = viewChild<ElementRef<HTMLElement>>('scroller');
 
   readonly kinds = DropKind;
+  // A professional only sees their own agenda, so the specialty and professional pickers are front desk's.
+  readonly doctor = clinicaSession.role() === TenantRole.Doctor;
   readonly labels = appointmentStatusLabels;
   readonly tones = statusTone;
   readonly shown = shownStatus;

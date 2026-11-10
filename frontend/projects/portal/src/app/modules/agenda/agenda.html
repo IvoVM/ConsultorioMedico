@@ -30,6 +30,7 @@
   </header>
 
   <div class="ag-filters">
+    @if (!doctor) {
     <ui-select
       class="ag-filter"
       [ngModel]="specialtyFilter()"
@@ -46,6 +47,7 @@
     />
     @if (filtering()) {
       <button type="button" class="ag-clear" (click)="clearFilters()"><ui-icon name="filter_alt_off" [size]="18" />Limpiar filtros</button>
+    }
     }
     <ul class="ag-legend" aria-label="Qué significa cada color">
       @for (item of legend; track item.tone) {
