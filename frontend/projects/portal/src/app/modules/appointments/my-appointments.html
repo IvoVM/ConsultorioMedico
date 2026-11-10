@@ -2,8 +2,14 @@
 @if (loading()) {
   <ui-skeleton label="Cargando turnos" />
 } @else {
-  <p class="mb-6 max-w-prose text-ink/75">La secretaría confirma cada solicitud. Cuando lo hace, el turno queda asociado a tu documento: recordá llevarlo al consultorio.</p>
-  <ui-tabs class="mb-5" label="Mis turnos" [tabs]="tabs()" [(active)]="tab" />
+  @if (removedView) {
+    <h2 class="mb-2 font-serif text-3xl tracking-tight">Turnos eliminados</h2>
+    <p class="mb-6 max-w-prose text-ink/75">Los turnos que se cancelaron y las solicitudes que la secretaría no confirmó. Ya no ocupan un horario.</p>
+  } @else {
+    <h2 class="mb-2 font-serif text-3xl tracking-tight">Historial de turnos</h2>
+    <p class="mb-6 max-w-prose text-ink/75">La secretaría confirma cada solicitud. Cuando lo hace, el turno queda asociado a tu documento: recordá llevarlo al consultorio.</p>
+    <ui-tabs class="mb-5" label="Historial de turnos" [tabs]="tabs()" [(active)]="tab" />
+  }
   @if (requests().length || appointments().length) {
     <div class="mb-6 grid gap-4 sm:grid-cols-2">
       <ui-field label="Buscar">

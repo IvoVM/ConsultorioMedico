@@ -1,12 +1,12 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AppointmentDto, AppointmentStatus, AppointmentsService, BookingRequestDto, BookingRequestStatus, OrganizationService, errorMessage } from 'sdk';
 import { appointmentStatusLabels } from './models/appointment-status-labels';
 import { FechaPipe, SelectOption, UiBadge, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable, UiTabs, TabItem, UiTone, siteLabel } from 'ui';
 import { MyAppointmentsOrder, MyAppointmentsTab, matchesSearch, myAppointmentsTabLabels, myAppointmentsOrderLabels, sortMine } from './models/my-appointments-order';
 import { firstValueFrom } from 'rxjs';
-import { AppRoute } from '../../app.routes.enum';
+import { AppRoute, routePath } from '../../app.routes.enum';
 import { AppointmentChanges } from './appointment-changes';
 
 const live = (item: AppointmentDto) => item.status !== AppointmentStatus.Cancelled;
@@ -34,7 +34,9 @@ export class MyAppointmentsPage {
   // Cancelling cannot be undone, so the patient confirms it first.
   readonly confirming = signal<AppointmentDto | null>(null);
   readonly tabKeys = MyAppointmentsTab;
-  readonly tab = signal<string>(MyAppointmentsTab.Turnos);
+  // The same page serves the removed screen, which shows only what left the flow and no tabs.
+  readonly removedView = inject(ActivatedRoute).snapshot.routeConfig?.path === routePath(AppRoute.TurnosEliminados);
+  readonly tab = signal<string>(this.removedView ? MyAppointmentsTab.Eliminados : MyAppointmentsTab.Turnos);
   readonly tabs = computed((): TabItem[] => [
     { key: MyAppointmentsTab.Turnos, label: myAppointmentsTabLabels[MyAppointmentsTab.Turnos], icon: 'event_available', count: this.appointments().filter(live).length },
     {
@@ -43,12 +45,6 @@ export class MyAppointmentsPage {
       icon: 'pending_actions',
       count: this.requests().filter(waiting).length,
       tone: UiTone.Warn,
-    },
-    {
-      key: MyAppointmentsTab.Eliminados,
-      label: myAppointmentsTabLabels[MyAppointmentsTab.Eliminados],
-      icon: 'delete',
-      count: this.appointments().filter((item) => !live(item)).length + this.requests().filter(rejected).length,
     },
   ]);
   readonly order = signal<string>(MyAppointmentsOrder.Creado);

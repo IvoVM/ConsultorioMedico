@@ -11,8 +11,8 @@ export const myAppointmentsOrderLabels: Record<MyAppointmentsOrder, string> = {
   [MyAppointmentsOrder.Turno]: 'Fecha del turno',
 };
 
-// The patient sees their live appointments first, then the requests front desk still has to confirm,
-// and apart from both, what left the flow: removed appointments and rejected requests.
+// The history shows the patient's live appointments and the requests front desk still has to confirm;
+// what left the flow (removed appointments and rejected requests) has its own screen.
 export enum MyAppointmentsTab {
   Turnos = 'turnos',
   Solicitudes = 'solicitudes',

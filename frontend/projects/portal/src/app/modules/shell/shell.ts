@@ -25,12 +25,14 @@ export class ShellPage {
     if (this.session.token()) nodes.push({ label: 'Inicio', path: AppRoute.Panel, exact: true, icon: 'monitor_heart' });
     if (role === TenantRole.Secretary || role === TenantRole.TenantAdmin || role === TenantRole.Doctor) nodes.push({ label: 'Agenda', path: AppRoute.Agenda, icon: 'calendar_view_week' });
     if (role === TenantRole.Patient) {
+      // Booking is the patient's main action, so it stands alone; what they already booked lives under Turnos.
+      nodes.push({ label: 'Reservar turno', path: AppRoute.Reservar, icon: 'event_upcoming' });
       nodes.push({
         label: 'Turnos',
         icon: 'calendar_month',
         children: [
-          { label: 'Reservar', path: AppRoute.Reservar, icon: 'event_upcoming' },
-          { label: 'Mis turnos', path: AppRoute.MisTurnos, icon: 'event_available' },
+          { label: 'Historial de turnos', path: AppRoute.MisTurnos, icon: 'event_available' },
+          { label: 'Eliminados', path: AppRoute.TurnosEliminados, icon: 'delete' },
         ],
       });
       nodes.push({
