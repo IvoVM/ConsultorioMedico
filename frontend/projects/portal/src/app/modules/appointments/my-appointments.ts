@@ -1,9 +1,9 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { AppointmentDto, AppointmentStatus, AppointmentsService, BookingRequestDto, BookingRequestStatus, OrganizationService, errorMessage } from 'sdk';
+import { AppointmentDto, AppointmentStatus, AppointmentsService, BookingRequestDto, BookingRequestStatus, errorMessage } from 'sdk';
 import { appointmentStatusLabels } from './models/appointment-status-labels';
-import { FechaPipe, SelectOption, UiBadge, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable, UiTabs, TabItem, UiTone, siteLabel } from 'ui';
+import { FechaPipe, SelectOption, UiBadge, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable, UiTabs, TabItem, UiTone } from 'ui';
 import { MyAppointmentsOrder, MyAppointmentsTab, matchesSearch, myAppointmentsTabLabels, myAppointmentsOrderLabels, sortMine } from './models/my-appointments-order';
 import { firstValueFrom } from 'rxjs';
 import { AppRoute, routePath } from '../../app.routes.enum';
@@ -20,9 +20,6 @@ const rejected = (item: BookingRequestDto) => item.status === BookingRequestStat
 })
 export class MyAppointmentsPage {
   private readonly appointmentsApi = inject(AppointmentsService);
-  private readonly organization = inject(OrganizationService);
-  // With more than one active site each request names where the visit is; otherwise it reads "Sede única".
-  readonly multiSite = signal(false);
   readonly statusLabels = appointmentStatusLabels;
   readonly status = AppointmentStatus;
   readonly route = AppRoute;
@@ -51,10 +48,10 @@ export class MyAppointmentsPage {
   readonly search = signal('');
   readonly orderOptions: SelectOption[] = (Object.values(MyAppointmentsOrder) as MyAppointmentsOrder[]).map((value) => ({ value, label: myAppointmentsOrderLabels[value] }));
   readonly shownRequests = computed(() =>
-    sortMine(this.requests().filter((item) => matchesSearch(this.search(), item.specialty, item.professional, item.appointmentType, item.location)), this.order() as MyAppointmentsOrder),
+    sortMine(this.requests().filter((item) => matchesSearch(this.search(), item.specialty, item.professional, item.appointmentType)), this.order() as MyAppointmentsOrder),
   );
   readonly shownAppointments = computed(() =>
-    sortMine(this.appointments().filter((item) => matchesSearch(this.search(), item.specialty, item.professional, item.appointmentType, item.location)), this.order() as MyAppointmentsOrder),
+    sortMine(this.appointments().filter((item) => matchesSearch(this.search(), item.specialty, item.professional, item.appointmentType)), this.order() as MyAppointmentsOrder),
   );
   readonly liveAppointments = computed(() => this.shownAppointments().filter(live));
   readonly removedAppointments = computed(() => this.shownAppointments().filter((item) => !live(item)));
@@ -72,21 +69,8 @@ export class MyAppointmentsPage {
 
   constructor() {
     void this.load();
-    void this.loadSites();
   }
 
-  site(location: string) {
-    return siteLabel(location, this.multiSite());
-  }
-
-  private async loadSites() {
-    try {
-      const sites = await firstValueFrom(this.organization.locations());
-      this.multiSite.set(sites.filter((item) => item.isActive).length > 1);
-    } catch {
-      this.multiSite.set(false);
-    }
-  }
 
   async load() {
     try {

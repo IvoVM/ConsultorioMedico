@@ -13,7 +13,7 @@
   @if (requests().length || appointments().length) {
     <div class="mb-6 grid gap-4 sm:grid-cols-2">
       <ui-field label="Buscar">
-        <input type="search" name="search" [ngModel]="search()" (ngModelChange)="search.set($event)" placeholder="Especialidad, profesional o sede" />
+        <input type="search" name="search" [ngModel]="search()" (ngModelChange)="search.set($event)" placeholder="Especialidad o profesional" />
       </ui-field>
       <ui-field label="Ordenar por">
         <ui-select [ngModel]="order()" (ngModelChange)="order.set($event)" [ngModelOptions]="{ standalone: true }" [options]="orderOptions" />
@@ -25,7 +25,7 @@
       @if (pendingRequests().length) {
         <ui-table>
           <table class="cards">
-            <thead><tr><th>Cuándo</th><th>Especialidad</th><th>Profesional</th><th>Sede</th><th>Estado</th></tr></thead>
+            <thead><tr><th>Cuándo</th><th>Especialidad</th><th>Profesional</th><th>Estado</th></tr></thead>
             <tbody>
               @for (request of pendingRequests(); track request.id) {
               <tr>
@@ -37,7 +37,6 @@
               </td>
               <td data-name="Especialidad">{{ request.specialty }}</td>
               <td data-name="Profesional">{{ request.professional }}</td>
-              <td data-name="Sede">{{ site(request.location) }}</td>
               <td data-name="Estado"><ui-badge [tone]="tone(request.status)">{{ requestStatus[request.status] }}</ui-badge></td>
             </tr>
               }
@@ -78,7 +77,7 @@
         <h2 class="mt-8 mb-3 font-serif text-2xl">Solicitudes rechazadas</h2>
         <ui-table>
           <table class="cards">
-            <thead><tr><th>Cuándo</th><th>Especialidad</th><th>Profesional</th><th>Sede</th><th>Estado</th><th></th></tr></thead>
+            <thead><tr><th>Cuándo</th><th>Especialidad</th><th>Profesional</th><th>Estado</th><th></th></tr></thead>
             <tbody>
               @for (request of rejectedRequests(); track request.id) {
               <tr>
@@ -90,7 +89,6 @@
               </td>
               <td data-name="Especialidad">{{ request.specialty }}</td>
               <td data-name="Profesional">{{ request.professional }}</td>
-              <td data-name="Sede">{{ site(request.location) }}</td>
               <td data-name="Estado"><ui-badge [tone]="tone(request.status)">{{ requestStatus[request.status] }}</ui-badge></td>
               <td class="whitespace-nowrap"><ui-button variant="ghost" (click)="reasonFor.set(request)">Ver motivo</ui-button></td>
             </tr>
