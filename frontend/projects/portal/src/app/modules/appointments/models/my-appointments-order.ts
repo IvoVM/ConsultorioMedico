@@ -11,15 +11,18 @@ export const myAppointmentsOrderLabels: Record<MyAppointmentsOrder, string> = {
   [MyAppointmentsOrder.Turno]: 'Fecha del turno',
 };
 
-// The patient sees their appointments first and the requests still waiting on front desk in the other tab.
+// The patient sees their live appointments first, then the requests front desk still has to confirm,
+// and apart from both, what left the flow: removed appointments and rejected requests.
 export enum MyAppointmentsTab {
   Turnos = 'turnos',
   Solicitudes = 'solicitudes',
+  Eliminados = 'eliminados',
 }
 
 export const myAppointmentsTabLabels: Record<MyAppointmentsTab, string> = {
   [MyAppointmentsTab.Turnos]: 'Turnos',
-  [MyAppointmentsTab.Solicitudes]: 'Solicitudes',
+  [MyAppointmentsTab.Solicitudes]: 'Solicitudes pendientes',
+  [MyAppointmentsTab.Eliminados]: 'Eliminados',
 };
 
 type Dated = { start: string; createdAt?: string | null; updatedAt?: string | null };

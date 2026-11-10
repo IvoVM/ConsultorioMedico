@@ -9,6 +9,11 @@ import { firstValueFrom } from 'rxjs';
 import { AppRoute } from '../../app.routes.enum';
 import { AppointmentChanges } from './appointment-changes';
 
+const live = (item: AppointmentDto) => item.status !== AppointmentStatus.Cancelled;
+// A rescheduled request still waits for front desk; a confirmed one already shows as an appointment.
+const waiting = (item: BookingRequestDto) => item.status === BookingRequestStatus.Pending || item.status === BookingRequestStatus.Rescheduled;
+const rejected = (item: BookingRequestDto) => item.status === BookingRequestStatus.Rejected;
+
 @Component({
   imports: [FormsModule, RouterLink, AppointmentChanges, FechaPipe, UiTable, UiBadge, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTabs],
   templateUrl: './my-appointments.html',
@@ -29,13 +34,19 @@ export class MyAppointmentsPage {
   readonly tabKeys = MyAppointmentsTab;
   readonly tab = signal<string>(MyAppointmentsTab.Turnos);
   readonly tabs = computed((): TabItem[] => [
-    { key: MyAppointmentsTab.Turnos, label: myAppointmentsTabLabels[MyAppointmentsTab.Turnos], icon: 'event_available', count: this.appointments().length },
+    { key: MyAppointmentsTab.Turnos, label: myAppointmentsTabLabels[MyAppointmentsTab.Turnos], icon: 'event_available', count: this.appointments().filter(live).length },
     {
       key: MyAppointmentsTab.Solicitudes,
       label: myAppointmentsTabLabels[MyAppointmentsTab.Solicitudes],
       icon: 'pending_actions',
-      count: this.requests().filter((item) => item.status === BookingRequestStatus.Pending).length,
+      count: this.requests().filter(waiting).length,
       tone: UiTone.Warn,
+    },
+    {
+      key: MyAppointmentsTab.Eliminados,
+      label: myAppointmentsTabLabels[MyAppointmentsTab.Eliminados],
+      icon: 'delete',
+      count: this.appointments().filter((item) => !live(item)).length + this.requests().filter(rejected).length,
     },
   ]);
   readonly order = signal<string>(MyAppointmentsOrder.Creado);
@@ -47,7 +58,10 @@ export class MyAppointmentsPage {
   readonly shownAppointments = computed(() =>
     sortMine(this.appointments().filter((item) => matchesSearch(this.search(), item.specialty, item.professional, item.appointmentType, item.location)), this.order() as MyAppointmentsOrder),
   );
-  readonly hasReason = computed(() => this.shownRequests().some((request) => request.status === BookingRequestStatus.Rejected));
+  readonly liveAppointments = computed(() => this.shownAppointments().filter(live));
+  readonly removedAppointments = computed(() => this.shownAppointments().filter((item) => !live(item)));
+  readonly pendingRequests = computed(() => this.shownRequests().filter(waiting));
+  readonly rejectedRequests = computed(() => this.shownRequests().filter(rejected));
   readonly requestStatus: Record<BookingRequestStatus, string> = {
     [BookingRequestStatus.Pending]: 'Pendiente',
     [BookingRequestStatus.Approved]: 'Confirmada',
