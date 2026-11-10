@@ -71,10 +71,7 @@
             <td class="whitespace-nowrap">{{ item.start | fecha }}</td>
             <td data-name="Paciente" class="font-serif text-lg leading-tight">{{ item.patient }}</td>
             <td data-name="Profesional">{{ item.professional }}</td>
-            <td data-name="Especialidad">
-              {{ item.specialty || 'Sin especialidad' }}
-              <span class="mt-1 block text-sm text-ink/70">{{ item.appointmentType }}</span>
-            </td>
+            <td data-name="Especialidad">{{ item.specialty || 'Sin especialidad' }}</td>
             <td data-name="Sede">{{ site(item) }}</td>
             <td data-name="Estado"><ui-badge [tone]="tone(item.status)">{{ statusLabels[item.status] }}</ui-badge></td>
             <td class="whitespace-nowrap"><ui-button variant="ghost" (click)="openDetail(item)">Detalle</ui-button></td>
@@ -100,7 +97,6 @@
     <dl class="mt-4 grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
       <div><dt class="font-semibold text-ink/70">Profesional</dt><dd>{{ item.professional }}</dd></div>
       <div><dt class="font-semibold text-ink/70">Especialidad</dt><dd>{{ item.specialty || 'Sin especialidad' }}</dd></div>
-      <div><dt class="font-semibold text-ink/70">Prestación</dt><dd>{{ item.appointmentType }}</dd></div>
       <div><dt class="font-semibold text-ink/70">Sede</dt><dd>{{ site(item) }}</dd></div>
       @if (item.insurer) {
         <div><dt class="font-semibold text-ink/70">Cobertura</dt><dd>{{ item.insurer }}{{ item.memberNumber ? ' · ' + item.memberNumber : '' }}</dd></div>
