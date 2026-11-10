@@ -20,7 +20,7 @@ import {
   clinicaSession,
   errorMessage,
 } from 'sdk';
-import { FechaPipe, MediaWatcherService, SelectOption, ToastService, UiBadge, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable, UiTabs, HistoryTab, historyTabLabels, TabItem, formatFecha } from 'ui';
+import { FechaPipe, MediaWatcherService, SelectOption, ToastService, UiBadge, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable, UiTabs, HistoryTab, historyTabLabels, TabItem, siteLabel, formatFecha } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { TablePager, listParams, queueSearch } from '../../table-pager';
 import { SortCol, SortState, nextSort } from '../../table-sort';
@@ -84,6 +84,8 @@ export class AppointmentHistoryPage {
   readonly patientText = signal('');
   readonly statusFilter = signal('');
   readonly tab = signal<string>(HistoryTab.Turnos);
+  // With more than one active site each row names where the visit is; otherwise it reads "Sede única".
+  readonly multiSite = signal(false);
   readonly removed = computed(() => this.tab() === HistoryTab.Eliminados);
   readonly tabs: TabItem[] = [
     { key: HistoryTab.Turnos, label: historyTabLabels[HistoryTab.Turnos], icon: 'event' },
@@ -171,6 +173,10 @@ export class AppointmentHistoryPage {
   setStatus(value: string) {
     this.statusFilter.set(value);
     this.reload();
+  }
+
+  site(item: AppointmentDto) {
+    return siteLabel(item.location, this.multiSite());
   }
 
   setTab(value: string) {
@@ -410,12 +416,14 @@ export class AppointmentHistoryPage {
 
   private async loadFilters() {
     try {
-      const [specialties, professionals] = await Promise.all([
+      const [specialties, professionals, sites] = await Promise.all([
         firstValueFrom(this.organization.specialties()),
         firstValueFrom(this.employees.professionals()),
+        firstValueFrom(this.organization.locations()),
       ]);
       this.specialties.set(specialties);
       this.professionals.set(professionals);
+      this.multiSite.set(sites.filter((item) => item.isActive).length > 1);
     } catch (error) {
       this.error.set(errorMessage(error));
     }

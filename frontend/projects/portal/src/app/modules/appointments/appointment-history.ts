@@ -15,7 +15,7 @@ import {
   clinicaSession,
   errorMessage,
 } from 'sdk';
-import { FechaPipe, SelectOption, UiBadge, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable, UiTabs, HistoryTab, historyTabLabels, TabItem } from 'ui';
+import { FechaPipe, SelectOption, UiBadge, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable, UiTabs, HistoryTab, historyTabLabels, TabItem, siteLabel } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { appointmentStatusLabels } from './models/appointment-status-labels';
 import { AppointmentChanges } from './appointment-changes';
@@ -57,6 +57,8 @@ export class AppointmentHistoryPage {
   readonly patientText = signal('');
   readonly statusFilter = signal('');
   readonly tab = signal<string>(HistoryTab.Turnos);
+  // With more than one active site each row names where the visit is; otherwise it reads "Sede única".
+  readonly multiSite = signal(false);
   readonly removed = computed(() => this.tab() === HistoryTab.Eliminados);
   readonly tabs: TabItem[] = [
     { key: HistoryTab.Turnos, label: historyTabLabels[HistoryTab.Turnos], icon: 'event' },
@@ -94,6 +96,7 @@ export class AppointmentHistoryPage {
       void this.loadPatient(requested);
     }
     void this.load();
+    void this.loadSites();
     if (!this.doctor) void this.loadFilters();
   }
 
@@ -123,6 +126,10 @@ export class AppointmentHistoryPage {
   setStatus(value: string) {
     this.statusFilter.set(value);
     this.reload();
+  }
+
+  site(item: AppointmentDto) {
+    return siteLabel(item.location, this.multiSite());
   }
 
   setTab(value: string) {
@@ -208,6 +215,15 @@ export class AppointmentHistoryPage {
       this.patientMatches.set(await firstValueFrom(this.patientsApi.searchPatients({ q: term })));
     } catch {
       this.patientMatches.set([]);
+    }
+  }
+
+  private async loadSites() {
+    try {
+      const sites = await firstValueFrom(this.organization.locations());
+      this.multiSite.set(sites.filter((item) => item.isActive).length > 1);
+    } catch {
+      this.multiSite.set(false);
     }
   }
 
