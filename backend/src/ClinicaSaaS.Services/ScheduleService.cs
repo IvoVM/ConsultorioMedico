@@ -319,7 +319,7 @@ public partial class ScheduleService(
             .FirstOrDefaultAsync(ct) ?? throw new NotFoundException("No hay un paciente asociado a esta cuenta.");
         return await appointments.Appointments
             .Where(a => a.ClientId == clientId)
-            .OrderByDescending(a => a.Start)
+            .OrderByDescending(a => a.CreatedAt).ThenByDescending(a => a.Start)
             .ToAppointmentDtos(currentUser.Id)
             .ToListAsync(ct);
     }
@@ -615,7 +615,9 @@ public partial class ScheduleService(
                 request.MemberNumber,
                 request.Status,
                 request.RejectionReason,
-                request.PreviousStart))
+                request.PreviousStart,
+                request.CreatedAt,
+                request.UpdatedAt))
             .ToListAsync(ct);
     }
 
@@ -631,7 +633,7 @@ public partial class ScheduleService(
             .Where(request => request.Start >= activeFrom
                 || request.AppointmentId != null
                 || (request.Status != BookingRequestStatus.Pending && request.Status != BookingRequestStatus.Rescheduled))
-            .OrderByDescending(request => request.Start)
+            .OrderByDescending(request => request.CreatedAt).ThenByDescending(request => request.Start)
             .Select(request => new BookingRequestDto(
                 request.Id,
                 request.Name,
@@ -645,7 +647,9 @@ public partial class ScheduleService(
                 request.MemberNumber,
                 request.Status,
                 request.RejectionReason,
-                request.PreviousStart))
+                request.PreviousStart,
+                request.CreatedAt,
+                request.UpdatedAt))
             .ToListAsync(ct);
     }
 
@@ -827,7 +831,9 @@ public partial class ScheduleService(
                 request.MemberNumber,
                 request.Status,
                 request.RejectionReason,
-                request.PreviousStart))
+                request.PreviousStart,
+                request.CreatedAt,
+                request.UpdatedAt))
             .FirstAsync(ct);
 
     private async Task<Client> ResolveClientAsync(Guid? patientId, CancellationToken ct)

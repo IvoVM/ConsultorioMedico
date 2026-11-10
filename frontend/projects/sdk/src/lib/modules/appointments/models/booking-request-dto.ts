@@ -14,6 +14,8 @@ export interface BookingRequestDto {
   status: BookingRequestStatus;
   rejectionReason?: string | null;
   previousStart?: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CreateBookingRequestCommand {

@@ -3,7 +3,17 @@
   <ui-skeleton label="Cargando turnos" />
 } @else {
   <p class="mb-6 max-w-prose text-ink/75">La secretaría confirma cada solicitud. Cuando lo hace, el turno queda asociado a tu documento: recordá llevarlo al consultorio.</p>
-  @if (requests().length) {
+  @if (requests().length || appointments().length) {
+    <div class="mb-6 grid gap-4 sm:grid-cols-2">
+      <ui-field label="Buscar">
+        <input type="search" name="search" [ngModel]="search()" (ngModelChange)="search.set($event)" placeholder="Especialidad, profesional o sede" />
+      </ui-field>
+      <ui-field label="Ordenar por">
+        <ui-select [ngModel]="order()" (ngModelChange)="order.set($event)" [ngModelOptions]="{ standalone: true }" [options]="orderOptions" />
+      </ui-field>
+    </div>
+  }
+  @if (shownRequests().length) {
     <h2 class="mb-3 font-serif text-2xl">Solicitudes</h2>
     <p class="mb-4 max-w-[48ch] text-ink/75">Las que pediste con tu documento, también las de antes de crear la cuenta.</p>
     <ui-table>
@@ -17,7 +27,7 @@
         </tr>
       </thead>
       <tbody>
-        @for (request of requests(); track request.id) {
+        @for (request of shownRequests(); track request.id) {
           <tr>
             <td>
               {{ request.start | fecha }}
@@ -43,13 +53,13 @@
     </table>
 </ui-table>
   }
-  @if (appointments().length) {
+  @if (shownAppointments().length) {
     <h2 class="mt-10 mb-3 font-serif text-2xl">Turnos</h2>
     <ui-table>
 <table class="cards">
       <thead><tr><th>Cuándo</th><th>Profesional</th><th>Estado</th><th></th></tr></thead>
       <tbody>
-        @for (appointment of appointments(); track appointment.id) {
+        @for (appointment of shownAppointments(); track appointment.id) {
           <tr>
             <td>{{ appointment.start | fecha }}</td>
             <td data-name="Profesional">
@@ -71,6 +81,8 @@
   }
   @if (appointments().length === 0 && requests().length === 0) {
     <ui-empty message="Todavía no tenés turnos. Cuando reserves uno, aparece acá." />
+  } @else if (shownAppointments().length === 0 && shownRequests().length === 0) {
+    <ui-empty message="Nada coincide con esa búsqueda." />
   }
 }
 <ui-modal [open]="reasonFor() !== null" title="No se confirmó el turno" (closed)="reasonFor.set(null)">
