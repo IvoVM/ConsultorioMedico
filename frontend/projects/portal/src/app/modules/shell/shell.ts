@@ -38,10 +38,11 @@ export class ShellPage {
         icon: 'favorite',
         children: [
           { label: 'Historia', path: AppRoute.Historia, icon: 'clinical_notes' },
-          { label: 'Perfil', path: AppRoute.Perfil, icon: 'person' },
           { label: 'Recetas', path: AppRoute.Recetas, icon: 'prescriptions' },
         ],
       });
+      // The profile holds the patient's own details, not their health, so it gets its own entry.
+      nodes.push({ label: 'Mi perfil', path: AppRoute.Perfil, icon: 'person' });
     } else if (role === TenantRole.Secretary || role === TenantRole.TenantAdmin) {
       nodes.push({
         label: 'Turnos',
