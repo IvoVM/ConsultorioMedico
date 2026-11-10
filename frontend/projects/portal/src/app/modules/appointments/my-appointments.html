@@ -21,7 +21,9 @@
       <thead>
         <tr>
           <th>Cuándo</th>
-          <th>Para</th>
+          <th>Especialidad</th>
+          <th>Profesional</th>
+          <th>Sede</th>
           <th>Estado</th>
           @if (hasReason()) { <th>Motivo</th> }
         </tr>
@@ -35,10 +37,9 @@
                 <span class="mt-1 block text-sm text-ink/70">Antes: {{ request.previousStart | fecha }}</span>
               }
             </td>
-            <td data-name="Para">
-              {{ request.specialty }}
-              <span class="mt-1 block text-sm text-ink/70">{{ request.professional }}</span>
-            </td>
+            <td data-name="Especialidad">{{ request.specialty }}</td>
+            <td data-name="Profesional">{{ request.professional }}</td>
+            <td data-name="Sede">{{ site(request.location) }}</td>
             <td data-name="Estado"><ui-badge [tone]="tone(request.status)">{{ requestStatus[request.status] }}</ui-badge></td>
             @if (hasReason()) {
               <td data-name="Motivo">

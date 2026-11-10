@@ -16,6 +16,7 @@ export interface BookingRequestDto {
   previousStart?: string | null;
   createdAt: string;
   updatedAt: string;
+  location: string;
 }
 
 export interface CreateBookingRequestCommand {

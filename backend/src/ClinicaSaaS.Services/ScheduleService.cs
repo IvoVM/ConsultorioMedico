@@ -617,7 +617,8 @@ public partial class ScheduleService(
                 request.RejectionReason,
                 request.PreviousStart,
                 request.CreatedAt,
-                request.UpdatedAt))
+                request.UpdatedAt,
+                request.Location.Name))
             .ToListAsync(ct);
     }
 
@@ -649,7 +650,8 @@ public partial class ScheduleService(
                 request.RejectionReason,
                 request.PreviousStart,
                 request.CreatedAt,
-                request.UpdatedAt))
+                request.UpdatedAt,
+                request.Location.Name))
             .ToListAsync(ct);
     }
 
@@ -833,7 +835,8 @@ public partial class ScheduleService(
                 request.RejectionReason,
                 request.PreviousStart,
                 request.CreatedAt,
-                request.UpdatedAt))
+                request.UpdatedAt,
+                request.Location.Name))
             .FirstAsync(ct);
 
     private async Task<Client> ResolveClientAsync(Guid? patientId, CancellationToken ct)
