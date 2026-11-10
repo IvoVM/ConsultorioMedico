@@ -72,7 +72,7 @@ public partial class ScheduleService
         return await unitOfWork.InTransactionAsync(async () =>
         {
             var appointment = await appointments.GetAsync(id, ct) ?? throw new NotFoundException("Turno no encontrado.");
-            if (!SchedulingRules.CanMoveOnAgenda(appointment.Status))
+            if (!SchedulingRules.CanReschedule(appointment.Status))
                 throw new BusinessRuleException("Ese turno ya no se puede mover.");
             var placement = await PlaceAsync(command.ProfessionalId, appointment.AppointmentTypeId, command.Start, appointment.Id, null, ct);
             appointment.ProfessionalId = command.ProfessionalId;
@@ -86,7 +86,7 @@ public partial class ScheduleService
                 appointment.MemberNumber = null;
                 appointment.CoverageAccepted = null;
             }
-            appointment.Status = SchedulingRules.StatusAfterMove(appointment.Status);
+            appointment.Status = AppointmentStatus.Rescheduled;
             await appointments.SaveAsync(ct);
             await audit.RecordAsync(currentUser.Id, "reprogramacion", "Turno", appointment.Id.ToString(), appointment.Start.ToString("O"), ct);
             return await LoadAppointmentAsync(appointment.Id, ct);

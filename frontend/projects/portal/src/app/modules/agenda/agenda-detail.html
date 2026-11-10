@@ -1,4 +1,4 @@
-<ui-modal [open]="true" [wide]="mode() === modes.Move" [title]="mode() === modes.Confirm ? (confirmation()?.title ?? '') : mode() === modes.Edit ? 'Editar turno' : mode() === modes.Move ? 'Reprogramar a otro día' : 'Turno'" (closed)="closed.emit()">
+<ui-modal [open]="true" [wide]="mode() === modes.Move" [title]="mode() === modes.Confirm ? (confirmation()?.title ?? '') : mode() === modes.Move ? 'Reprogramar a otro día' : 'Turno'" (closed)="closed.emit()">
   @switch (mode()) {
     @case (modes.Info) {
       @let item = appointment();
@@ -20,6 +20,7 @@
           <div><dt>Profesional</dt><dd>{{ item.professional }}</dd></div>
           <div><dt>Prestación</dt><dd>{{ item.appointmentType }} · {{ duration() }} min</dd></div>
           <div><dt>Sede</dt><dd>{{ item.location }}</dd></div>
+          @if (!canEditData()) {
           <div>
             <dt>Cobertura</dt>
             <dd>
@@ -31,30 +32,42 @@
               }
             </dd>
           </div>
+          }
           @if (canSeeHistory()) {
             <div class="sm:col-span-2"><dt>Motivo</dt><dd>{{ item.visitReason || 'Sin motivo cargado' }}</dd></div>
           }
         </dl>
+        @if (canEditData()) {
+          <form class="ag-coverage" (ngSubmit)="saveCoverage()">
+            <div class="grid gap-4 sm:grid-cols-2">
+              <ui-field label="Cobertura">
+                <ui-select name="insurer" [ngModel]="insurerId()" (ngModelChange)="insurerId.set($event)" [options]="insurerOptions()" />
+              </ui-field>
+              @if (insurerId()) {
+                <ui-field label="N.º de afiliado">
+                  <input name="member" maxlength="40" required [ngModel]="memberNumber()" (ngModelChange)="memberNumber.set($event)" />
+                </ui-field>
+              }
+            </div>
+            @if (item.insurer && !coverageDirty()) {
+              <p class="mt-2 text-xs text-ink/55">
+                {{ item.coverageAccepted === true ? 'Cobertura aceptada' : item.coverageAccepted === false ? 'Cobertura rechazada' : 'Cobertura sin revisar' }}
+              </p>
+            }
+            @if (coverageDirty()) {
+              <div class="mt-3 flex flex-wrap gap-2">
+                <ui-button type="submit" [loading]="saving()"><ui-icon name="check" [size]="18" />Guardar cobertura</ui-button>
+                <ui-button type="button" variant="outlined" [disabled]="saving()" (click)="resetCoverage()">Deshacer</ui-button>
+              </div>
+            }
+          </form>
+        }
         @if (canSeeHistory()) {
           <a class="text-link inline-flex items-center gap-1" [routerLink]="route.Historia" [queryParams]="patientParams(item.patientId)">
             <ui-icon name="clinical_notes" [size]="18" />Ver historia clínica
           </a>
         }
       </div>
-    }
-    @case (modes.Edit) {
-      <form id="agenda-edit-form" class="flex flex-col gap-4" (ngSubmit)="reviewEdit()">
-        <div class="grid gap-4 sm:grid-cols-2">
-          <ui-field label="Cobertura">
-            <ui-select name="insurer" [(ngModel)]="insurerId" [options]="insurerOptions()" />
-          </ui-field>
-          @if (insurerId) {
-            <ui-field label="N.º de afiliado">
-              <input name="member" maxlength="40" required [(ngModel)]="memberNumber" />
-            </ui-field>
-          }
-        </div>
-      </form>
     }
     @case (modes.Move) {
       <div class="ag-move">
@@ -114,22 +127,15 @@
           @if (canMove()) {
             <ui-button (click)="startMove()"><ui-icon name="event_repeat" [size]="18" />Reprogramar</ui-button>
           }
-          @if (canEditData()) {
-            <ui-button variant="secondary" (click)="edit()"><ui-icon name="edit" [size]="18" />Editar</ui-button>
-          }
           @if (canCheckIn()) {
             <ui-button variant="secondary" (click)="checkIn()"><ui-icon name="chair" [size]="18" />Sala de espera</ui-button>
           }
           @if (canMarkAbsent()) {
             <ui-button variant="secondary" (click)="noShow()"><ui-icon name="person_off" [size]="18" />Ausente</ui-button>
           }
-          @if (canMove()) {
+          @if (canCancel()) {
             <ui-button variant="error" (click)="cancel()"><ui-icon name="delete" [size]="18" />Cancelar turno</ui-button>
           }
-        }
-        @case (modes.Edit) {
-          <ui-button type="submit" form="agenda-edit-form">Guardar</ui-button>
-          <ui-button variant="outlined" (click)="mode.set(modes.Info)">Volver</ui-button>
         }
         @case (modes.Move) {
           <ui-button [disabled]="moveStart() === null" (click)="reviewMove()">Continuar</ui-button>

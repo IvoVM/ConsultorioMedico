@@ -61,15 +61,9 @@ public static class SchedulingRules
     public static bool IsOverbook(IEnumerable<TimeRange> agenda, TimeRange candidate) =>
         !MergeRanges(agenda).Any(range => range.Start <= candidate.Start && candidate.End <= range.End);
 
-    public static bool CanMoveOnAgenda(AppointmentStatus status) =>
-        status is AppointmentStatus.Booked or AppointmentStatus.Rescheduled or AppointmentStatus.CheckedIn;
-
+    // Once the patient is in the waiting room the slot is theirs: it can be cancelled, not moved.
     public static bool CanReschedule(AppointmentStatus status) =>
-        status is AppointmentStatus.Booked or AppointmentStatus.Rescheduled or AppointmentStatus.CheckedIn;
-
-    // A patient already in the waiting room stays there when front desk moves the slot or the professional.
-    public static AppointmentStatus StatusAfterMove(AppointmentStatus current) =>
-        current == AppointmentStatus.CheckedIn ? AppointmentStatus.CheckedIn : AppointmentStatus.Rescheduled;
+        status is AppointmentStatus.Booked or AppointmentStatus.Rescheduled;
 
     // How long a booking may stay unattended after its end before the system records the patient as absent.
     public static readonly TimeSpan NoShowGrace = TimeSpan.FromHours(1);

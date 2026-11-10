@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostListener, OnDestroy, computed, forwardRef, inject, input, signal, viewChild } from '@angular/core';
+import { Component, ElementRef, HostListener, OnDestroy, afterRenderEffect, computed, forwardRef, inject, input, signal, untracked, viewChild } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { UiIcon } from './ui-icon.component';
 
@@ -37,6 +37,17 @@ export class UiSelect implements ControlValueAccessor, OnDestroy {
   // The menu lives in the browser's top layer, so a modal's scroll area or overflow cannot clip it.
   readonly place = signal<{ top: number | null; bottom: number | null; left: number; width: number; maxHeight: number }>({ top: 0, bottom: null, left: 0, width: 0, maxHeight: 256 });
   private readonly follow = () => this.position();
+
+  constructor() {
+    // The list only exists once Angular has rendered it; showing the popover any earlier finds nothing and leaves it hidden.
+    afterRenderEffect(() => {
+      const list = this.list()?.nativeElement;
+      if (!list) return;
+      if ('showPopover' in list && !list.matches(':popover-open')) list.showPopover();
+      list.focus();
+      untracked(() => this.revealActive());
+    });
+  }
 
   writeValue(value: string | null) {
     this.current.set(value ?? '');
@@ -129,12 +140,6 @@ export class UiSelect implements ControlValueAccessor, OnDestroy {
     this.open.set(true);
     window.addEventListener('scroll', this.follow, true);
     window.addEventListener('resize', this.follow);
-    queueMicrotask(() => {
-      const list = this.list()?.nativeElement;
-      if (list && 'showPopover' in list && !list.matches(':popover-open')) list.showPopover();
-      list?.focus();
-      this.revealActive();
-    });
   }
 
   ngOnDestroy() {

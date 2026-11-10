@@ -31,14 +31,6 @@ public class SchedulingRulesTests
     }
 
     [Fact]
-    public void Moving_keeps_a_patient_in_the_waiting_room()
-    {
-        Assert.Equal(AppointmentStatus.CheckedIn, SchedulingRules.StatusAfterMove(AppointmentStatus.CheckedIn));
-        Assert.Equal(AppointmentStatus.Rescheduled, SchedulingRules.StatusAfterMove(AppointmentStatus.Booked));
-        Assert.Equal(AppointmentStatus.Rescheduled, SchedulingRules.StatusAfterMove(AppointmentStatus.Rescheduled));
-    }
-
-    [Fact]
     public void Unattended_booking_becomes_absent_after_the_grace()
     {
         var end = At(10, 0);

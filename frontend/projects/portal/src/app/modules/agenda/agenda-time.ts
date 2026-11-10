@@ -9,7 +9,7 @@ export const DAY_END = 24 * 60;
 export { appointmentStatusTones as statusTone } from '../appointments/models/appointment-status-tones';
 
 export function movable(status: AppointmentStatus) {
-  return status === AppointmentStatus.Booked || status === AppointmentStatus.Rescheduled || status === AppointmentStatus.CheckedIn;
+  return status === AppointmentStatus.Booked || status === AppointmentStatus.Rescheduled;
 }
 
 // A booking whose time ended without the patient being admitted reads as absent on the agenda.

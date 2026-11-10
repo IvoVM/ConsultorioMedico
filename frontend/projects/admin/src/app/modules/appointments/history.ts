@@ -315,7 +315,7 @@ export class AppointmentHistoryPage {
   }
 
   canMove(item: AppointmentDto) {
-    return item.status === AppointmentStatus.Booked || item.status === AppointmentStatus.Rescheduled || item.status === AppointmentStatus.CheckedIn;
+    return item.status === AppointmentStatus.Booked || item.status === AppointmentStatus.Rescheduled;
   }
 
   async startMove(item: AppointmentDto) {

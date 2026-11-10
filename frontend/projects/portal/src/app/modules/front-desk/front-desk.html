@@ -77,6 +77,8 @@
                 @if (appointment.status === status.Booked || appointment.status === status.Rescheduled) { <ui-button [loading]="pending() === 'checkin:' + appointment.id" (click)="checkIn(appointment)">Sala de espera</ui-button> }
                 @if (canMove(appointment)) {
                   <ui-button variant="ghost" (click)="startMove(appointment)">Reprogramar</ui-button>
+                }
+                @if (canMove(appointment) || appointment.status === status.CheckedIn) {
                   <ui-button variant="ghost" [loading]="pending() === 'absent:' + appointment.id" (click)="absent(appointment)">No se presentó</ui-button>
                 }
                 @if (appointment.status === status.Booked || appointment.status === status.Rescheduled || appointment.status === status.CheckedIn) {

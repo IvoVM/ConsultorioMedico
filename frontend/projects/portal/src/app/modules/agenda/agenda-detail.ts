@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, output, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { Observable, firstValueFrom } from 'rxjs';
@@ -10,7 +10,6 @@ import { bounds, clock, dayTitle, durationOf, inPast, isOverbook, isoAt, minutes
 
 enum DetailMode {
   Info = 'info',
-  Edit = 'edit',
   Move = 'move',
   Confirm = 'confirm',
 }
@@ -55,8 +54,9 @@ export class AgendaDetail {
   readonly saving = signal(false);
   readonly error = signal('');
 
-  insurerId = '';
-  memberNumber = '';
+  // Coverage is edited right on the detail; these hold what the desk is typing until it is saved.
+  readonly insurerId = signal('');
+  readonly memberNumber = signal('');
 
   readonly moveYear = signal(new Date().getFullYear());
   readonly moveMonth = signal(new Date().getMonth() + 1);
@@ -75,12 +75,18 @@ export class AgendaDetail {
     ...(this.professional()?.insurers ?? []).map((insurer) => ({ value: insurer.id, label: insurer.name })),
   ]);
   readonly canMove = computed(() => this.canEdit() && movable(this.appointment().status));
+  // A patient already in the waiting room can still leave, so the booking can be cancelled, but not moved.
+  readonly canCancel = computed(() => this.canEdit() && (this.booked() || this.appointment().status === AppointmentStatus.CheckedIn));
   readonly canCheckIn = computed(() => this.canEdit() && (this.booked() || this.lateArrival()));
   readonly canMarkAbsent = computed(() => this.canEdit() && this.booked());
   private readonly booked = computed(() => this.appointment().status === AppointmentStatus.Booked || this.appointment().status === AppointmentStatus.Rescheduled);
   // The system marks unattended bookings absent; a patient who still shows up that day can go to the waiting room.
   private readonly lateArrival = computed(() => this.appointment().status === AppointmentStatus.NoShow && this.day() === localDate(new Date()));
-  readonly canEditData = computed(() => this.canEdit() && this.appointment().status !== AppointmentStatus.Completed);
+  readonly canEditData = computed(() => this.canEdit() && this.appointment().status !== AppointmentStatus.Completed && this.appointment().status !== AppointmentStatus.Cancelled);
+  private readonly savedInsurerId = computed(() => this.professional()?.insurers.find((item) => item.name === this.appointment().insurer)?.id ?? '');
+  readonly coverageDirty = computed(
+    () => this.insurerId() !== this.savedInsurerId() || (!!this.insurerId() && this.memberNumber().trim() !== (this.appointment().memberNumber ?? '')),
+  );
   readonly openDays = computed(() => {
     const today = localDate(new Date());
     const count = new Date(this.moveYear(), this.moveMonth(), 0).getDate();
@@ -114,28 +120,34 @@ export class AgendaDetail {
   readonly dayTitle = dayTitle;
   readonly when = (iso: string) => formatFecha(iso);
 
-  edit() {
-    const appointment = this.appointment();
-    const insurer = this.professional()?.insurers.find((item) => item.name === appointment.insurer);
-    this.insurerId = insurer?.id ?? '';
-    this.memberNumber = appointment.memberNumber ?? '';
-    this.error.set('');
-    this.mode.set(DetailMode.Edit);
+  constructor() {
+    effect(() => this.resetCoverage());
   }
 
-  reviewEdit() {
-    this.ask({
-      title: 'Guardar cambios',
-      message: `Se actualiza la cobertura del turno de ${this.appointment().patient}.`,
-      back: DetailMode.Edit,
-      run: async () => {
-        await this.call(this.agendaApi.edit(this.appointment().id, {
-          insurerId: this.insurerId || null,
-          memberNumber: this.insurerId ? this.memberNumber.trim() : null,
-        }));
-        this.toasts.success('Turno actualizado', `Se guardaron los cambios de ${this.appointment().patient}.`);
-      },
-    });
+  resetCoverage() {
+    this.insurerId.set(this.savedInsurerId());
+    this.memberNumber.set(this.appointment().memberNumber ?? '');
+  }
+
+  async saveCoverage() {
+    if (this.insurerId() && !this.memberNumber().trim()) {
+      this.error.set('Cargá el número de afiliado.');
+      return;
+    }
+    this.saving.set(true);
+    this.error.set('');
+    try {
+      await this.call(this.agendaApi.edit(this.appointment().id, {
+        insurerId: this.insurerId() || null,
+        memberNumber: this.insurerId() ? this.memberNumber().trim() : null,
+      }));
+      this.toasts.success('Cobertura actualizada', `Se guardó la cobertura de ${this.appointment().patient}.`);
+      this.changed.emit();
+    } catch (error) {
+      this.error.set(error instanceof Error ? error.message : 'No se pudo guardar.');
+    } finally {
+      this.saving.set(false);
+    }
   }
 
   async startMove() {

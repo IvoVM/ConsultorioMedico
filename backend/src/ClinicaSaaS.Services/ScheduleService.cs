@@ -391,7 +391,7 @@ public partial class ScheduleService(
                 ?? throw new ConflictException("Ese horario ya no está disponible.");
             appointment.Start = slot.Start;
             appointment.End = slot.End;
-            appointment.Status = SchedulingRules.StatusAfterMove(appointment.Status);
+            appointment.Status = AppointmentStatus.Rescheduled;
             await appointments.SaveAsync(ct);
             var linkedId = await requests.Entries
                 .Where(request => request.AppointmentId == appointment.Id)
