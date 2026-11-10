@@ -11,6 +11,17 @@ export const myAppointmentsOrderLabels: Record<MyAppointmentsOrder, string> = {
   [MyAppointmentsOrder.Turno]: 'Fecha del turno',
 };
 
+// The patient sees their appointments first and the requests still waiting on front desk in the other tab.
+export enum MyAppointmentsTab {
+  Turnos = 'turnos',
+  Solicitudes = 'solicitudes',
+}
+
+export const myAppointmentsTabLabels: Record<MyAppointmentsTab, string> = {
+  [MyAppointmentsTab.Turnos]: 'Turnos',
+  [MyAppointmentsTab.Solicitudes]: 'Solicitudes',
+};
+
 type Dated = { start: string; createdAt?: string | null; updatedAt?: string | null };
 
 function moment(item: Dated, order: MyAppointmentsOrder) {

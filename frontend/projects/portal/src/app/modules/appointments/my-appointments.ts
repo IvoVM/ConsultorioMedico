@@ -3,14 +3,14 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AppointmentDto, AppointmentStatus, AppointmentsService, BookingRequestDto, BookingRequestStatus, OrganizationService, errorMessage } from 'sdk';
 import { appointmentStatusLabels } from './models/appointment-status-labels';
-import { FechaPipe, SelectOption, UiBadge, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable, siteLabel } from 'ui';
-import { MyAppointmentsOrder, matchesSearch, myAppointmentsOrderLabels, sortMine } from './models/my-appointments-order';
+import { FechaPipe, SelectOption, UiBadge, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable, UiTabs, TabItem, UiTone, siteLabel } from 'ui';
+import { MyAppointmentsOrder, MyAppointmentsTab, matchesSearch, myAppointmentsTabLabels, myAppointmentsOrderLabels, sortMine } from './models/my-appointments-order';
 import { firstValueFrom } from 'rxjs';
 import { AppRoute } from '../../app.routes.enum';
 import { AppointmentChanges } from './appointment-changes';
 
 @Component({
-  imports: [FormsModule, RouterLink, AppointmentChanges, FechaPipe, UiTable, UiBadge, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton],
+  imports: [FormsModule, RouterLink, AppointmentChanges, FechaPipe, UiTable, UiBadge, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTabs],
   templateUrl: './my-appointments.html',
 })
 export class MyAppointmentsPage {
@@ -26,6 +26,18 @@ export class MyAppointmentsPage {
   readonly requests = signal<BookingRequestDto[]>([]);
   readonly reasonFor = signal<BookingRequestDto | null>(null);
   readonly trailOf = signal<AppointmentDto | null>(null);
+  readonly tabKeys = MyAppointmentsTab;
+  readonly tab = signal<string>(MyAppointmentsTab.Turnos);
+  readonly tabs = computed((): TabItem[] => [
+    { key: MyAppointmentsTab.Turnos, label: myAppointmentsTabLabels[MyAppointmentsTab.Turnos], icon: 'event_available', count: this.appointments().length },
+    {
+      key: MyAppointmentsTab.Solicitudes,
+      label: myAppointmentsTabLabels[MyAppointmentsTab.Solicitudes],
+      icon: 'pending_actions',
+      count: this.requests().filter((item) => item.status === BookingRequestStatus.Pending).length,
+      tone: UiTone.Warn,
+    },
+  ]);
   readonly order = signal<string>(MyAppointmentsOrder.Creado);
   readonly search = signal('');
   readonly orderOptions: SelectOption[] = (Object.values(MyAppointmentsOrder) as MyAppointmentsOrder[]).map((value) => ({ value, label: myAppointmentsOrderLabels[value] }));

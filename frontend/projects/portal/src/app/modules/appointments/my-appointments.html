@@ -3,6 +3,7 @@
   <ui-skeleton label="Cargando turnos" />
 } @else {
   <p class="mb-6 max-w-prose text-ink/75">La secretaría confirma cada solicitud. Cuando lo hace, el turno queda asociado a tu documento: recordá llevarlo al consultorio.</p>
+  <ui-tabs class="mb-5" label="Mis turnos" [tabs]="tabs()" [(active)]="tab" />
   @if (requests().length || appointments().length) {
     <div class="mb-6 grid gap-4 sm:grid-cols-2">
       <ui-field label="Buscar">
@@ -13,8 +14,8 @@
       </ui-field>
     </div>
   }
+  @if (tab() === tabKeys.Solicitudes) {
   @if (shownRequests().length) {
-    <h2 class="mb-3 font-serif text-2xl">Solicitudes</h2>
     <p class="mb-4 max-w-[48ch] text-ink/75">Las que pediste con tu documento, también las de antes de crear la cuenta.</p>
     <ui-table>
 <table class="cards">
@@ -53,9 +54,11 @@
       </tbody>
     </table>
 </ui-table>
+  } @else {
+    <ui-empty [message]="requests().length ? 'Ninguna solicitud coincide con esa búsqueda.' : 'No tenés solicitudes.'" />
   }
+  } @else {
   @if (shownAppointments().length) {
-    <h2 class="mt-10 mb-3 font-serif text-2xl">Turnos</h2>
     <ui-table>
 <table class="cards">
       <thead><tr><th>Cuándo</th><th>Profesional</th><th>Estado</th><th></th></tr></thead>
@@ -79,11 +82,9 @@
       </tbody>
     </table>
 </ui-table>
+  } @else {
+    <ui-empty [message]="appointments().length ? 'Ningún turno coincide con esa búsqueda.' : 'Todavía no tenés turnos. Cuando reserves uno o la secretaría confirme tu solicitud, aparece acá.'" />
   }
-  @if (appointments().length === 0 && requests().length === 0) {
-    <ui-empty message="Todavía no tenés turnos. Cuando reserves uno, aparece acá." />
-  } @else if (shownAppointments().length === 0 && shownRequests().length === 0) {
-    <ui-empty message="Nada coincide con esa búsqueda." />
   }
 }
 <ui-modal [open]="reasonFor() !== null" title="No se confirmó el turno" (closed)="reasonFor.set(null)">
