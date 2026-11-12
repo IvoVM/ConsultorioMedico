@@ -49,12 +49,15 @@
         <div class="panel-head">
           <h3 class="panel-title"><ui-icon name="payments" [size]="20" class="text-leaf" />Facturación y cobro</h3>
         </div>
-        <dl class="mb-5 grid grid-cols-3 gap-3">
+        <dl class="grid grid-cols-3 gap-3" [class.mb-5]="billing.points.length > 1">
           <div><dt class="text-xs text-ink/55">Facturado</dt><dd class="text-xl font-bold tabular-nums">{{ billing.invoiced }}</dd></div>
           <div><dt class="text-xs text-ink/55">Cobrado</dt><dd class="text-xl font-bold tabular-nums">{{ billing.collected }}</dd></div>
           <div><dt class="text-xs text-ink/55">Pendiente de cobro</dt><dd class="text-xl font-bold tabular-nums">{{ billing.outstanding }}</dd></div>
         </dl>
-        <ui-chart [kind]="kinds.Lines" [series]="billingSeries" [points]="billing.points" [format]="money" [axisFormat]="moneyAxis" [label]="'Facturado y cobrado por ' + (billing.weekly ? 'semana' : 'día')" />
+        <!-- A single day is one point, which says nothing a line can add to the three figures above. -->
+        @if (billing.points.length > 1) {
+          <ui-chart [kind]="kinds.Lines" [series]="billingSeries" [points]="billing.points" [format]="money" [axisFormat]="moneyAxis" [label]="'Facturado y cobrado por ' + (billing.weekly ? 'semana' : 'día')" />
+        }
       </section>
     }
   </div>

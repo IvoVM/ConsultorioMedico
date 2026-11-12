@@ -32,7 +32,7 @@ export class ShellPage {
         icon: 'calendar_month',
         children: [
           { label: 'Historial de turnos', path: AppRoute.MisTurnos, icon: 'event_available' },
-          { label: 'Eliminados', path: AppRoute.TurnosEliminados, icon: 'delete' },
+          { label: 'Cancelados', path: AppRoute.TurnosCancelados, icon: 'event_busy' },
         ],
       });
       nodes.push({

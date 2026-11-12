@@ -29,7 +29,7 @@ export const routes: Routes = [
             loadComponent: () => import('./modules/appointments/my-appointments').then((m) => m.MyAppointmentsPage),
           },
           {
-            path: routePath(AppRoute.TurnosEliminados),
+            path: routePath(AppRoute.TurnosCancelados),
             canActivate: [roleGuard(TenantRole.Patient)],
             loadComponent: () => import('./modules/appointments/my-appointments').then((m) => m.MyAppointmentsPage),
           },

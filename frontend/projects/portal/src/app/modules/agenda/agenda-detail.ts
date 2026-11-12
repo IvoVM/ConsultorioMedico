@@ -230,13 +230,13 @@ export class AgendaDetail {
 
   cancel() {
     this.ask({
-      title: 'Eliminar turno',
-      message: `Se elimina el turno de ${this.appointment().patient}: sale de la agenda y el horario queda libre. Queda en el historial, en Eliminados. No se puede deshacer.`,
+      title: 'Cancelar turno',
+      message: `Se cancela el turno de ${this.appointment().patient}: sale de la agenda y el horario queda libre. Queda en el historial, en Cancelados. No se puede deshacer.`,
       danger: true,
       back: DetailMode.Info,
       run: async () => {
         await this.call(this.appointmentsApi.cancelAppointment(this.appointment().id));
-        this.toasts.success('Turno eliminado', `El horario de las ${clock(this.from())} quedó libre.`);
+        this.toasts.success('Turno cancelado', `El horario de las ${clock(this.from())} quedó libre.`);
       },
     });
   }

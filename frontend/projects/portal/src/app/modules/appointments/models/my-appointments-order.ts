@@ -16,13 +16,13 @@ export const myAppointmentsOrderLabels: Record<MyAppointmentsOrder, string> = {
 export enum MyAppointmentsTab {
   Turnos = 'turnos',
   Solicitudes = 'solicitudes',
-  Eliminados = 'eliminados',
+  Cancelados = 'cancelados',
 }
 
 export const myAppointmentsTabLabels: Record<MyAppointmentsTab, string> = {
   [MyAppointmentsTab.Turnos]: 'Turnos',
   [MyAppointmentsTab.Solicitudes]: 'Solicitudes pendientes',
-  [MyAppointmentsTab.Eliminados]: 'Eliminados',
+  [MyAppointmentsTab.Cancelados]: 'Cancelados',
 };
 
 type Dated = { start: string; createdAt?: string | null; updatedAt?: string | null };

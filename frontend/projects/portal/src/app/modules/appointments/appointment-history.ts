@@ -59,10 +59,10 @@ export class AppointmentHistoryPage {
   readonly tab = signal<string>(HistoryTab.Turnos);
   // With more than one active site each row names where the visit is; otherwise it reads "Sede única".
   readonly multiSite = signal(false);
-  readonly removed = computed(() => this.tab() === HistoryTab.Eliminados);
+  readonly removed = computed(() => this.tab() === HistoryTab.Cancelados);
   readonly tabs: TabItem[] = [
     { key: HistoryTab.Turnos, label: historyTabLabels[HistoryTab.Turnos], icon: 'event' },
-    { key: HistoryTab.Eliminados, label: historyTabLabels[HistoryTab.Eliminados], icon: 'delete' },
+    { key: HistoryTab.Cancelados, label: historyTabLabels[HistoryTab.Cancelados], icon: 'event_busy' },
   ];
   readonly past = signal(true);
 

@@ -54,7 +54,9 @@ export class MetricsDashboard {
 
   readonly period = computed(() => {
     const data = this.data();
-    return data ? `Del ${shortDate.format(day(data.from))} al ${shortDate.format(day(data.to))}` : '';
+    if (!data) return '';
+    if (data.from === data.to) return `Hoy, ${longDate.format(day(data.to))}`;
+    return `Del ${shortDate.format(day(data.from))} al ${shortDate.format(day(data.to))}`;
   });
 
   readonly tiles = computed((): Tile[] => {
@@ -71,7 +73,7 @@ export class MetricsDashboard {
     return [
       tile('Atendidos', 'task_alt', summary.completed, UiTone.Ok),
       tile('Ausentes', 'person_off', summary.noShow, UiTone.Warn),
-      tile('Eliminados', 'event_busy', summary.cancelled, UiTone.Bad),
+      tile('Cancelados', 'event_busy', summary.cancelled, UiTone.Bad),
       tile('Cambiados de horario', 'update', summary.rescheduled, UiTone.Muted),
     ];
   });

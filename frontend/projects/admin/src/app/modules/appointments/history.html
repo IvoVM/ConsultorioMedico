@@ -1,7 +1,7 @@
 <header class="mb-6">
   <h2 class="font-serif text-2xl tracking-tight">Historial de turnos</h2>
   <p class="mt-2 max-w-prose text-sm leading-relaxed text-ink/70">
-    Cada fila es un turno del consultorio, del más reciente al más antiguo. Filtrá por especialidad, profesional, paciente o estado, y abrí el detalle para ver quién lo reservó, eliminó o marcó ausente, y cuándo.
+    Cada fila es un turno del consultorio, del más reciente al más antiguo. Filtrá por especialidad, profesional, paciente o estado, y abrí el detalle para ver quién lo reservó, canceló o marcó ausente, y cuándo.
   </p>
 </header>
 
@@ -54,7 +54,7 @@
 @if (loading()) {
   <ui-skeleton label="Cargando turnos" />
 } @else if (!total()) {
-  <ui-empty [message]="filtered() ? 'Ningún turno coincide con esos filtros.' : removed() ? (past() ? 'No hay turnos pasados eliminados.' : 'No hay turnos eliminados.') : past() ? 'Todavía no hay turnos pasados.' : 'Todavía no hay turnos.'" />
+  <ui-empty [message]="filtered() ? 'Ningún turno coincide con esos filtros.' : removed() ? (past() ? 'No hay turnos pasados cancelados.' : 'No hay turnos cancelados.') : past() ? 'Todavía no hay turnos pasados.' : 'Todavía no hay turnos.'" />
 } @else {
   <ui-table>
 <table class="cards">

@@ -3,7 +3,7 @@
   <ui-skeleton label="Cargando turnos" />
 } @else {
   @if (removedView) {
-    <h2 class="mb-2 font-serif text-3xl tracking-tight">Turnos eliminados</h2>
+    <h2 class="mb-2 font-serif text-3xl tracking-tight">Turnos cancelados</h2>
     <p class="mb-6 max-w-prose text-ink/75">Los turnos que se cancelaron y las solicitudes que la secretaría no confirmó. Ya no ocupan un horario.</p>
   } @else {
     <h2 class="mb-2 font-serif text-3xl tracking-tight">Historial de turnos</h2>
@@ -47,7 +47,7 @@
         <ui-empty [message]="search() ? 'Ninguna solicitud coincide con esa búsqueda.' : 'No tenés solicitudes pendientes.'" />
       }
     }
-    @case (tabKeys.Eliminados) {
+    @case (tabKeys.Cancelados) {
       @if (removedAppointments().length) {
         <ui-table>
       <table class="cards">
@@ -98,7 +98,7 @@
         </ui-table>
       }
       @if (!removedAppointments().length && !rejectedRequests().length) {
-        <ui-empty [message]="search() ? 'Nada coincide con esa búsqueda.' : 'No tenés turnos eliminados.'" />
+        <ui-empty [message]="search() ? 'Nada coincide con esa búsqueda.' : 'No tenés turnos cancelados.'" />
       }
     }
     @default {

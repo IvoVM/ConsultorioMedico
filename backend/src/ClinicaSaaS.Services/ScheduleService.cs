@@ -282,7 +282,7 @@ public partial class ScheduleService(
                     : a.Status == AppointmentStatus.CheckedIn ? "en sala de espera"
                     : a.Status == AppointmentStatus.InProgress ? "en atención"
                     : a.Status == AppointmentStatus.Completed ? "atendido"
-                    : a.Status == AppointmentStatus.Cancelled ? "eliminado"
+                    : a.Status == AppointmentStatus.Cancelled ? "cancelado"
                     : a.Status == AppointmentStatus.Rescheduled ? "reprogramado"
                     : "ausente").Contains(term));
         var ordered = (query.Sort, query.Desc) switch

@@ -32,8 +32,8 @@ export class MyAppointmentsPage {
   readonly confirming = signal<AppointmentDto | null>(null);
   readonly tabKeys = MyAppointmentsTab;
   // The same page serves the removed screen, which shows only what left the flow and no tabs.
-  readonly removedView = inject(ActivatedRoute).snapshot.routeConfig?.path === routePath(AppRoute.TurnosEliminados);
-  readonly tab = signal<string>(this.removedView ? MyAppointmentsTab.Eliminados : MyAppointmentsTab.Turnos);
+  readonly removedView = inject(ActivatedRoute).snapshot.routeConfig?.path === routePath(AppRoute.TurnosCancelados);
+  readonly tab = signal<string>(this.removedView ? MyAppointmentsTab.Cancelados : MyAppointmentsTab.Turnos);
   readonly tabs = computed((): TabItem[] => [
     { key: MyAppointmentsTab.Turnos, label: myAppointmentsTabLabels[MyAppointmentsTab.Turnos], icon: 'event_available', count: this.appointments().filter(live).length },
     {

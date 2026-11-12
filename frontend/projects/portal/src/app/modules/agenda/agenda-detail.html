@@ -134,7 +134,7 @@
             <ui-button variant="secondary" (click)="noShow()"><ui-icon name="person_off" [size]="18" />Ausente</ui-button>
           }
           @if (canCancel()) {
-            <ui-button variant="error" (click)="cancel()"><ui-icon name="delete" [size]="18" />Eliminar turno</ui-button>
+            <ui-button variant="error" (click)="cancel()"><ui-icon name="event_busy" [size]="18" />Cancelar turno</ui-button>
           }
         }
         @case (modes.Move) {

@@ -2,9 +2,9 @@ import { AppointmentStatus, MetricsRange } from 'sdk';
 import { ChartHue } from 'ui';
 
 export const metricsRangeLabels: Record<MetricsRange, string> = {
+  [MetricsRange.Today]: 'Hoy',
   [MetricsRange.Week]: '7 días',
   [MetricsRange.Month]: '30 días',
-  [MetricsRange.Quarter]: '90 días',
 };
 
 // Slices go around the donut in this order; the colorblind check passed for these neighbours, so keep them together.

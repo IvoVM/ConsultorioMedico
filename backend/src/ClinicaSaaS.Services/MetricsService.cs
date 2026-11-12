@@ -17,10 +17,10 @@ public class MetricsService(
         var zone = timeZone.Zone;
         var days = range switch
         {
+            MetricsRange.Today => 1,
             MetricsRange.Week => 7,
             MetricsRange.Month => 30,
-            MetricsRange.Quarter => 90,
-            _ => throw new BusinessRuleException("Elegí 7, 30 o 90 días.")
+            _ => throw new BusinessRuleException("Elegí hoy, 7 o 30 días.")
         };
         var to = SchedulingRules.LocalDate(clock.GetUtcNow(), zone);
         var from = to.AddDays(1 - days);
@@ -58,17 +58,17 @@ public class MetricsService(
             .ToList();
 
         var clinic = await settings.GetAsync(ct);
-        var billingMetrics = clinic.BillingEnabled ? await BillingAsync(from, days, range, start, end, ct) : null;
+        var billingMetrics = clinic.BillingEnabled ? await BillingAsync(from, days, start, end, ct) : null;
 
         return new MetricsDto(range, from, to, summary, professionals, billingMetrics);
     }
 
     private async Task<BillingMetricsDto> BillingAsync(
-        DateOnly from, int days, MetricsRange range, DateTimeOffset start, DateTimeOffset end, CancellationToken ct)
+        DateOnly from, int days, DateTimeOffset start, DateTimeOffset end, CancellationToken ct)
     {
         var zone = timeZone.Zone;
-        // Ninety daily points are too many to read, so the long range is drawn by week.
-        var bucketDays = range == MetricsRange.Quarter ? 7 : 1;
+        // Thirty days at most, so one point per day stays readable.
+        const int bucketDays = 1;
         var issued = await billing.Invoices
             .Where(i => i.Status != InvoiceStatus.Voided && i.CreatedAt >= start && i.CreatedAt < end)
             .Select(i => new { i.CreatedAt, i.Total })

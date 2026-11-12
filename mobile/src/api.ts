@@ -340,7 +340,7 @@ export const statusLabel: Record<string, string> = {
   CheckedIn: 'En sala de espera',
   InProgress: 'En atención',
   Completed: 'Atendido',
-  Cancelled: 'Eliminado',
+  Cancelled: 'Cancelado',
   NoShow: 'Ausente',
   Rescheduled: 'Reprogramado',
   Pending: 'En espera',
