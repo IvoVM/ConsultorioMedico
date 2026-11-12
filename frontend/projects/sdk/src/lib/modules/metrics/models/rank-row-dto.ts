@@ -2,5 +2,4 @@
 export interface RankRowDto {
   label: string;
   completed: number;
-  noShow: number;
 }

@@ -20,46 +20,31 @@
       }
     </div>
 
-    <section class="panel rise mb-5 min-w-0">
-      <div class="panel-head">
-        <h3 class="panel-title"><ui-icon name="bar_chart" [size]="20" class="text-leaf" />Turnos por {{ weekly() ? 'semana' : 'día' }}</h3>
-      </div>
-      <ui-chart [kind]="kinds.Bars" [series]="appointmentSeries" [points]="appointmentPoints()" label="Turnos por estado en el período" />
-    </section>
-
-    <div class="mb-5 grid gap-5 lg:grid-cols-2">
-      <section class="panel rise min-w-0">
+    <div class="grid gap-5" [class.lg:grid-cols-5]="billing()">
+      <section class="panel rise min-w-0 lg:col-span-2">
         <div class="panel-head">
-          <h3 class="panel-title"><ui-icon name="leaderboard" [size]="20" class="text-leaf" />Atendidos</h3>
-          <ui-tabs label="Agrupar por" [tabs]="rankingTabs" [active]="ranking()" (activeChange)="pickRanking($event)" />
+          <h3 class="panel-title"><ui-icon name="stethoscope" [size]="20" class="text-leaf" />Atendidos por profesional</h3>
         </div>
-        @if (rankingRows().length) {
-          <ui-bar-list label="Turnos atendidos" [rows]="rankingRows()" [tone]="tone.Muted" />
+        @if (professionals().length) {
+          <ui-bar-list label="Turnos atendidos por profesional" [rows]="professionals()" [tone]="tone.Muted" />
         } @else {
           <ui-empty message="Todavía no hay turnos atendidos en el período." />
         }
       </section>
 
-      <section class="panel rise min-w-0">
-        <div class="panel-head">
-          <h3 class="panel-title"><ui-icon name="schedule" [size]="20" class="text-leaf" />Horarios pico</h3>
-        </div>
-        @if (heatmap().rows.length) {
-          <ui-heatmap label="Turnos por día de la semana y hora" [rows]="heatmap().rows" [columns]="heatmap().columns" />
-        } @else {
-          <ui-empty message="No hay turnos en el período." />
-        }
-      </section>
+      @if (billing(); as billing) {
+        <section class="panel rise min-w-0 lg:col-span-3">
+          <div class="panel-head">
+            <h3 class="panel-title"><ui-icon name="payments" [size]="20" class="text-leaf" />Facturación y cobro</h3>
+          </div>
+          <dl class="mb-5 grid grid-cols-3 gap-3">
+            <div><dt class="text-xs text-ink/55">Facturado</dt><dd class="text-xl font-bold tabular-nums">{{ billing.invoiced }}</dd></div>
+            <div><dt class="text-xs text-ink/55">Cobrado</dt><dd class="text-xl font-bold tabular-nums">{{ billing.collected }}</dd></div>
+            <div><dt class="text-xs text-ink/55">Pendiente de cobro</dt><dd class="text-xl font-bold tabular-nums">{{ billing.outstanding }}</dd></div>
+          </dl>
+          <ui-chart [kind]="kinds.Lines" [series]="billingSeries" [points]="billing.points" [format]="money" [axisFormat]="moneyAxis" [label]="'Facturado y cobrado por ' + (billing.weekly ? 'semana' : 'día')" />
+        </section>
+      }
     </div>
-
-    @if (data()!.billing) {
-      <section class="panel rise min-w-0">
-        <div class="panel-head">
-          <h3 class="panel-title"><ui-icon name="show_chart" [size]="20" class="text-leaf" />Facturado y cobrado</h3>
-          <span class="text-sm text-ink/55">Pendiente de cobro: <b class="text-ink">{{ outstanding() }}</b></span>
-        </div>
-        <ui-chart [kind]="kinds.Lines" [series]="billingSeries" [points]="billingPoints()" [format]="money" [axisFormat]="moneyAxis" label="Facturado y cobrado en el período" />
-      </section>
-    }
   </div>
 }

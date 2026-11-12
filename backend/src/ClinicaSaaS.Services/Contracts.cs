@@ -302,22 +302,16 @@ public record AgendaBookCommand(
 public record PlaceRequestCommand(Guid ProfessionalId, DateTimeOffset Start);
 public record EditAppointmentCommand(Guid? InsurerId, string? MemberNumber);
 
-// A dashboard figure for the chosen period, next to the same figure for the period right before it.
-public record MetricKpiDto(decimal? Value, decimal? Previous);
-public record MetricsKpisDto(MetricKpiDto Completed, MetricKpiDto NoShowRate, MetricKpiDto Occupancy, MetricKpiDto NewPatients);
-public record AppointmentBucketDto(DateOnly Date, int Completed, int NoShow, int Cancelled, int Pending);
-public record RankRowDto(string Label, int Completed, int NoShow);
-public record HeatCellDto(DayOfWeek Day, int Hour, int Count);
+// Percent is null when the period has no appointments, so the dashboard shows a dash instead of a misleading 0 %.
+public record StatusShareDto(int Count, decimal? Percent);
+public record AppointmentMetricsDto(int Total, StatusShareDto Completed, StatusShareDto NoShow, StatusShareDto Cancelled, StatusShareDto Rescheduled);
+public record RankRowDto(string Label, int Completed);
 public record BillingBucketDto(DateOnly Date, decimal Invoiced, decimal Collected);
-public record BillingMetricsDto(MetricKpiDto Collected, decimal Outstanding, IReadOnlyList<BillingBucketDto> Series);
+public record BillingMetricsDto(decimal Invoiced, decimal Collected, decimal Outstanding, int BucketDays, IReadOnlyList<BillingBucketDto> Series);
 public record MetricsDto(
     MetricsRange Range,
     DateOnly From,
     DateOnly To,
-    int BucketDays,
-    MetricsKpisDto Kpis,
-    IReadOnlyList<AppointmentBucketDto> Series,
+    AppointmentMetricsDto Appointments,
     IReadOnlyList<RankRowDto> Professionals,
-    IReadOnlyList<RankRowDto> Specialties,
-    IReadOnlyList<HeatCellDto> Heatmap,
     BillingMetricsDto? Billing);
