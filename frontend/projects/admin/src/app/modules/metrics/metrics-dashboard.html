@@ -1,6 +1,6 @@
 <header class="page-hero">
   <div>
-    <p class="eyebrow">{{ period() || 'Métricas' }} · Administración</p>
+    <p class="eyebrow">{{ period() || 'Métricas' }}</p>
     <h2>{{ hello }}</h2>
   </div>
   <ui-tabs label="Período" [tabs]="ranges" [active]="range()" (activeChange)="pickRange($event)" />
@@ -10,7 +10,7 @@
 
 @if (!data()) {
   @if (loading()) {
-    <ui-skeleton label="Cargando métricas" [count]="4" height="6rem" />
+    <ui-skeleton label="Cargando métricas" [count]="3" height="6rem" />
   }
 } @else {
   <div class="transition-opacity duration-300" [class.opacity-60]="loading()" [attr.aria-busy]="loading()">
@@ -20,59 +20,29 @@
       }
     </div>
 
-    <div class="grid gap-5 lg:grid-cols-2">
-      <section class="panel rise min-w-0 lg:col-span-2">
-        <div class="panel-head">
-          <h3 class="panel-title"><ui-icon name="bar_chart" [size]="20" class="text-leaf" />Turnos por {{ weekly() ? 'semana' : 'día' }}</h3>
-          <span class="text-sm text-ink/55">Según el estado de cada turno</span>
-        </div>
-        <ui-chart [kind]="kinds.Bars" [series]="appointmentSeries" [points]="appointmentPoints()" label="Turnos por estado en el período" />
-      </section>
+    <section class="panel rise mb-5 min-w-0">
+      <div class="panel-head">
+        <h3 class="panel-title"><ui-icon name="bar_chart" [size]="20" class="text-leaf" />Turnos por {{ weekly() ? 'semana' : 'día' }}</h3>
+      </div>
+      <ui-chart [kind]="kinds.Bars" [series]="appointmentSeries" [points]="appointmentPoints()" label="Turnos por estado en el período" />
+    </section>
 
+    <div class="mb-5 grid gap-5 lg:grid-cols-2">
       <section class="panel rise min-w-0">
         <div class="panel-head">
-          <h3 class="panel-title"><ui-icon name="stethoscope" [size]="20" class="text-leaf" />Profesionales</h3>
-          <span class="text-sm text-ink/55">Atendidos</span>
+          <h3 class="panel-title"><ui-icon name="leaderboard" [size]="20" class="text-leaf" />Atendidos</h3>
+          <ui-tabs label="Agrupar por" [tabs]="rankingTabs" [active]="ranking()" (activeChange)="pickRanking($event)" />
         </div>
-        @if (professionals().length) {
-          <ui-bar-list label="Turnos atendidos por profesional" [rows]="professionals()" [tone]="tone.Muted" />
+        @if (rankingRows().length) {
+          <ui-bar-list label="Turnos atendidos" [rows]="rankingRows()" [tone]="tone.Muted" />
         } @else {
           <ui-empty message="Todavía no hay turnos atendidos en el período." />
-        }
-      </section>
-
-      <section class="panel rise min-w-0">
-        <div class="panel-head">
-          <h3 class="panel-title"><ui-icon name="medical_services" [size]="20" class="text-leaf" />Especialidades</h3>
-          <span class="text-sm text-ink/55">Atendidos</span>
-        </div>
-        @if (specialties().length) {
-          <ui-bar-list label="Turnos atendidos por especialidad" [rows]="specialties()" [tone]="tone.Muted" />
-        } @else {
-          <ui-empty message="Todavía no hay turnos atendidos en el período." />
-        }
-      </section>
-
-      <section class="panel rise min-w-0">
-        <div class="panel-head">
-          <h3 class="panel-title"><ui-icon name="health_and_safety" [size]="20" class="text-leaf" />Cobertura</h3>
-          <span class="text-sm text-ink/55">Turnos no eliminados</span>
-        </div>
-        @if (coverageTotal()) {
-          <ui-donut label="Turnos con obra social y particulares" [slices]="coverage()" [center]="'' + coverageTotal()" caption="turnos" />
-          @if (insurers().length) {
-            <h4 class="mt-5 mb-3 text-sm font-semibold text-ink/65">Obras sociales más usadas</h4>
-            <ui-bar-list label="Turnos por obra social" [rows]="insurers()" [tone]="tone.Sky" />
-          }
-        } @else {
-          <ui-empty message="No hay turnos en el período." />
         }
       </section>
 
       <section class="panel rise min-w-0">
         <div class="panel-head">
           <h3 class="panel-title"><ui-icon name="schedule" [size]="20" class="text-leaf" />Horarios pico</h3>
-          <span class="text-sm text-ink/55">Turnos por día y hora</span>
         </div>
         @if (heatmap().rows.length) {
           <ui-heatmap label="Turnos por día de la semana y hora" [rows]="heatmap().rows" [columns]="heatmap().columns" />
@@ -83,30 +53,13 @@
     </div>
 
     @if (data()!.billing) {
-      <h3 class="panel-title mt-8 mb-4"><ui-icon name="account_balance_wallet" [size]="20" class="text-leaf" />Facturación</h3>
-      <div class="stat-grid stagger">
-        @for (item of billingTiles(); track item.label) {
-          <ui-stat [label]="item.label" [icon]="item.icon" [value]="item.value" [suffix]="item.suffix" [note]="item.note" [tone]="item.tone" />
-        }
-      </div>
-      <div class="grid gap-5 xl:grid-cols-3">
-        <section class="panel rise min-w-0 xl:col-span-2">
-          <div class="panel-head">
-            <h3 class="panel-title"><ui-icon name="show_chart" [size]="20" class="text-leaf" />Facturado y cobrado por {{ weekly() ? 'semana' : 'día' }}</h3>
-          </div>
-          <ui-chart [kind]="kinds.Lines" [series]="billingSeries" [points]="billingPoints()" [format]="money" [axisFormat]="moneyAxis" label="Facturado y cobrado en el período" />
-        </section>
-        <section class="panel rise min-w-0">
-          <div class="panel-head">
-            <h3 class="panel-title"><ui-icon name="credit_card" [size]="20" class="text-leaf" />Medios de pago</h3>
-          </div>
-          @if (payments().length) {
-            <ui-donut label="Cobrado por medio de pago" [slices]="payments()" [format]="money" [center]="paymentsTotal()" caption="cobrado" />
-          } @else {
-            <ui-empty message="No hubo cobros en el período." />
-          }
-        </section>
-      </div>
+      <section class="panel rise min-w-0">
+        <div class="panel-head">
+          <h3 class="panel-title"><ui-icon name="show_chart" [size]="20" class="text-leaf" />Facturado y cobrado</h3>
+          <span class="text-sm text-ink/55">Pendiente de cobro: <b class="text-ink">{{ outstanding() }}</b></span>
+        </div>
+        <ui-chart [kind]="kinds.Lines" [series]="billingSeries" [points]="billingPoints()" [format]="money" [axisFormat]="moneyAxis" label="Facturado y cobrado en el período" />
+      </section>
     }
   </div>
 }

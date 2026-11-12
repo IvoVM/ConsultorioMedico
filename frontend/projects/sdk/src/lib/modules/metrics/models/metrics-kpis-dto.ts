@@ -2,13 +2,8 @@
 import type { MetricKpiDto } from './metric-kpi-dto';
 
 export interface MetricsKpisDto {
-  appointments: MetricKpiDto;
   completed: MetricKpiDto;
   noShowRate: MetricKpiDto;
-  cancellationRate: MetricKpiDto;
-  patients: MetricKpiDto;
-  newPatients: MetricKpiDto;
   occupancy: MetricKpiDto;
-  requests: MetricKpiDto;
-  requestApproval: MetricKpiDto;
+  newPatients: MetricKpiDto;
 }

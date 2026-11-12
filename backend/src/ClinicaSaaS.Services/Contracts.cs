@@ -304,30 +304,12 @@ public record EditAppointmentCommand(Guid? InsurerId, string? MemberNumber);
 
 // A dashboard figure for the chosen period, next to the same figure for the period right before it.
 public record MetricKpiDto(decimal? Value, decimal? Previous);
-public record MetricsKpisDto(
-    MetricKpiDto Appointments,
-    MetricKpiDto Completed,
-    MetricKpiDto NoShowRate,
-    MetricKpiDto CancellationRate,
-    MetricKpiDto Patients,
-    MetricKpiDto NewPatients,
-    MetricKpiDto Occupancy,
-    MetricKpiDto Requests,
-    MetricKpiDto RequestApproval);
+public record MetricsKpisDto(MetricKpiDto Completed, MetricKpiDto NoShowRate, MetricKpiDto Occupancy, MetricKpiDto NewPatients);
 public record AppointmentBucketDto(DateOnly Date, int Completed, int NoShow, int Cancelled, int Pending);
 public record RankRowDto(string Label, int Completed, int NoShow);
-public record ShareDto(string Label, int Count);
-public record CoverageMetricsDto(int Insured, int Private, IReadOnlyList<ShareDto> Insurers);
 public record HeatCellDto(DayOfWeek Day, int Hour, int Count);
 public record BillingBucketDto(DateOnly Date, decimal Invoiced, decimal Collected);
-public record PaymentShareDto(PaymentMethod Method, decimal Amount, int Count);
-public record BillingMetricsDto(
-    MetricKpiDto Invoiced,
-    MetricKpiDto Collected,
-    MetricKpiDto AverageTicket,
-    decimal Outstanding,
-    IReadOnlyList<BillingBucketDto> Series,
-    IReadOnlyList<PaymentShareDto> Payments);
+public record BillingMetricsDto(MetricKpiDto Collected, decimal Outstanding, IReadOnlyList<BillingBucketDto> Series);
 public record MetricsDto(
     MetricsRange Range,
     DateOnly From,
@@ -337,6 +319,5 @@ public record MetricsDto(
     IReadOnlyList<AppointmentBucketDto> Series,
     IReadOnlyList<RankRowDto> Professionals,
     IReadOnlyList<RankRowDto> Specialties,
-    CoverageMetricsDto Coverage,
     IReadOnlyList<HeatCellDto> Heatmap,
     BillingMetricsDto? Billing);

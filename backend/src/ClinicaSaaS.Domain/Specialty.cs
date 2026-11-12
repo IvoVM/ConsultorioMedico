@@ -1,4 +1,4 @@
-namespace ClinicaSaaS.Domain;
+ namespace ClinicaSaaS.Domain;
 
 public class Specialty
 {

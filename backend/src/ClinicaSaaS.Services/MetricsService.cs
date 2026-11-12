@@ -4,12 +4,12 @@ using Microsoft.EntityFrameworkCore;
 namespace ClinicaSaaS.Services;
 
 // The admin dashboard: how the clinic did over the last 7, 30 or 90 days, against the period right before.
+// It answers three questions only: are we seeing patients, are we losing appointments, is the money coming in.
 // Clinical content (notes, diagnoses) stays out, since the admin does not read clinical history.
 public class MetricsService(
     IAppointmentStore appointments,
     IScheduleStore schedules,
     IEmployeeStore employees,
-    IBookingRequestStore requests,
     IBillingStore billing,
     IClinicSettingsStore settings,
     ITimeZoneProvider timeZone,
@@ -41,11 +41,9 @@ public class MetricsService(
                 a.Start,
                 a.End,
                 a.Status,
-                a.ClientId,
                 a.ProfessionalId,
                 (a.Professional.FirstName + " " + a.Professional.LastName).Trim(),
-                a.AppointmentType.Specialty != null ? a.AppointmentType.Specialty.Name : null,
-                a.InsurerId != null && a.CoverageAccepted != false && a.Insurer != null ? a.Insurer.Name : null))
+                a.AppointmentType.Specialty != null ? a.AppointmentType.Specialty.Name : null))
             .ToListAsync(ct);
         var current = visits.Where(v => v.Start >= start).ToList();
         var previous = visits.Where(v => v.Start < start).ToList();
@@ -57,25 +55,13 @@ public class MetricsService(
             .Where(first => first >= previousStart && first < end)
             .ToListAsync(ct);
 
-        var requestRows = await requests.Entries
-            .Where(r => r.CreatedAt >= previousStart && r.CreatedAt < end)
-            .Select(r => new { r.CreatedAt, r.Status })
-            .ToListAsync(ct);
-        var currentRequests = requestRows.Where(r => r.CreatedAt >= start).Select(r => r.Status).ToList();
-        var previousRequests = requestRows.Where(r => r.CreatedAt < start).Select(r => r.Status).ToList();
-
         var occupancy = await OccupancyAsync(previousFrom, from, to, visits, start, ct);
 
         var kpis = new MetricsKpisDto(
-            Kpi(current.Count, previous.Count),
-            Kpi(Count(current, AppointmentStatus.Completed), Count(previous, AppointmentStatus.Completed)),
-            Rate(NoShowRate(current), NoShowRate(previous)),
-            Rate(CancellationRate(current), CancellationRate(previous)),
-            Kpi(Patients(current), Patients(previous)),
-            Kpi(firstVisits.Count(f => f >= start), firstVisits.Count(f => f < start)),
-            Rate(occupancy.Current, occupancy.Previous),
-            Kpi(currentRequests.Count, previousRequests.Count),
-            Rate(ApprovalRate(currentRequests), ApprovalRate(previousRequests)));
+            new(Count(current, AppointmentStatus.Completed), Count(previous, AppointmentStatus.Completed)),
+            new(NoShowRate(current), NoShowRate(previous)),
+            new(occupancy.Current, occupancy.Previous),
+            new(firstVisits.Count(f => f >= start), firstVisits.Count(f => f < start)));
 
         var series = Buckets(from, days, bucketDays)
             .Select(date =>
@@ -90,22 +76,8 @@ public class MetricsService(
             })
             .ToList();
 
-        var professionals = Rank(current, v => v.Professional);
-        var specialties = Rank(current, v => v.Specialty ?? "Sin especialidad");
-
-        var held = current.Where(v => v.Status != AppointmentStatus.Cancelled).ToList();
-        var coverage = new CoverageMetricsDto(
-            held.Count(v => v.Insurer != null),
-            held.Count(v => v.Insurer == null),
-            held.Where(v => v.Insurer != null)
-                .GroupBy(v => v.Insurer!)
-                .Select(g => new ShareDto(g.Key, g.Count()))
-                .OrderByDescending(s => s.Count)
-                .ThenBy(s => s.Label)
-                .Take(TopRows)
-                .ToList());
-
-        var heatmap = held
+        var heatmap = current
+            .Where(v => v.Status != AppointmentStatus.Cancelled)
             .Select(v => TimeZoneInfo.ConvertTime(v.Start, zone))
             .GroupBy(local => (local.DayOfWeek, local.Hour))
             .Select(g => new HeatCellDto(g.Key.DayOfWeek, g.Key.Hour, g.Count()))
@@ -118,7 +90,17 @@ public class MetricsService(
             ? await BillingAsync(from, days, bucketDays, start, end, previousStart, ct)
             : null;
 
-        return new MetricsDto(range, from, to, bucketDays, kpis, series, professionals, specialties, coverage, heatmap, billingMetrics);
+        return new MetricsDto(
+            range,
+            from,
+            to,
+            bucketDays,
+            kpis,
+            series,
+            Rank(current, v => v.Professional),
+            Rank(current, v => v.Specialty ?? "Sin especialidad"),
+            heatmap,
+            billingMetrics);
     }
 
     private async Task<BillingMetricsDto> BillingAsync(
@@ -126,42 +108,29 @@ public class MetricsService(
     {
         var zone = timeZone.Zone;
         var issued = await billing.Invoices
-            .Where(i => i.Status != InvoiceStatus.Voided && i.CreatedAt >= previousStart && i.CreatedAt < end)
+            .Where(i => i.Status != InvoiceStatus.Voided && i.CreatedAt >= start && i.CreatedAt < end)
             .Select(i => new { i.CreatedAt, i.Total })
             .ToListAsync(ct);
         var paid = await billing.Invoices
             .Where(i => i.Status == InvoiceStatus.Paid && i.PaidAt >= previousStart && i.PaidAt < end)
-            .Select(i => new { PaidAt = i.PaidAt!.Value, i.Total, i.PaymentMethod })
+            .Select(i => new { PaidAt = i.PaidAt!.Value, i.Total })
             .ToListAsync(ct);
         var outstanding = await billing.Invoices
             .Where(i => i.Status == InvoiceStatus.Pending)
             .SumAsync(i => i.Total, ct);
 
-        var currentIssued = issued.Where(i => i.CreatedAt >= start).ToList();
-        var previousIssued = issued.Where(i => i.CreatedAt < start).ToList();
         var currentPaid = paid.Where(i => i.PaidAt >= start).ToList();
-        var previousPaid = paid.Where(i => i.PaidAt < start).ToList();
-
         var series = Buckets(from, days, bucketDays)
             .Select(date => new BillingBucketDto(
                 date,
-                currentIssued.Where(i => BucketOf(i.CreatedAt, from, bucketDays, zone) == date).Sum(i => i.Total),
+                issued.Where(i => BucketOf(i.CreatedAt, from, bucketDays, zone) == date).Sum(i => i.Total),
                 currentPaid.Where(i => BucketOf(i.PaidAt, from, bucketDays, zone) == date).Sum(i => i.Total)))
-            .ToList();
-        var payments = currentPaid
-            .Where(i => i.PaymentMethod != null)
-            .GroupBy(i => i.PaymentMethod!.Value)
-            .Select(g => new PaymentShareDto(g.Key, g.Sum(i => i.Total), g.Count()))
-            .OrderByDescending(p => p.Amount)
             .ToList();
 
         return new BillingMetricsDto(
-            Kpi(currentIssued.Sum(i => i.Total), previousIssued.Sum(i => i.Total)),
-            Kpi(currentPaid.Sum(i => i.Total), previousPaid.Sum(i => i.Total)),
-            Rate(Average(currentIssued.Select(i => i.Total)), Average(previousIssued.Select(i => i.Total))),
+            new(currentPaid.Sum(i => i.Total), paid.Where(i => i.PaidAt < start).Sum(i => i.Total)),
             outstanding,
-            series,
-            payments);
+            series);
     }
 
     // Share of the active professionals' weekly hours, minus their blockouts, that ended up booked.
@@ -235,32 +204,13 @@ public class MetricsService(
 
     private static int Count(IEnumerable<Visit> visits, AppointmentStatus status) => visits.Count(v => v.Status == status);
 
-    private static int Patients(IEnumerable<Visit> visits) =>
-        visits.Where(v => v.Status == AppointmentStatus.Completed).Select(v => v.ClientId).Distinct().Count();
-
-    private static decimal? NoShowRate(IReadOnlyList<Visit> visits) =>
-        Percent(Count(visits, AppointmentStatus.NoShow), Count(visits, AppointmentStatus.Completed) + Count(visits, AppointmentStatus.NoShow));
-
-    private static decimal? CancellationRate(IReadOnlyList<Visit> visits) =>
-        Percent(Count(visits, AppointmentStatus.Cancelled), visits.Count);
-
-    private static decimal? ApprovalRate(IReadOnlyList<BookingRequestStatus> statuses) =>
-        Percent(
-            statuses.Count(s => s is BookingRequestStatus.Approved or BookingRequestStatus.Rescheduled),
-            statuses.Count(s => s != BookingRequestStatus.Pending));
-
-    private static decimal? Percent(int part, int whole) => whole == 0 ? null : Math.Round(part * 100m / whole, 1);
-
-    private static decimal? Average(IEnumerable<decimal> values)
-    {
-        var list = values.ToList();
-        return list.Count == 0 ? null : Math.Round(list.Average(), 2);
-    }
-
-    private static MetricKpiDto Kpi(decimal value, decimal previous) => new(value, previous);
-
     // A rate with nothing to divide by has no value; the dashboard shows a dash instead of a misleading 0 %.
-    private static MetricKpiDto Rate(decimal? value, decimal? previous) => new(value, previous);
+    private static decimal? NoShowRate(IReadOnlyList<Visit> visits)
+    {
+        var noShow = Count(visits, AppointmentStatus.NoShow);
+        var whole = Count(visits, AppointmentStatus.Completed) + noShow;
+        return whole == 0 ? null : Math.Round(noShow * 100m / whole, 1);
+    }
 
     private static DateTimeOffset Min(DateTimeOffset a, DateTimeOffset b) => a < b ? a : b;
     private static DateTimeOffset Max(DateTimeOffset a, DateTimeOffset b) => a > b ? a : b;
@@ -269,9 +219,7 @@ public class MetricsService(
         DateTimeOffset Start,
         DateTimeOffset End,
         AppointmentStatus Status,
-        Guid ClientId,
         Guid ProfessionalId,
         string Professional,
-        string? Specialty,
-        string? Insurer);
+        string? Specialty);
 }

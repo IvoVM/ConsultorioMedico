@@ -1,17 +1,15 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { AppointmentStatus, MetricKpiDto, MetricsDto, MetricsRange, MetricsService, PaymentMethod, clinicaSession, errorMessage } from 'sdk';
+import { AppointmentStatus, MetricKpiDto, MetricsDto, MetricsRange, MetricsService, clinicaSession, errorMessage } from 'sdk';
 import {
   BarListRow,
   ChartKind,
   ChartPoint,
   ChartSeries,
-  ChartSlice,
   HeatmapRow,
   TabItem,
   UiBarList,
   UiChart,
-  UiDonut,
   UiEmpty,
   UiHeatmap,
   UiIcon,
@@ -22,8 +20,7 @@ import {
   greeting,
 } from 'ui';
 import { appointmentStatusLabels } from '../appointments/models/appointment-status-labels';
-import { paymentMethodLabels } from '../invoices/models/invoice-labels';
-import { Trend, metricsRangeLabels, weekDays } from './models/metrics-labels';
+import { RankingView, Trend, metricsRangeLabels, rankingViewLabels, weekDays } from './models/metrics-labels';
 
 const storageKey = 'clinica.admin.metrics-range';
 
@@ -35,9 +32,10 @@ const compactCurrency = new Intl.NumberFormat('es-AR', { style: 'currency', curr
 const shortDate = new Intl.DateTimeFormat('es-AR', { day: 'numeric', month: 'numeric' });
 const longDate = new Intl.DateTimeFormat('es-AR', { weekday: 'long', day: 'numeric', month: 'long' });
 
+// Three questions and nothing else: are we seeing patients, are we losing appointments, is the money coming in.
 @Component({
   selector: 'metrics-dashboard',
-  imports: [UiBarList, UiChart, UiDonut, UiEmpty, UiHeatmap, UiIcon, UiSkeleton, UiStat, UiTabs],
+  imports: [UiBarList, UiChart, UiEmpty, UiHeatmap, UiIcon, UiSkeleton, UiStat, UiTabs],
   templateUrl: './metrics-dashboard.html',
 })
 export class MetricsDashboard {
@@ -45,10 +43,13 @@ export class MetricsDashboard {
   readonly hello = greeting(clinicaSession.name());
   readonly kinds = ChartKind;
   readonly tone = UiTone;
+  readonly rankingViews = RankingView;
   readonly money = (value: number) => currency.format(value);
   readonly moneyAxis = (value: number) => compactCurrency.format(value);
   readonly ranges: TabItem[] = Object.values(MetricsRange).map((range) => ({ key: range, label: metricsRangeLabels[range] }));
+  readonly rankingTabs: TabItem[] = Object.values(RankingView).map((view) => ({ key: view, label: rankingViewLabels[view] }));
   readonly range = signal(readRange());
+  readonly ranking = signal(RankingView.Professionals);
   readonly data = signal<MetricsDto | null>(null);
   readonly loading = signal(true);
   readonly error = signal('');
@@ -56,7 +57,8 @@ export class MetricsDashboard {
 
   readonly period = computed(() => {
     const data = this.data();
-    return data ? `Del ${shortDate.format(day(data.from))} al ${shortDate.format(day(data.to))}` : '';
+    if (!data) return '';
+    return `Del ${shortDate.format(day(data.from))} al ${shortDate.format(day(data.to))}, comparado con los ${metricsRangeLabels[data.range]} anteriores`;
   });
 
   readonly weekly = computed(() => (this.data()?.bucketDays ?? 1) > 1);
@@ -65,43 +67,18 @@ export class MetricsDashboard {
     const data = this.data();
     if (!data) return [];
     const k = data.kpis;
-    const requests = k.requestApproval.value;
+    const last = data.billing
+      ? { label: 'Cobrado', icon: 'payments', ...money(data.billing.collected) }
+      : { label: 'Pacientes nuevos', icon: 'person_add', ...count(k.newPatients, Trend.UpIsGood) };
     return [
-      tile('Turnos', 'event', k.appointments, Trend.UpIsGood),
-      tile('Atendidos', 'task_alt', k.completed, Trend.UpIsGood),
-      rate('Ausentismo', 'person_off', k.noShowRate, Trend.DownIsGood),
-      rate('Cancelación', 'event_busy', k.cancellationRate, Trend.DownIsGood),
-      tile('Pacientes atendidos', 'group', k.patients, Trend.UpIsGood),
-      tile('Pacientes nuevos', 'person_add', k.newPatients, Trend.UpIsGood),
-      rate('Ocupación de agenda', 'donut_large', k.occupancy, Trend.UpIsGood),
-      {
-        label: 'Solicitudes web',
-        icon: 'inbox',
-        value: k.requests.value ?? 0,
-        suffix: '',
-        note: requests == null ? 'sin resolver' : `${decimals.format(requests)} % aprobadas`,
-        tone: UiTone.Muted,
-      },
+      { label: 'Atendidos', icon: 'task_alt', ...count(k.completed, Trend.UpIsGood) },
+      { label: 'Ausentismo', icon: 'person_off', ...rate(k.noShowRate, Trend.DownIsGood) },
+      { label: 'Ocupación de agenda', icon: 'donut_large', ...rate(k.occupancy, Trend.UpIsGood) },
+      last,
     ];
   });
 
-  readonly billingTiles = computed((): Tile[] => {
-    const billing = this.data()?.billing;
-    if (!billing) return [];
-    return [
-      money('Facturado', 'receipt_long', billing.invoiced),
-      money('Cobrado', 'payments', billing.collected),
-      money('Ticket promedio', 'sell', billing.averageTicket),
-      {
-        label: 'Pendiente de cobro',
-        icon: 'hourglass_top',
-        value: currency.format(billing.outstanding),
-        suffix: '',
-        note: 'a hoy, de todos los períodos',
-        tone: billing.outstanding > 0 ? UiTone.Warn : UiTone.Ok,
-      },
-    ];
-  });
+  readonly outstanding = computed(() => currency.format(this.data()?.billing?.outstanding ?? 0));
 
   readonly appointmentSeries: ChartSeries[] = [
     { key: 'completed', label: appointmentStatusLabels[AppointmentStatus.Completed], tone: UiTone.Ok },
@@ -129,39 +106,22 @@ export class MetricsDashboard {
     })),
   );
 
-  readonly professionals = computed(() => rankRows(this.data()?.professionals ?? []));
-  readonly specialties = computed(() => rankRows(this.data()?.specialties ?? []));
-  readonly insurers = computed((): BarListRow[] => (this.data()?.coverage.insurers ?? []).map((row) => ({ label: row.label, value: row.count })));
-
-  readonly coverage = computed((): ChartSlice[] => {
-    const coverage = this.data()?.coverage;
-    if (!coverage) return [];
-    return [
-      { label: 'Obra social', value: coverage.insured, tone: UiTone.Sky },
-      { label: 'Particular', value: coverage.private, tone: UiTone.Ok },
-    ];
+  readonly rankingRows = computed((): BarListRow[] => {
+    const data = this.data();
+    const rows = (this.ranking() === RankingView.Professionals ? data?.professionals : data?.specialties) ?? [];
+    return rows.map((row) => ({
+      label: row.label,
+      value: row.completed,
+      note: row.noShow ? `${row.noShow} ${row.noShow === 1 ? 'ausente' : 'ausentes'}` : '',
+    }));
   });
-
-  readonly coverageTotal = computed(() => this.coverage().reduce((sum, slice) => sum + slice.value, 0));
-
-  readonly payments = computed((): ChartSlice[] => {
-    const tones: Record<PaymentMethod, UiTone> = {
-      [PaymentMethod.Cash]: UiTone.Ok,
-      [PaymentMethod.Transfer]: UiTone.Sky,
-      [PaymentMethod.Card]: UiTone.Warn,
-    };
-    return (this.data()?.billing?.payments ?? []).map((row) => ({ label: paymentMethodLabels[row.method], value: row.amount, tone: tones[row.method] }));
-  });
-
-  readonly paymentsTotal = computed(() => currency.format(this.payments().reduce((sum, slice) => sum + slice.value, 0)));
 
   readonly heatmap = computed(() => {
     const cells = this.data()?.heatmap ?? [];
     if (!cells.length) return { rows: [] as HeatmapRow[], columns: [] as string[] };
     const hours = cells.map((cell) => cell.hour);
     const first = Math.min(...hours);
-    const last = Math.max(...hours);
-    const span = Array.from({ length: last - first + 1 }, (_, index) => first + index);
+    const span = Array.from({ length: Math.max(...hours) - first + 1 }, (_, index) => first + index);
     const used = new Set(cells.map((cell) => cell.day));
     const rows = weekDays
       .filter((item, index) => index < 5 || used.has(item.day))
@@ -185,14 +145,18 @@ export class MetricsDashboard {
   }
 
   pickRange(key: string) {
-    if (Object.values(MetricsRange).includes(key as MetricsRange)) this.range.set(key as MetricsRange);
+    const range = Object.values(MetricsRange).find((item) => item === key);
+    if (range) this.range.set(range);
+  }
+
+  pickRanking(key: string) {
+    const view = Object.values(RankingView).find((item) => item === key);
+    if (view) this.ranking.set(view);
   }
 
   private slot(date: string) {
     const value = day(date);
-    return this.weekly()
-      ? { label: shortDate.format(value), hint: `Semana del ${longDate.format(value)}` }
-      : { label: shortDate.format(value), hint: longDate.format(value) };
+    return { label: shortDate.format(value), hint: this.weekly() ? `Semana del ${longDate.format(value)}` : longDate.format(value) };
   }
 
   private async load(range: MetricsRange) {
@@ -225,48 +189,35 @@ function day(value: string) {
   return new Date(year, month - 1, date);
 }
 
-function rankRows(rows: { label: string; completed: number; noShow: number }[]): BarListRow[] {
-  return rows.map((row) => ({
-    label: row.label,
-    value: row.completed,
-    note: row.noShow ? `${row.noShow} ${row.noShow === 1 ? 'ausente' : 'ausentes'}` : '',
-  }));
-}
-
 function trendTone(change: number, trend: Trend) {
   if (!change) return UiTone.Muted;
   return change > 0 === (trend === Trend.UpIsGood) ? UiTone.Ok : UiTone.Bad;
 }
 
-function arrow(change: number) {
-  return change > 0 ? '▲' : '▼';
-}
-
-// Counts and amounts compare as a percent change against the previous period.
-function change(kpi: MetricKpiDto, trend: Trend): Pick<Tile, 'note' | 'tone'> {
+// The header already says what the comparison is against, so each tile only carries the arrow and the size.
+function delta(kpi: MetricKpiDto, trend: Trend): Pick<Tile, 'note' | 'tone'> {
   const value = kpi.value ?? 0;
   const previous = kpi.previous;
-  if (previous == null) return { note: 'sin período previo', tone: UiTone.Muted };
-  if (value === previous) return { note: 'igual que antes', tone: UiTone.Muted };
-  if (previous === 0) return { note: 'antes no había', tone: trendTone(value, trend) };
+  if (previous == null || previous === 0) return { note: '', tone: UiTone.Muted };
   const percent = ((value - previous) / previous) * 100;
-  return { note: `${arrow(percent)} ${decimals.format(Math.abs(percent))} % vs. anterior`, tone: trendTone(percent, trend) };
+  if (Math.abs(percent) < 0.05) return { note: '= igual', tone: UiTone.Muted };
+  return { note: `${percent > 0 ? '▲' : '▼'} ${decimals.format(Math.abs(percent))} %`, tone: trendTone(percent, trend) };
 }
 
-function tile(label: string, icon: string, kpi: MetricKpiDto, trend: Trend): Tile {
-  return { label, icon, value: kpi.value ?? 0, suffix: '', ...change(kpi, trend) };
+function count(kpi: MetricKpiDto, trend: Trend) {
+  return { value: kpi.value ?? 0, suffix: '', ...delta(kpi, trend) };
 }
 
-function money(label: string, icon: string, kpi: MetricKpiDto): Tile {
-  return { label, icon, value: kpi.value == null ? '–' : currency.format(kpi.value), suffix: '', ...change(kpi, Trend.UpIsGood) };
+function money(kpi: MetricKpiDto) {
+  return { value: currency.format(kpi.value ?? 0), suffix: '', ...delta(kpi, Trend.UpIsGood) };
 }
 
 // Rates compare in percentage points, since a percent of a percent reads wrong.
-function rate(label: string, icon: string, kpi: MetricKpiDto, trend: Trend): Tile {
-  if (kpi.value == null) return { label, icon, value: '–', suffix: '', note: 'sin datos', tone: UiTone.Muted };
-  const base = { label, icon, value: kpi.value, suffix: ' %' };
-  if (kpi.previous == null) return { ...base, note: 'sin período previo', tone: UiTone.Muted };
+function rate(kpi: MetricKpiDto, trend: Trend) {
+  if (kpi.value == null) return { value: '–', suffix: '', note: '', tone: UiTone.Muted };
+  const base = { value: kpi.value, suffix: ' %' };
+  if (kpi.previous == null) return { ...base, note: '', tone: UiTone.Muted };
   const points = Math.round((kpi.value - kpi.previous) * 10) / 10;
-  if (!points) return { ...base, note: 'igual que antes', tone: UiTone.Muted };
-  return { ...base, note: `${arrow(points)} ${decimals.format(Math.abs(points))} pts vs. anterior`, tone: trendTone(points, trend) };
+  if (!points) return { ...base, note: '= igual', tone: UiTone.Muted };
+  return { ...base, note: `${points > 0 ? '▲' : '▼'} ${decimals.format(Math.abs(points))} pts`, tone: trendTone(points, trend) };
 }

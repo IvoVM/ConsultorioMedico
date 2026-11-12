@@ -6,7 +6,7 @@ export const metricsRangeLabels: Record<MetricsRange, string> = {
   [MetricsRange.Quarter]: '90 días',
 };
 
-// Monday first, the way the clinic reads its week; Sunday only shows up when something happened on one.
+// Monday first, the way the clinic reads its week; the weekend only shows up when something happened on it.
 export const weekDays: { day: DayOfWeek; label: string }[] = [
   { day: DayOfWeek.Monday, label: 'Lun' },
   { day: DayOfWeek.Tuesday, label: 'Mar' },
@@ -22,3 +22,13 @@ export enum Trend {
   UpIsGood = 'up',
   DownIsGood = 'down',
 }
+
+export enum RankingView {
+  Professionals = 'professionals',
+  Specialties = 'specialties',
+}
+
+export const rankingViewLabels: Record<RankingView, string> = {
+  [RankingView.Professionals]: 'Profesionales',
+  [RankingView.Specialties]: 'Especialidades',
+};

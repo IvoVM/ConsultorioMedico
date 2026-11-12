@@ -7,8 +7,6 @@ export type ChartSeries = { key: string; label: string; tone: UiTone };
 // One slot along the x axis: a short tick label, a longer one for the tooltip, and a value per series key.
 export type ChartPoint = { label: string; hint?: string; values: Record<string, number> };
 
-export type ChartSlice = { label: string; value: number; tone: UiTone };
-
 export const chartColor = (tone: UiTone) => `var(--chart-${tone})`;
 
 const numberFormat = new Intl.NumberFormat('es-AR');
