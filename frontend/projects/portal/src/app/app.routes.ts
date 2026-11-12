@@ -1,15 +1,18 @@
 import { Routes } from '@angular/router';
-import { TenantRole } from 'sdk';
+import { TenantRole, clinicaSession } from 'sdk';
 import { authGuard, roleGuard, signedInGuard } from './auth.guard';
 import { AppRoute, routePath } from './app.routes.enum';
 
 export const routes: Routes = [
-  { path: routePath(AppRoute.Ingreso), loadComponent: () => import('./modules/auth/welcome').then((m) => m.WelcomePage) },
-  { path: routePath(AppRoute.IngresoEmpleado), loadComponent: () => import('./modules/auth/login').then((m) => m.LoginPage), data: { audience: 'staff' } },
-  { path: routePath(AppRoute.IngresoCuenta), loadComponent: () => import('./modules/auth/login').then((m) => m.LoginPage), data: { audience: 'patient' } },
+  { path: routePath(AppRoute.Ingreso), loadComponent: () => import('./modules/auth/login').then((m) => m.LoginPage) },
+  // Sign-in used to be split by audience; old bookmarks land on the single form.
+  { path: 'ingreso/empleado', redirectTo: routePath(AppRoute.Ingreso) },
+  { path: 'ingreso/cuenta', redirectTo: routePath(AppRoute.Ingreso) },
   { path: routePath(AppRoute.Registro), loadComponent: () => import('./modules/auth/register').then((m) => m.RegisterPage) },
   { path: routePath(AppRoute.Clave), canActivate: [signedInGuard], loadComponent: () => import('./modules/auth/change-password').then((m) => m.ChangePasswordPage) },
   { path: routePath(AppRoute.Paciente), redirectTo: routePath(AppRoute.Reservar) },
+  // The portal's home is booking for visitors, the main public action, and the panel once signed in.
+  { path: '', pathMatch: 'full', redirectTo: () => routePath(clinicaSession.token() ? AppRoute.Panel : AppRoute.Reservar) },
   {
     path: '',
     loadComponent: () => import('./modules/shell/shell').then((m) => m.ShellPage),
@@ -19,7 +22,6 @@ export const routes: Routes = [
         path: '',
         canActivate: [authGuard],
         children: [
-          { path: '', pathMatch: 'full', redirectTo: routePath(AppRoute.Panel) },
           { path: routePath(AppRoute.Panel), loadComponent: () => import('./modules/shell/dashboard').then((m) => m.DashboardPage) },
           {
             path: routePath(AppRoute.MisTurnos),

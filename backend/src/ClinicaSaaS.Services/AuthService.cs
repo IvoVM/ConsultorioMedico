@@ -17,6 +17,8 @@ public class AuthService(
     IEmployeeStore employees,
     ICurrentUser currentUser)
 {
+    // One sign-in for everyone. A document can hold a staff account and a patient account (a secretary who is also
+    // treated here); the password decides which one opens, and only when it opens both does the person choose.
     public async Task<IssuedSession> LoginTenantAsync(LoginCommand command, CancellationToken ct)
     {
         var document = DocumentRules.Normalize(command.DocumentNumber);
@@ -27,71 +29,32 @@ public class AuthService(
             .Where(e => e.DocumentNumber == document || (e.DocumentNumber != null && e.DocumentNumber.ToLower() == document.ToLower()))
             .Select(e => new { e.UserId, e.IsActive })
             .FirstOrDefaultAsync(ct);
+        var client = await clients.Clients
+            .Where(c => c.DocumentNumber == document || c.DocumentNumber.ToLower() == document.ToLower())
+            .Select(c => new { c.UserId, Email = c.User != null ? c.User.Email : null })
+            .FirstOrDefaultAsync(ct);
 
-        Guid userId;
-        if (employee is not null)
-        {
-            if (!employee.IsActive)
-                throw new BusinessRuleException("Esta cuenta está dada de baja.");
-            userId = employee.UserId;
-        }
-        else
-        {
-            var client = await clients.Clients
-                .Where(c => c.DocumentNumber == document || c.DocumentNumber.ToLower() == document.ToLower())
-                .Select(c => new { c.UserId, Email = c.User != null ? c.User.Email : null })
-                .FirstOrDefaultAsync(ct)
-                ?? throw new BusinessRuleException("El documento o la contraseña no coinciden.");
-            if (client.UserId is not Guid patientUser || IsPlaceholder(client.Email))
-                throw new BusinessRuleException("Todavía no creaste la cuenta. Registrate con este documento para ver tus solicitudes.");
-            userId = patientUser;
-        }
+        var staff = employee is { IsActive: true } ? await users.FindByIdAsync(employee.UserId, ct) : null;
+        var patient = client is { UserId: Guid patientId } && !IsPlaceholder(client.Email) ? await users.FindByIdAsync(patientId, ct) : null;
+        if (patient is not null && (patient.Role != TenantRole.Patient || patient.Id == staff?.Id))
+            patient = null;
 
-        var user = await users.FindByIdAsync(userId, ct)
-            ?? throw new BusinessRuleException("El documento o la contraseña no coinciden.");
-        if (!await users.CheckPasswordAsync(user.Id, command.Password, ct))
-            throw new BusinessRuleException("El documento o la contraseña no coinciden.");
-        return await IssueAsync(user, ct);
-    }
+        var opened = new List<(LoginAccount Account, TenantAccount User)>();
+        if (staff is not null && command.Account != LoginAccount.Patient && await users.CheckPasswordAsync(staff.Id, command.Password, ct))
+            opened.Add((LoginAccount.Staff, staff));
+        if (patient is not null && command.Account != LoginAccount.Staff && await users.CheckPasswordAsync(patient.Id, command.Password, ct))
+            opened.Add((LoginAccount.Patient, patient));
 
-    public async Task<IssuedSession> LoginPatientAsync(LoginPatientCommand command, CancellationToken ct)
-    {
-        var document = DocumentRules.Normalize(command.DocumentNumber);
-        if (!DocumentRules.IsValid(document))
-            throw new BusinessRuleException("El documento no es válido.");
-        var match = await clients.Clients
-            .Where(client => client.DocumentNumber == document || client.DocumentNumber.ToLower() == document.ToLower())
-            .Select(client => new { client.UserId, Email = client.User != null ? client.User.Email : null })
-            .FirstOrDefaultAsync(ct)
-            ?? throw new BusinessRuleException("No hay una cuenta con ese documento. Creala con el mismo número para ver tus solicitudes.");
-        if (match.UserId is not Guid patientUser || IsPlaceholder(match.Email))
-            throw new BusinessRuleException("Todavía no creaste la cuenta. Registrate con este documento para ver tus solicitudes.");
-        var user = await users.FindByIdAsync(patientUser, ct)
-            ?? throw new BusinessRuleException("No hay una cuenta con ese documento. Creala con el mismo número para ver tus solicitudes.");
-        if (user.Role != TenantRole.Patient)
-            throw new BusinessRuleException("El documento o la contraseña no coinciden.");
-        if (!await users.CheckPasswordAsync(user.Id, command.Password, ct))
-            throw new BusinessRuleException("El documento o la contraseña no coinciden.");
-        return await IssueAsync(user, ct);
-    }
+        if (opened.Count > 1)
+            throw new AccountChoiceException("Con este documento tenés una cuenta del equipo y otra de paciente. Elegí con cuál entrar.");
+        if (opened.Count == 1)
+            return await IssueAsync(opened[0].User, ct);
 
-    public async Task<IssuedSession> LoginStaffAsync(LoginStaffCommand command, CancellationToken ct)
-    {
-        var document = DocumentRules.Normalize(command.DocumentNumber);
-        if (!DocumentRules.IsValid(document))
-            throw new BusinessRuleException("El documento no es válido.");
-        var match = await employees.Employees
-            .Where(employee => employee.DocumentNumber == document || (employee.DocumentNumber != null && employee.DocumentNumber.ToLower() == document.ToLower()))
-            .Select(employee => new { employee.UserId, employee.IsActive })
-            .FirstOrDefaultAsync(ct)
-            ?? throw new BusinessRuleException("No hay un empleado con ese documento.");
-        if (!match.IsActive)
+        if (employee is { IsActive: false } && patient is null)
             throw new BusinessRuleException("Esta cuenta está dada de baja.");
-        var user = await users.FindByIdAsync(match.UserId, ct)
-            ?? throw new BusinessRuleException("No hay un empleado con ese documento.");
-        if (!await users.CheckPasswordAsync(user.Id, command.Password, ct))
-            throw new BusinessRuleException("El documento o la contraseña no coinciden.");
-        return await IssueAsync(user, ct);
+        if (employee is null && client is not null && patient is null)
+            throw new BusinessRuleException("Todavía no creaste la cuenta. Registrate con este documento para ver tus solicitudes.");
+        throw new BusinessRuleException("El documento o la contraseña no coinciden.");
     }
 
     public async Task<PatientProfileDto> ProfileAsync(CancellationToken ct)

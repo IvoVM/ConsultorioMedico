@@ -14,15 +14,14 @@
 } @else {
   <div class="min-h-screen bg-paper text-ink">
     <header class="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 bg-paper/80 px-5 py-4 backdrop-blur-md sm:px-8">
-      <a [routerLink]="route.Ingreso" class="flex items-center gap-3 text-ink no-underline">
+      <a [routerLink]="route.Reservar" class="flex items-center gap-3 text-ink no-underline">
         <span class="brand-badge"><img src="logo.svg" alt="" /></span>
         <span class="text-xl leading-none font-bold tracking-tight text-forest">{{ clinicName() }}</span>
       </a>
-      <p class="max-w-[46ch] text-sm text-ink/70 sm:text-right">
-        Para ver tu historia clínica, las recetas y tus turnos, podés
-        <a [routerLink]="route.Registro" class="text-link">crear una cuenta</a>
-        o <a [routerLink]="route.IngresoCuenta" class="text-link">entrar</a>.
-      </p>
+      <nav class="flex items-center gap-5" aria-label="Cuenta">
+        <a [routerLink]="route.Registro" class="text-link">Crear cuenta</a>
+        <a [routerLink]="route.Ingreso" class="action-link">Ingresar</a>
+      </nav>
     </header>
     <main class="mx-auto w-full max-w-6xl px-5 py-8 sm:px-8">
       <router-outlet />

@@ -30,10 +30,9 @@ export class ChangePasswordPage {
   }
 
   back() {
-    const next = clinicaSession.role() === TenantRole.Patient ? AppRoute.IngresoCuenta : AppRoute.IngresoEmpleado;
     void firstValueFrom(this.auth.logout()).finally(() => {
       clinicaSession.clear();
-      location.href = next;
+      location.href = AppRoute.Ingreso;
     });
   }
 

@@ -14,14 +14,6 @@ public class AuthController(AuthService auth) : ApiController
     public Task<IActionResult> Login(LoginCommand command, CancellationToken ct) =>
         Issue(() => auth.LoginTenantAsync(command, ct));
 
-    [HttpPost("ingreso-paciente")]
-    public Task<IActionResult> LoginPatient(LoginPatientCommand command, CancellationToken ct) =>
-        Issue(() => auth.LoginPatientAsync(command, ct));
-
-    [HttpPost("ingreso-empleado")]
-    public Task<IActionResult> LoginStaff(LoginStaffCommand command, CancellationToken ct) =>
-        Issue(() => auth.LoginStaffAsync(command, ct));
-
     [Authorize]
     [HttpPost("/api/cuenta/clave")]
     public Task<IActionResult> ChangePassword(ChangePasswordCommand command, CancellationToken ct) =>

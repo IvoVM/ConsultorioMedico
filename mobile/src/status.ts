@@ -18,3 +18,9 @@ export enum AppointmentStatus {
   NoShow = 'NoShow',
   Rescheduled = 'Rescheduled',
 }
+
+// Which account to enter with when one document holds both a staff and a patient account.
+export enum LoginAccount {
+  Staff = 'Staff',
+  Patient = 'Patient',
+}

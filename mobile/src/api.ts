@@ -1,8 +1,13 @@
 import { sessionStore, type Session } from './session';
+import type { LoginAccount } from './status';
 
 export const apiUrl = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:5080';
 
-export class ApiError extends Error {}
+export class ApiError extends Error {
+  constructor(message: string, readonly status?: number) {
+    super(message);
+  }
+}
 
 export type TokenDto = {
   token: string;
@@ -203,7 +208,7 @@ export async function request<T>(path: string, init: RequestInit = {}, auth = tr
 
 async function sessionFrom(response: Response) {
   const body = (await response.json()) as TokenDto;
-  if (!response.ok) throw new ApiError((body as { error?: string }).error ?? 'No se pudo ingresar.');
+  if (!response.ok) throw new ApiError((body as { error?: string }).error ?? 'No se pudo ingresar.', response.status);
   const refresh = response.headers.get('x-refresh-token');
   if (!refresh) throw new ApiError('La API no devolvió la sesión. Reiniciá el servidor.');
   const session: Session = { token: body.token, refresh, role: body.role, name: body.name, email: body.email };
@@ -211,11 +216,11 @@ async function sessionFrom(response: Response) {
   return session;
 }
 
-export async function login(documentNumber: string, password: string) {
+export async function login(documentNumber: string, password: string, account?: LoginAccount) {
   const response = await fetch(`${apiUrl}/api/acceso/ingreso`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ documentNumber, password }),
+    body: JSON.stringify({ documentNumber, password, account }),
   });
   return sessionFrom(response);
 }

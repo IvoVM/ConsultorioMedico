@@ -1,7 +1,5 @@
 export enum AppRoute {
   Ingreso = '/ingreso',
-  IngresoEmpleado = '/ingreso/empleado',
-  IngresoCuenta = '/ingreso/cuenta',
   Registro = '/registro',
   Clave = '/clave',
   Paciente = '/paciente',

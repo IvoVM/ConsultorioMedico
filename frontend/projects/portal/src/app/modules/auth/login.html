@@ -1,39 +1,28 @@
-@if (staff) {
-  <main class="auth-split">
-    <section class="auth-intro">
-      <p class="auth-brand"><span class="brand-badge"><img src="logo.svg" alt="" /></span>{{ clinicName() }}</p>
-      <h1 class="auth-title">Quiero acceder al sistema administrativo</h1>
-      <div class="auth-copy">
-        <p>Entrá para trabajar el día del consultorio: la agenda, los turnos y las personas que llegan.</p>
-        <p>Ves quién tiene turno, reservás uno cuando hace falta y, si atendés, tenés la historia clínica a mano.</p>
+<main class="auth-split">
+  <section class="auth-intro">
+    <a [routerLink]="route.Reservar" class="auth-brand"><span class="brand-badge"><img src="logo.svg" alt="" /></span>{{ clinicName() }}</a>
+    <h1 class="auth-title">Ingresar</h1>
+    <div class="auth-copy">
+      <p>Entrá con tu documento. Si sos paciente, ves tus turnos, la historia clínica y las recetas. Si trabajás en el consultorio, vas directo a tu día.</p>
+      <p>Para pedir un turno no hace falta cuenta: <a [routerLink]="route.Reservar" class="text-link">reservá desde acá</a>.</p>
+    </div>
+  </section>
+  <section class="auth-side">
+    @if (choosing()) {
+      <div class="auth-card">
+        <p class="text-sm leading-relaxed text-ink/75" role="status">{{ error() }}</p>
+        <ui-button [loading]="loading() && chosen() === account.Staff" [disabled]="loading()" (click)="submit(account.Staff)">Equipo del consultorio</ui-button>
+        <ui-button variant="outlined" [loading]="loading() && chosen() === account.Patient" [disabled]="loading()" (click)="submit(account.Patient)">Paciente</ui-button>
+        <button type="button" class="text-link self-start" (click)="restart()">Usar otro documento</button>
       </div>
-    </section>
-    <section class="auth-side">
+    } @else {
       <form class="auth-card" (ngSubmit)="submit()">
         <ui-field label="Documento"><input name="username" [(ngModel)]="documentNumber" required autocomplete="username" inputmode="numeric" autocapitalize="none" spellcheck="false" /></ui-field>
         <ui-field label="Contraseña"><ui-password><input name="password" type="password" [(ngModel)]="password" required autocomplete="current-password" /></ui-password></ui-field>
         @if (error()) { <p class="text-sm text-pulse" role="alert">{{ error() }}</p> }
         <ui-button type="submit" [loading]="loading()">Entrar</ui-button>
+        <p class="text-sm text-ink/70">¿No tenés cuenta? <a [routerLink]="route.Registro" [queryParams]="registerQuery()" class="text-link">Creala</a></p>
       </form>
-    </section>
-  </main>
-} @else {
-  <main class="auth-split">
-    <section class="auth-intro">
-      <p class="auth-brand"><span class="brand-badge"><img src="logo.svg" alt="" /></span>{{ clinicName() }}</p>
-      <h1 class="auth-title">Quiero ver mis turnos</h1>
-      <div class="auth-copy">
-        <p>Entrá para ver los turnos, la historia clínica y las recetas.</p>
-        <p>Recordá que los turnos creados están asociados a tu número de documento.</p>
-      </div>
-    </section>
-    <section class="auth-side">
-      <form class="auth-card" (ngSubmit)="submit()">
-        <ui-field label="Documento"><input name="username" [(ngModel)]="documentNumber" required autocomplete="username" inputmode="numeric" autocapitalize="none" spellcheck="false" /></ui-field>
-        <ui-field label="Contraseña"><ui-password><input name="password" type="password" [(ngModel)]="password" required autocomplete="current-password" /></ui-password></ui-field>
-        @if (error()) { <p class="text-sm text-pulse" role="alert">{{ error() }}</p> }
-        <ui-button type="submit" [loading]="loading()">Entrar</ui-button>
-      </form>
-    </section>
-  </main>
-}
+    }
+  </section>
+</main>

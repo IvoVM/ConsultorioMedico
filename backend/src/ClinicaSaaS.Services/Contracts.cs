@@ -15,8 +15,7 @@ public record TenantAccount(
 
 public record ClinicDto(string Slug, string Name);
 
-public record LoginCommand(string DocumentNumber, string Password);
-public record LoginStaffCommand(string DocumentNumber, string Password);
+public record LoginCommand(string DocumentNumber, string Password, LoginAccount? Account = null);
 public record ChangePasswordCommand(string Password);
 public record PatientProfileDto(string FirstName, string LastName, string DocumentNumber, string Phone);
 public record UpdatePatientProfileCommand(string FirstName, string LastName, string Phone);
@@ -67,7 +66,6 @@ public record CreateBookingRequestCommand(Guid SpecialtyId, Guid ProfessionalId,
 public record BookingRequestDto(Guid Id, string Name, string Phone, string DocumentNumber, string Specialty, string Professional, string AppointmentType, DateTimeOffset Start, string? Insurer, string? MemberNumber, BookingRequestStatus Status, string? RejectionReason, DateTimeOffset? PreviousStart, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt, string Location);
 public record RejectBookingRequestCommand(string Reason);
 public record RescheduleBookingRequestCommand(DateTimeOffset Start);
-public record LoginPatientCommand(string DocumentNumber, string Password);
 public record ReviewCoverageCommand(bool Accepted);
 public record InsurerDto(Guid Id, string Name, bool Enabled);
 public record SaveInsurerCommand(string Name);

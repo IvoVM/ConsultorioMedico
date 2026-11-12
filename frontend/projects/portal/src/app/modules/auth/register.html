@@ -26,7 +26,7 @@
       <p class="text-sm text-ink/65">Al menos 8 caracteres, con una mayúscula, una minúscula y un número.</p>
       @if (error()) { <p class="text-sm text-pulse" role="alert">{{ error() }}</p> }
       <ui-button type="submit" [loading]="loading()">Crear cuenta</ui-button>
-      <a [routerLink]="paths.IngresoCuenta" [queryParams]="loginQuery()" class="text-link">Ya tengo cuenta</a>
+      <a [routerLink]="paths.Ingreso" [queryParams]="loginQuery()" class="text-link">Ya tengo cuenta</a>
     </form>
   </section>
 </main>

@@ -54,3 +54,10 @@ public enum AppointmentKind
     Consulta,
     Estudio
 }
+
+// Which account to enter with when one document holds both a staff and a patient account.
+public enum LoginAccount
+{
+    Staff,
+    Patient
+}

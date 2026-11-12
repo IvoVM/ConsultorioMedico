@@ -5,8 +5,6 @@ import type { ChangePasswordCommand } from './models/change-password-command';
 import type { PatientProfileDto } from './models/patient-profile-dto';
 import type { UpdatePatientProfileCommand } from './models/update-patient-profile-command';
 import type { LoginCommand } from './models/login-command';
-import type { LoginPatientCommand } from './models/login-patient-command';
-import type { LoginStaffCommand } from './models/login-staff-command';
 import type { RegisterPatientCommand } from './models/register-patient-command';
 import type { TokenDto } from './models/token-dto';
 
@@ -14,14 +12,6 @@ import type { TokenDto } from './models/token-dto';
 export class AuthService extends ApiClient {
   login(body: LoginCommand) {
     return this.http.post<TokenDto>(`${this.base}/api/acceso/ingreso`, body);
-  }
-
-  loginPatient(body: LoginPatientCommand) {
-    return this.http.post<TokenDto>(`${this.base}/api/acceso/ingreso-paciente`, body);
-  }
-
-  loginStaff(body: LoginStaffCommand) {
-    return this.http.post<TokenDto>(`${this.base}/api/acceso/ingreso-empleado`, body);
   }
 
   changePassword(body: ChangePasswordCommand) {

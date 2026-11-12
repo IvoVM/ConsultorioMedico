@@ -1,7 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { AuthService, ClinicService, clinicaSession, errorMessage } from 'sdk';
+import { AuthService, ClinicService, LoginAccount, clinicaSession, errorMessage } from 'sdk';
 import { UiButton, UiField, UiPassword } from 'ui';
 import { firstValueFrom } from 'rxjs';
 
@@ -36,7 +36,7 @@ export class LoginPage {
     this.error.set('');
     this.loading.set(true);
     try {
-      const token = await firstValueFrom(this.auth.login({ documentNumber: this.documentNumber, password: this.password }));
+      const token = await firstValueFrom(this.auth.login({ documentNumber: this.documentNumber, password: this.password, account: LoginAccount.Staff }));
       clinicaSession.set(token.token, token.role, token.name, token.mustChangePassword);
       await this.router.navigateByUrl(token.mustChangePassword ? '/clave' : '/inicio');
     } catch (error) {

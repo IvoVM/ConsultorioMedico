@@ -39,6 +39,7 @@ internal static class ErrorMap
         ValidationException validation => new(StatusCodes.Status400BadRequest, string.Join(' ', validation.Errors.Select(e => e.ErrorMessage))),
         NotFoundException notFound => new(StatusCodes.Status404NotFound, notFound.Message),
         ConflictException conflict => new(StatusCodes.Status409Conflict, conflict.Message),
+        AccountChoiceException choice => new(StatusCodes.Status409Conflict, choice.Message),
         BusinessRuleException rule => new(StatusCodes.Status400BadRequest, rule.Message),
         // The database refuses two active appointments of one professional at the same time (EX_Appointments_NoOverlap).
         DbUpdateException { InnerException: PostgresException { SqlState: PostgresErrorCodes.ExclusionViolation } } =>
