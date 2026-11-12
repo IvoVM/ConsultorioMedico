@@ -1,8 +1,27 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { MetricsDto, MetricsRange, MetricsService, StatusShareDto, clinicaSession, errorMessage } from 'sdk';
-import { BarListRow, ChartKind, ChartPoint, ChartSeries, TabItem, UiBarList, UiChart, UiEmpty, UiIcon, UiSkeleton, UiStat, UiTabs, UiTone, greeting } from 'ui';
-import { metricsRangeLabels } from './models/metrics-labels';
+import {
+  BarListRow,
+  ChartHue,
+  ChartKind,
+  ChartPoint,
+  ChartSeries,
+  ChartSlice,
+  TabItem,
+  UiBarList,
+  UiChart,
+  UiDonut,
+  UiEmpty,
+  UiIcon,
+  UiSkeleton,
+  UiStat,
+  UiTabs,
+  UiTone,
+  greeting,
+} from 'ui';
+import { appointmentStatusLabels } from '../appointments/models/appointment-status-labels';
+import { metricsRangeLabels, statusSlices } from './models/metrics-labels';
 
 const storageKey = 'clinica.admin.metrics-range';
 
@@ -16,15 +35,15 @@ const longDate = new Intl.DateTimeFormat('es-AR', { weekday: 'long', day: 'numer
 // What happened to the period's appointments, who saw the patients, and how much was invoiced and collected.
 @Component({
   selector: 'metrics-dashboard',
-  imports: [UiBarList, UiChart, UiEmpty, UiIcon, UiSkeleton, UiStat, UiTabs],
+  imports: [UiBarList, UiChart, UiDonut, UiEmpty, UiIcon, UiSkeleton, UiStat, UiTabs],
   templateUrl: './metrics-dashboard.html',
 })
 export class MetricsDashboard {
   private readonly metricsApi = inject(MetricsService);
   readonly hello = greeting(clinicaSession.name());
   readonly kinds = ChartKind;
-  readonly tone = UiTone;
-  readonly money = (value: number) => currency.format(value);
+  readonly hue = ChartHue;
+  readonly money = (value: number) => amount(value);
   readonly moneyAxis = (value: number) => compactCurrency.format(value);
   readonly ranges: TabItem[] = Object.values(MetricsRange).map((range) => ({ key: range, label: metricsRangeLabels[range] }));
   readonly range = signal(readRange());
@@ -57,6 +76,15 @@ export class MetricsDashboard {
     ];
   });
 
+  readonly statuses = computed((): ChartSlice[] => {
+    const counts = this.data()?.appointments.byStatus ?? [];
+    return statusSlices.map(({ status, hue }) => ({
+      label: appointmentStatusLabels[status],
+      value: counts.find((row) => row.status === status)?.count ?? 0,
+      tone: hue,
+    }));
+  });
+
   readonly professionals = computed((): BarListRow[] =>
     (this.data()?.professionals ?? []).map((row) => ({ label: row.label, value: row.completed })),
   );
@@ -65,9 +93,9 @@ export class MetricsDashboard {
     const billing = this.data()?.billing;
     if (!billing) return null;
     return {
-      invoiced: currency.format(billing.invoiced),
-      collected: currency.format(billing.collected),
-      outstanding: currency.format(billing.outstanding),
+      invoiced: amount(billing.invoiced),
+      collected: amount(billing.collected),
+      outstanding: amount(billing.outstanding),
       weekly: billing.bucketDays > 1,
       points: billing.series.map((bucket): ChartPoint => {
         const value = day(bucket.date);
@@ -81,8 +109,8 @@ export class MetricsDashboard {
   });
 
   readonly billingSeries: ChartSeries[] = [
-    { key: 'invoiced', label: 'Facturado', tone: UiTone.Sky },
-    { key: 'collected', label: 'Cobrado', tone: UiTone.Ok },
+    { key: 'invoiced', label: 'Facturado', tone: ChartHue.Sky },
+    { key: 'collected', label: 'Cobrado', tone: ChartHue.Ok },
   ];
 
   constructor() {
@@ -124,6 +152,11 @@ function readRange(): MetricsRange {
   } catch {
     return MetricsRange.Month;
   }
+}
+
+// A missing amount reads as $ 0, never as $ NaN.
+function amount(value: number | null | undefined) {
+  return currency.format(Number.isFinite(value) ? (value as number) : 0);
 }
 
 // The API sends calendar days as yyyy-mm-dd; read them as local days, not UTC midnight.

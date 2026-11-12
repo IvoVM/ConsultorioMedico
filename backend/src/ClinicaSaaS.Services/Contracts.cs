@@ -304,7 +304,14 @@ public record EditAppointmentCommand(Guid? InsurerId, string? MemberNumber);
 
 // Percent is null when the period has no appointments, so the dashboard shows a dash instead of a misleading 0 %.
 public record StatusShareDto(int Count, decimal? Percent);
-public record AppointmentMetricsDto(int Total, StatusShareDto Completed, StatusShareDto NoShow, StatusShareDto Cancelled, StatusShareDto Rescheduled);
+public record StatusCountDto(AppointmentStatus Status, int Count);
+public record AppointmentMetricsDto(
+    int Total,
+    StatusShareDto Completed,
+    StatusShareDto NoShow,
+    StatusShareDto Cancelled,
+    StatusShareDto Rescheduled,
+    IReadOnlyList<StatusCountDto> ByStatus);
 public record RankRowDto(string Label, int Completed);
 public record BillingBucketDto(DateOnly Date, decimal Invoiced, decimal Collected);
 public record BillingMetricsDto(decimal Invoiced, decimal Collected, decimal Outstanding, int BucketDays, IReadOnlyList<BillingBucketDto> Series);

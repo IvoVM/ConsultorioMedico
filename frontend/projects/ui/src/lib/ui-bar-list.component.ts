@@ -1,6 +1,5 @@
 import { Component, computed, input } from '@angular/core';
-import { UiTone } from './ui-board.component';
-import { chartColor, formatCount } from './ui-chart';
+import { ChartHue, chartColor, formatCount } from './ui-chart';
 
 export type BarListRow = { label: string; value: number; note?: string };
 
@@ -33,7 +32,7 @@ export type BarListRow = { label: string; value: number; note?: string };
 })
 export class UiBarList {
   readonly rows = input<BarListRow[]>([]);
-  readonly tone = input(UiTone.Muted);
+  readonly tone = input(ChartHue.Muted);
   readonly label = input('Ranking');
   readonly format = input<(value: number) => string>(formatCount);
   readonly color = computed(() => chartColor(this.tone()));

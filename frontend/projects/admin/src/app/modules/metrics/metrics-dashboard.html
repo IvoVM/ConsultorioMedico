@@ -20,31 +20,42 @@
       }
     </div>
 
-    <div class="grid gap-5" [class.lg:grid-cols-5]="billing()">
-      <section class="panel rise min-w-0 lg:col-span-2">
+    <div class="mb-5 grid gap-5 lg:grid-cols-2">
+      <section class="panel rise min-w-0">
         <div class="panel-head">
           <h3 class="panel-title"><ui-icon name="stethoscope" [size]="20" class="text-leaf" />Atendidos por profesional</h3>
         </div>
         @if (professionals().length) {
-          <ui-bar-list label="Turnos atendidos por profesional" [rows]="professionals()" [tone]="tone.Muted" />
+          <ui-bar-list label="Turnos atendidos por profesional" [rows]="professionals()" [tone]="hue.Muted" />
         } @else {
           <ui-empty message="Todavía no hay turnos atendidos en el período." />
         }
       </section>
 
-      @if (billing(); as billing) {
-        <section class="panel rise min-w-0 lg:col-span-3">
-          <div class="panel-head">
-            <h3 class="panel-title"><ui-icon name="payments" [size]="20" class="text-leaf" />Facturación y cobro</h3>
-          </div>
-          <dl class="mb-5 grid grid-cols-3 gap-3">
-            <div><dt class="text-xs text-ink/55">Facturado</dt><dd class="text-xl font-bold tabular-nums">{{ billing.invoiced }}</dd></div>
-            <div><dt class="text-xs text-ink/55">Cobrado</dt><dd class="text-xl font-bold tabular-nums">{{ billing.collected }}</dd></div>
-            <div><dt class="text-xs text-ink/55">Pendiente de cobro</dt><dd class="text-xl font-bold tabular-nums">{{ billing.outstanding }}</dd></div>
-          </dl>
-          <ui-chart [kind]="kinds.Lines" [series]="billingSeries" [points]="billing.points" [format]="money" [axisFormat]="moneyAxis" [label]="'Facturado y cobrado por ' + (billing.weekly ? 'semana' : 'día')" />
-        </section>
-      }
+      <section class="panel rise min-w-0">
+        <div class="panel-head">
+          <h3 class="panel-title"><ui-icon name="donut_large" [size]="20" class="text-leaf" />Turnos por estado</h3>
+        </div>
+        @if (data()!.appointments.total) {
+          <ui-donut label="Turnos del período por estado" [slices]="statuses()" [center]="'' + data()!.appointments.total" caption="turnos" />
+        } @else {
+          <ui-empty message="No hay turnos en el período." />
+        }
+      </section>
     </div>
+
+    @if (billing(); as billing) {
+      <section class="panel rise min-w-0">
+        <div class="panel-head">
+          <h3 class="panel-title"><ui-icon name="payments" [size]="20" class="text-leaf" />Facturación y cobro</h3>
+        </div>
+        <dl class="mb-5 grid grid-cols-3 gap-3">
+          <div><dt class="text-xs text-ink/55">Facturado</dt><dd class="text-xl font-bold tabular-nums">{{ billing.invoiced }}</dd></div>
+          <div><dt class="text-xs text-ink/55">Cobrado</dt><dd class="text-xl font-bold tabular-nums">{{ billing.collected }}</dd></div>
+          <div><dt class="text-xs text-ink/55">Pendiente de cobro</dt><dd class="text-xl font-bold tabular-nums">{{ billing.outstanding }}</dd></div>
+        </dl>
+        <ui-chart [kind]="kinds.Lines" [series]="billingSeries" [points]="billing.points" [format]="money" [axisFormat]="moneyAxis" [label]="'Facturado y cobrado por ' + (billing.weekly ? 'semana' : 'día')" />
+      </section>
+    }
   </div>
 }

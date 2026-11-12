@@ -2,6 +2,7 @@
 export { MetricsService } from './metrics.service';
 export * from './models/metrics-range';
 export * from './models/status-share-dto';
+export * from './models/status-count-dto';
 export * from './models/appointment-metrics-dto';
 export * from './models/rank-row-dto';
 export * from './models/billing-bucket-dto';

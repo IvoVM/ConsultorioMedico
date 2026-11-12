@@ -54,10 +54,13 @@
   --ease-out-soft: cubic-bezier(0.16, 0.84, 0.32, 1);
 }
 
-/* Colores de gráficos, validados para daltonismo en este orden: atendido, pendiente, ausente, eliminado. */
+/* Colores de gráficos, validados para daltonismo en este orden: azul, naranja, violeta, verde, rosa, ámbar, rojo. */
 :root {
-  --chart-ok: #18a058;
   --chart-sky: #2f6fdf;
+  --chart-orange: #eb6834;
+  --chart-violet: #6250d6;
+  --chart-ok: #18a058;
+  --chart-pink: #e87ba4;
   --chart-warn: #d99a1e;
   --chart-bad: #c0392f;
   --chart-muted: #14634b;

@@ -46,7 +46,8 @@ public class MetricsService(
             Share(visits.Count(v => v.Status == AppointmentStatus.Completed)),
             Share(visits.Count(v => v.Status == AppointmentStatus.NoShow)),
             Share(visits.Count(v => v.Status == AppointmentStatus.Cancelled)),
-            Share(visits.Count(v => v.Moved)));
+            Share(visits.Count(v => v.Moved)),
+            visits.GroupBy(v => v.Status).Select(g => new StatusCountDto(g.Key, g.Count())).ToList());
 
         var professionals = visits
             .Where(v => v.Status == AppointmentStatus.Completed)
