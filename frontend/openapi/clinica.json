@@ -19,6 +19,13 @@
         "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ClinicSettingsDto" } } } } }
       }
     },
+    "/api/metricas": {
+      "get": {
+        "operationId": "metrics",
+        "parameters": [{ "name": "range", "in": "query", "schema": { "$ref": "#/components/schemas/MetricsRange" } }],
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MetricsDto" } } } } }
+      }
+    },
     "/api/acceso/ingreso": {
       "post": {
         "operationId": "login",
@@ -415,6 +422,18 @@
       "InvoiceDto": { "type": "object", "required": ["id", "appointmentId", "patientId", "patient", "total", "status", "createdAt", "items"], "properties": { "id": { "type": "string" }, "appointmentId": { "type": "string" }, "patientId": { "type": "string" }, "patient": { "type": "string" }, "total": { "type": "number" }, "status": { "$ref": "#/components/schemas/InvoiceStatus" }, "paymentMethod": { "allOf": [{ "$ref": "#/components/schemas/PaymentMethod" }], "nullable": true }, "createdAt": { "type": "string" }, "paidAt": { "type": "string", "nullable": true }, "items": { "type": "array", "items": { "$ref": "#/components/schemas/InvoiceItemDto" } } } },
       "PayInvoiceCommand": { "type": "object", "required": ["method"], "properties": { "method": { "$ref": "#/components/schemas/PaymentMethod" } } },
       "IssueInvoiceCommand": { "type": "object", "required": ["appointmentId"], "properties": { "appointmentId": { "type": "string" } } },
+      "MetricsRange": { "type": "string", "enum": ["Week", "Month", "Quarter"] },
+      "MetricKpiDto": { "type": "object", "properties": { "value": { "type": "number", "nullable": true }, "previous": { "type": "number", "nullable": true } } },
+      "MetricsKpisDto": { "type": "object", "required": ["appointments", "completed", "noShowRate", "cancellationRate", "patients", "newPatients", "occupancy", "requests", "requestApproval"], "properties": { "appointments": { "$ref": "#/components/schemas/MetricKpiDto" }, "completed": { "$ref": "#/components/schemas/MetricKpiDto" }, "noShowRate": { "$ref": "#/components/schemas/MetricKpiDto" }, "cancellationRate": { "$ref": "#/components/schemas/MetricKpiDto" }, "patients": { "$ref": "#/components/schemas/MetricKpiDto" }, "newPatients": { "$ref": "#/components/schemas/MetricKpiDto" }, "occupancy": { "$ref": "#/components/schemas/MetricKpiDto" }, "requests": { "$ref": "#/components/schemas/MetricKpiDto" }, "requestApproval": { "$ref": "#/components/schemas/MetricKpiDto" } } },
+      "AppointmentBucketDto": { "type": "object", "required": ["date", "completed", "noShow", "cancelled", "pending"], "properties": { "date": { "type": "string" }, "completed": { "type": "integer" }, "noShow": { "type": "integer" }, "cancelled": { "type": "integer" }, "pending": { "type": "integer" } } },
+      "RankRowDto": { "type": "object", "required": ["label", "completed", "noShow"], "properties": { "label": { "type": "string" }, "completed": { "type": "integer" }, "noShow": { "type": "integer" } } },
+      "ShareDto": { "type": "object", "required": ["label", "count"], "properties": { "label": { "type": "string" }, "count": { "type": "integer" } } },
+      "CoverageMetricsDto": { "type": "object", "required": ["insured", "private", "insurers"], "properties": { "insured": { "type": "integer" }, "private": { "type": "integer" }, "insurers": { "type": "array", "items": { "$ref": "#/components/schemas/ShareDto" } } } },
+      "HeatCellDto": { "type": "object", "required": ["day", "hour", "count"], "properties": { "day": { "$ref": "#/components/schemas/DayOfWeek" }, "hour": { "type": "integer" }, "count": { "type": "integer" } } },
+      "BillingBucketDto": { "type": "object", "required": ["date", "invoiced", "collected"], "properties": { "date": { "type": "string" }, "invoiced": { "type": "number" }, "collected": { "type": "number" } } },
+      "PaymentShareDto": { "type": "object", "required": ["method", "amount", "count"], "properties": { "method": { "$ref": "#/components/schemas/PaymentMethod" }, "amount": { "type": "number" }, "count": { "type": "integer" } } },
+      "BillingMetricsDto": { "type": "object", "required": ["invoiced", "collected", "averageTicket", "outstanding", "series", "payments"], "properties": { "invoiced": { "$ref": "#/components/schemas/MetricKpiDto" }, "collected": { "$ref": "#/components/schemas/MetricKpiDto" }, "averageTicket": { "$ref": "#/components/schemas/MetricKpiDto" }, "outstanding": { "type": "number" }, "series": { "type": "array", "items": { "$ref": "#/components/schemas/BillingBucketDto" } }, "payments": { "type": "array", "items": { "$ref": "#/components/schemas/PaymentShareDto" } } } },
+      "MetricsDto": { "type": "object", "required": ["range", "from", "to", "bucketDays", "kpis", "series", "professionals", "specialties", "coverage", "heatmap"], "properties": { "range": { "$ref": "#/components/schemas/MetricsRange" }, "from": { "type": "string" }, "to": { "type": "string" }, "bucketDays": { "type": "integer" }, "kpis": { "$ref": "#/components/schemas/MetricsKpisDto" }, "series": { "type": "array", "items": { "$ref": "#/components/schemas/AppointmentBucketDto" } }, "professionals": { "type": "array", "items": { "$ref": "#/components/schemas/RankRowDto" } }, "specialties": { "type": "array", "items": { "$ref": "#/components/schemas/RankRowDto" } }, "coverage": { "$ref": "#/components/schemas/CoverageMetricsDto" }, "heatmap": { "type": "array", "items": { "$ref": "#/components/schemas/HeatCellDto" } }, "billing": { "allOf": [{ "$ref": "#/components/schemas/BillingMetricsDto" }], "nullable": true } } },
       "AuditEntryDto": { "type": "object", "required": ["id", "action", "entity", "timestamp"], "properties": { "id": { "type": "string" }, "userId": { "type": "string", "nullable": true }, "action": { "type": "string" }, "entity": { "type": "string" }, "entityId": { "type": "string", "nullable": true }, "detail": { "type": "string", "nullable": true }, "timestamp": { "type": "string" } } }
     }
   }

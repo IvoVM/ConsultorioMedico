@@ -61,3 +61,11 @@ public enum LoginAccount
     Staff,
     Patient
 }
+
+// How far back the admin dashboard looks: the last 7, 30 or 90 days.
+public enum MetricsRange
+{
+    Week,
+    Month,
+    Quarter
+}

@@ -34,3 +34,11 @@ export { RequestTab, daysOverdue, localDate, deactivationLabel, expiredRequestDa
 export { UiMonth } from './ui-month.component';
 export { RescheduleOrigin, UiReschedule } from './ui-reschedule.component';
 export type { RescheduleSlot, RescheduleSource } from './ui-reschedule.component';
+export { ChartKind, UiChart } from './ui-chart.component';
+export { chartColor, formatCount, niceMax } from './ui-chart';
+export type { ChartPoint, ChartSeries, ChartSlice } from './ui-chart';
+export { UiBarList } from './ui-bar-list.component';
+export type { BarListRow } from './ui-bar-list.component';
+export { UiDonut } from './ui-donut.component';
+export { UiHeatmap } from './ui-heatmap.component';
+export type { HeatmapRow } from './ui-heatmap.component';

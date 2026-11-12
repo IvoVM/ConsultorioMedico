@@ -64,6 +64,11 @@ const modules = [
     match: (path) => path.startsWith('/api/aranceles') || path.startsWith('/api/comprobantes'),
   },
   {
+    id: 'metrics',
+    service: 'MetricsService',
+    match: (path) => path.startsWith('/api/metricas'),
+  },
+  {
     id: 'audit',
     service: 'AuditService',
     match: (path) => path.startsWith('/api/auditoria'),
@@ -154,6 +159,7 @@ for (const { op, module } of operations) {
   const refs = new Set();
   walkRefs(op.requestBody?.content?.['application/json']?.schema, refs);
   for (const response of Object.values(op.responses ?? {})) walkRefs(response.content?.['application/json']?.schema, refs);
+  for (const parameter of op.parameters ?? []) walkRefs(parameter.schema, refs);
   for (const name of refs) {
     if (owner.has(name)) continue;
     owner.set(name, module.id);
@@ -200,6 +206,7 @@ function emitMethod(item) {
   const used = new Set();
   walkRefs(body, used);
   walkRefs(response, used);
+  for (const parameter of [...params, ...query]) walkRefs(parameter.schema, used);
   return { source: `  ${op.operationId}(${args.join(', ')}) {\n    return ${call};\n  }`, used, hasQuery: query.length > 0 };
 }
 

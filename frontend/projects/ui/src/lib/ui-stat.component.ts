@@ -68,9 +68,11 @@ export class UiStat {
         return;
       }
       const reduce = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
-      const decimals = Number.isInteger(value) ? 0 : 1;
+      const digits = Number.isInteger(value) ? 0 : 1;
+      // Same separators as the rest of the screen: 1.234 and 93,6, not 1234 and 93.6.
+      const format = new Intl.NumberFormat('es-AR', { minimumFractionDigits: digits, maximumFractionDigits: digits });
       if (reduce || value === 0) {
-        this.shown.set(value.toFixed(decimals));
+        this.shown.set(format.format(value));
         return;
       }
       const start = performance.now();
@@ -78,7 +80,7 @@ export class UiStat {
       const step = (now: number) => {
         const progress = Math.min(1, (now - start) / duration);
         const eased = 1 - Math.pow(1 - progress, 3);
-        this.shown.set((value * eased).toFixed(decimals));
+        this.shown.set(format.format(value * eased));
         if (progress < 1) this.frame = requestAnimationFrame(step);
       };
       this.frame = requestAnimationFrame(step);
