@@ -105,7 +105,7 @@ table.cards {
     display: none !important;
   }
 
-  table.cards ui-actions .panel {
+  table.cards ui-actions .actions-panel {
     display: flex !important;
     flex-wrap: wrap;
     gap: 0.5rem;
@@ -122,11 +122,11 @@ table.cards {
     box-shadow: none !important;
   }
 
-  table.cards ui-actions .panel > ui-button {
+  table.cards ui-actions .actions-panel > ui-button {
     flex: 1 1 10.5rem;
   }
 
-  table.cards ui-actions .panel > ui-button button {
+  table.cards ui-actions .actions-panel > ui-button button {
     width: 100%;
     min-width: 10.5rem;
     min-height: 2.6rem;
@@ -135,18 +135,18 @@ table.cards {
     text-align: center;
   }
 
-  table.cards ui-actions .panel > ui-button button.btn-primary {
+  table.cards ui-actions .actions-panel > ui-button button.btn-primary {
     background: var(--color-clinic);
     color: white;
   }
 
-  table.cards ui-actions .panel > ui-button button.btn-secondary {
+  table.cards ui-actions .actions-panel > ui-button button.btn-secondary {
     background: white;
     color: var(--color-ink);
     box-shadow: inset 0 0 0 1px var(--color-rule);
   }
 
-  table.cards ui-actions .panel > ui-button button.btn-error {
+  table.cards ui-actions .actions-panel > ui-button button.btn-error {
     background: var(--color-pulse);
     color: white;
   }

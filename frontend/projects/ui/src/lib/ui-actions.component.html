@@ -2,6 +2,6 @@
   Acciones
   <ui-icon [name]="open() ? 'expand_less' : 'expand_more'" [size]="18" />
 </button>
-<div #panel class="panel" role="menu" (toggle)="onToggle($event)" (click)="close()">
+<div #panel class="actions-panel" role="menu" (toggle)="onToggle($event)" (click)="close()">
   <ng-content />
 </div>

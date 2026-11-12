@@ -25,13 +25,13 @@
   display: inline-flex;
 }
 
-.panel {
+.actions-panel {
   display: inline-flex;
   align-items: center;
   gap: 1rem;
 }
 
-:host.is-many .panel {
+:host.is-many .actions-panel {
   display: none;
   min-width: 11rem;
   margin: 0;
@@ -42,7 +42,7 @@
   box-shadow: var(--shadow-lift);
 }
 
-:host.is-many .panel:popover-open {
+:host.is-many .actions-panel:popover-open {
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -52,10 +52,10 @@
   height: auto;
 }
 
-:host.is-many ::ng-deep .panel > button,
-:host.is-many ::ng-deep .panel > a,
-:host.is-many ::ng-deep .panel > ui-button,
-:host.is-many ::ng-deep .panel > ui-button button {
+:host.is-many ::ng-deep .actions-panel > button,
+:host.is-many ::ng-deep .actions-panel > a,
+:host.is-many ::ng-deep .actions-panel > ui-button,
+:host.is-many ::ng-deep .actions-panel > ui-button button {
   display: flex;
   width: 100%;
   min-height: 2.4rem;
@@ -76,9 +76,9 @@
   cursor: pointer;
 }
 
-:host.is-many ::ng-deep .panel > button:hover,
-:host.is-many ::ng-deep .panel > a:hover,
-:host.is-many ::ng-deep .panel > ui-button button:hover {
+:host.is-many ::ng-deep .actions-panel > button:hover,
+:host.is-many ::ng-deep .actions-panel > a:hover,
+:host.is-many ::ng-deep .actions-panel > ui-button button:hover {
   background: var(--color-clinic-wash);
   transform: none;
 }
