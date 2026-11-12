@@ -34,6 +34,7 @@ public class TenantDbContext(DbContextOptions<TenantDbContext> options)
     public DbSet<InvoiceItem> InvoiceItems => Set<InvoiceItem>();
     public DbSet<AuditEntry> AuditEntries => Set<AuditEntry>();
     public DbSet<RefreshSession> RefreshSessions => Set<RefreshSession>();
+    public DbSet<ClinicSettings> ClinicSettings => Set<ClinicSettings>();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
@@ -59,6 +60,7 @@ public class TenantDbContext(DbContextOptions<TenantDbContext> options)
         builder.Entity<IdentityUserLogin<Guid>>().ToTable("UserLogins");
         builder.Entity<IdentityUserToken<Guid>>().ToTable("UserTokens");
         builder.Entity<IdentityRoleClaim<Guid>>().ToTable("RoleClaims");
+        builder.Entity<ClinicSettings>(e => e.Property(c => c.Name).HasMaxLength(120));
         builder.Entity<Location>(e =>
         {
             e.Property(l => l.Name).HasMaxLength(120);

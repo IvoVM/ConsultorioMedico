@@ -7,6 +7,7 @@ import type { CreateFeeCommand } from './models/create-fee-command';
 import type { FeeDto } from './models/fee-dto';
 import type { FeeRowDto } from './models/fee-row-dto';
 import type { InvoiceDto } from './models/invoice-dto';
+import type { IssueInvoiceCommand } from './models/issue-invoice-command';
 import type { PayInvoiceCommand } from './models/pay-invoice-command';
 
 @Injectable({ providedIn: 'root' })
@@ -29,6 +30,10 @@ export class BillingService extends ApiClient {
 
   invoicesPage(query: ListParams) {
     return this.http.get<PageDto<InvoiceDto>>(`${this.base}/api/comprobantes${queryString(query)}`);
+  }
+
+  issueInvoice(body: IssueInvoiceCommand) {
+    return this.http.post<InvoiceDto>(`${this.base}/api/comprobantes`, body);
   }
 
   payInvoice(id: string, body: PayInvoiceCommand) {

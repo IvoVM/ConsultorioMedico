@@ -8,3 +8,4 @@ export * from './models/create-fee-command';
 export * from './models/invoice-item-dto';
 export * from './models/invoice-dto';
 export * from './models/pay-invoice-command';
+export * from './models/issue-invoice-command';

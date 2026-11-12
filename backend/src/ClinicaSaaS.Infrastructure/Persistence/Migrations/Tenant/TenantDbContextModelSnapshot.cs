@@ -356,6 +356,28 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                     b.ToTable("Clients");
                 });
 
+            modelBuilder.Entity("ClinicaSaaS.Domain.ClinicSettings", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("AutoInvoice")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("BillingEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ClinicSettings");
+                });
+
             modelBuilder.Entity("ClinicaSaaS.Domain.Diagnosis", b =>
                 {
                     b.Property<Guid>("Id")

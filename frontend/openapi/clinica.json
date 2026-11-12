@@ -8,6 +8,17 @@
         "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ClinicDto" } } } } }
       }
     },
+    "/api/configuracion": {
+      "get": {
+        "operationId": "clinicSettings",
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ClinicSettingsDto" } } } } }
+      },
+      "put": {
+        "operationId": "saveClinicSettings",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SaveClinicSettingsCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ClinicSettingsDto" } } } } }
+      }
+    },
     "/api/acceso/ingreso": {
       "post": {
         "operationId": "login",
@@ -320,6 +331,11 @@
       "get": {
         "operationId": "invoices",
         "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/InvoiceDto" } } } } } }
+      },
+      "post": {
+        "operationId": "issueInvoice",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/IssueInvoiceCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/InvoiceDto" } } } } }
       }
     },
     "/api/comprobantes/{id}/pagar": {
@@ -345,7 +361,9 @@
       "PaymentMethod": { "type": "string", "enum": ["Cash", "Transfer", "Card"] },
       "InvoiceStatus": { "type": "string", "enum": ["Pending", "Paid", "Voided"] },
       "DayOfWeek": { "type": "string", "enum": ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] },
-      "ClinicDto": { "type": "object", "required": ["slug", "name"], "properties": { "slug": { "type": "string" }, "name": { "type": "string" } } },
+      "ClinicDto": { "type": "object", "required": ["slug", "name", "billingEnabled"], "properties": { "slug": { "type": "string" }, "name": { "type": "string" }, "billingEnabled": { "type": "boolean" } } },
+      "ClinicSettingsDto": { "type": "object", "required": ["name", "billingEnabled", "autoInvoice"], "properties": { "name": { "type": "string" }, "billingEnabled": { "type": "boolean" }, "autoInvoice": { "type": "boolean" } } },
+      "SaveClinicSettingsCommand": { "type": "object", "required": ["name", "billingEnabled", "autoInvoice"], "properties": { "name": { "type": "string" }, "billingEnabled": { "type": "boolean" }, "autoInvoice": { "type": "boolean" } } },
       "LoginCommand": { "type": "object", "required": ["documentNumber", "password"], "properties": { "documentNumber": { "type": "string" }, "password": { "type": "string" } } },
       "TokenDto": { "type": "object", "required": ["token", "email", "name", "role", "mustChangePassword"], "properties": { "token": { "type": "string" }, "email": { "type": "string" }, "name": { "type": "string" }, "role": { "type": "string" }, "tenantSlug": { "type": "string", "nullable": true }, "mustChangePassword": { "type": "boolean" } } },
       "RegisterPatientCommand": { "type": "object", "required": ["email", "password", "firstName", "lastName", "documentNumber", "birthDate", "phone"], "properties": { "email": { "type": "string" }, "password": { "type": "string" }, "firstName": { "type": "string" }, "lastName": { "type": "string" }, "documentNumber": { "type": "string" }, "birthDate": { "type": "string" }, "phone": { "type": "string" } } },
@@ -396,6 +414,7 @@
       "InvoiceItemDto": { "type": "object", "required": ["description", "amount"], "properties": { "description": { "type": "string" }, "amount": { "type": "number" } } },
       "InvoiceDto": { "type": "object", "required": ["id", "appointmentId", "patientId", "patient", "total", "status", "createdAt", "items"], "properties": { "id": { "type": "string" }, "appointmentId": { "type": "string" }, "patientId": { "type": "string" }, "patient": { "type": "string" }, "total": { "type": "number" }, "status": { "$ref": "#/components/schemas/InvoiceStatus" }, "paymentMethod": { "allOf": [{ "$ref": "#/components/schemas/PaymentMethod" }], "nullable": true }, "createdAt": { "type": "string" }, "paidAt": { "type": "string", "nullable": true }, "items": { "type": "array", "items": { "$ref": "#/components/schemas/InvoiceItemDto" } } } },
       "PayInvoiceCommand": { "type": "object", "required": ["method"], "properties": { "method": { "$ref": "#/components/schemas/PaymentMethod" } } },
+      "IssueInvoiceCommand": { "type": "object", "required": ["appointmentId"], "properties": { "appointmentId": { "type": "string" } } },
       "AuditEntryDto": { "type": "object", "required": ["id", "action", "entity", "timestamp"], "properties": { "id": { "type": "string" }, "userId": { "type": "string", "nullable": true }, "action": { "type": "string" }, "entity": { "type": "string" }, "entityId": { "type": "string", "nullable": true }, "detail": { "type": "string", "nullable": true }, "timestamp": { "type": "string" } } }
     }
   }

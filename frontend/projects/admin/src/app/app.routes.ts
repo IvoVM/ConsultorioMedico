@@ -65,6 +65,7 @@ export const routes: Routes = [
       { path: 'aranceles', redirectTo: 'organizacion/especialidades' },
       { path: 'comprobantes', canActivate: [roleGuard(TenantRole.TenantAdmin)], loadComponent: () => import('./modules/invoices/invoices').then((m) => m.InvoicesPage) },
       { path: 'auditoria', canActivate: [roleGuard(TenantRole.TenantAdmin)], loadComponent: () => import('./modules/audit/audit-log').then((m) => m.AuditLogPage) },
+      { path: 'configuracion', canActivate: [roleGuard(TenantRole.TenantAdmin)], loadComponent: () => import('./modules/settings/settings').then((m) => m.SettingsPage) },
       { path: 'configuracion/usuarios', canActivate: [roleGuard(TenantRole.TenantAdmin)], loadComponent: () => import('./modules/users/users').then((m) => m.UsersPage) },
     ],
   },

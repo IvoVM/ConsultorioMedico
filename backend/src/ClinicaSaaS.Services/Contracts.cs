@@ -13,7 +13,9 @@ public record TenantAccount(
     public string Name => $"{FirstName} {LastName}".Trim();
 }
 
-public record ClinicDto(string Slug, string Name);
+public record ClinicDto(string Slug, string Name, bool BillingEnabled);
+public record ClinicSettingsDto(string Name, bool BillingEnabled, bool AutoInvoice);
+public record SaveClinicSettingsCommand(string Name, bool BillingEnabled, bool AutoInvoice);
 
 public record LoginCommand(string DocumentNumber, string Password, LoginAccount? Account = null);
 public record ChangePasswordCommand(string Password);
@@ -265,6 +267,7 @@ public record InvoiceDto(
     DateTimeOffset? PaidAt,
     IReadOnlyList<InvoiceItemDto> Items);
 public record PayInvoiceCommand(PaymentMethod Method);
+public record IssueInvoiceCommand(Guid AppointmentId);
 
 public record AuditEntryDto(Guid Id, Guid? UserId, string Action, string Entity, string? EntityId, string? Detail, DateTimeOffset Timestamp);
 

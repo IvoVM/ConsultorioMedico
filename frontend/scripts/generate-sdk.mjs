@@ -11,7 +11,7 @@ const modules = [
   {
     id: 'clinic',
     service: 'ClinicService',
-    match: (path) => path === '/api/clinica' || path.startsWith('/api/clinica/'),
+    match: (path) => path === '/api/clinica' || path.startsWith('/api/clinica/') || path === '/api/configuracion',
   },
   {
     id: 'auth',

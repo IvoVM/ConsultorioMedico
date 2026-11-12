@@ -24,6 +24,10 @@ public class BillingController(FeeService fees, InvoiceService invoices) : ApiCo
     public Task<IActionResult> Invoices([FromQuery] ListQuery query, CancellationToken ct) =>
         Run(() => invoices.InvoicesResultAsync(query, ct));
 
+    [HttpPost("comprobantes")]
+    public Task<IActionResult> Issue(IssueInvoiceCommand command, CancellationToken ct) =>
+        Run(() => invoices.IssueAsync(command, ct));
+
     [HttpPost("comprobantes/{id:guid}/pagar")]
     public Task<IActionResult> Pay(Guid id, PayInvoiceCommand command, CancellationToken ct) =>
         Run(() => invoices.PayAsync(id, command, ct));

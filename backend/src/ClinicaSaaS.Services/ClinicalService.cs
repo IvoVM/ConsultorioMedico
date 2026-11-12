@@ -9,7 +9,7 @@ public class ClinicalService(
     IClinicalStore clinical,
     IAppointmentStore appointments,
     IClientStore clients,
-    IBillingStore billing,
+    InvoiceService invoices,
     IOrganizationStore organization,
     IEmployeeStore employees,
     ICurrentUser currentUser,
@@ -79,7 +79,7 @@ public class ClinicalService(
         appointment.Status = AppointmentStatus.Completed;
         await clinical.SaveAsync(ct);
         await appointments.SaveAsync(ct);
-        await CreateInvoiceIfMissingAsync(appointment, ct);
+        await invoices.IssueOnCloseAsync(appointment, ct);
         await audit.RecordAsync(currentUser.Id, "cierre", "Encuentro", encounter.Id.ToString(), null, ct);
         return await LoadEncounterAsync(encounter.Id, ct);
     }
@@ -237,46 +237,6 @@ public class ClinicalService(
             .Where(e => e.UserId == appointment.ProfessionalId)
             .Select(e => e.SpecialtyId)
             .FirstOrDefaultAsync(ct);
-
-    private async Task CreateInvoiceIfMissingAsync(Appointment appointment, CancellationToken ct)
-    {
-        if (await billing.Invoices.AnyAsync(i => i.AppointmentId == appointment.Id, ct))
-            return;
-        var today = DateOnly.FromDateTime(clock.GetUtcNow().DateTime);
-        string? insurance = null;
-        if (appointment.InsurerId is Guid insurerId && appointment.CoverageAccepted != false)
-            insurance = await organization.Insurers.Where(i => i.Id == insurerId).Select(i => i.Name).FirstOrDefaultAsync(ct);
-        var fees = await billing.Fees
-            .Where(f => f.AppointmentTypeId == appointment.AppointmentTypeId && f.EffectiveFrom <= today)
-            .Select(f => new { f.Payer, f.Amount, f.EffectiveFrom, f.Id, f.AppointmentType.Name })
-            .ToListAsync(ct);
-        var covered = fees.Where(f => SamePayer(f.Payer, insurance)).ToList();
-        if (covered.Count == 0)
-            covered = fees.Where(f => BillingRules.CanonicalPayer(f.Payer) is null).ToList();
-        var chosen = covered.OrderByDescending(f => f.EffectiveFrom).ThenByDescending(f => f.Id).FirstOrDefault();
-        var amount = chosen?.Amount ?? 0;
-        await billing.AddInvoiceAsync(new Invoice
-        {
-            Id = Guid.NewGuid(),
-            AppointmentId = appointment.Id,
-            ClientId = appointment.ClientId,
-            Total = BillingRules.Total([amount]),
-            Status = InvoiceStatus.Pending,
-            CreatedAt = clock.GetUtcNow(),
-            Items =
-            [
-                new InvoiceItem
-                {
-                    Id = Guid.NewGuid(),
-                    Description = chosen?.Name ?? "Consulta",
-                    Amount = amount
-                }
-            ]
-        }, ct);
-    }
-
-    private static bool SamePayer(string? feePayer, string? insurance) =>
-        string.Equals(BillingRules.CanonicalPayer(feePayer), BillingRules.CanonicalPayer(insurance), StringComparison.OrdinalIgnoreCase);
 
     private async Task EnsurePatientAccessAsync(Guid patientId, CancellationToken ct)
     {

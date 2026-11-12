@@ -1,6 +1,6 @@
 <ui-page
   frame="shell"
-  brand="Clínica"
+  [brand]="clinicName()"
   eyebrow="Administración"
   [title]="session.name() ?? 'Admin'"
   [userName]="session.name() ?? 'Admin'"

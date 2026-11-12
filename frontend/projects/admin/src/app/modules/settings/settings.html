@@ -1,0 +1,56 @@
+<header class="mb-6">
+  <h2 class="font-serif text-2xl tracking-tight">Configuración</h2>
+  <p class="mt-2 max-w-prose text-sm leading-relaxed text-ink/70">
+    Acá se ajusta cómo funciona la clínica. Los cambios se aplican recién cuando los guardás.
+  </p>
+</header>
+
+<ui-tabs class="mb-6" label="Configuración" [tabs]="tabs" [(active)]="tab" />
+
+@if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
+
+@if (draft(); as form) {
+  <form class="max-w-2xl pb-24" (ngSubmit)="save()">
+    @switch (tab()) {
+      @case (settingsTab.General) {
+        <section class="rounded-2xl bg-white p-5 shadow-[var(--shadow-card)] sm:p-6">
+          <h3 class="font-serif text-lg tracking-tight">Datos de la clínica</h3>
+          <ui-field class="mt-4" label="Nombre de la clínica">
+            <input name="name" maxlength="120" autocomplete="organization" [ngModel]="form.name" (ngModelChange)="setName($event)" required />
+          </ui-field>
+          <p class="mt-2 text-sm text-ink/60">Es el nombre que ven los pacientes al entrar al portal.</p>
+        </section>
+      }
+      @case (settingsTab.Facturacion) {
+        <section class="rounded-2xl bg-white px-5 py-2 shadow-[var(--shadow-card)] sm:px-6">
+          <ui-switch
+            label="Emitir facturación"
+            description="Permite generar comprobantes y cobrarlos desde la recepción. Si lo apagás, no se emiten comprobantes nuevos; los que ya existen se pueden seguir cobrando."
+            [checked]="form.billingEnabled"
+            (checkedChange)="setBilling($event)"
+          />
+          <div class="border-t border-rule"></div>
+          <ui-switch
+            label="Facturación automática"
+            description="Al cerrar la consulta se genera el comprobante solo. Si lo apagás, la recepción lo emite a mano desde la agenda del día."
+            [checked]="form.autoInvoice"
+            [disabled]="!form.billingEnabled"
+            (checkedChange)="setAutoInvoice($event)"
+          />
+        </section>
+      }
+    }
+
+    @if (dirty()) {
+      <div class="save-bar" animate.enter="save-bar-in" animate.leave="save-bar-out">
+        <p class="text-sm">Hay cambios sin guardar.</p>
+        <div class="flex gap-2">
+          <ui-button variant="outlined" [disabled]="saving()" (click)="discard()">Descartar</ui-button>
+          <ui-button type="submit" [loading]="saving()">Guardar cambios</ui-button>
+        </div>
+      </div>
+    }
+  </form>
+} @else if (!error()) {
+  <ui-skeleton label="Cargando configuración" />
+}

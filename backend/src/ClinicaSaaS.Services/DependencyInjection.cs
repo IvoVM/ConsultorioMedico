@@ -42,6 +42,7 @@ public static class DependencyInjection
             "Frequency" => "frecuencia",
             "Duration" => "duración",
             "Instructions" => "indicaciones",
+            "Name" => "nombre",
             _ => null
         };
         services.AddScoped<IValidator<RegisterPatientCommand>, RegisterPatientValidator>();
@@ -50,6 +51,7 @@ public static class DependencyInjection
         services.AddScoped<IValidator<CreatePrescriptionCommand>, CreatePrescriptionValidator>();
         services.AddScoped<IValidator<SaveMedicalRecordCommand>, SaveMedicalRecordValidator>();
         services.AddScoped<IValidator<CreatePatientCommand>, CreatePatientValidator>();
+        services.AddScoped<IValidator<SaveClinicSettingsCommand>, SaveClinicSettingsValidator>();
         services.AddScoped<AuthService>();
         services.AddScoped<OrganizationService>();
         services.AddScoped<EmployeesService>();
@@ -59,6 +61,7 @@ public static class DependencyInjection
         services.AddScoped<FeeService>();
         services.AddScoped<InvoiceService>();
         services.AddScoped<MedicalRecordsService>();
+        services.AddScoped<ClinicSettingsService>();
         return services;
     }
 }

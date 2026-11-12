@@ -234,6 +234,7 @@ public static class DependencyInjection
         services.AddScoped<IClinicalStore, ClinicalStore>();
         services.AddScoped<IBillingStore, BillingStore>();
         services.AddScoped<IAuditStore, AuditStore>();
+        services.AddScoped<IClinicSettingsStore, ClinicSettingsStore>();
         services.AddSingleton<ITokenService, JwtTokenService>();
         services.AddSingleton<ITimeZoneProvider, ConfiguredTimeZone>();
         services.AddScoped<ClinicSeeder>();

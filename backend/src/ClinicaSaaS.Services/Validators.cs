@@ -110,3 +110,11 @@ public class SaveEncounterValidator : AbstractValidator<SaveEncounterCommand>
         RuleFor(x => x.Note).MaximumLength(4000);
     }
 }
+
+public class SaveClinicSettingsValidator : AbstractValidator<SaveClinicSettingsCommand>
+{
+    public SaveClinicSettingsValidator()
+    {
+        RuleFor(x => x.Name).NotEmpty().MaximumLength(120);
+    }
+}

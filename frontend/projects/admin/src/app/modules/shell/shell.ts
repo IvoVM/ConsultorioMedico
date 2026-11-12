@@ -1,7 +1,8 @@
 import { Component, computed, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { AuthService, TenantRole, clinicaSession } from 'sdk';
+import { AuthService, ClinicService, TenantRole, clinicaSession } from 'sdk';
 import { firstValueFrom } from 'rxjs';
+import { clinicName } from '../../clinic-name';
 import { NavLink, NavNode, UiNav, UiPage } from 'ui';
 import { roleLabels } from '../employees/models/role-labels';
 
@@ -11,7 +12,9 @@ import { roleLabels } from '../employees/models/role-labels';
 })
 export class ShellPage {
   private readonly auth = inject(AuthService);
+  private readonly clinic = inject(ClinicService);
   readonly session = clinicaSession;
+  readonly clinicName = clinicName;
   readonly roleLabel = computed(() => {
     const role = this.session.role();
     return role ? roleLabels[role] : 'Administración';
@@ -64,7 +67,14 @@ export class ShellPage {
         ],
       },
       { label: 'Auditoría', path: '/auditoria', icon: 'policy' },
+      { label: 'Configuración', path: '/configuracion', exact: true, icon: 'settings' },
     ];
+
+  constructor() {
+    void firstValueFrom(this.clinic.clinicProfile())
+      .then((profile) => clinicName.set(profile.name))
+      .catch(() => undefined);
+  }
 
   logout() {
     void firstValueFrom(this.auth.logout()).finally(() => {

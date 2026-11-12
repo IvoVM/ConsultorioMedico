@@ -169,6 +169,13 @@ public interface IBillingStore
     Task SaveAsync(CancellationToken ct);
 }
 
+public interface IClinicSettingsStore
+{
+    // Returns the tracked settings row, creating it from the configured clinic the first time.
+    Task<ClinicSettings> GetAsync(CancellationToken ct);
+    Task SaveAsync(CancellationToken ct);
+}
+
 public interface IAuditStore
 {
     Task RecordAsync(Guid? userId, string action, string entity, string? entityId, string? detail, CancellationToken ct);

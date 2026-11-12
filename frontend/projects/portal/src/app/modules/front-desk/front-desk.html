@@ -84,6 +84,9 @@
                 @if (appointment.status === status.Booked || appointment.status === status.Rescheduled || appointment.status === status.CheckedIn) {
                   <ui-button variant="ghost" (click)="confirming.set(appointment)">Eliminar</ui-button>
                 }
+                @if (canIssue(appointment)) {
+                  <ui-button [loading]="pending() === 'issue:' + appointment.id" (click)="issue(appointment)">Emitir comprobante</ui-button>
+                }
                 @if (charge(appointment); as bill) {
                   @if (bill.status === invoice.Pending) {
                     <ui-button [loading]="pending() === 'pay:' + bill.id + ':' + payment.Cash" (click)="pay(bill, payment.Cash)">Efectivo</ui-button>

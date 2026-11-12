@@ -493,6 +493,21 @@ public class BillingStore(TenantDbContext db) : IBillingStore
     public Task SaveAsync(CancellationToken ct) => db.SaveChangesAsync(ct);
 }
 
+public class ClinicSettingsStore(TenantDbContext db, ICurrentTenant clinic) : IClinicSettingsStore
+{
+    public async Task<ClinicSettings> GetAsync(CancellationToken ct)
+    {
+        if (await db.ClinicSettings.FirstOrDefaultAsync(ct) is { } settings)
+            return settings;
+        settings = new ClinicSettings { Id = Guid.NewGuid(), Name = clinic.Name };
+        db.ClinicSettings.Add(settings);
+        await db.SaveChangesAsync(ct);
+        return settings;
+    }
+
+    public Task SaveAsync(CancellationToken ct) => db.SaveChangesAsync(ct);
+}
+
 public class AuditStore(TenantDbContext db) : IAuditStore
 {
     public async Task RecordAsync(Guid? userId, string action, string entity, string? entityId, string? detail, CancellationToken ct)

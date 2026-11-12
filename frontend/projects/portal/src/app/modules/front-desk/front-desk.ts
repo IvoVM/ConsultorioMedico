@@ -1,7 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { AppointmentDto, AppointmentStatus, AppointmentsService, BillingService, InvoiceDto, InvoiceStatus, PatientLookupDto, PatientsService, PaymentMethod, ScheduleService, SlotDto, WaitlistEntryDto, errorMessage } from 'sdk';
+import { AppointmentDto, AppointmentStatus, AppointmentsService, BillingService, ClinicService, InvoiceDto, InvoiceStatus, PatientLookupDto, PatientsService, PaymentMethod, ScheduleService, SlotDto, WaitlistEntryDto, errorMessage } from 'sdk';
 import { FechaPipe, ToastService, UiActions, UiBadge, UiButton, UiCalendar, UiEmpty, UiField, UiModal, UiSkeleton, UiTable, formatFecha } from 'ui';
 import { Observable, firstValueFrom } from 'rxjs';
 import { appointmentStatusLabels } from '../appointments/models/appointment-status-labels';
@@ -26,6 +26,7 @@ export class FrontDeskPage {
   readonly payment = PaymentMethod;
   private readonly appointmentsApi = inject(AppointmentsService);
   private readonly billing = inject(BillingService);
+  private readonly clinic = inject(ClinicService);
   private readonly patientsApi = inject(PatientsService);
   private readonly schedule = inject(ScheduleService);
   private readonly toasts = inject(ToastService);
@@ -37,6 +38,8 @@ export class FrontDeskPage {
   readonly appointments = signal<AppointmentDto[]>([]);
   readonly waitlist = signal<WaitlistEntryDto[]>([]);
   readonly invoices = signal<InvoiceDto[]>([]);
+  // With automatic invoicing off, front desk issues the invoice of an attended appointment by hand.
+  readonly billingEnabled = signal(false);
   readonly slots = signal<SlotDto[]>([]);
   readonly moving = signal<AppointmentDto | null>(null);
   readonly error = signal('');
@@ -56,6 +59,9 @@ export class FrontDeskPage {
 
   constructor() {
     void this.load();
+    void firstValueFrom(this.clinic.clinicProfile())
+      .then((profile) => this.billingEnabled.set(profile.billingEnabled))
+      .catch(() => undefined);
   }
 
   onQuery(value: string) {
@@ -212,6 +218,14 @@ export class FrontDeskPage {
     } finally {
       this.pending.set('');
     }
+  }
+
+  canIssue(appointment: AppointmentDto) {
+    return this.billingEnabled() && appointment.status === AppointmentStatus.Completed && !this.charge(appointment);
+  }
+
+  async issue(appointment: AppointmentDto) {
+    await this.run(`issue:${appointment.id}`, () => this.billing.issueInvoice({ appointmentId: appointment.id }));
   }
 
   async pay(item: InvoiceDto, method: PaymentMethod) {
