@@ -11,7 +11,6 @@
     <ui-field label="Documento"><input name="documentNumber" [value]="documentNumber" disabled /></ui-field>
     <ui-field label="Teléfono"><input name="phone" type="tel" inputmode="tel" [(ngModel)]="phone" (blur)="normalizePhone()" required maxlength="30" placeholder="+54 11 00000000" autocomplete="tel" /></ui-field>
     @if (error()) { <p class="text-sm text-pulse" role="alert">{{ error() }}</p> }
-    @if (saved()) { <p class="text-sm text-clinic">Guardamos tus datos.</p> }
     <ui-button type="submit" [loading]="saving()">Guardar</ui-button>
   </form>
 }

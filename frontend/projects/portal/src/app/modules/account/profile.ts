@@ -1,7 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService, PatientProfileDto, clinicaSession, errorMessage } from 'sdk';
-import { UiButton, UiField, UiSkeleton, formatPhone } from 'ui';
+import { ToastService, UiButton, UiField, UiSkeleton, formatPhone } from 'ui';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
@@ -10,10 +10,10 @@ import { firstValueFrom } from 'rxjs';
 })
 export class ProfilePage {
   private readonly auth = inject(AuthService);
+  private readonly toasts = inject(ToastService);
   readonly loading = signal(true);
   readonly saving = signal(false);
   readonly error = signal('');
-  readonly saved = signal(false);
   firstName = '';
   lastName = '';
   documentNumber = '';
@@ -31,7 +31,6 @@ export class ProfilePage {
   async save() {
     this.saving.set(true);
     this.error.set('');
-    this.saved.set(false);
     this.normalizePhone();
     try {
       const profile = await firstValueFrom(this.auth.updateProfile({
@@ -41,7 +40,7 @@ export class ProfilePage {
       }));
       this.apply(profile);
       clinicaSession.name.set(`${profile.firstName} ${profile.lastName}`.trim());
-      this.saved.set(true);
+      this.toasts.success('Perfil actualizado', 'Guardamos tus datos.');
     } catch (reason) {
       this.error.set(errorMessage(reason));
     } finally {
