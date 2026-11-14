@@ -5,6 +5,9 @@
   </div>
   <ui-tabs label="Período" [tabs]="ranges" [active]="range()" (activeChange)="pickRange($event)" />
 </header>
+<p class="-mt-2 mb-6 max-w-prose text-sm leading-relaxed text-ink/70">
+  Cómo viene la clínica en el período elegido: qué parte de los turnos se atendió, se perdió, se canceló o se movió, quién atendió, y cuánto se facturó, se cobró y falta cobrar. Sirve para ver de un vistazo si se está atendiendo y cobrando, sin leer turno por turno.
+</p>
 
 @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
 
