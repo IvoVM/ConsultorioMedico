@@ -1,8 +1,8 @@
-<header class="mb-6">
+<header class="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2">
   <h2 class="font-serif text-3xl tracking-tight">Solicitudes de turnos</h2>
-  <p class="mt-2 max-w-prose text-sm leading-relaxed text-ink/70">
-    Al aprobar, el turno queda en la agenda y asociado al documento. Si esa persona todavía no tiene ficha, se crea en ese momento. Reprogramar mueve la solicitud a un horario libre. Al denegar, el motivo le llega a quien lo pidió.
-  </p>
+  <ui-help title="Solicitudes de turnos">
+    <p>Al aprobar, el turno queda en la agenda y asociado al documento. Si esa persona todavía no tiene ficha, se crea en ese momento. Reprogramar mueve la solicitud a un horario libre. Al denegar, el motivo le llega a quien lo pidió.</p>
+  </ui-help>
 </header>
 
 @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }

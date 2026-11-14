@@ -1,16 +1,12 @@
-<header class="mb-6">
+<header class="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2">
   <h2 class="font-serif text-2xl tracking-tight">Pacientes</h2>
-  <p class="mt-2 max-w-prose text-sm leading-relaxed text-ink/70">
-    La ficha de cada paciente: documento, contacto, cobertura y contacto de emergencia. Se busca por documento, nombre, teléfono o número de afiliado, que es como lo pide la recepción. Al crear una ficha se le da al paciente una clave temporal para el portal.
-  </p>
+  <ui-help title="Pacientes">
+    <p>La ficha de cada paciente: documento, contacto, cobertura y contacto de emergencia. Se busca por documento, nombre, teléfono o número de afiliado, que es como lo pide la recepción. Al crear una ficha se le da al paciente una clave temporal para el portal.</p>
+    <p><strong>Por qué lo editás:</strong> Secretaría lo busca por documento, teléfono o afiliado, y el médico lo ve en la atención.</p>
+    <p>Si no das de alta la ficha, esa persona no puede tener <em>TURNOS</em> ni <em>HISTORIA CLÍNICA</em>.</p>
+    <p><strong>Quién más puede cargarlo:</strong> El paciente, desde el portal en <em>Registro</em>.</p>
+  </ui-help>
 </header>
-<screen-note
-  screen="Pacientes"
-  loading="Estás cargando la ficha del paciente: documento, contacto, cobertura y emergencia."
-  reason="Secretaría lo busca por documento, teléfono o afiliado, y el médico lo ve en la atención."
-  skip="Si no das de alta la ficha, esa persona no puede tener [[TURNOS]] ni [[HISTORIA CLÍNICA]]."
-  others="El paciente, desde el portal en [[Registro]]."
-/>
 
 @if (error() && !altaOpen()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
 

@@ -1,10 +1,12 @@
-<header class="mb-6">
+<header class="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2">
   <h2 class="font-serif text-2xl tracking-tight">Comprobantes</h2>
-  <p class="mt-2 max-w-prose text-sm leading-relaxed text-ink/70">
+  <ui-help title="Comprobantes">
+    <p>
     Cada fila es el cobro de una atención cerrada. Abrí uno para cobrarlo, también en partes, corregir sus ítems o el descuento mientras no tenga pagos,
     autorizarlo ante ARCA, descargar el PDF o anularlo con un motivo. Si el paciente tiene obra social, el saldo es solo lo que le toca pagar a él.
     Los anulados quedan aparte, con su motivo y la nota de crédito si estaban autorizados.
-  </p>
+    </p>
+  </ui-help>
 </header>
 
 <ui-tabs class="mb-5" label="Comprobantes" [tabs]="tabs" [active]="tab()" (activeChange)="setTab($event)" />

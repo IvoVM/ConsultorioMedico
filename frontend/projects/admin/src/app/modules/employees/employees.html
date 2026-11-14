@@ -1,15 +1,11 @@
-<header class="mb-6">
+<header class="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2">
   <h2 class="font-serif text-2xl tracking-tight">Empleados</h2>
-  <p class="mt-2 max-w-prose text-sm leading-relaxed text-ink/70">
-    Las personas que trabajan en la clínica: médicos, secretaría y administradores, con su documento, rol, especialidad y si siguen activos. Cada uno entra con su documento, y un médico activo con especialidad es el que aparece para reservar turnos. Dar de baja corta su acceso sin borrar lo que atendió.
-  </p>
+  <ui-help title="Empleados">
+    <p>Las personas que trabajan en la clínica: médicos, secretaría y administradores, con su documento, rol, especialidad y si siguen activos. Cada uno entra con su documento, y un médico activo con especialidad es el que aparece para reservar turnos. Dar de baja corta su acceso sin borrar lo que atendió.</p>
+    <p><strong>Por qué lo editás:</strong> Sin empleados no hay quien atienda, arme la agenda ni ingrese al consultorio.</p>
+    <p>Si no los cargás, no aparecen <em>TURNOS</em> para reservar ni profesionales para asignar a una especialidad.</p>
+  </ui-help>
 </header>
-<screen-note
-  screen="Empleados"
-  loading="Estás cargando a las personas que trabajan en la clínica: médicos, secretaría y administradores."
-  reason="Sin empleados no hay quien atienda, arme la agenda ni ingrese al consultorio."
-  skip="Si no los cargás, no aparecen [[TURNOS]] para reservar ni profesionales para asignar a una especialidad."
-/>
 
 <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
   <ui-field class="sm:w-80" label="Buscar">

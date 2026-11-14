@@ -1,19 +1,15 @@
-<header class="mb-6">
+<header class="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2">
   <h2 class="font-serif text-2xl tracking-tight">Agendas</h2>
-  <p class="mt-2 max-w-prose text-sm leading-relaxed text-ink/70">
-    Los días y horarios en que atiende cada profesional, y los bloqueos en los que no atiende, como un congreso o una licencia. Esos horarios son los turnos que pueden reservar los pacientes y la recepción; un bloqueo los saca de la oferta sin tocar la agenda de la semana.
-  </p>
+  <ui-help title="Agendas">
+    <p>Los días y horarios en que atiende cada profesional, y los bloqueos en los que no atiende, como un congreso o una licencia. Esos horarios son los turnos que pueden reservar los pacientes y la recepción; un bloqueo los saca de la oferta sin tocar la agenda de la semana.</p>
+    <p><strong>Por qué lo editás:</strong> Esos bloques son los <em>TURNOS</em> que el paciente puede reservar.</p>
+    <p>Si no publicás la agenda, ese médico no tiene horarios disponibles.</p>
+    <h3>Bloqueos</h3>
+    <p>Estás marcando un tramo en el que ese profesional no atiende.</p>
+    <p><strong>Por qué lo editás:</strong> En esas horas no se pueden reservar <em>TURNOS</em>.</p>
+    <p>Si no cargás el bloqueo, la agenda publicada sigue disponible.</p>
+  </ui-help>
 </header>
-<screen-note
-  screen="Agendas"
-  loading="Estás cargando los días y horarios en los que atiende cada profesional."
-  reason="Esos bloques son los [[TURNOS]] que el paciente puede reservar."
-  skip="Si no publicás la agenda, ese médico no tiene horarios disponibles."
-  nextScreen="Bloqueos"
-  nextLoading="Estás marcando un tramo en el que ese profesional no atiende."
-  nextReason="En esas horas no se pueden reservar [[TURNOS]]."
-  nextSkip="Si no cargás el bloqueo, la agenda publicada sigue disponible."
-/>
 @if (loading()) {
   <ui-skeleton label="Cargando agenda" />
 } @else if (!professionals().length) {

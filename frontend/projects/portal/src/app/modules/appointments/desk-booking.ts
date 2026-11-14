@@ -3,7 +3,7 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { PatientsService, errorMessage } from 'sdk';
-import { UiButton, UiField, formatPhone } from 'ui';
+import { UiButton, UiField, formatPhone, UiHelp } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { AppRoute, patientParams } from '../../app.routes.enum';
 
@@ -15,7 +15,7 @@ export interface DeskPatient {
 }
 
 @Component({
-  imports: [FormsModule, UiButton, UiField],
+  imports: [UiHelp, FormsModule, UiButton, UiField],
   templateUrl: './desk-booking.html',
 })
 export class DeskBookingPage {

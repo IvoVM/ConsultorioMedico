@@ -1,7 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { AppointmentDto, AppointmentStatus, AppointmentsService, TenantRole, clinicaSession, errorMessage } from 'sdk';
-import { BoardColumn, UiTone, MediaWatcherService, UiBadge, UiBoard, UiEmpty, UiIcon, UiSkeleton, UiStat, UiTable, greeting, todayLabel } from 'ui';
+import { BoardColumn, UiTone, MediaWatcherService, UiBadge, UiBoard, UiEmpty, UiIcon, UiSkeleton, UiStat, UiTable, greeting, todayLabel, UiHelp } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { appointmentStatusLabels as statusLabels, appointmentStatusTone } from '../appointments/models/appointment-status-labels';
 
@@ -13,7 +13,7 @@ const flow: { status: AppointmentStatus; tone: UiTone }[] = [
 ];
 
 @Component({
-  imports: [RouterLink, UiBadge, UiBoard, UiEmpty, UiIcon, UiSkeleton, UiStat, UiTable],
+  imports: [UiHelp, RouterLink, UiBadge, UiBoard, UiEmpty, UiIcon, UiSkeleton, UiStat, UiTable],
   selector: 'today-board',
   templateUrl: './today-board.html',
 })

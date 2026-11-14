@@ -1,3 +1,8 @@
+<ui-help class="mb-6" title="Turno">
+  <p>Estás editando la especialidad de este turno y los profesionales que lo atienden.</p>
+  <p><strong>Por qué lo editás:</strong> Sin especialidad el turno no se puede ofrecer, y sin profesionales no hay horario.</p>
+  <p>Si no lo completás, este tipo de turno no aparece para reservar.</p>
+</ui-help>
 <a class="back-link mb-6" routerLink="/organizacion/turnos">
   <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
     <path d="M16 10H5m4.5-4.5L5 10l4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
@@ -15,12 +20,6 @@
   <header class="mb-8">
     <h2 class="font-serif text-4xl leading-none tracking-tight">{{ item.name }}</h2>
     <p class="mt-3 text-sm text-ink/65">{{ item.durationMinutes }} min</p>
-    <screen-note
-      screen="Turno"
-      loading="Estás editando la especialidad de este turno y los profesionales que lo atienden."
-      reason="Sin especialidad el turno no se puede ofrecer, y sin profesionales no hay horario."
-      skip="Si no lo completás, este tipo de turno no aparece para reservar."
-    />
   </header>
 
   <div class="steps">

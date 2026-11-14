@@ -1,11 +1,11 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AppointmentsService, BookingRequestDto, BookingRequestStatus, errorMessage } from 'sdk';
-import { FechaPipe, RequestTab, RescheduleSource, TabItem, ToastService, UiButton, UiEmpty, UiField, UiModal, UiReschedule, UiSkeleton, UiTable, UiTabs, UiTone, formatFecha, deactivationLabel, expiredRequestDays, overdueLabel, requestDeactivated, requestExpired, requestTabLabels } from 'ui';
+import { FechaPipe, RequestTab, RescheduleSource, TabItem, ToastService, UiButton, UiEmpty, UiField, UiModal, UiReschedule, UiSkeleton, UiTable, UiTabs, UiTone, formatFecha, deactivationLabel, expiredRequestDays, overdueLabel, requestDeactivated, requestExpired, requestTabLabels, UiHelp } from 'ui';
 import { Observable, firstValueFrom } from 'rxjs';
 
 @Component({
-  imports: [FormsModule, FechaPipe, UiButton, UiEmpty, UiField, UiModal, UiReschedule, UiSkeleton, UiTable, UiTabs],
+  imports: [UiHelp, FormsModule, FechaPipe, UiButton, UiEmpty, UiField, UiModal, UiReschedule, UiSkeleton, UiTable, UiTabs],
   templateUrl: './desk-requests.html',
 })
 export class DeskRequestsPage {

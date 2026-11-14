@@ -20,7 +20,7 @@ import {
   clinicaSession,
   errorMessage,
 } from 'sdk';
-import { FechaPipe, MediaWatcherService, SelectOption, ToastService, UiBadge, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable, UiTabs, HistoryTab, historyTabLabels, TabItem, siteLabel, formatFecha } from 'ui';
+import { FechaPipe, MediaWatcherService, SelectOption, ToastService, UiBadge, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable, UiTabs, HistoryTab, historyTabLabels, TabItem, siteLabel, formatFecha, UiHelp } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { TablePager, listParams, queueSearch } from '../../table-pager';
 import { SortCol, SortState, nextSort } from '../../table-sort';
@@ -49,7 +49,7 @@ interface ChangeDraft {
 }
 
 @Component({
-  imports: [FormsModule, UiTabs, RouterLink, FechaPipe, SortCol, TablePager, UiBadge, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable],
+  imports: [UiHelp, FormsModule, UiTabs, RouterLink, FechaPipe, SortCol, TablePager, UiBadge, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable],
   templateUrl: './history.html',
 })
 export class AppointmentHistoryPage {

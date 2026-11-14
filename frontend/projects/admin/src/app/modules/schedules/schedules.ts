@@ -11,15 +11,14 @@ import {
   ScheduleService,
   errorMessage,
 } from 'sdk';
-import { FechaPipe, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable } from 'ui';
-import { ScreenNote } from '../../screen-note';
+import { FechaPipe, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable, UiHelp } from 'ui';
 import { TablePager, listParams, queueSearch } from '../../table-pager';
 import { SortCol, SortState, nextSort } from '../../table-sort';
 import { firstValueFrom } from 'rxjs';
 import { dayLabels } from './models/day-labels';
 
 @Component({
-  imports: [FormsModule, FechaPipe, ScreenNote, SortCol, TablePager, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable],
+  imports: [FormsModule, FechaPipe, UiHelp, SortCol, TablePager, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable],
   templateUrl: './schedules.html',
 })
 export class SchedulesPage {

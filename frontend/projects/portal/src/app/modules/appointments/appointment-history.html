@@ -1,12 +1,14 @@
-<header class="mb-6">
+<header class="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2">
   <h2 class="font-serif text-3xl tracking-tight">Historial de turnos</h2>
-  <p class="mt-2 max-w-prose text-sm leading-relaxed text-ink/70">
+  <ui-help title="Historial de turnos">
+    <p>
     @if (doctor) {
-      Los turnos de tus pacientes con vos, del más reciente al más antiguo. Buscá por nombre o documento y abrí el detalle para ver quién reservó, canceló o marcó ausente cada turno, y cuándo.
+    Los turnos de tus pacientes con vos, del más reciente al más antiguo. Buscá por nombre o documento y abrí el detalle para ver quién reservó, canceló o marcó ausente cada turno, y cuándo.
     } @else {
-      Del más reciente al más antiguo. Filtrá por especialidad, profesional, paciente o estado, y abrí el detalle para ver quién reservó, canceló o marcó ausente cada turno, y cuándo.
+    Del más reciente al más antiguo. Filtrá por especialidad, profesional, paciente o estado, y abrí el detalle para ver quién reservó, canceló o marcó ausente cada turno, y cuándo.
     }
-  </p>
+    </p>
+  </ui-help>
 </header>
 
 <ui-tabs class="mb-5" label="Turnos" [tabs]="tabs" [active]="tab()" (activeChange)="setTab($event)" />

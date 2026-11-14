@@ -1,15 +1,11 @@
-<header class="mb-6">
+<header class="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2">
   <h2 class="font-serif text-2xl tracking-tight">Obras sociales</h2>
-  <p class="mt-2 max-w-prose text-sm leading-relaxed text-ink/70">
-    Las obras sociales que la clínica acepta. Solo las permitidas se le ofrecen al paciente al reservar, y solo con los médicos afiliados a ellas. El precio y el coseguro de cada una se cargan en la ficha de la especialidad.
-  </p>
+  <ui-help title="Obras sociales">
+    <p>Las obras sociales que la clínica acepta. Solo las permitidas se le ofrecen al paciente al reservar, y solo con los médicos afiliados a ellas. El precio y el coseguro de cada una se cargan en la ficha de la especialidad.</p>
+    <p><strong>Por qué lo editás:</strong> El paciente solo ve una obra social si está permitida acá y el médico está afiliado a ella.</p>
+    <p>Si ninguna está permitida, los turnos se reservan como particular.</p>
+  </ui-help>
 </header>
-<screen-note
-  screen="Obras sociales"
-  loading="Estás eligiendo qué obras sociales puede ofrecer la clínica."
-  reason="El paciente solo ve una obra social si está permitida acá y el médico está afiliado a ella."
-  skip="Si ninguna está permitida, los turnos se reservan como particular."
-/>
 
 <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
   <ui-field class="sm:w-80" label="Buscar">

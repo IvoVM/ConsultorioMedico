@@ -13,8 +13,7 @@ import {
   SpecialtyDto,
   errorMessage,
 } from 'sdk';
-import { SelectOption, UiButton, UiEmpty, UiField, UiSelect, UiSkeleton } from 'ui';
-import { ScreenNote } from '../../screen-note';
+import { SelectOption, UiButton, UiEmpty, UiField, UiSelect, UiSkeleton, UiHelp } from 'ui';
 import { firstValueFrom } from 'rxjs';
 
 const dayLabels: Record<string, string> = {
@@ -27,7 +26,7 @@ const dayLabels: Record<string, string> = {
 };
 
 @Component({
-  imports: [FormsModule, RouterLink, ScreenNote, UiButton, UiEmpty, UiField, UiSelect, UiSkeleton],
+  imports: [FormsModule, RouterLink, UiHelp, UiButton, UiEmpty, UiField, UiSelect, UiSkeleton],
   templateUrl: './turno-detail.html',
   styleUrl: './turno-detail.css',
 })

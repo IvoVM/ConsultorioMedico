@@ -4,7 +4,7 @@ import { BillingService, ClinicService, InvoiceDto, InvoiceStatus, errorMessage 
 import { invoiceStatusLabels, voucherTypeLabels } from './models/invoice-labels';
 import { InvoiceTab, invoiceTabLabels } from './models/invoice-tab';
 import { invoiceSource, invoiceTone, invoiceView, paymentOptions, voucherNumber } from './models/invoice-view';
-import { FechaPipe, SelectOption, TabItem, UiBadge, UiButton, UiEmpty, UiField, UiInvoice, UiSelect, UiSkeleton, UiTable, UiTabs, formatMoney } from 'ui';
+import { FechaPipe, SelectOption, TabItem, UiBadge, UiButton, UiEmpty, UiField, UiInvoice, UiSelect, UiSkeleton, UiTable, UiTabs, formatMoney, UiHelp } from 'ui';
 import { TablePager, listParams, queueSearch } from '../../table-pager';
 import { SortCol, SortState, nextSort } from '../../table-sort';
 import { firstValueFrom } from 'rxjs';
@@ -13,7 +13,7 @@ import { firstValueFrom } from 'rxjs';
 const allStatuses = '';
 
 @Component({
-  imports: [FormsModule, FechaPipe, SortCol, TablePager, UiBadge, UiButton, UiEmpty, UiField, UiInvoice, UiSelect, UiSkeleton, UiTable, UiTabs],
+  imports: [UiHelp, FormsModule, FechaPipe, SortCol, TablePager, UiBadge, UiButton, UiEmpty, UiField, UiInvoice, UiSelect, UiSkeleton, UiTable, UiTabs],
   templateUrl: './invoices.html',
 })
 export class InvoicesPage {

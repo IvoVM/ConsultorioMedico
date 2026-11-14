@@ -1,8 +1,8 @@
-<header class="mb-6">
+<header class="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2">
   <h2 class="font-serif text-3xl tracking-tight">Dar un turno</h2>
-  <p class="mt-2 max-w-prose text-sm leading-relaxed text-ink/70">
-    El turno es para un paciente. Con el documento se busca si ya tiene ficha. Si no la tiene, se crea recién cuando el horario queda confirmado, y la cuenta la crea esa persona al registrarse.
-  </p>
+  <ui-help title="Dar un turno">
+    <p>El turno es para un paciente. Con el documento se busca si ya tiene ficha. Si no la tiene, se crea recién cuando el horario queda confirmado, y la cuenta la crea esa persona al registrarse.</p>
+  </ui-help>
 </header>
 
 <form class="grid max-w-xl gap-4" (ngSubmit)="lookup()">

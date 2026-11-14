@@ -1,8 +1,8 @@
-<header class="mb-6">
+<header class="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2">
   <h2 class="font-serif text-3xl tracking-tight">Mis comprobantes</h2>
-  <p class="mt-2 max-w-prose text-sm leading-relaxed text-ink/70">
-    Lo que costó cada atención, lo que cubrió tu obra social, lo que pagaste y lo que te falta. Podés ver el detalle o bajar el PDF para guardarlo.
-  </p>
+  <ui-help title="Mis comprobantes">
+    <p>Lo que costó cada atención, lo que cubrió tu obra social, lo que pagaste y lo que te falta. Podés ver el detalle o bajar el PDF para guardarlo.</p>
+  </ui-help>
 </header>
 @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
 @if (loading()) {

@@ -1,14 +1,14 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ClinicService, ClinicSettingsDto, TaxCondition, errorMessage } from 'sdk';
-import { SelectOption, TabItem, ToastService, UiButton, UiField, UiSelect, UiSkeleton, UiSwitch, UiTabs } from 'ui';
+import { SelectOption, TabItem, ToastService, UiButton, UiField, UiSelect, UiSkeleton, UiSwitch, UiTabs, UiHelp } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { clinicName } from '../../clinic-name';
 import { SettingsTab, settingsTabLabels } from './models/settings-tab';
 import { taxConditionLabels } from './models/tax-condition-labels';
 
 @Component({
-  imports: [FormsModule, UiButton, UiField, UiSelect, UiSkeleton, UiSwitch, UiTabs],
+  imports: [UiHelp, FormsModule, UiButton, UiField, UiSelect, UiSkeleton, UiSwitch, UiTabs],
   templateUrl: './settings.html',
 })
 export class SettingsPage {

@@ -1,9 +1,8 @@
-<screen-note
-  screen="Aranceles"
-  loading="Estás viendo el precio vigente de cada servicio."
-  reason="Al editarlo, ese servicio pasa a valer el monto nuevo a partir de ahora."
-  skip="Si no lo cambiás, los [[TURNOS]] se siguen cobrando al precio que ya está vigente."
-/>
+<ui-help class="mb-6" title="Aranceles">
+  <p>Estás viendo el precio vigente de cada servicio.</p>
+  <p><strong>Por qué lo editás:</strong> Al editarlo, ese servicio pasa a valer el monto nuevo a partir de ahora.</p>
+  <p>Si no lo cambiás, los <em>TURNOS</em> se siguen cobrando al precio que ya está vigente.</p>
+</ui-help>
 @if (error() && !editing()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
 
 <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end">

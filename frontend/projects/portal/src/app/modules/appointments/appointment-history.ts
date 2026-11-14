@@ -15,7 +15,7 @@ import {
   clinicaSession,
   errorMessage,
 } from 'sdk';
-import { FechaPipe, SelectOption, UiBadge, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable, UiTabs, HistoryTab, historyTabLabels, TabItem, siteLabel } from 'ui';
+import { FechaPipe, SelectOption, UiBadge, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable, UiTabs, HistoryTab, historyTabLabels, TabItem, siteLabel, UiHelp } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { appointmentStatusLabels } from './models/appointment-status-labels';
 import { AppointmentChanges } from './appointment-changes';
@@ -25,7 +25,7 @@ const pageSize = 10;
 const searchDelay = 300;
 
 @Component({
-  imports: [FormsModule, UiTabs, AppointmentChanges, FechaPipe, UiBadge, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable],
+  imports: [UiHelp, FormsModule, UiTabs, AppointmentChanges, FechaPipe, UiBadge, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable],
   templateUrl: './appointment-history.html',
 })
 export class AppointmentHistoryPage {

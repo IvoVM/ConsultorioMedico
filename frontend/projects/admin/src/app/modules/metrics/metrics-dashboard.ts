@@ -18,8 +18,7 @@ import {
   UiStat,
   UiTabs,
   UiTone,
-  greeting,
-} from 'ui';
+  greeting, UiHelp } from 'ui';
 import { appointmentStatusLabels } from '../appointments/models/appointment-status-labels';
 import { metricsRangeLabels, statusSlices } from './models/metrics-labels';
 
@@ -35,7 +34,7 @@ const longDate = new Intl.DateTimeFormat('es-AR', { weekday: 'long', day: 'numer
 // What happened to the period's appointments, who saw the patients, and how much was invoiced and collected.
 @Component({
   selector: 'metrics-dashboard',
-  imports: [UiBarList, UiChart, UiDonut, UiEmpty, UiIcon, UiSkeleton, UiStat, UiTabs],
+  imports: [UiHelp, UiBarList, UiChart, UiDonut, UiEmpty, UiIcon, UiSkeleton, UiStat, UiTabs],
   templateUrl: './metrics-dashboard.html',
 })
 export class MetricsDashboard {

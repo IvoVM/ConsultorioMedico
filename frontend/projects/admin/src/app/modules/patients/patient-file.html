@@ -23,13 +23,11 @@
         @if (age() !== null) { <span>{{ age() }} años</span> }
         <span>{{ f.phone }}</span>
       </p>
-      <p class="mt-3 max-w-prose text-sm leading-relaxed text-ink/70">Los datos personales, la cobertura y el contacto de emergencia de este paciente. Es lo que ven la recepción al darle un turno y el médico al atenderlo.</p>
-      <screen-note
-        screen="Ficha del paciente"
-        loading="Estás editando la ficha de este paciente: datos, cobertura, emergencia e historia."
-        reason="Secretaría y el médico ven lo que cambies acá."
-        skip="Si no guardás, queda la ficha anterior."
-      />
+      <ui-help class="mt-3" title="Ficha del paciente">
+        <p>Los datos personales, la cobertura y el contacto de emergencia de este paciente. Es lo que ven la recepción al darle un turno y el médico al atenderlo.</p>
+        <p><strong>Por qué lo editás:</strong> Secretaría y el médico ven lo que cambies acá.</p>
+        <p>Si no guardás, queda la ficha anterior.</p>
+      </ui-help>
       @if (saved()) {
         <p class="saved-note mt-3" role="status">
           <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path class="check-draw" d="M4.5 10.5l3.5 3.5 7.5-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>

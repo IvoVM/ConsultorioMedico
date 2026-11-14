@@ -1,13 +1,13 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { BillingService, InvoiceDto, InvoiceStatus, errorMessage } from 'sdk';
-import { FechaPipe, ToastService, UiBadge, UiButton, UiEmpty, UiInvoice, UiSkeleton, formatMoney } from 'ui';
+import { FechaPipe, ToastService, UiBadge, UiButton, UiEmpty, UiInvoice, UiSkeleton, formatMoney, UiHelp } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { invoiceStatusLabels } from './models/invoice-labels';
 import { downloadInvoicePdf, invoiceSource, invoiceTitle, invoiceTone, invoiceView } from './models/invoice-view';
 
 // The patient's own invoices: what each visit cost, what they paid and what they still owe, with the PDF to keep.
 @Component({
-  imports: [FechaPipe, UiBadge, UiButton, UiEmpty, UiInvoice, UiSkeleton],
+  imports: [UiHelp, FechaPipe, UiBadge, UiButton, UiEmpty, UiInvoice, UiSkeleton],
   templateUrl: './my-invoices.html',
 })
 export class MyInvoicesPage {

@@ -1,15 +1,11 @@
-<header class="mb-6">
+<header class="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2">
   <h2 class="font-serif text-2xl tracking-tight">{{ sectionLabel() }}</h2>
-  <p class="mt-2 max-w-prose text-sm leading-relaxed text-ink/70">
-    Los servicios que ofrece la clínica en cada sede, como consultorios externos, vacunatorio o diagnóstico por imágenes. Sirven para dejar registrado qué se atiende y dónde.
-  </p>
+  <ui-help [title]="sectionLabel()">
+    <p>Los servicios que ofrece la clínica en cada sede, como consultorios externos, vacunatorio o diagnóstico por imágenes. Sirven para dejar registrado qué se atiende y dónde.</p>
+    <p><strong>Por qué lo editás:</strong> Sirven para ver qué se atiende en cada sede y para ordenar la organización.</p>
+    <p>Si no los cargás, esta lista queda vacía y no queda registrado qué ofrece la clínica.</p>
+  </ui-help>
 </header>
-<screen-note
-  screen="Servicios"
-  loading="Estás cargando los servicios que ofrece el consultorio, como consultorios externos, vacunatorio o imágenes."
-  reason="Sirven para ver qué se atiende en cada sede y para ordenar la organización."
-  skip="Si no los cargás, esta lista queda vacía y no queda registrado qué ofrece la clínica."
-/>
 
 @if (section() === 'servicios') {
   <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">

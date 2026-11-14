@@ -12,14 +12,13 @@ import {
   SpecialtyDto,
   errorMessage,
 } from 'sdk';
-import { SelectOption, UiActions, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable } from 'ui';
-import { ScreenNote } from '../../screen-note';
+import { SelectOption, UiActions, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable, UiHelp } from 'ui';
 import { firstValueFrom } from 'rxjs';
 
 type Dialog = 'duration' | 'price' | 'service';
 
 @Component({
-  imports: [FormsModule, RouterLink, ScreenNote, UiActions, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable],
+  imports: [FormsModule, RouterLink, UiHelp, UiActions, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable],
   templateUrl: './specialty-detail.html',
   styleUrl: './specialty-detail.css',
 })

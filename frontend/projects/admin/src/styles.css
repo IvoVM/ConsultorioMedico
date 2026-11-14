@@ -441,7 +441,3 @@ tbody tr.quick-row:hover {
   to { background-position: -50% 0; }
 }
 
-
-body:has(.save-bar) screen-note {
-  bottom: 6rem;
-}

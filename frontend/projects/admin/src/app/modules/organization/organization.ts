@@ -3,15 +3,14 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MedicalServiceDto, OrganizationService, errorMessage } from 'sdk';
-import { UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable } from 'ui';
-import { ScreenNote } from '../../screen-note';
+import { UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable, UiHelp } from 'ui';
 import { TablePager, listParams, queueSearch } from '../../table-pager';
 import { SortCol, SortState, nextSort } from '../../table-sort';
 import { Observable, firstValueFrom } from 'rxjs';
 import { isOrganizationSection, organizationSections } from './models/section';
 
 @Component({
-  imports: [FormsModule, ScreenNote, SortCol, TablePager, UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable],
+  imports: [FormsModule, UiHelp, SortCol, TablePager, UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable],
   templateUrl: './organization.html',
 })
 export class OrganizationPage {

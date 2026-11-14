@@ -1,14 +1,13 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { InsurerDto, OrganizationService, errorMessage } from 'sdk';
-import { UiBadge, UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable } from 'ui';
-import { ScreenNote } from '../../screen-note';
+import { UiBadge, UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable, UiHelp } from 'ui';
 import { TablePager, listParams, queueSearch } from '../../table-pager';
 import { SortCol, SortState, nextSort } from '../../table-sort';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
-  imports: [FormsModule, ScreenNote, SortCol, TablePager, UiBadge, UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable],
+  imports: [FormsModule, UiHelp, SortCol, TablePager, UiBadge, UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable],
   templateUrl: './insurers.html',
 })
 export class InsurersPage {

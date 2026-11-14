@@ -2,15 +2,14 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { MedicalRecordDto, MedicalRecordsService, PatientsService, errorMessage } from 'sdk';
-import { MediaWatcherService, UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable, formatPhone } from 'ui';
-import { ScreenNote } from '../../screen-note';
+import { MediaWatcherService, UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable, formatPhone, UiHelp } from 'ui';
 import { TablePager, listParams, queueSearch } from '../../table-pager';
 import { SortCol, SortState, nextSort } from '../../table-sort';
 import { firstValueFrom } from 'rxjs';
 import { age } from '../medical-records/models/medical-record-form';
 
 @Component({
-  imports: [FormsModule, RouterLink, ScreenNote, SortCol, TablePager, UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable],
+  imports: [FormsModule, RouterLink, UiHelp, SortCol, TablePager, UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable],
   templateUrl: './patients.html',
 })
 export class PatientsPage {

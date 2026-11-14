@@ -1,8 +1,8 @@
-<header class="mb-6">
+<header class="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2">
   <h2 class="font-serif text-2xl tracking-tight">Historial de turnos</h2>
-  <p class="mt-2 max-w-prose text-sm leading-relaxed text-ink/70">
-    Cada fila es un turno del consultorio, del más reciente al más antiguo. Filtrá por especialidad, profesional, paciente o estado, y abrí el detalle para ver quién lo reservó, canceló o marcó ausente, y cuándo.
-  </p>
+  <ui-help title="Historial de turnos">
+    <p>Cada fila es un turno del consultorio, del más reciente al más antiguo. Filtrá por especialidad, profesional, paciente o estado, y abrí el detalle para ver quién lo reservó, canceló o marcó ausente, y cuándo.</p>
+  </ui-help>
 </header>
 
 <ui-tabs class="mb-5" label="Turnos" [tabs]="tabs" [active]="tab()" (activeChange)="setTab($event)" />

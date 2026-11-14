@@ -1,13 +1,13 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuditEntryDto, AuditService, errorMessage } from 'sdk';
-import { FechaPipe, UiEmpty, UiField, UiSkeleton, UiTable } from 'ui';
+import { FechaPipe, UiEmpty, UiField, UiSkeleton, UiTable, UiHelp } from 'ui';
 import { TablePager, listParams, queueSearch } from '../../table-pager';
 import { SortCol, SortState, nextSort } from '../../table-sort';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
-  imports: [FormsModule, FechaPipe, SortCol, TablePager, UiEmpty, UiField, UiSkeleton, UiTable],
+  imports: [UiHelp, FormsModule, FechaPipe, SortCol, TablePager, UiEmpty, UiField, UiSkeleton, UiTable],
   templateUrl: './audit-log.html',
 })
 export class AuditLogPage {

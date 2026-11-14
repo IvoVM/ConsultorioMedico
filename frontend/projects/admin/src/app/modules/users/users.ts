@@ -1,14 +1,14 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AccountUserDto, UsersService, errorMessage } from 'sdk';
-import { UiActions, UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable } from 'ui';
+import { UiActions, UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable, UiHelp } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { TablePager, listParams, queueSearch } from '../../table-pager';
 import { SortCol, SortState, nextSort } from '../../table-sort';
 import { roleLabels } from '../employees/models/role-labels';
 
 @Component({
-  imports: [FormsModule, SortCol, TablePager, UiActions, UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable],
+  imports: [UiHelp, FormsModule, SortCol, TablePager, UiActions, UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable],
   templateUrl: './users.html',
 })
 export class UsersPage {

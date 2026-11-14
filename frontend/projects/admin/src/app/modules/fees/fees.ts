@@ -1,14 +1,13 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BillingService, FeeRowDto, errorMessage } from 'sdk';
-import { FechaPipe, UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable } from 'ui';
-import { ScreenNote } from '../../screen-note';
+import { FechaPipe, UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable, UiHelp } from 'ui';
 import { TablePager, listParams, queueSearch } from '../../table-pager';
 import { SortCol, SortState, nextSort } from '../../table-sort';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
-  imports: [FormsModule, FechaPipe, ScreenNote, SortCol, TablePager, UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable],
+  imports: [FormsModule, FechaPipe, UiHelp, SortCol, TablePager, UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable],
   templateUrl: './fees.html',
 })
 export class FeesPage {

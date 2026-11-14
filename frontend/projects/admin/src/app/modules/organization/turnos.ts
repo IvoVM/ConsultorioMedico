@@ -2,14 +2,13 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AppointmentKind, AppointmentTypeRowDto, OrganizationService, errorMessage } from 'sdk';
-import { MediaWatcherService, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable } from 'ui';
-import { ScreenNote } from '../../screen-note';
+import { MediaWatcherService, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable, UiHelp } from 'ui';
 import { TablePager, listParams, queueSearch } from '../../table-pager';
 import { SortCol, SortState, nextSort } from '../../table-sort';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
-  imports: [FormsModule, RouterLink, ScreenNote, SortCol, TablePager, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable],
+  imports: [FormsModule, RouterLink, UiHelp, SortCol, TablePager, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable],
   templateUrl: './turnos.html',
 })
 export class TurnosPage {
