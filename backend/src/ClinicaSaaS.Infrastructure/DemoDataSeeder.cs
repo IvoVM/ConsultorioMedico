@@ -27,6 +27,13 @@ public class DemoDataSeeder(TenantDbContext db, UserManager<TenantUser> users)
         var traumaId = Guid.NewGuid();
         var cardioId = Guid.NewGuid();
 
+        // Specialties are saved first: each doctor's account is saved right away and points to one.
+        var clinica = AddSpecialty(clinicaId, "Clínica médica");
+        var pediatria = AddSpecialty(pediatriaId, "Pediatría");
+        var trauma = AddSpecialty(traumaId, "Traumatología");
+        var cardio = AddSpecialty(cardioId, "Cardiología");
+        await db.SaveChangesAsync(ct);
+
         var martin = await AccountAsync("medico@demo.local", "Martín", "Ríos", TenantRole.Doctor, "MN 12345", clinicaId, ct);
         var elena = await AccountAsync("elena.vazquez@demo.local", "Elena", "Vázquez", TenantRole.Doctor, "MN 22810", pediatriaId, ct);
         var julian = await AccountAsync("julian.costa@demo.local", "Julián", "Costa", TenantRole.Doctor, "MN 33402", traumaId, ct);
@@ -60,10 +67,6 @@ public class DemoDataSeeder(TenantDbContext db, UserManager<TenantUser> users)
             Service(main.Id, "Vacunatorio"),
             Service(anexo.Id, "Diagnóstico por imágenes"));
 
-        var clinica = AddSpecialty(clinicaId, "Clínica médica");
-        var pediatria = AddSpecialty(pediatriaId, "Pediatría");
-        var trauma = AddSpecialty(traumaId, "Traumatología");
-        var cardio = AddSpecialty(cardioId, "Cardiología");
         var consulta = AddType("Consulta clínica", 20, clinica.Id, AppointmentKind.Consulta);
         var control = AddType("Control", 15, clinica.Id, AppointmentKind.Consulta);
         var nino = AddType("Consulta pediátrica", 30, pediatria.Id, AppointmentKind.Consulta);

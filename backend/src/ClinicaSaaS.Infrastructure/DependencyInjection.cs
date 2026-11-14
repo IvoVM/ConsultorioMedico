@@ -114,6 +114,7 @@ public class ClinicSeeder(TenantDbContext db, UserManager<TenantUser> users, ICo
         await new DemoDataSeeder(db, users).SeedAsync(password, zone, admin?.Id, ct);
         await EnsureStaffDocuments(adminEmail, ct);
         await InsurerCatalog.EnsureAsync(db, ct);
+        await new BillingDemoSeeder(db, zone, configuration["Clinic:Name"] ?? "Consultorio demo").SeedAsync(ct);
     }
 
     private async Task<TenantUser> EnsureUserAsync(
