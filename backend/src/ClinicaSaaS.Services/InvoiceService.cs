@@ -28,10 +28,12 @@ public class InvoiceService(
 
     // Search reads the patient, their document, the total or the voucher number; the status is a filter
     // sent as an InvoiceStatus value, so no label is compared here.
-    public async Task<object> InvoicesResultAsync(ListQuery query, CancellationToken ct)
+    public async Task<object> InvoicesResultAsync(ListQuery query, bool voided, CancellationToken ct)
     {
         if (!query.Paged) return await InvoicesAsync(ct);
-        var source = store.Invoices.AsQueryable();
+        var source = voided
+            ? store.Invoices.Where(i => i.Status == InvoiceStatus.Voided)
+            : store.Invoices.Where(i => i.Status != InvoiceStatus.Voided);
         if (Enum.TryParse<InvoiceStatus>(query.Filter, out var status))
             source = source.Where(i => i.Status == status);
         if (query.Term is string term)
@@ -50,6 +52,8 @@ public class InvoiceService(
             ("number", true) => source.OrderBy(i => i.Number == null).ThenByDescending(i => i.Number).ThenByDescending(i => i.CreatedAt),
             ("date", false) => source.OrderBy(i => i.CreatedAt),
             ("date", true) => source.OrderByDescending(i => i.CreatedAt),
+            ("voided", false) => source.OrderBy(i => i.VoidedAt),
+            ("voided", true) => source.OrderByDescending(i => i.VoidedAt),
             ("patient", true) => source.OrderByDescending(i => i.Client.LastName).ThenByDescending(i => i.Client.FirstName),
             _ => source.OrderBy(i => i.Client.LastName).ThenBy(i => i.Client.FirstName)
         };

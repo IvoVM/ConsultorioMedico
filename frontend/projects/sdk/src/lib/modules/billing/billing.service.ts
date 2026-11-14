@@ -30,7 +30,7 @@ export class BillingService extends ApiClient {
     return this.http.get<InvoiceDto[]>(`${this.base}/api/comprobantes`);
   }
 
-  invoicesPage(query: ListParams) {
+  invoicesPage(query: ListParams & { voided?: boolean }) {
     return this.http.get<PageDto<InvoiceDto>>(`${this.base}/api/comprobantes${queryString(query)}`);
   }
 

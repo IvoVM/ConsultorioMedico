@@ -24,8 +24,9 @@ public class BillingController(FeeService fees, InvoiceService invoices) : ApiCo
 
     [Authorize(Roles = Desk)]
     [HttpGet("comprobantes")]
-    public Task<IActionResult> Invoices([FromQuery] ListQuery query, CancellationToken ct) =>
-        Run(() => invoices.InvoicesResultAsync(query, ct));
+    // The list keeps voided invoices apart: without voided it holds the ones in force, with it only the voided.
+    public Task<IActionResult> Invoices([FromQuery] ListQuery query, [FromQuery] bool voided, CancellationToken ct) =>
+        Run(() => invoices.InvoicesResultAsync(query, voided, ct));
 
     [Authorize(Roles = AppRoles.Patient)]
     [HttpGet("comprobantes/mios")]

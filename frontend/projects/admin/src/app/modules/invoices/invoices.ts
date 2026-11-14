@@ -1,18 +1,19 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BillingService, ClinicService, InvoiceDto, InvoiceStatus, errorMessage } from 'sdk';
-import { invoiceStatusLabels } from './models/invoice-labels';
+import { invoiceStatusLabels, voucherTypeLabels } from './models/invoice-labels';
+import { InvoiceTab, invoiceTabLabels } from './models/invoice-tab';
 import { invoiceSource, invoiceTone, invoiceView, paymentOptions, voucherNumber } from './models/invoice-view';
-import { FechaPipe, SelectOption, UiBadge, UiButton, UiEmpty, UiField, UiInvoice, UiSelect, UiSkeleton, UiTable, formatMoney } from 'ui';
+import { FechaPipe, SelectOption, TabItem, UiBadge, UiButton, UiEmpty, UiField, UiInvoice, UiSelect, UiSkeleton, UiTable, UiTabs, formatMoney } from 'ui';
 import { TablePager, listParams, queueSearch } from '../../table-pager';
 import { SortCol, SortState, nextSort } from '../../table-sort';
 import { firstValueFrom } from 'rxjs';
 
-// Every status, plus an empty value for all of them; the status goes to the API as its enum value.
+// Every status still in force, plus an empty value for all of them; the status goes to the API as its enum value.
 const allStatuses = '';
 
 @Component({
-  imports: [FormsModule, FechaPipe, SortCol, TablePager, UiBadge, UiButton, UiEmpty, UiField, UiInvoice, UiSelect, UiSkeleton, UiTable],
+  imports: [FormsModule, FechaPipe, SortCol, TablePager, UiBadge, UiButton, UiEmpty, UiField, UiInvoice, UiSelect, UiSkeleton, UiTable, UiTabs],
   templateUrl: './invoices.html',
 })
 export class InvoicesPage {
@@ -26,8 +27,18 @@ export class InvoicesPage {
   readonly paymentOptions = paymentOptions;
   readonly statusOptions: SelectOption[] = [
     { value: allStatuses, label: 'Todos los estados' },
-    ...Object.values(InvoiceStatus).map((value) => ({ value, label: invoiceStatusLabels[value] })),
+    ...Object.values(InvoiceStatus)
+      .filter((value) => value !== InvoiceStatus.Voided)
+      .map((value) => ({ value, label: invoiceStatusLabels[value] })),
   ];
+  readonly invoiceTab = InvoiceTab;
+  readonly tabs: TabItem[] = [
+    { key: InvoiceTab.Vigentes, label: invoiceTabLabels[InvoiceTab.Vigentes], icon: 'receipt_long' },
+    { key: InvoiceTab.Anulados, label: invoiceTabLabels[InvoiceTab.Anulados], icon: 'block' },
+  ];
+  readonly tab = signal<string>(InvoiceTab.Vigentes);
+  readonly voided = computed(() => this.tab() === InvoiceTab.Anulados);
+  readonly voucherLabels = voucherTypeLabels;
   readonly invoices = signal<InvoiceDto[]>([]);
   readonly total = signal(0);
   readonly page = signal(1);
@@ -71,6 +82,15 @@ export class InvoicesPage {
     queueSearch(this.searchHost, () => void this.load());
   }
 
+  setTab(value: string) {
+    this.tab.set(value);
+    this.status.set(allStatuses);
+    this.sort.set({ key: value === InvoiceTab.Anulados ? 'voided' : 'date', dir: 'desc' });
+    this.page.set(1);
+    this.loading.set(true);
+    void this.load();
+  }
+
   onStatus(value: string) {
     this.status.set(value);
     this.page.set(1);
@@ -84,7 +104,7 @@ export class InvoicesPage {
 
   private async load() {
     try {
-      const result = await firstValueFrom(this.billing.invoicesPage(listParams(this.page(), this.sort(), this.query(), this.status())));
+      const result = await firstValueFrom(this.billing.invoicesPage({ ...listParams(this.page(), this.sort(), this.query(), this.status()), voided: this.voided() || undefined }));
       this.invoices.set(result.items);
       this.total.set(result.total);
       this.page.set(result.page);
