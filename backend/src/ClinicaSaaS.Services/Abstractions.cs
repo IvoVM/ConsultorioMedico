@@ -171,8 +171,32 @@ public interface IBillingStore
     void AddPayment(InvoicePayment payment);
     void AddItem(InvoiceItem item);
     void RemoveItems(IEnumerable<InvoiceItem> items);
+    IQueryable<Receipt> Receipts { get; }
+    void AddReceipt(Receipt receipt);
+    Task<Receipt?> GetReceiptAsync(Guid id, CancellationToken ct);
+    // Tracked invoices with their items, payments and plans.
+    Task<List<Invoice>> GetInvoicesAsync(IReadOnlyCollection<Guid> ids, CancellationToken ct);
+    IQueryable<PaymentPlan> Plans { get; }
+    void AddPlan(PaymentPlan plan);
+    IQueryable<CashSession> CashSessions { get; }
+    Task<CashSession?> GetCashSessionAsync(Guid id, CancellationToken ct);
+    void AddCashSession(CashSession session);
+    void AddCashMovement(CashMovement movement);
+    IQueryable<CardSettlement> Settlements { get; }
+    IQueryable<CardSettlementLine> SettlementLines { get; }
+    Task<CardSettlementLine?> GetSettlementLineAsync(Guid id, CancellationToken ct);
+    void AddSettlement(CardSettlement settlement);
     Task SaveAsync(CancellationToken ct);
 }
+
+// The card processor that settles card payments (Prisma, Fiserv…), or a simulation of it.
+public interface ICardProcessor
+{
+    bool Simulated { get; }
+    Task<IReadOnlyList<SettlementLineData>> SettlementAsync(CardBrand brand, DateOnly from, DateOnly to, CancellationToken ct);
+}
+
+public record SettlementLineData(string Batch, string Coupon, int Installments, DateOnly ChargedOn, DateOnly PaidOn, decimal Gross, decimal Fee);
 
 // The tax authority that numbers and authorizes fiscal vouchers (AFIP/ARCA web services, or a simulation).
 public interface IFiscalAuthority

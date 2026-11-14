@@ -14,7 +14,7 @@ public record TenantAccount(
 }
 
 public record ClinicDto(string Slug, string Name, bool BillingEnabled, bool FiscalEnabled);
-public record ClinicSettingsDto(string Name, bool BillingEnabled, bool AutoInvoice, bool FiscalEnabled, string? TaxId, TaxCondition? TaxCondition, int? PointOfSale);
+public record ClinicSettingsDto(string Name, bool BillingEnabled, bool AutoInvoice, bool FiscalEnabled, string? TaxId, TaxCondition? TaxCondition, int? PointOfSale, bool AutoAuthorize);
 public record SaveClinicSettingsCommand(
     string Name,
     bool BillingEnabled,
@@ -22,7 +22,8 @@ public record SaveClinicSettingsCommand(
     bool FiscalEnabled = false,
     string? TaxId = null,
     TaxCondition? TaxCondition = null,
-    int? PointOfSale = null);
+    int? PointOfSale = null,
+    bool AutoAuthorize = false);
 
 public record LoginCommand(string DocumentNumber, string Password, LoginAccount? Account = null);
 public record ChangePasswordCommand(string Password);
@@ -262,7 +263,9 @@ public record InsurerPriceDto(string Payer, decimal Amount, DateOnly EffectiveFr
 public record PrestacionDto(Guid Id, string Name, int DurationMinutes, decimal? Particular, DateOnly? ParticularFrom, IReadOnlyList<InsurerPriceDto> Insurers, AppointmentKind Kind);
 public record PrestacionesDto(IReadOnlyList<PrestacionDto> Items, IReadOnlyList<string> Insurers);
 public record InvoiceItemDto(string Description, int Quantity, decimal UnitPrice, decimal Amount);
-public record InvoicePaymentDto(Guid Id, decimal Amount, PaymentMethod Method, DateTimeOffset PaidAt);
+public record InvoicePaymentDto(Guid Id, decimal Amount, PaymentMethod Method, DateTimeOffset PaidAt, CardBrand? CardBrand, int? CardInstallments);
+public record InstallmentDto(int Number, DateOnly DueDate, decimal Amount, decimal Paid, InstallmentStatus Status);
+public record PaymentPlanDto(Guid Id, decimal Amount, DateTimeOffset CreatedAt, IReadOnlyList<InstallmentDto> Installments);
 public record InvoiceDto(
     Guid Id,
     Guid AppointmentId,
@@ -296,9 +299,87 @@ public record InvoiceDto(
     string? CreditNoteCae,
     bool Editable,
     IReadOnlyList<InvoiceItemDto> Items,
-    IReadOnlyList<InvoicePaymentDto> Payments);
-// Without an amount the payment covers whatever the patient still owes.
-public record PayInvoiceCommand(PaymentMethod Method, decimal? Amount = null);
+    IReadOnlyList<InvoicePaymentDto> Payments,
+    PaymentPlanDto? Plan,
+    // The patient's credit not yet applied to any invoice, which can pay this one.
+    decimal PatientCredit);
+// Without an amount the payment covers whatever the patient still owes. A card payment carries the
+// brand, installments, batch and coupon the processor settles it by.
+public record PayInvoiceCommand(
+    PaymentMethod Method,
+    decimal? Amount = null,
+    CardBrand? CardBrand = null,
+    int? CardInstallments = null,
+    string? CardBatch = null,
+    string? CardCoupon = null);
+public record CreatePlanCommand(int Installments, DateOnly FirstDueDate);
+// Without an amount it applies as much credit as the invoice still owes.
+public record ApplyCreditCommand(decimal? Amount = null);
+
+public record AccountMovementDto(
+    DateTimeOffset At,
+    AccountMovementKind Kind,
+    decimal Debit,
+    decimal Credit,
+    decimal Balance,
+    Guid? InvoiceId,
+    FiscalVoucherType? VoucherType,
+    int? PointOfSale,
+    int? Number,
+    PaymentMethod? Method,
+    CardBrand? CardBrand,
+    string? Note);
+public record AccountDto(
+    Guid PatientId,
+    string Patient,
+    string PatientDocument,
+    // What the patient owes across their invoices, and the money they paid that no invoice has used yet.
+    decimal Owed,
+    decimal Credit,
+    decimal Overdue,
+    IReadOnlyList<AccountMovementDto> Movements,
+    IReadOnlyList<InvoiceDto> Invoices);
+// Money on account: applied to the listed invoices, or to the oldest ones owing, and the rest kept as credit.
+public record AccountPaymentCommand(
+    Guid LocationId,
+    decimal Amount,
+    PaymentMethod Method,
+    CardBrand? CardBrand = null,
+    int? CardInstallments = null,
+    string? CardBatch = null,
+    string? CardCoupon = null,
+    IReadOnlyList<Guid>? InvoiceIds = null,
+    string? Note = null);
+public record RefundCommand(Guid LocationId, decimal Amount, PaymentMethod Method, string Reason);
+
+public record CashTotalDto(PaymentMethod Method, decimal In, decimal Out, decimal Net);
+public record CashMovementDto(Guid Id, CashMovementKind Kind, PaymentMethod Method, decimal Amount, string Description, DateTimeOffset At, string? User);
+public record CashSessionDto(
+    Guid Id,
+    Guid LocationId,
+    string Location,
+    CashSessionStatus Status,
+    decimal OpeningCash,
+    DateTimeOffset OpenedAt,
+    string? OpenedBy,
+    DateTimeOffset? ClosedAt,
+    string? ClosedBy,
+    decimal ExpectedCash,
+    decimal? CountedCash,
+    decimal? Difference,
+    string? Notes,
+    IReadOnlyList<CashTotalDto> Totals,
+    IReadOnlyList<CashMovementDto> Movements);
+public record OpenCashCommand(Guid LocationId, decimal OpeningCash);
+public record CashMovementCommand(CashMovementKind Kind, PaymentMethod Method, decimal Amount, string Description);
+public record CloseCashCommand(decimal CountedCash, string? Notes);
+
+public record SettlementLineDto(Guid Id, string Batch, string Coupon, int Installments, DateOnly ChargedOn, DateOnly PaidOn, decimal Gross, decimal Fee, decimal Net, Guid? ReceiptId, string? Patient);
+public record CardSettlementDto(Guid Id, CardBrand Brand, DateOnly From, DateOnly To, DateTimeOffset ImportedAt, bool Simulated, decimal Gross, decimal Fee, decimal Net, IReadOnlyList<SettlementLineDto> Lines);
+public record CardReceiptDto(Guid Id, string Patient, CardBrand Brand, int Installments, string Batch, string Coupon, decimal Amount, DateTimeOffset PaidAt, bool Reconciled);
+public record ReconciliationDto(IReadOnlyList<CardSettlementDto> Settlements, IReadOnlyList<CardReceiptDto> Pending, bool Simulated);
+public record ImportSettlementCommand(CardBrand Brand, DateOnly From, DateOnly To);
+public record MatchLineCommand(Guid ReceiptId);
 public record IssueInvoiceCommand(Guid AppointmentId);
 public record InvoiceLineCommand(string Description, int Quantity, decimal UnitPrice);
 public record UpdateInvoiceCommand(IReadOnlyList<InvoiceLineCommand> Items, decimal Discount, decimal InsurerAmount);

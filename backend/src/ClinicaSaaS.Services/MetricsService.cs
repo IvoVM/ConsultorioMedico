@@ -73,10 +73,10 @@ public class MetricsService(
             .Where(i => i.Status != InvoiceStatus.Voided && i.CreatedAt >= start && i.CreatedAt < end)
             .Select(i => new { i.CreatedAt, i.Total })
             .ToListAsync(ct);
-        // Collected is every payment received in the period, partial ones included, on invoices still in force.
-        var paid = await billing.Payments
-            .Where(p => p.Invoice!.Status != InvoiceStatus.Voided && p.PaidAt >= start && p.PaidAt < end)
-            .Select(p => new { p.PaidAt, Total = p.Amount })
+        // Collected is the money received in the period, on account or against an invoice, net of refunds.
+        var paid = await billing.Receipts
+            .Where(r => r.PaidAt >= start && r.PaidAt < end)
+            .Select(r => new { r.PaidAt, Total = r.Amount })
             .ToListAsync(ct);
         // Outstanding is what patients still owe; the insurer's share is billed to the insurer.
         var outstanding = await billing.Invoices

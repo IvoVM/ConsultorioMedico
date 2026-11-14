@@ -89,3 +89,44 @@ public enum MetricsRange
     Week,
     Month
 }
+
+// The card networks a clinic usually takes; each one settles on its own.
+public enum CardBrand
+{
+    Visa,
+    Mastercard,
+    Amex,
+    Cabal,
+    Naranja
+}
+
+public enum CashSessionStatus
+{
+    Open,
+    Closed
+}
+
+// What moved money in or out of a register: a patient's payment or refund, or an entry made by hand.
+public enum CashMovementKind
+{
+    Payment,
+    Refund,
+    Income,
+    Expense
+}
+
+public enum InstallmentStatus
+{
+    Pending,
+    Overdue,
+    Paid
+}
+
+// A line of a patient's account: an invoice owed, its voiding, a payment received or money given back.
+public enum AccountMovementKind
+{
+    Invoice,
+    Voided,
+    Payment,
+    Refund
+}

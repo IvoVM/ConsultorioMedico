@@ -8,5 +8,5 @@ public static class InvoiceItemMappingExtensions
         new(item.Description, item.Quantity, item.UnitPrice, item.Amount);
 
     public static InvoicePaymentDto MapToInvoicePaymentDto(this InvoicePayment payment) =>
-        new(payment.Id, payment.Amount, payment.Method, payment.PaidAt);
+        new(payment.Id, payment.Amount, payment.Method, payment.PaidAt, payment.Receipt?.CardBrand, payment.Receipt?.CardInstallments);
 }

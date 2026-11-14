@@ -1,10 +1,11 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { BillingService, InvoiceDto, InvoiceStatus, PaymentMethod, errorMessage } from 'sdk';
+import { BillingService, CardBrand, InstallmentStatus, InvoiceDto, InvoiceStatus, PaymentMethod, errorMessage } from 'sdk';
 import { InvoiceSource, InvoiceView, SelectOption } from 'ui';
 import { Observable, firstValueFrom } from 'rxjs';
-import { invoiceStatusLabels, paymentMethodLabels, voucherTypeLabels } from './invoice-labels';
+import { cardBrandLabels, installmentStatusLabels, invoiceStatusLabels, paymentMethodLabels, voucherTypeLabels } from './invoice-labels';
 
 export const paymentOptions: SelectOption[] = Object.values(PaymentMethod).map((value) => ({ value, label: paymentMethodLabels[value] }));
+export const cardBrandOptions: SelectOption[] = Object.values(CardBrand).map((value) => ({ value, label: cardBrandLabels[value] }));
 
 export function voucherNumber(pointOfSale?: number | null, number?: number | null) {
   return pointOfSale != null && number != null ? `${String(pointOfSale).padStart(4, '0')}-${String(number).padStart(8, '0')}` : '';
@@ -16,6 +17,10 @@ export function invoiceTitle(invoice: InvoiceDto) {
 
 export function invoiceTone(status: InvoiceStatus) {
   return status === InvoiceStatus.Paid ? 'ok' : status === InvoiceStatus.Voided ? 'muted' : 'warn';
+}
+
+export function installmentTone(status: InstallmentStatus) {
+  return status === InstallmentStatus.Paid ? 'ok' : status === InstallmentStatus.Overdue ? 'warn' : 'muted';
 }
 
 // Front desk acts on the invoice; a patient only reads it and downloads the PDF.
@@ -38,7 +43,12 @@ export function invoiceView(invoice: InvoiceDto, options: { staff: boolean; fisc
     patientAmount: invoice.patientAmount,
     paid: invoice.paid,
     balance: invoice.balance,
-    payments: invoice.payments.map((payment) => ({ ...payment, method: paymentMethodLabels[payment.method] })),
+    payments: invoice.payments.map((payment) => ({
+      ...payment,
+      method: payment.cardBrand
+        ? `${cardBrandLabels[payment.cardBrand]}${payment.cardInstallments && payment.cardInstallments > 1 ? ` en ${payment.cardInstallments} cuotas` : ''}`
+        : paymentMethodLabels[payment.method],
+    })),
     cae: invoice.cae ?? null,
     caeDueDate: invoice.caeDueDate ?? null,
     fiscalSimulated: invoice.fiscalSimulated,
@@ -50,6 +60,17 @@ export function invoiceView(invoice: InvoiceDto, options: { staff: boolean; fisc
     canPay: options.staff && live && invoice.balance > 0,
     canAuthorize: options.staff && options.fiscalEnabled && live && invoice.number == null && invoice.total > 0,
     canVoid: options.staff && live,
+    plan: invoice.plan
+      ? {
+          installments: invoice.plan.installments.map((item) => ({
+            ...item,
+            status: installmentStatusLabels[item.status],
+            tone: installmentTone(item.status),
+          })),
+        }
+      : null,
+    canPlan: options.staff && live && invoice.balance > 0 && !invoice.plan,
+    credit: options.staff ? invoice.patientCredit : 0,
   };
 }
 
@@ -82,7 +103,22 @@ export async function downloadInvoicePdf(billing: BillingService, invoice: Invoi
 export function invoiceSource(billing: BillingService, invoice: InvoiceDto, updated: (invoice: InvoiceDto) => void | Promise<void>): InvoiceSource {
   return {
     save: async (edit) => updated(await call(billing.updateInvoice(invoice.id, edit))),
-    pay: async (amount, method) => updated(await call(billing.payInvoice(invoice.id, { amount, method: method as PaymentMethod }))),
+    pay: async (amount, method, card) =>
+      updated(
+        await call(
+          billing.payInvoice(invoice.id, {
+            amount,
+            method: method as PaymentMethod,
+            cardBrand: card ? (card.brand as CardBrand) : null,
+            cardInstallments: card?.installments ?? null,
+            cardBatch: card?.batch ?? null,
+            cardCoupon: card?.coupon ?? null,
+          }),
+        ),
+      ),
+    applyCredit: async () => updated(await call(billing.applyCredit(invoice.id, {}))),
+    createPlan: async (installments, firstDueDate) => updated(await call(billing.createPlan(invoice.id, { installments, firstDueDate }))),
+    cancelPlan: async () => updated(await call(billing.cancelPlan(invoice.id))),
     authorize: async () => updated(await call(billing.authorizeInvoice(invoice.id))),
     void: async (reason) => updated(await call(billing.voidInvoice(invoice.id, { reason }))),
     pdf: () => downloadInvoicePdf(billing, invoice),

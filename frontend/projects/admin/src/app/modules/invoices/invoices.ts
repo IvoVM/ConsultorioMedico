@@ -1,9 +1,9 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { BillingService, ClinicService, InvoiceDto, InvoiceStatus, errorMessage } from 'sdk';
+import { BillingService, ClinicService, InvoiceDto, InvoiceStatus, PaymentMethod, errorMessage } from 'sdk';
 import { invoiceStatusLabels, voucherTypeLabels } from './models/invoice-labels';
 import { InvoiceTab, invoiceTabLabels } from './models/invoice-tab';
-import { invoiceSource, invoiceTone, invoiceView, paymentOptions, voucherNumber } from './models/invoice-view';
+import { cardBrandOptions, invoiceSource, invoiceTone, invoiceView, paymentOptions, voucherNumber } from './models/invoice-view';
 import { FechaPipe, SelectOption, TabItem, UiBadge, UiButton, UiEmpty, UiField, UiInvoice, UiSelect, UiSkeleton, UiTable, UiTabs, formatMoney, UiHelp } from 'ui';
 import { TablePager, listParams, queueSearch } from '../../table-pager';
 import { SortCol, SortState, nextSort } from '../../table-sort';
@@ -25,6 +25,8 @@ export class InvoicesPage {
   readonly number = voucherNumber;
   readonly money = formatMoney;
   readonly paymentOptions = paymentOptions;
+  readonly brandOptions = cardBrandOptions;
+  readonly cardMethod = PaymentMethod.Card;
   readonly statusOptions: SelectOption[] = [
     { value: allStatuses, label: 'Todos los estados' },
     ...Object.values(InvoiceStatus)

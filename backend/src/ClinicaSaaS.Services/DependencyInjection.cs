@@ -60,6 +60,9 @@ public static class DependencyInjection
         services.AddScoped<ClinicalService>();
         services.AddScoped<FeeService>();
         services.AddScoped<InvoiceService>();
+        services.AddScoped<CashService>();
+        services.AddScoped<AccountService>();
+        services.AddScoped<ReconciliationService>();
         services.AddScoped<MedicalRecordsService>();
         services.AddScoped<ClinicSettingsService>();
         services.AddScoped<MetricsService>();

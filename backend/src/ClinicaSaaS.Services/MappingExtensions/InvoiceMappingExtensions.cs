@@ -6,9 +6,11 @@ namespace ClinicaSaaS.Services.MappingExtensions;
 
 public static class InvoiceMappingExtensions
 {
-    public static InvoiceDto MapToInvoiceDto(this Invoice invoice)
+    // Today decides which installments are overdue; the credit is the patient's, read apart for each page.
+    public static InvoiceDto MapToInvoiceDto(this Invoice invoice, DateOnly? today = null, decimal patientCredit = 0)
     {
         var paid = BillingRules.Total(invoice.Payments.Select(p => p.Amount));
+        var plan = invoice.Plans.Where(p => p.CancelledAt == null).OrderByDescending(p => p.CreatedAt).FirstOrDefault();
         return new(
             invoice.Id,
             invoice.AppointmentId,
@@ -42,7 +44,20 @@ public static class InvoiceMappingExtensions
             invoice.CreditNoteCae,
             BillingRules.CanEdit(invoice),
             invoice.Items.Select(item => item.MapToInvoiceItemDto()).ToList(),
-            invoice.Payments.OrderBy(p => p.PaidAt).Select(p => p.MapToInvoicePaymentDto()).ToList());
+            invoice.Payments.OrderBy(p => p.PaidAt).Select(p => p.MapToInvoicePaymentDto()).ToList(),
+            plan is null || invoice.Status == InvoiceStatus.Voided ? null : plan.MapToPlanDto(paid, today ?? DateOnly.FromDateTime(DateTime.UtcNow)),
+            invoice.Status == InvoiceStatus.Voided ? 0 : patientCredit);
+    }
+
+    public static PaymentPlanDto MapToPlanDto(this PaymentPlan plan, decimal paidOnInvoice, DateOnly today)
+    {
+        var installments = plan.Installments.OrderBy(i => i.Number).ToList();
+        var progress = PlanRules.Progress(installments.Select(i => (i.DueDate, i.Amount)).ToList(), paidOnInvoice - plan.PaidBefore, today);
+        return new PaymentPlanDto(
+            plan.Id,
+            plan.Amount,
+            plan.CreatedAt,
+            installments.Select((i, n) => new InstallmentDto(i.Number, i.DueDate, i.Amount, progress[n].Paid, progress[n].Status)).ToList());
     }
 
     public static Expression<Func<Invoice, Invoice>> MapForInvoiceDto() =>
@@ -97,7 +112,20 @@ public static class InvoiceMappingExtensions
                 Id = payment.Id,
                 Amount = payment.Amount,
                 Method = payment.Method,
-                PaidAt = payment.PaidAt
+                PaidAt = payment.PaidAt,
+                Receipt = payment.Receipt == null ? null : new Receipt
+                {
+                    CardBrand = payment.Receipt.CardBrand,
+                    CardInstallments = payment.Receipt.CardInstallments
+                }
+            }).ToList(),
+            Plans = invoice.Plans.Where(plan => plan.CancelledAt == null).Select(plan => new PaymentPlan
+            {
+                Id = plan.Id,
+                Amount = plan.Amount,
+                PaidBefore = plan.PaidBefore,
+                CreatedAt = plan.CreatedAt,
+                Installments = plan.Installments.Select(i => new PlanInstallment { Number = i.Number, DueDate = i.DueDate, Amount = i.Amount }).ToList()
             }).ToList()
         };
 }

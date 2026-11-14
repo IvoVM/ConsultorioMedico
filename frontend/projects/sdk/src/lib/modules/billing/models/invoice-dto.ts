@@ -3,6 +3,7 @@ import type { FiscalVoucherType } from './fiscal-voucher-type';
 import type { InvoiceItemDto } from './invoice-item-dto';
 import type { InvoicePaymentDto } from './invoice-payment-dto';
 import type { InvoiceStatus } from './invoice-status';
+import type { PaymentPlanDto } from './payment-plan-dto';
 
 export interface InvoiceDto {
   id: string;
@@ -38,4 +39,6 @@ export interface InvoiceDto {
   editable: boolean;
   items: InvoiceItemDto[];
   payments: InvoicePaymentDto[];
+  plan?: PaymentPlanDto | null;
+  patientCredit: number;
 }

@@ -10,8 +10,15 @@
 } @else if (invoices().length === 0) {
   <ui-empty message="Todavía no tenés comprobantes. Se generan cuando te atienden." />
 } @else {
-  @if (owed()) {
-    <p class="mb-6 text-sm">Tenés <strong class="tabular-nums">{{ money(owed()) }}</strong> pendientes de pago. Podés pagarlos en la recepción.</p>
+  @if (account(); as acc) {
+    @if (acc.owed || acc.credit || acc.overdue) {
+      <div class="mb-6 grid gap-3 sm:grid-cols-3">
+        <div class="surface px-5 py-4"><p class="text-xs font-semibold text-ink/60">Te falta pagar</p><p class="mt-1 font-serif text-2xl tabular-nums">{{ money(acc.owed) }}</p></div>
+        <div class="surface px-5 py-4"><p class="text-xs font-semibold text-ink/60">Tenés a favor</p><p class="mt-1 font-serif text-2xl tabular-nums">{{ money(acc.credit) }}</p></div>
+        <div class="surface px-5 py-4"><p class="text-xs font-semibold text-ink/60">Cuotas vencidas</p><p class="mt-1 font-serif text-2xl tabular-nums" [class.text-pulse]="acc.overdue > 0">{{ money(acc.overdue) }}</p></div>
+      </div>
+      <p class="-mt-2 mb-6 text-sm text-ink/70">Podés pagar en la recepción. Si tenés saldo a favor, se usa en tu próxima atención.</p>
+    }
   }
   <div class="space-y-4">
     @for (invoice of invoices(); track invoice.id) {
@@ -23,6 +30,7 @@
             Total {{ money(invoice.total) }}
             @if (invoice.insurerAmount) { · a tu cargo {{ money(invoice.patientAmount) }} }
             @if (invoice.balance) { · <strong>saldo {{ money(invoice.balance) }}</strong> }
+            @if (invoice.plan) { · plan en {{ invoice.plan.installments.length }} cuotas }
           </p>
         </div>
         <div class="flex flex-wrap items-center gap-3">

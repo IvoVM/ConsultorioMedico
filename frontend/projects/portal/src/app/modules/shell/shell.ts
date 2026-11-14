@@ -70,7 +70,10 @@ export class ShellPage {
         ],
       });
     }
-    if (role === TenantRole.Secretary || role === TenantRole.TenantAdmin) nodes.push({ label: 'Secretaría', path: AppRoute.Secretaria, icon: 'desk' });
+    if (role === TenantRole.Secretary || role === TenantRole.TenantAdmin) {
+      nodes.push({ label: 'Secretaría', path: AppRoute.Secretaria, icon: 'desk' });
+      nodes.push({ label: 'Caja', path: AppRoute.Caja, icon: 'point_of_sale' });
+    }
     return nodes;
   });
 

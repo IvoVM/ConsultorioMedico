@@ -33,6 +33,13 @@ public class TenantDbContext(DbContextOptions<TenantDbContext> options)
     public DbSet<Invoice> Invoices => Set<Invoice>();
     public DbSet<InvoiceItem> InvoiceItems => Set<InvoiceItem>();
     public DbSet<InvoicePayment> InvoicePayments => Set<InvoicePayment>();
+    public DbSet<Receipt> Receipts => Set<Receipt>();
+    public DbSet<PaymentPlan> PaymentPlans => Set<PaymentPlan>();
+    public DbSet<PlanInstallment> PlanInstallments => Set<PlanInstallment>();
+    public DbSet<CashSession> CashSessions => Set<CashSession>();
+    public DbSet<CashMovement> CashMovements => Set<CashMovement>();
+    public DbSet<CardSettlement> CardSettlements => Set<CardSettlement>();
+    public DbSet<CardSettlementLine> CardSettlementLines => Set<CardSettlementLine>();
     public DbSet<AuditEntry> AuditEntries => Set<AuditEntry>();
     public DbSet<RefreshSession> RefreshSessions => Set<RefreshSession>();
     public DbSet<ClinicSettings> ClinicSettings => Set<ClinicSettings>();
@@ -262,6 +269,66 @@ public class TenantDbContext(DbContextOptions<TenantDbContext> options)
             e.Property(p => p.Method).HasConversion<string>().HasMaxLength(20);
             e.HasIndex(p => p.PaidAt);
             e.HasOne(p => p.Invoice).WithMany(i => i.Payments).HasForeignKey(p => p.InvoiceId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(p => p.Receipt).WithMany(r => r.Allocations).HasForeignKey(p => p.ReceiptId).OnDelete(DeleteBehavior.Restrict);
+        });
+        builder.Entity<Receipt>(e =>
+        {
+            e.Property(r => r.Amount).HasPrecision(12, 2);
+            e.Property(r => r.Method).HasConversion<string>().HasMaxLength(20);
+            e.Property(r => r.CardBrand).HasConversion<string>().HasMaxLength(20);
+            e.Property(r => r.CardBatch).HasMaxLength(20);
+            e.Property(r => r.CardCoupon).HasMaxLength(20);
+            e.Property(r => r.Note).HasMaxLength(200);
+            e.HasIndex(r => new { r.ClientId, r.PaidAt });
+            e.HasIndex(r => r.PaidAt);
+            e.HasIndex(r => new { r.CardBrand, r.CardBatch, r.CardCoupon });
+            e.HasOne(r => r.Client).WithMany().HasForeignKey(r => r.ClientId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(r => r.Location).WithMany().HasForeignKey(r => r.LocationId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(r => r.CashSession).WithMany().HasForeignKey(r => r.CashSessionId).OnDelete(DeleteBehavior.Restrict);
+        });
+        builder.Entity<PaymentPlan>(e =>
+        {
+            e.Property(p => p.Amount).HasPrecision(12, 2);
+            e.Property(p => p.PaidBefore).HasPrecision(12, 2);
+            e.HasOne(p => p.Invoice).WithMany(i => i.Plans).HasForeignKey(p => p.InvoiceId).OnDelete(DeleteBehavior.Cascade);
+        });
+        builder.Entity<PlanInstallment>(e =>
+        {
+            e.Property(i => i.Amount).HasPrecision(12, 2);
+            e.HasOne(i => i.Plan).WithMany(p => p.Installments).HasForeignKey(i => i.PlanId).OnDelete(DeleteBehavior.Cascade);
+        });
+        builder.Entity<CashSession>(e =>
+        {
+            e.Property(s => s.Status).HasConversion<string>().HasMaxLength(20);
+            e.Property(s => s.OpeningCash).HasPrecision(12, 2);
+            e.Property(s => s.ExpectedCash).HasPrecision(12, 2);
+            e.Property(s => s.CountedCash).HasPrecision(12, 2);
+            e.Property(s => s.Notes).HasMaxLength(500);
+            // One open register per site, so every payment there lands in the same drawer.
+            e.HasIndex(s => s.LocationId).IsUnique().HasFilter("\"Status\" = 'Open'");
+            e.HasIndex(s => s.OpenedAt);
+            e.HasOne(s => s.Location).WithMany().HasForeignKey(s => s.LocationId).OnDelete(DeleteBehavior.Restrict);
+        });
+        builder.Entity<CashMovement>(e =>
+        {
+            e.Property(m => m.Kind).HasConversion<string>().HasMaxLength(20);
+            e.Property(m => m.Method).HasConversion<string>().HasMaxLength(20);
+            e.Property(m => m.Amount).HasPrecision(12, 2);
+            e.Property(m => m.Description).HasMaxLength(200);
+            e.HasOne(m => m.CashSession).WithMany(s => s.Movements).HasForeignKey(m => m.CashSessionId).OnDelete(DeleteBehavior.Cascade);
+        });
+        builder.Entity<CardSettlement>(e =>
+        {
+            e.Property(s => s.Brand).HasConversion<string>().HasMaxLength(20);
+        });
+        builder.Entity<CardSettlementLine>(e =>
+        {
+            e.Property(l => l.Batch).HasMaxLength(20);
+            e.Property(l => l.Coupon).HasMaxLength(20);
+            e.Property(l => l.Gross).HasPrecision(12, 2);
+            e.Property(l => l.Fee).HasPrecision(12, 2);
+            e.Property(l => l.Net).HasPrecision(12, 2);
+            e.HasOne(l => l.Settlement).WithMany(s => s.Lines).HasForeignKey(l => l.SettlementId).OnDelete(DeleteBehavior.Cascade);
         });
         builder.Entity<AuditEntry>(e =>
         {

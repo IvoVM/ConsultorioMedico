@@ -1,0 +1,149 @@
+@if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
+
+@if (loading()) {
+  <ui-skeleton label="Cargando cuenta" />
+} @else if (account(); as acc) {
+  <header class="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2">
+    <h2 class="font-serif text-3xl tracking-tight">{{ acc.patient }}</h2>
+    <ui-help title="Cuenta corriente">
+      <p>Todo lo que el paciente debe y pagó, en orden. Cada comprobante suma su parte a cargo del paciente; cada pago resta; una anulación devuelve lo facturado y una devolución vuelve a sumar.</p>
+      <p><strong>Debe</strong> es lo que falta pagar entre todos sus comprobantes. <strong>A favor</strong> es plata que dejó y ningún comprobante usó todavía: se aplica desde el comprobante con "Usar saldo a favor" o se le devuelve.</p>
+      <p>Un pago a cuenta se aplica solo a los comprobantes más viejos que deben, y lo que sobra queda a favor. Entra en la caja de la sede que elijas, que tiene que estar abierta.</p>
+    </ui-help>
+  </header>
+  <p class="-mt-4 mb-6 text-sm text-ink/65">DNI {{ acc.patientDocument }}</p>
+
+  <div class="mb-6 grid gap-3 sm:grid-cols-3">
+    <div class="surface px-5 py-4">
+      <p class="text-xs font-semibold text-ink/60">Debe</p>
+      <p class="mt-1 font-serif text-2xl tabular-nums">{{ money(acc.owed) }}</p>
+    </div>
+    <div class="surface px-5 py-4">
+      <p class="text-xs font-semibold text-ink/60">A favor</p>
+      <p class="mt-1 font-serif text-2xl tabular-nums">{{ money(acc.credit) }}</p>
+    </div>
+    <div class="surface px-5 py-4">
+      <p class="text-xs font-semibold text-ink/60">Cuotas vencidas</p>
+      <p class="mt-1 font-serif text-2xl tabular-nums" [class.text-pulse]="acc.overdue > 0">{{ money(acc.overdue) }}</p>
+    </div>
+  </div>
+
+  <div class="mb-8 flex flex-wrap gap-3">
+    <ui-button (click)="openDialog(dialogs.Payment)">Cobrar a cuenta</ui-button>
+    @if (acc.credit > 0) { <ui-button variant="outlined" (click)="openDialog(dialogs.Refund)">Devolver saldo a favor</ui-button> }
+    <a class="text-link self-center" [routerLink]="route.Secretaria">Volver a la secretaría</a>
+  </div>
+
+  <section class="mb-10">
+    <h3 class="mb-3 font-serif text-xl">Comprobantes</h3>
+    @if (!acc.invoices.length) {
+      <ui-empty message="Este paciente todavía no tiene comprobantes." />
+    } @else {
+      <ui-table>
+        <table class="cards">
+          <thead><tr><th>Comprobante</th><th>Atención</th><th>A su cargo</th><th>Saldo</th><th>Estado</th><th class="w-px"></th></tr></thead>
+          <tbody>
+            @for (invoice of acc.invoices; track invoice.id) {
+              <tr>
+                <td>{{ title(invoice) }}@if (invoice.plan) { <span class="block text-xs text-ink/60">Plan en {{ invoice.plan.installments.length }} cuotas</span> }</td>
+                <td data-name="Atención">{{ invoice.appointmentStart | fecha }}</td>
+                <td data-name="A su cargo" class="tabular-nums">{{ money(invoice.patientAmount) }}</td>
+                <td data-name="Saldo" class="tabular-nums">{{ money(invoice.balance) }}</td>
+                <td data-name="Estado"><ui-badge [tone]="tone(invoice.status)">{{ statusLabels[invoice.status] }}</ui-badge></td>
+                <td class="w-px whitespace-nowrap"><ui-button variant="ghost" (click)="opened.set(invoice)">Abrir</ui-button></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </ui-table>
+    }
+  </section>
+
+  <section>
+    <h3 class="mb-3 font-serif text-xl">Movimientos</h3>
+    @if (!acc.movements.length) {
+      <ui-empty message="Todavía no hay movimientos." />
+    } @else {
+      <ui-table>
+        <table class="cards">
+          <thead><tr><th>Fecha</th><th>Concepto</th><th>Debe</th><th>Haber</th><th>Saldo</th></tr></thead>
+          <tbody>
+            @for (item of acc.movements; track $index) {
+              <tr>
+                <td>{{ item.at | fecha }}</td>
+                <td data-name="Concepto">
+                  @if (invoiceOf(item); as invoice) {
+                    <button type="button" class="text-link" (click)="opened.set(invoice)">{{ concept(item) }}</button>
+                  } @else {
+                    {{ concept(item) }}
+                  }
+                  @if (item.note) { <span class="block text-xs text-ink/60">{{ item.note }}</span> }
+                </td>
+                <td data-name="Debe" class="tabular-nums">{{ item.debit ? money(item.debit) : '' }}</td>
+                <td data-name="Haber" class="tabular-nums">{{ item.credit ? money(item.credit) : '' }}</td>
+                <td data-name="Saldo" class="tabular-nums">{{ money(item.balance) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </ui-table>
+      <p class="mt-2 text-xs text-ink/60">Un saldo negativo es plata a favor del paciente.</p>
+    }
+  </section>
+}
+
+@if (dialog(); as kind) {
+  <ui-modal [open]="true" [title]="kind === dialogs.Payment ? 'Cobrar a cuenta' : 'Devolver saldo a favor'" (closed)="dialog.set(null)">
+    @if (!registerOptions().length) {
+      <p class="text-sm text-ink/75">No hay ninguna caja abierta. Abrí la caja de la sede para poder {{ kind === dialogs.Payment ? 'cobrar' : 'devolver' }}.</p>
+    } @else {
+      <form id="account-form" class="grid gap-4" (ngSubmit)="kind === dialogs.Payment ? pay() : refund()">
+        <ui-field label="Caja de la sede">
+          <ui-select name="location" [options]="registerOptions()" [ngModel]="locationId()" (ngModelChange)="locationId.set($event)" />
+        </ui-field>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <ui-field label="Monto">
+            <input name="amount" type="number" min="0.01" step="0.01" inputmode="decimal" [ngModel]="amount()" (ngModelChange)="amount.set($event)" required />
+          </ui-field>
+          <ui-field label="Medio">
+            <ui-select name="method" [options]="methodOptions" [ngModel]="method()" (ngModelChange)="method.set($event)" />
+          </ui-field>
+        </div>
+        @if (kind === dialogs.Payment && method() === cardMethod) {
+          <div class="grid gap-4 sm:grid-cols-4">
+            <ui-field label="Tarjeta">
+              <ui-select name="brand" [options]="brandOptions" [ngModel]="brand()" (ngModelChange)="brand.set($event)" />
+            </ui-field>
+            <ui-field label="Cuotas">
+              <input name="cardInstallments" type="number" min="1" max="24" step="1" [ngModel]="cardInstallments()" (ngModelChange)="cardInstallments.set($event)" required />
+            </ui-field>
+            <ui-field label="Lote">
+              <input name="batch" maxlength="20" [ngModel]="batch()" (ngModelChange)="batch.set($event)" required />
+            </ui-field>
+            <ui-field label="Cupón">
+              <input name="coupon" maxlength="20" [ngModel]="coupon()" (ngModelChange)="coupon.set($event)" required />
+            </ui-field>
+          </div>
+        }
+        <ui-field [label]="kind === dialogs.Payment ? 'Nota (opcional)' : 'Motivo'">
+          <input name="note" maxlength="200" [ngModel]="note()" (ngModelChange)="note.set($event)" [required]="kind === dialogs.Refund" />
+        </ui-field>
+        <p class="text-sm text-ink/70">
+          @if (kind === dialogs.Payment) { Se aplica a los comprobantes más viejos que deben; lo que sobre queda a favor. }
+          @else { Sale de la caja de la sede y baja el saldo a favor. }
+        </p>
+        @if (dialogError()) { <p class="text-sm text-pulse" role="alert">{{ dialogError() }}</p> }
+      </form>
+    }
+    <div uiModalFooter class="flex flex-wrap gap-3">
+      @if (registerOptions().length) {
+        <ui-button type="submit" form="account-form" [loading]="saving()">{{ kind === dialogs.Payment ? 'Cobrar' : 'Devolver' }}</ui-button>
+      }
+      <ui-button variant="outlined" [disabled]="saving()" (click)="dialog.set(null)">Cancelar</ui-button>
+    </div>
+  </ui-modal>
+}
+
+@if (openedView(); as view) {
+  <ui-invoice [view]="view" [source]="openedSource()!" [methods]="methodOptions" [cardMethod]="cardMethod" [brands]="brandOptions" (closed)="opened.set(null)" />
+}

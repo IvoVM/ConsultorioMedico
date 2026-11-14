@@ -84,6 +84,25 @@
       </ul>
     }
 
+    @if (v.plan; as plan) {
+      <div class="mt-6 flex flex-wrap items-baseline justify-between gap-2">
+        <h3 class="text-sm font-semibold">Plan de pago · {{ plan.installments.length }} cuotas</h3>
+        @if (v.canPay) { <button type="button" class="text-link text-sm" [disabled]="busy() === 'cancel-plan'" (click)="cancelPlan()">Cancelar plan</button> }
+      </div>
+      <ul class="mt-2 divide-y divide-rule text-sm">
+        @for (item of plan.installments; track item.number) {
+          <li class="flex flex-wrap items-center justify-between gap-3 py-1.5">
+            <span>Cuota {{ item.number }} · vence {{ date(item.dueDate) }}</span>
+            <span class="flex items-center gap-3 tabular-nums">
+              {{ money(item.amount) }}
+              @if (item.paid && item.paid < item.amount) { <span class="text-ink/60">pagado {{ money(item.paid) }}</span> }
+              <ui-badge [tone]="item.tone">{{ item.status }}</ui-badge>
+            </span>
+          </li>
+        }
+      </ul>
+    }
+
     @if (v.cae) {
       <p class="mt-6 text-sm">CAE <strong class="tabular-nums">{{ v.cae }}</strong> · vence {{ date(v.caeDueDate) }}</p>
       @if (v.fiscalSimulated) { <p class="mt-1 text-xs text-ink/60">CAE de prueba del simulador: no tiene validez ante ARCA.</p> }
@@ -109,7 +128,26 @@
           @if (v.paid) { Los pagos quedan registrados: devolvéselos al paciente. }
         </p>
       </form>
+    } @else if (mode() === modes.Plan) {
+      <form id="invoice-plan-form" class="mt-6 grid gap-3 sm:grid-cols-2" (ngSubmit)="createPlan()">
+        <ui-field label="Cantidad de cuotas">
+          <input name="planCount" type="number" min="2" max="24" step="1" [ngModel]="planCount()" (ngModelChange)="planCount.set($event)" required />
+        </ui-field>
+        <ui-field label="Vence la primera">
+          <input name="planFirstDue" type="date" [ngModel]="planFirstDue()" (ngModelChange)="planFirstDue.set($event)" required />
+        </ui-field>
+      </form>
+      <p class="mt-2 text-sm text-ink/70">
+        El saldo de {{ money(v.balance) }} se divide en {{ planCount() }} cuotas mensuales de unos {{ money(installmentShare()) }}.
+        Cada pago que entre después va cancelando las cuotas en orden.
+      </p>
     } @else if (v.canPay) {
+      @if (v.credit > 0) {
+        <div class="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-clinic-wash px-4 py-3 text-sm">
+          <span>El paciente tiene <strong class="tabular-nums">{{ money(v.credit) }}</strong> a favor.</span>
+          <ui-button variant="outlined" [loading]="busy() === 'credit'" (click)="applyCredit()">Usar saldo a favor</ui-button>
+        </div>
+      }
       <form id="invoice-pay-form" class="mt-6 grid gap-3 sm:grid-cols-[10rem_12rem_auto] sm:items-end" (ngSubmit)="pay()">
         <ui-field label="Monto a cobrar">
           <input name="amount" type="number" min="0.01" [max]="v.balance" step="0.01" inputmode="decimal" [ngModel]="amount()" (ngModelChange)="amount.set($event)" required />
@@ -118,8 +156,27 @@
           <ui-select name="method" [options]="methods()" [ngModel]="method()" (ngModelChange)="method.set($event)" />
         </ui-field>
         <ui-button type="submit" [loading]="busy() === 'pay'">Registrar pago</ui-button>
+        @if (isCard()) {
+          <div class="grid gap-3 sm:col-span-3 sm:grid-cols-4">
+            <ui-field label="Tarjeta">
+              <ui-select name="brand" [options]="brands()" [ngModel]="brand()" (ngModelChange)="brand.set($event)" />
+            </ui-field>
+            <ui-field label="Cuotas">
+              <input name="cardInstallments" type="number" min="1" max="24" step="1" [ngModel]="cardInstallments()" (ngModelChange)="cardInstallments.set($event)" required />
+            </ui-field>
+            <ui-field label="Lote">
+              <input name="batch" maxlength="20" [ngModel]="batch()" (ngModelChange)="batch.set($event)" required />
+            </ui-field>
+            <ui-field label="Cupón">
+              <input name="coupon" maxlength="20" [ngModel]="coupon()" (ngModelChange)="coupon.set($event)" required />
+            </ui-field>
+          </div>
+        }
       </form>
-      <p class="mt-2 text-xs text-ink/60">Podés cobrar una parte: el resto queda como saldo.</p>
+      <p class="mt-2 text-xs text-ink/60">
+        Podés cobrar una parte: el resto queda como saldo. El cobro entra en la caja de la sede donde se atendió, que tiene que estar abierta.
+        @if (isCard()) { El lote y el cupón están en el ticket del posnet y sirven para conciliar con la liquidación. }
+      </p>
     }
   }
 
@@ -131,6 +188,10 @@
         <ui-button type="submit" form="invoice-edit-form" [loading]="busy() === 'save'">Guardar</ui-button>
         <ui-button variant="outlined" [disabled]="busy() === 'save'" (click)="back()">Cancelar</ui-button>
       }
+      @case (modes.Plan) {
+        <ui-button type="submit" form="invoice-plan-form" [loading]="busy() === 'plan'">Armar plan</ui-button>
+        <ui-button variant="outlined" [disabled]="busy() === 'plan'" (click)="back()">Volver</ui-button>
+      }
       @case (modes.Void) {
         <ui-button type="submit" variant="danger" form="invoice-void-form" [loading]="busy() === 'void'" [disabled]="!reason().trim()">Anular</ui-button>
         <ui-button variant="outlined" [disabled]="busy() === 'void'" (click)="back()">Volver</ui-button>
@@ -138,6 +199,7 @@
       @default {
         <ui-button variant="outlined" [loading]="busy() === 'pdf'" (click)="pdf()"><ui-icon name="download" [size]="18" />Descargar PDF</ui-button>
         @if (v.editable) { <ui-button variant="ghost" (click)="startEdit()">Corregir</ui-button> }
+        @if (v.canPlan) { <ui-button variant="ghost" (click)="startPlan()">Plan de pago</ui-button> }
         @if (v.canAuthorize) { <ui-button variant="ghost" [loading]="busy() === 'authorize'" (click)="authorize()">Autorizar ante ARCA</ui-button> }
         @if (v.canVoid) { <ui-button variant="ghost" (click)="startVoid()">Anular</ui-button> }
       }

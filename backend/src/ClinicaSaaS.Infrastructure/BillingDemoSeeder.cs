@@ -15,6 +15,7 @@ public class BillingDemoSeeder(TenantDbContext db, TimeZoneInfo zone, string cli
     private const int DemoPointOfSale = 1;
     private int invoiceNumber;
     private int creditNoteNumber;
+    private int coupon;
 
     public async Task SeedAsync(CancellationToken ct)
     {
@@ -67,7 +68,7 @@ public class BillingDemoSeeder(TenantDbContext db, TimeZoneInfo zone, string cli
         if (osde is not null)
         {
             var invoice = Invoice(osde, [("Consulta clínica", 1, 24000m)], discount: 0, insurer: "OSDE", insurerAmount: 18000m);
-            Pay(invoice, 6000m, PaymentMethod.Card, osde.End.AddMinutes(5));
+            Pay(invoice, osde, 6000m, PaymentMethod.Card, osde.End.AddMinutes(5));
             Authorize(invoice, FiscalVoucherType.FacturaC, osde.End.AddMinutes(10));
         }
 
@@ -76,7 +77,7 @@ public class BillingDemoSeeder(TenantDbContext db, TimeZoneInfo zone, string cli
         if (partial is not null)
         {
             var invoice = Invoice(partial, [("Consulta clínica", 1, 25000m), ("Certificado médico", 1, 3000m)], discount: 2000m, insurer: null, insurerAmount: 0);
-            Pay(invoice, 10000m, PaymentMethod.Cash, partial.End.AddMinutes(5));
+            Pay(invoice, partial, 10000m, PaymentMethod.Cash, partial.End.AddMinutes(5));
         }
 
         // A procedure on top of the visit, split between Medicus and the patient, paid in two parts and authorized.
@@ -84,8 +85,8 @@ public class BillingDemoSeeder(TenantDbContext db, TimeZoneInfo zone, string cli
         if (knee is not null)
         {
             var invoice = Invoice(knee, [("Consulta traumatológica", 1, 28000m), ("Infiltración de rodilla", 2, 9000m)], discount: 0, insurer: "Medicus", insurerAmount: 30000m);
-            Pay(invoice, 10000m, PaymentMethod.Transfer, knee.End.AddMinutes(5));
-            Pay(invoice, 6000m, PaymentMethod.Cash, knee.End.AddDays(3));
+            Pay(invoice, knee, 10000m, PaymentMethod.Transfer, knee.End.AddMinutes(5));
+            Pay(invoice, knee, 6000m, PaymentMethod.Cash, knee.End.AddDays(3));
             Authorize(invoice, FiscalVoucherType.FacturaC, knee.End.AddMinutes(10));
         }
 
@@ -94,7 +95,7 @@ public class BillingDemoSeeder(TenantDbContext db, TimeZoneInfo zone, string cli
         if (voided is not null)
         {
             var invoice = Invoice(voided, [("Consulta pediátrica", 1, 24000m)], discount: 0, insurer: null, insurerAmount: 0);
-            Pay(invoice, 24000m, PaymentMethod.Cash, voided.End.AddMinutes(5));
+            Pay(invoice, voided, 24000m, PaymentMethod.Cash, voided.End.AddMinutes(5));
             Authorize(invoice, FiscalVoucherType.FacturaC, voided.End.AddMinutes(10));
             invoice.Status = InvoiceStatus.Voided;
             invoice.VoidedAt = voided.End.AddHours(2);
@@ -220,9 +221,24 @@ public class BillingDemoSeeder(TenantDbContext db, TimeZoneInfo zone, string cli
         return invoice;
     }
 
-    private void Pay(Invoice invoice, decimal amount, PaymentMethod method, DateTimeOffset at)
+    // Each payment is a receipt applied in full to the invoice. Card ones carry a made-up batch and coupon.
+    private void Pay(Invoice invoice, Appointment visit, decimal amount, PaymentMethod method, DateTimeOffset at)
     {
-        db.InvoicePayments.Add(new InvoicePayment { Id = Guid.NewGuid(), InvoiceId = invoice.Id, Amount = amount, Method = method, PaidAt = at });
+        var receipt = new Receipt
+        {
+            Id = Guid.NewGuid(),
+            ClientId = invoice.ClientId,
+            Amount = amount,
+            Method = method,
+            PaidAt = at,
+            LocationId = visit.LocationId,
+            CardBrand = method == PaymentMethod.Card ? CardBrand.Visa : null,
+            CardInstallments = method == PaymentMethod.Card ? 1 : null,
+            CardBatch = method == PaymentMethod.Card ? "DEMO01" : null,
+            CardCoupon = method == PaymentMethod.Card ? $"{++coupon:0000}" : null
+        };
+        db.Receipts.Add(receipt);
+        db.InvoicePayments.Add(new InvoicePayment { Id = Guid.NewGuid(), InvoiceId = invoice.Id, ReceiptId = receipt.Id, Amount = amount, Method = method, PaidAt = at });
         var paid = BillingRules.Total(db.InvoicePayments.Local.Where(p => p.InvoiceId == invoice.Id).Select(p => p.Amount));
         invoice.Status = BillingRules.StatusFor(invoice.Total, invoice.InsurerAmount, paid);
         invoice.PaidAt = invoice.Status == InvoiceStatus.Paid ? at : null;

@@ -1,5 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { BillingService, InvoiceDto, InvoiceStatus, errorMessage } from 'sdk';
+import { AccountDto, BillingService, InvoiceDto, InvoiceStatus, errorMessage } from 'sdk';
 import { FechaPipe, ToastService, UiBadge, UiButton, UiEmpty, UiInvoice, UiSkeleton, formatMoney, UiHelp } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { invoiceStatusLabels } from './models/invoice-labels';
@@ -31,11 +31,15 @@ export class MyInvoicesPage {
     const invoice = this.opened();
     return invoice ? invoiceSource(this.billing, invoice, () => undefined) : null;
   });
-  readonly owed = computed(() => this.invoices().reduce((sum, invoice) => sum + invoice.balance, 0));
+  readonly account = signal<AccountDto | null>(null);
 
   constructor() {
-    void firstValueFrom(this.billing.myInvoices())
-      .then((list) => this.invoices.set(list))
+    // The account brings the invoices too, with what the patient owes, their credit and overdue installments.
+    void firstValueFrom(this.billing.myAccount())
+      .then((account) => {
+        this.account.set(account);
+        this.invoices.set(account.invoices);
+      })
       .catch((error) => this.error.set(errorMessage(error)))
       .finally(() => this.loading.set(false));
   }

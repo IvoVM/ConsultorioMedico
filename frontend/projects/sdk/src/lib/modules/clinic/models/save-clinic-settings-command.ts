@@ -9,4 +9,5 @@ export interface SaveClinicSettingsCommand {
   taxId?: string | null;
   taxCondition?: TaxCondition | null;
   pointOfSale?: number | null;
+  autoAuthorize?: boolean;
 }

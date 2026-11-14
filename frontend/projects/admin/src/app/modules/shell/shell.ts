@@ -56,6 +56,8 @@ export class ShellPage {
         children: [
           { label: 'Obras sociales', path: '/organizacion/obras-sociales', icon: 'health_and_safety' },
           { label: 'Comprobantes', path: '/comprobantes', icon: 'request_quote' },
+          { label: 'Cajas', path: '/cajas', icon: 'point_of_sale' },
+          { label: 'Conciliación de tarjetas', path: '/conciliacion', icon: 'credit_card' },
         ],
       },
       {

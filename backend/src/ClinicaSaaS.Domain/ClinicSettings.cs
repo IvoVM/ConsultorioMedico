@@ -12,4 +12,6 @@ public class ClinicSettings
     public string? TaxId { get; set; }
     public TaxCondition? TaxCondition { get; set; }
     public int? PointOfSale { get; set; }
+    // Authorize each invoice as soon as it is issued, instead of with a separate step.
+    public bool AutoAuthorize { get; set; }
 }

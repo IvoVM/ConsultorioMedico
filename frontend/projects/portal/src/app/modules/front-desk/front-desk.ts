@@ -1,12 +1,12 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { AppointmentDto, AppointmentStatus, AppointmentsService, BillingService, ClinicService, InvoiceDto, InvoiceStatus, PatientLookupDto, PatientsService, ScheduleService, SlotDto, WaitlistEntryDto, errorMessage } from 'sdk';
+import { AppointmentDto, AppointmentStatus, AppointmentsService, BillingService, ClinicService, InvoiceDto, InvoiceStatus, PatientLookupDto, PatientsService, PaymentMethod, ScheduleService, SlotDto, WaitlistEntryDto, errorMessage } from 'sdk';
 import { FechaPipe, ToastService, UiActions, UiBadge, UiButton, UiCalendar, UiEmpty, UiField, UiInvoice, UiModal, UiSkeleton, UiTable, formatFecha, formatMoney } from 'ui';
 import { Observable, firstValueFrom } from 'rxjs';
 import { appointmentStatusLabels } from '../appointments/models/appointment-status-labels';
 import { invoiceStatusLabels } from '../billing/models/invoice-labels';
-import { invoiceSource, invoiceView, paymentOptions } from '../billing/models/invoice-view';
+import { cardBrandOptions, invoiceSource, invoiceView, paymentOptions } from '../billing/models/invoice-view';
 import { AppRoute, patientParams } from '../../app.routes.enum';
 
 @Component({
@@ -29,6 +29,8 @@ export class FrontDeskPage {
   readonly statusLabels = appointmentStatusLabels;
   readonly invoiceStatusLabels = invoiceStatusLabels;
   readonly paymentOptions = paymentOptions;
+  readonly brandOptions = cardBrandOptions;
+  readonly cardMethod = PaymentMethod.Card;
   readonly appointments = signal<AppointmentDto[]>([]);
   readonly waitlist = signal<WaitlistEntryDto[]>([]);
   readonly invoices = signal<InvoiceDto[]>([]);

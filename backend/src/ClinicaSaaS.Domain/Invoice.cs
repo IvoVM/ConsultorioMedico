@@ -38,4 +38,5 @@ public class Invoice
     public virtual Client Client { get; set; } = null!;
     public virtual List<InvoiceItem> Items { get; set; } = [];
     public virtual List<InvoicePayment> Payments { get; set; } = [];
+    public virtual List<PaymentPlan> Plans { get; set; } = [];
 }

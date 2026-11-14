@@ -3,12 +3,24 @@ import { Injectable } from '@angular/core';
 import { ApiClient } from '../../core/api-client';
 import { queryString } from '../../core/query-string';
 import type { ListParams, PageDto } from '../../core/page';
+import type { AccountDto } from './models/account-dto';
+import type { AccountPaymentCommand } from './models/account-payment-command';
+import type { ApplyCreditCommand } from './models/apply-credit-command';
+import type { CashMovementCommand } from './models/cash-movement-command';
+import type { CashSessionDto } from './models/cash-session-dto';
+import type { CloseCashCommand } from './models/close-cash-command';
 import type { CreateFeeCommand } from './models/create-fee-command';
+import type { CreatePlanCommand } from './models/create-plan-command';
 import type { FeeDto } from './models/fee-dto';
 import type { FeeRowDto } from './models/fee-row-dto';
+import type { ImportSettlementCommand } from './models/import-settlement-command';
 import type { InvoiceDto } from './models/invoice-dto';
 import type { IssueInvoiceCommand } from './models/issue-invoice-command';
+import type { MatchLineCommand } from './models/match-line-command';
+import type { OpenCashCommand } from './models/open-cash-command';
 import type { PayInvoiceCommand } from './models/pay-invoice-command';
+import type { ReconciliationDto } from './models/reconciliation-dto';
+import type { RefundCommand } from './models/refund-command';
 import type { UpdateInvoiceCommand } from './models/update-invoice-command';
 import type { VoidInvoiceCommand } from './models/void-invoice-command';
 
@@ -60,5 +72,69 @@ export class BillingService extends ApiClient {
 
   invoicePdf(id: string) {
     return this.http.get(`${this.base}/api/comprobantes/${id}/pdf`, { responseType: 'blob' });
+  }
+
+  createPlan(id: string, body: CreatePlanCommand) {
+    return this.http.post<InvoiceDto>(`${this.base}/api/comprobantes/${id}/plan`, body);
+  }
+
+  cancelPlan(id: string) {
+    return this.http.post<InvoiceDto>(`${this.base}/api/comprobantes/${id}/plan/cancelar`, {});
+  }
+
+  applyCredit(id: string, body: ApplyCreditCommand) {
+    return this.http.post<InvoiceDto>(`${this.base}/api/comprobantes/${id}/aplicar-saldo`, body);
+  }
+
+  cashSessions(query?: { locationId?: string }) {
+    return this.http.get<CashSessionDto[]>(`${this.base}/api/cajas${queryString(query)}`);
+  }
+
+  openCashSessions() {
+    return this.http.get<CashSessionDto[]>(`${this.base}/api/cajas/abiertas`);
+  }
+
+  cashSession(id: string) {
+    return this.http.get<CashSessionDto>(`${this.base}/api/cajas/${id}`);
+  }
+
+  openCash(body: OpenCashCommand) {
+    return this.http.post<CashSessionDto>(`${this.base}/api/cajas`, body);
+  }
+
+  addCashMovement(id: string, body: CashMovementCommand) {
+    return this.http.post<CashSessionDto>(`${this.base}/api/cajas/${id}/movimientos`, body);
+  }
+
+  closeCash(id: string, body: CloseCashCommand) {
+    return this.http.post<CashSessionDto>(`${this.base}/api/cajas/${id}/cerrar`, body);
+  }
+
+  myAccount() {
+    return this.http.get<AccountDto>(`${this.base}/api/cuentas/mia`);
+  }
+
+  account(clientId: string) {
+    return this.http.get<AccountDto>(`${this.base}/api/cuentas/${clientId}`);
+  }
+
+  accountPayment(clientId: string, body: AccountPaymentCommand) {
+    return this.http.post<AccountDto>(`${this.base}/api/cuentas/${clientId}/cobros`, body);
+  }
+
+  refund(clientId: string, body: RefundCommand) {
+    return this.http.post<AccountDto>(`${this.base}/api/cuentas/${clientId}/devoluciones`, body);
+  }
+
+  reconciliation() {
+    return this.http.get<ReconciliationDto>(`${this.base}/api/conciliacion`);
+  }
+
+  importSettlement(body: ImportSettlementCommand) {
+    return this.http.post<ReconciliationDto>(`${this.base}/api/conciliacion/liquidaciones`, body);
+  }
+
+  matchSettlementLine(lineId: string, body: MatchLineCommand) {
+    return this.http.post<ReconciliationDto>(`${this.base}/api/conciliacion/lineas/${lineId}/asociar`, body);
   }
 }

@@ -1,0 +1,79 @@
+<header class="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2">
+  <h2 class="font-serif text-2xl tracking-tight">Cajas</h2>
+  <ui-help title="Cajas">
+    <p>Las cajas de cada sede, de la más reciente a la más vieja. Cada una es un turno de la recepción: se abre con el efectivo del cajón y se cierra contándolo.</p>
+    <p>El total es lo que entró neto por todos los medios. La diferencia compara el efectivo contado con el esperado: negativa es un faltante, positiva un sobrante.</p>
+    <p>Las cajas se abren, se cargan y se cierran desde el portal, en <em>Caja</em>. Acá se siguen.</p>
+  </ui-help>
+</header>
+
+@if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
+
+<div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+  <ui-field class="sm:w-72" label="Sede">
+    <ui-select name="location" [options]="locationOptions()" [ngModel]="locationId()" (ngModelChange)="pick($event)" />
+  </ui-field>
+  @if (shortfall() < 0) {
+    <p class="text-sm">Faltantes en estas cajas: <ui-badge tone="warn">{{ money(shortfall()) }}</ui-badge></p>
+  }
+</div>
+
+@if (loading()) {
+  <ui-skeleton label="Cargando cajas" />
+} @else if (!sessions().length) {
+  <ui-empty message="Todavía no se abrió ninguna caja. La recepción la abre desde el portal." />
+} @else {
+  <ui-table>
+    <table class="cards">
+      <thead><tr><th>Sede</th><th>Apertura</th><th>Estado</th><th>Total</th><th>Efectivo esperado</th><th>Diferencia</th><th class="w-px"></th></tr></thead>
+      <tbody>
+        @for (item of sessions(); track item.id) {
+          <tr>
+            <td>{{ item.location }}</td>
+            <td data-name="Apertura">{{ item.openedAt | fecha }}@if (item.openedBy) { <span class="block text-xs text-ink/60">{{ item.openedBy }}</span> }</td>
+            <td data-name="Estado"><ui-badge [tone]="item.status === open ? 'ok' : 'muted'">{{ statusLabels[item.status] }}</ui-badge></td>
+            <td data-name="Total" class="tabular-nums">{{ money(total(item)) }}</td>
+            <td data-name="Efectivo esperado" class="tabular-nums">{{ money(item.expectedCash) }}</td>
+            <td data-name="Diferencia">
+              @if (item.status === open) { — } @else { <ui-badge [tone]="differenceTone(item.difference)">{{ money(item.difference) }}</ui-badge> }
+            </td>
+            <td class="w-px whitespace-nowrap"><ui-button variant="ghost" (click)="view(item)">Ver</ui-button></td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </ui-table>
+}
+
+@if (viewing(); as session) {
+  <ui-modal [open]="true" [wide]="true" [title]="session.location + ' · ' + (session.openedAt | fecha)" (closed)="viewing.set(null)">
+    <p class="text-sm text-ink/70">
+      Abrió {{ session.openedBy || '—' }}.
+      @if (session.closedAt) { Cerró {{ session.closedBy || '—' }} el {{ session.closedAt | fecha }}. } @else { Sigue abierta. }
+    </p>
+    <dl class="mt-4 grid grid-cols-[1fr_auto] gap-x-6 gap-y-1 text-sm tabular-nums sm:max-w-sm">
+      <dt class="text-ink/70">Apertura</dt><dd class="text-right">{{ money(session.openingCash) }}</dd>
+      @for (total of session.totals; track total.method) {
+        <dt class="text-ink/70">{{ methodLabels[total.method] }}</dt><dd class="text-right">{{ money(total.net) }}</dd>
+      }
+      <dt class="text-ink/70">Efectivo esperado</dt><dd class="text-right">{{ money(session.expectedCash) }}</dd>
+      @if (session.closedAt) {
+        <dt class="text-ink/70">Efectivo contado</dt><dd class="text-right">{{ money(session.countedCash) }}</dd>
+        <dt class="font-semibold">Diferencia</dt><dd class="text-right font-semibold">{{ money(session.difference) }}</dd>
+      }
+    </dl>
+    @if (session.notes) { <p class="mt-3 text-sm">{{ session.notes }}</p> }
+    @if (session.movements.length) {
+      <ul class="mt-5 divide-y divide-rule text-sm">
+        @for (item of session.movements; track item.id) {
+          <li class="flex flex-wrap justify-between gap-3 py-1.5">
+            <span>{{ item.at | fecha:'hora' }} · {{ kindLabels[item.kind] }} · {{ methodLabels[item.method] }} · {{ item.description }}@if (item.user) { · {{ item.user }} }</span>
+            <span class="tabular-nums">{{ money(signed(item.kind, item.amount)) }}</span>
+          </li>
+        }
+      </ul>
+    } @else {
+      <p class="mt-5 text-sm text-ink/70">No tuvo movimientos.</p>
+    }
+  </ui-modal>
+}

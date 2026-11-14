@@ -240,3 +240,76 @@ public static class EncounterRules
 {
     public static bool CanClose(string? note) => !string.IsNullOrWhiteSpace(note);
 }
+
+public static class CashRules
+{
+    public static bool IsIn(CashMovementKind kind) => kind is CashMovementKind.Payment or CashMovementKind.Income;
+
+    public static decimal Signed(CashMovementKind kind, decimal amount) => IsIn(kind) ? amount : -amount;
+
+    // What the drawer should hold: the opening cash plus cash taken, minus cash paid out.
+    public static decimal ExpectedCash(decimal opening, IEnumerable<(CashMovementKind Kind, PaymentMethod Method, decimal Amount)> movements) =>
+        opening + movements.Where(m => m.Method == PaymentMethod.Cash).Sum(m => Signed(m.Kind, m.Amount));
+
+    public static string? MovementError(CashMovementKind kind, decimal amount, string? description)
+    {
+        if (kind is not (CashMovementKind.Income or CashMovementKind.Expense))
+            return "A mano solo se cargan ingresos o egresos.";
+        if (amount <= 0)
+            return "El monto tiene que ser mayor a 0.";
+        return string.IsNullOrWhiteSpace(description) ? "Contá de qué es el movimiento." : null;
+    }
+}
+
+public static class PlanRules
+{
+    public const int MaxInstallments = 24;
+
+    // Equal monthly installments; the last one absorbs the cents left by rounding.
+    public static IReadOnlyList<(int Number, DateOnly DueDate, decimal Amount)> Split(decimal amount, int count, DateOnly firstDue)
+    {
+        var share = Math.Floor(amount / count * 100) / 100;
+        return Enumerable.Range(1, count)
+            .Select(n => (n, firstDue.AddMonths(n - 1), n == count ? amount - share * (count - 1) : share))
+            .ToList();
+    }
+
+    // Payments made since the plan cover installments in order; an unpaid one past its date is overdue.
+    public static IReadOnlyList<(decimal Paid, InstallmentStatus Status)> Progress(
+        IReadOnlyList<(DateOnly DueDate, decimal Amount)> installments, decimal paidSincePlan, DateOnly today)
+    {
+        var left = paidSincePlan;
+        var result = new List<(decimal, InstallmentStatus)>();
+        foreach (var (due, amount) in installments)
+        {
+            var paid = Math.Min(amount, Math.Max(0, left));
+            left -= paid;
+            var status = paid >= amount ? InstallmentStatus.Paid : due < today ? InstallmentStatus.Overdue : InstallmentStatus.Pending;
+            result.Add((paid, status));
+        }
+        return result;
+    }
+
+    public static string? Error(int count, DateOnly firstDue, DateOnly today, decimal balance)
+    {
+        if (balance <= 0)
+            return "Ese comprobante no tiene saldo para financiar.";
+        if (count is < 2 or > MaxInstallments)
+            return $"El plan va de 2 a {MaxInstallments} cuotas.";
+        return firstDue < today ? "La primera cuota no puede vencer en el pasado." : null;
+    }
+}
+
+public static class CardRules
+{
+    public static string? Error(CardBrand? brand, int? installments, string? batch, string? coupon)
+    {
+        if (brand is null)
+            return "Elegí la tarjeta.";
+        if (installments is null or < 1 or > 24)
+            return "Las cuotas van de 1 a 24.";
+        if (string.IsNullOrWhiteSpace(batch) || string.IsNullOrWhiteSpace(coupon))
+            return "Cargá el lote y el cupón del comprobante de la tarjeta.";
+        return batch.Trim().Length > 20 || coupon.Trim().Length > 20 ? "El lote y el cupón no pasan los 20 caracteres." : null;
+    }
+}

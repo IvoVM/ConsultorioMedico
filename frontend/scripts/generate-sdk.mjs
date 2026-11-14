@@ -61,7 +61,8 @@ const modules = [
   {
     id: 'billing',
     service: 'BillingService',
-    match: (path) => path.startsWith('/api/aranceles') || path.startsWith('/api/comprobantes'),
+    match: (path) =>
+      ['/api/aranceles', '/api/comprobantes', '/api/cajas', '/api/cuentas', '/api/conciliacion'].some((prefix) => path === prefix || path.startsWith(`${prefix}/`)),
   },
   {
     id: 'metrics',

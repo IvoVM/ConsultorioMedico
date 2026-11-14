@@ -1,0 +1,126 @@
+<header class="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2">
+  <h2 class="font-serif text-2xl tracking-tight">Conciliación de tarjetas</h2>
+  <ui-help title="Conciliación de tarjetas">
+    <p>Cada cobro con tarjeta se carga en la recepción con su lote y cupón. Acá traés la liquidación de cada tarjeta para unos días: cada cargo se cruza solo con el cobro del mismo lote, cupón e importe.</p>
+    <p>La liquidación muestra el arancel que se queda la tarjeta, el neto y el día que lo paga (dos días después en un pago, dieciocho en cuotas). Un cargo sin cobro suele ser un cupón mal cargado: se asocia a mano.</p>
+    <p><strong>Cobros pendientes</strong> son los que la tarjeta todavía no pagó o no vinieron en ninguna liquidación traída.</p>
+  </ui-help>
+</header>
+
+@if (data()?.simulated) {
+  <p class="mb-6 max-w-prose rounded-xl bg-ochre-wash px-4 py-3 text-sm" role="status">
+    Las liquidaciones salen de un simulador: no hay conexión con ninguna procesadora de tarjetas todavía, y el arancel es de prueba.
+  </p>
+}
+
+@if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
+
+<form class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end" (ngSubmit)="bring()">
+  <ui-field class="sm:w-48" label="Tarjeta">
+    <ui-select name="brand" [options]="brandOptions" [ngModel]="brand()" (ngModelChange)="brand.set($event)" />
+  </ui-field>
+  <ui-field class="sm:w-44" label="Desde">
+    <input name="from" type="date" [ngModel]="from()" (ngModelChange)="from.set($event)" required />
+  </ui-field>
+  <ui-field class="sm:w-44" label="Hasta">
+    <input name="to" type="date" [ngModel]="to()" (ngModelChange)="to.set($event)" required />
+  </ui-field>
+  <ui-button type="submit" [loading]="importing()">Traer liquidación</ui-button>
+</form>
+
+@if (loading()) {
+  <ui-skeleton label="Cargando conciliación" />
+} @else if (data(); as d) {
+  <section class="mb-10">
+    <h3 class="mb-3 font-serif text-xl">Liquidaciones</h3>
+    @if (!d.settlements.length) {
+      <ui-empty message="Todavía no se trajo ninguna liquidación." />
+    } @else {
+      <ui-table>
+        <table class="cards">
+          <thead><tr><th>Tarjeta</th><th>Días</th><th>Bruto</th><th>Arancel</th><th>Neto</th><th>Conciliados</th><th class="w-px"></th></tr></thead>
+          <tbody>
+            @for (item of d.settlements; track item.id) {
+              <tr>
+                <td>{{ brandLabels[item.brand] }}</td>
+                <td data-name="Días">{{ item.from | fecha }} al {{ item.to | fecha }}</td>
+                <td data-name="Bruto" class="tabular-nums">{{ money(item.gross) }}</td>
+                <td data-name="Arancel" class="tabular-nums">{{ money(item.fee) }}</td>
+                <td data-name="Neto" class="tabular-nums">{{ money(item.net) }}</td>
+                <td data-name="Conciliados">
+                  <ui-badge [tone]="matched(item) === item.lines.length ? 'ok' : 'warn'">{{ matched(item) }} de {{ item.lines.length }}</ui-badge>
+                </td>
+                <td class="w-px whitespace-nowrap"><ui-button variant="ghost" (click)="viewing.set(item)">Ver</ui-button></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </ui-table>
+      @if (unmatched()) { <p class="mt-2 text-sm">Hay {{ unmatched() }} cargos sin cobro asociado: abrí la liquidación para asociarlos.</p> }
+    }
+  </section>
+
+  <section>
+    <h3 class="mb-3 font-serif text-xl">Cobros pendientes de liquidar</h3>
+    @if (!d.pending.length) {
+      <ui-empty message="Todos los cobros con tarjeta están conciliados." />
+    } @else {
+      <ui-table>
+        <table class="cards">
+          <thead><tr><th>Fecha</th><th>Paciente</th><th>Tarjeta</th><th>Lote / cupón</th><th>Importe</th></tr></thead>
+          <tbody>
+            @for (item of d.pending; track item.id) {
+              <tr>
+                <td>{{ item.paidAt | fecha }}</td>
+                <td data-name="Paciente">{{ item.patient }}</td>
+                <td data-name="Tarjeta">{{ brandLabels[item.brand] }}@if (item.installments > 1) { · {{ item.installments }} cuotas }</td>
+                <td data-name="Lote / cupón" class="tabular-nums">{{ item.batch }} / {{ item.coupon }}</td>
+                <td data-name="Importe" class="tabular-nums">{{ money(item.amount) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </ui-table>
+    }
+  </section>
+}
+
+@if (viewing(); as settlement) {
+  <ui-modal [open]="true" [wide]="true" [title]="brandLabels[settlement.brand] + ' · ' + (settlement.from | fecha) + ' al ' + (settlement.to | fecha)" (closed)="viewing.set(null); matching.set(null)">
+    <p class="text-sm text-ink/70">
+      Bruto {{ money(settlement.gross) }} · arancel {{ money(settlement.fee) }} · neto {{ money(settlement.net) }}
+      @if (settlement.simulated) { · liquidación simulada }
+    </p>
+    <ul class="mt-4 divide-y divide-rule text-sm">
+      @for (line of settlement.lines; track line.id) {
+        <li class="flex flex-wrap items-center justify-between gap-3 py-2">
+          <span>
+            Lote {{ line.batch }} · cupón {{ line.coupon }}@if (line.installments > 1) { · {{ line.installments }} cuotas }
+            <span class="block text-xs text-ink/60">cargado {{ line.chargedOn | fecha }} · se paga {{ line.paidOn | fecha }}</span>
+          </span>
+          <span class="flex items-center gap-3 tabular-nums">
+            {{ money(line.gross) }} − {{ money(line.fee) }} = {{ money(line.net) }}
+            @if (line.receiptId) { <ui-badge tone="ok">{{ line.patient }}</ui-badge> }
+            @else { <ui-button variant="outlined" (click)="startMatch(line)">Asociar</ui-button> }
+          </span>
+        </li>
+      }
+    </ul>
+    @if (matching(); as line) {
+      <div class="mt-5 rounded-xl bg-mist p-4">
+        <p class="text-sm">Asociar el cupón {{ line.coupon }} por {{ money(line.gross) }} a un cobro pendiente del mismo importe:</p>
+        @if (receiptOptions().length) {
+          <div class="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end">
+            <ui-field class="sm:flex-1" label="Cobro">
+              <ui-select name="receipt" placeholder="Elegir cobro" [options]="receiptOptions()" [ngModel]="receiptId()" (ngModelChange)="receiptId.set($event)" />
+            </ui-field>
+            <ui-button [disabled]="!receiptId()" (click)="match()">Asociar</ui-button>
+          </div>
+        } @else {
+          <p class="mt-2 text-sm text-ink/70">No hay cobros pendientes de esta tarjeta por ese importe.</p>
+        }
+        @if (matchError()) { <p class="mt-2 text-sm text-pulse" role="alert">{{ matchError() }}</p> }
+      </div>
+    }
+  </ui-modal>
+}

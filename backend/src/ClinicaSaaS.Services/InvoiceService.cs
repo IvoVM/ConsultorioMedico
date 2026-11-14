@@ -12,6 +12,7 @@ public class InvoiceService(
     IClientStore clients,
     IClinicSettingsStore settings,
     IFiscalAuthority fiscal,
+    AccountService accounts,
     ICurrentUser currentUser,
     IAuditStore audit,
     ITimeZoneProvider timeZone,
@@ -19,11 +20,7 @@ public class InvoiceService(
 {
     public async Task<IReadOnlyList<InvoiceDto>> InvoicesAsync(CancellationToken ct)
     {
-        var invoices = await store.Invoices
-            .OrderByDescending(i => i.CreatedAt)
-            .Select(InvoiceMappingExtensions.MapForInvoiceDto())
-            .ToListAsync(ct);
-        return invoices.Select(invoice => invoice.MapToInvoiceDto()).ToList();
+        return await accounts.InvoiceDtosAsync(store.Invoices.OrderByDescending(i => i.CreatedAt), ct);
     }
 
     // Search reads the patient, their document, the total or the voucher number; the status is a filter
@@ -58,24 +55,21 @@ public class InvoiceService(
             _ => source.OrderBy(i => i.Client.LastName).ThenBy(i => i.Client.FirstName)
         };
         var page = await Pages.Materialize(ordered.Select(InvoiceMappingExtensions.MapForInvoiceDto()), query, ct);
-        return new PageDto<InvoiceDto>(page.Items.Select(invoice => invoice.MapToInvoiceDto()).ToList(), page.Total, page.Page, page.PageSize);
+        var credits = await accounts.CreditsAsync(page.Items.Select(i => i.ClientId).Distinct().ToList(), ct);
+        var today = accounts.Today();
+        return new PageDto<InvoiceDto>(page.Items.Select(i => i.MapToInvoiceDto(today, credits.GetValueOrDefault(i.ClientId))).ToList(), page.Total, page.Page, page.PageSize);
     }
 
     public async Task<IReadOnlyList<InvoiceDto>> MineAsync(CancellationToken ct)
     {
-        var clientId = await OwnClientAsync(ct);
-        var invoices = await store.Invoices
-            .Where(i => i.ClientId == clientId)
-            .OrderByDescending(i => i.CreatedAt)
-            .Select(InvoiceMappingExtensions.MapForInvoiceDto())
-            .ToListAsync(ct);
-        return invoices.Select(invoice => invoice.MapToInvoiceDto()).ToList();
+        var clientId = await accounts.OwnClientAsync(ct);
+        return await accounts.InvoiceDtosAsync(store.Invoices.Where(i => i.ClientId == clientId).OrderByDescending(i => i.CreatedAt), ct);
     }
 
     public async Task<FileDto> PdfAsync(Guid id, CancellationToken ct)
     {
         var invoice = await ReadAsync(id, ct);
-        if (currentUser.Role == AppRoles.Patient && invoice.PatientId != await OwnClientAsync(ct))
+        if (currentUser.Role == AppRoles.Patient && invoice.PatientId != await accounts.OwnClientAsync(ct))
             throw new NotFoundException("Comprobante no encontrado.");
         var clinic = await settings.GetAsync(ct);
         var name = invoice.Number is int number
@@ -125,6 +119,7 @@ public class InvoiceService(
         return await ReadAsync(invoice.Id, ct);
     }
 
+    // The payment is a receipt in the open register of the site where the patient was seen.
     public async Task<InvoiceDto> PayAsync(Guid id, PayInvoiceCommand command, CancellationToken ct)
     {
         var invoice = await store.GetInvoiceAsync(id, ct) ?? throw new NotFoundException("Comprobante no encontrado.");
@@ -135,15 +130,39 @@ public class InvoiceService(
         var amount = BillingRules.NormalizePrice(command.Amount ?? balance);
         if (BillingRules.PaymentError(amount, balance) is string error)
             throw new BusinessRuleException(error);
+        var card = AccountService.Card(command.Method, command.CardBrand, command.CardInstallments, command.CardBatch, command.CardCoupon);
+        await accounts.PostAsync(invoice.ClientId, await accounts.LocationOfAsync(invoice, ct), amount, command.Method, card, null, [(invoice, amount)], ct);
+        return await ReadAsync(invoice.Id, ct);
+    }
 
-        var now = clock.GetUtcNow();
-        var payment = new InvoicePayment { Id = Guid.NewGuid(), InvoiceId = invoice.Id, Amount = amount, Method = command.Method, PaidAt = now };
-        store.AddPayment(payment);
-        invoice.Status = BillingRules.StatusFor(invoice.Total, invoice.InsurerAmount, paid + amount);
-        if (invoice.Status == InvoiceStatus.Paid)
-            invoice.PaidAt = now;
+    // Splits what the patient still owes into monthly installments; each later payment covers them in order.
+    public async Task<InvoiceDto> CreatePlanAsync(Guid id, CreatePlanCommand command, CancellationToken ct)
+    {
+        var invoice = await store.GetInvoiceAsync(id, ct) ?? throw new NotFoundException("Comprobante no encontrado.");
+        if (!BillingRules.CanPay(invoice.Status))
+            throw new BusinessRuleException("Ese comprobante ya no se puede financiar.");
+        if (invoice.Plans.Any(p => p.CancelledAt == null))
+            throw new ConflictException("Ese comprobante ya tiene un plan de pago.");
+        var paid = BillingRules.Total(invoice.Payments.Select(p => p.Amount));
+        var balance = BillingRules.Balance(invoice.Total, invoice.InsurerAmount, paid);
+        if (PlanRules.Error(command.Installments, command.FirstDueDate, Today(), balance) is string error)
+            throw new BusinessRuleException(error);
+        var plan = new PaymentPlan { Id = Guid.NewGuid(), InvoiceId = invoice.Id, CreatedAt = clock.GetUtcNow(), Amount = balance, PaidBefore = paid };
+        foreach (var (number, due, amount) in PlanRules.Split(balance, command.Installments, command.FirstDueDate))
+            plan.Installments.Add(new PlanInstallment { Id = Guid.NewGuid(), PlanId = plan.Id, Number = number, DueDate = due, Amount = amount });
+        store.AddPlan(plan);
         await store.SaveAsync(ct);
-        await audit.RecordAsync(currentUser.Id, "pago", "Comprobante", invoice.Id.ToString(), $"{command.Method} {amount:0.00}", ct);
+        await audit.RecordAsync(currentUser.Id, "plan", "Comprobante", invoice.Id.ToString(), $"{command.Installments} cuotas de {balance:0.00} desde {command.FirstDueDate:dd/MM/yyyy}", ct);
+        return await ReadAsync(invoice.Id, ct);
+    }
+
+    public async Task<InvoiceDto> CancelPlanAsync(Guid id, CancellationToken ct)
+    {
+        var invoice = await store.GetInvoiceAsync(id, ct) ?? throw new NotFoundException("Comprobante no encontrado.");
+        var plan = invoice.Plans.FirstOrDefault(p => p.CancelledAt == null) ?? throw new NotFoundException("Ese comprobante no tiene plan de pago.");
+        plan.CancelledAt = clock.GetUtcNow();
+        await store.SaveAsync(ct);
+        await audit.RecordAsync(currentUser.Id, "plan", "Comprobante", invoice.Id.ToString(), "plan cancelado", ct);
         return await ReadAsync(invoice.Id, ct);
     }
 
@@ -155,6 +174,12 @@ public class InvoiceService(
             throw new ConflictException("Ese comprobante ya está autorizado.");
         if (!BillingRules.CanAuthorize(invoice))
             throw new BusinessRuleException("Solo se autoriza un comprobante vigente con importe mayor a 0.");
+        await AuthorizeCoreAsync(invoice, clinic, ct);
+        return await ReadAsync(invoice.Id, ct);
+    }
+
+    private async Task AuthorizeCoreAsync(Invoice invoice, ClinicSettings clinic, CancellationToken ct)
+    {
         var document = await clients.Clients.Where(c => c.Id == invoice.ClientId).Select(c => c.DocumentNumber).FirstAsync(ct);
         var type = BillingRules.VoucherFor(clinic.TaxCondition!.Value);
         var today = Today();
@@ -169,7 +194,15 @@ public class InvoiceService(
         invoice.FiscalSimulated = authorization.Simulated;
         await store.SaveAsync(ct);
         await audit.RecordAsync(currentUser.Id, "autorizacion", "Comprobante", invoice.Id.ToString(), $"{type} {invoice.PointOfSale:0000}-{invoice.Number:00000000} CAE {invoice.Cae}", ct);
-        return await ReadAsync(invoice.Id, ct);
+    }
+
+    // With automatic authorization on, an invoice is numbered with the tax authority as soon as it is issued.
+    private async Task AuthorizeIfAutomaticAsync(Invoice invoice, CancellationToken ct)
+    {
+        var clinic = await settings.GetAsync(ct);
+        if (clinic.FiscalEnabled && clinic.AutoAuthorize && BillingRules.IsValidTaxId(clinic.TaxId) && clinic.TaxCondition is not null
+            && clinic.PointOfSale is not null && BillingRules.CanAuthorize(invoice))
+            await AuthorizeCoreAsync(invoice, clinic, ct);
     }
 
     // Voiding keeps the invoice and its payments on record; an authorized one is cancelled with a credit note.
@@ -196,6 +229,8 @@ public class InvoiceService(
         }
         invoice.Status = InvoiceStatus.Voided;
         invoice.VoidedAt = clock.GetUtcNow();
+        foreach (var plan in invoice.Plans.Where(p => p.CancelledAt == null))
+            plan.CancelledAt = invoice.VoidedAt;
         invoice.VoidReason = reason;
         await store.SaveAsync(ct);
         await audit.RecordAsync(currentUser.Id, "anulacion", "Comprobante", invoice.Id.ToString(), reason, ct);
@@ -206,8 +241,8 @@ public class InvoiceService(
     public async Task IssueOnCloseAsync(Appointment appointment, CancellationToken ct)
     {
         var clinic = await settings.GetAsync(ct);
-        if (clinic.BillingEnabled && clinic.AutoInvoice)
-            await CreateIfMissingAsync(appointment, ct);
+        if (clinic.BillingEnabled && clinic.AutoInvoice && await CreateIfMissingAsync(appointment, ct) is { } invoice)
+            await AuthorizeIfAutomaticAsync(invoice, ct);
     }
 
     public async Task<InvoiceDto> IssueAsync(IssueInvoiceCommand command, CancellationToken ct)
@@ -219,6 +254,7 @@ public class InvoiceService(
             throw new BusinessRuleException("Solo se factura un turno atendido.");
         var invoice = await CreateIfMissingAsync(appointment, ct) ?? throw new ConflictException("Ese turno ya tiene comprobante.");
         await audit.RecordAsync(currentUser.Id, "alta", "Comprobante", invoice.Id.ToString(), null, ct);
+        await AuthorizeIfAutomaticAsync(invoice, ct);
         return await ReadAsync(invoice.Id, ct);
     }
 
@@ -268,12 +304,7 @@ public class InvoiceService(
         }, ct);
     }
 
-    private async Task<InvoiceDto> ReadAsync(Guid id, CancellationToken ct)
-    {
-        var invoice = await store.Invoices.Where(i => i.Id == id).Select(InvoiceMappingExtensions.MapForInvoiceDto()).FirstOrDefaultAsync(ct)
-            ?? throw new NotFoundException("Comprobante no encontrado.");
-        return invoice.MapToInvoiceDto();
-    }
+    private Task<InvoiceDto> ReadAsync(Guid id, CancellationToken ct) => accounts.ReadInvoiceAsync(id, ct);
 
     private async Task<ClinicSettings> FiscalSettingsAsync(CancellationToken ct)
     {
@@ -285,14 +316,7 @@ public class InvoiceService(
         return clinic;
     }
 
-    private async Task<Guid> OwnClientAsync(CancellationToken ct)
-    {
-        var userId = currentUser.Id ?? Guid.Empty;
-        var own = await clients.Clients.Where(c => c.UserId == userId).Select(c => c.Id).FirstOrDefaultAsync(ct);
-        return own == Guid.Empty ? throw new NotFoundException("No hay un paciente asociado a esta cuenta.") : own;
-    }
-
-    private DateOnly Today() => SchedulingRules.LocalDate(clock.GetUtcNow(), timeZone.Zone);
+    private DateOnly Today() => accounts.Today();
 
     private static bool SamePayer(string? feePayer, string? insurance) =>
         string.Equals(BillingRules.CanonicalPayer(feePayer), BillingRules.CanonicalPayer(insurance), StringComparison.OrdinalIgnoreCase);

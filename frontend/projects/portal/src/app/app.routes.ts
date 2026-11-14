@@ -59,6 +59,16 @@ export const routes: Routes = [
             loadComponent: () => import('./modules/billing/my-invoices').then((m) => m.MyInvoicesPage),
           },
           {
+            path: routePath(AppRoute.Caja),
+            canActivate: [roleGuard(TenantRole.Secretary, TenantRole.TenantAdmin)],
+            loadComponent: () => import('./modules/cash/cash').then((m) => m.CashPage),
+          },
+          {
+            path: routePath(AppRoute.Cuenta),
+            canActivate: [roleGuard(TenantRole.Secretary, TenantRole.TenantAdmin)],
+            loadComponent: () => import('./modules/billing/account').then((m) => m.AccountPage),
+          },
+          {
             path: routePath(AppRoute.DarTurno),
             canActivate: [roleGuard(TenantRole.Secretary, TenantRole.TenantAdmin)],
             loadComponent: () => import('./modules/appointments/desk-booking').then((m) => m.DeskBookingPage),

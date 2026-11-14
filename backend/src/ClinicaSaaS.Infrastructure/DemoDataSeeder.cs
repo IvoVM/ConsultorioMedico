@@ -415,14 +415,27 @@ public class DemoDataSeeder(TenantDbContext db, UserManager<TenantUser> users)
             Amount = bill.Amount
         });
         if (bill.Method is PaymentMethod method)
+        {
+            var receipt = new Receipt
+            {
+                Id = Guid.NewGuid(),
+                ClientId = patient.Id,
+                Amount = bill.Amount,
+                Method = method,
+                PaidAt = start.AddHours(2),
+                LocationId = locationId
+            };
+            db.Receipts.Add(receipt);
             db.InvoicePayments.Add(new InvoicePayment
             {
                 Id = Guid.NewGuid(),
                 InvoiceId = invoice.Id,
+                ReceiptId = receipt.Id,
                 Amount = bill.Amount,
                 Method = method,
                 PaidAt = start.AddHours(2)
             });
+        }
     }
 
     private void Weekdays(Guid professionalId, TimeOnly start, TimeOnly end, Guid locationId, Guid typeId)

@@ -45,6 +45,14 @@
             [disabled]="!form.billingEnabled"
             (checkedChange)="setFiscal($event)"
           />
+          <div class="border-t border-rule"></div>
+          <ui-switch
+            label="Autorizar al emitir"
+            description="Cada comprobante se autoriza solo apenas se emite, sin el paso de Autorizar. Así sale con número y CAE, pero ya no se pueden corregir sus ítems: un error se corrige anulándolo. También usa el simulador."
+            [checked]="!!form.autoAuthorize"
+            [disabled]="!form.billingEnabled || !form.fiscalEnabled"
+            (checkedChange)="setAutoAuthorize($event)"
+          />
         </section>
         @if (form.billingEnabled && form.fiscalEnabled) {
           <section class="mt-6 rounded-2xl bg-white p-5 shadow-[var(--shadow-card)] sm:p-6">

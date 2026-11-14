@@ -102,5 +102,5 @@
 }
 
 @if (openedView(); as view) {
-  <ui-invoice [view]="view" [source]="openedSource()!" [methods]="paymentOptions" (closed)="opened.set(null)" />
+  <ui-invoice [view]="view" [source]="openedSource()!" [methods]="paymentOptions" [cardMethod]="cardMethod" [brands]="brandOptions" (closed)="opened.set(null)" />
 }

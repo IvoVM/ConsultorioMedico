@@ -34,12 +34,13 @@ public class ClinicSettingsService(
         settings.TaxId = string.IsNullOrWhiteSpace(command.TaxId) ? null : new string(command.TaxId.Where(char.IsDigit).ToArray());
         settings.TaxCondition = command.TaxCondition;
         settings.PointOfSale = command.PointOfSale;
+        settings.AutoAuthorize = settings.FiscalEnabled && command.AutoAuthorize;
         await store.SaveAsync(ct);
-        var detail = $"{settings.Name} · facturación {(settings.BillingEnabled ? "sí" : "no")} · automática {(settings.AutoInvoice ? "sí" : "no")} · electrónica {(settings.FiscalEnabled ? "sí" : "no")}";
+        var detail = $"{settings.Name} · facturación {(settings.BillingEnabled ? "sí" : "no")} · automática {(settings.AutoInvoice ? "sí" : "no")} · electrónica {(settings.FiscalEnabled ? "sí" : "no")} · autorización automática {(settings.AutoAuthorize ? "sí" : "no")}";
         await audit.RecordAsync(currentUser.Id, "edicion", "Configuracion", settings.Id.ToString(), detail, ct);
         return ToDto(settings);
     }
 
     private static ClinicSettingsDto ToDto(ClinicSettings settings) =>
-        new(settings.Name, settings.BillingEnabled, settings.AutoInvoice, settings.FiscalEnabled, settings.TaxId, settings.TaxCondition, settings.PointOfSale);
+        new(settings.Name, settings.BillingEnabled, settings.AutoInvoice, settings.FiscalEnabled, settings.TaxId, settings.TaxCondition, settings.PointOfSale, settings.AutoAuthorize);
 }

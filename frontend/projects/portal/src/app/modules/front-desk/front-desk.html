@@ -24,6 +24,7 @@
           <div class="flex gap-4">
             <a class="text-link" [routerLink]="route.ReservarPaciente" [queryParams]="patientParams(patient.patientId)">Reservar</a>
             <a class="text-link" [routerLink]="route.HistorialTurnos" [queryParams]="patientParams(patient.patientId)">Historial</a>
+            <a class="text-link" [routerLink]="route.Cuenta" [queryParams]="patientParams(patient.patientId)">Cuenta</a>
           </div>
         </li>
       }
@@ -102,7 +103,7 @@
     }
   </div>
   @if (openedView(); as view) {
-    <ui-invoice [view]="view" [source]="openedSource()!" [methods]="paymentOptions" (closed)="opened.set(null)" />
+    <ui-invoice [view]="view" [source]="openedSource()!" [methods]="paymentOptions" [cardMethod]="cardMethod" [brands]="brandOptions" (closed)="opened.set(null)" />
   }
   @if (moving(); as appointment) {
     <ui-modal [open]="true" [wide]="true" [title]="'Reprogramar a ' + appointment.patient" (closed)="cancelMove()">

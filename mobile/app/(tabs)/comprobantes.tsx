@@ -55,7 +55,10 @@ export default function Comprobantes() {
             <Text style={{ fontFamily: type.sansBold, color: colors.ink }}>Saldo {money.format(item.balance)}</Text>
           ) : null}
           {!patient && item.balance > 0 && item.status !== InvoiceStatus.Voided
-            ? Object.values(PaymentMethod).map((method) => (
+            ? Object.values(PaymentMethod)
+                // A card payment needs its batch and coupon, which are entered from the portal.
+                .filter((method) => method !== PaymentMethod.Card)
+                .map((method) => (
                 <Button
                   key={method}
                   label={`Cobrar saldo · ${paymentMethodLabels[method]}`}

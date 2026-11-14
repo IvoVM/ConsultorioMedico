@@ -8,7 +8,7 @@ namespace ClinicaSaaS.Api.Controllers;
 [ApiController]
 [Authorize]
 [Route("api")]
-public class BillingController(FeeService fees, InvoiceService invoices) : ApiController
+public class BillingController(FeeService fees, InvoiceService invoices, AccountService accounts) : ApiController
 {
     private const string Desk = $"{AppRoles.TenantAdmin},{AppRoles.Secretary}";
 
@@ -57,6 +57,21 @@ public class BillingController(FeeService fees, InvoiceService invoices) : ApiCo
     [HttpPost("comprobantes/{id:guid}/anular")]
     public Task<IActionResult> Void(Guid id, VoidInvoiceCommand command, CancellationToken ct) =>
         Run(() => invoices.VoidAsync(id, command, ct));
+
+    [Authorize(Roles = Desk)]
+    [HttpPost("comprobantes/{id:guid}/plan")]
+    public Task<IActionResult> CreatePlan(Guid id, CreatePlanCommand command, CancellationToken ct) =>
+        Run(() => invoices.CreatePlanAsync(id, command, ct));
+
+    [Authorize(Roles = Desk)]
+    [HttpPost("comprobantes/{id:guid}/plan/cancelar")]
+    public Task<IActionResult> CancelPlan(Guid id, CancellationToken ct) =>
+        Run(() => invoices.CancelPlanAsync(id, ct));
+
+    [Authorize(Roles = Desk)]
+    [HttpPost("comprobantes/{id:guid}/aplicar-saldo")]
+    public Task<IActionResult> ApplyCredit(Guid id, ApplyCreditCommand command, CancellationToken ct) =>
+        Run(() => accounts.ApplyCreditAsync(id, command, ct));
 
     // Front desk prints any invoice; a patient only gets their own.
     [Authorize(Roles = $"{Desk},{AppRoles.Patient}")]

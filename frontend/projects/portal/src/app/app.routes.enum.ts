@@ -11,6 +11,8 @@ export enum AppRoute {
   Perfil = '/perfil',
   Recetas = '/recetas',
   MisComprobantes = '/mis-comprobantes',
+  Caja = '/caja',
+  Cuenta = '/cuenta',
   ReservarPaciente = '/reservar/paciente',
   DarTurno = '/dar-turno',
   Solicitudes = '/solicitudes',

@@ -486,7 +486,7 @@ public class BillingStore(TenantDbContext db) : IBillingStore
     }
 
     public Task<Invoice?> GetInvoiceAsync(Guid id, CancellationToken ct) =>
-        db.Invoices.Include(i => i.Items).Include(i => i.Payments).FirstOrDefaultAsync(i => i.Id == id, ct);
+        db.Invoices.Include(i => i.Items).Include(i => i.Payments).Include(i => i.Plans).FirstOrDefaultAsync(i => i.Id == id, ct);
 
     public IQueryable<Invoice> Invoices => db.Invoices.AsNoTracking();
 
@@ -497,6 +497,36 @@ public class BillingStore(TenantDbContext db) : IBillingStore
     public void AddItem(InvoiceItem item) => db.InvoiceItems.Add(item);
 
     public void RemoveItems(IEnumerable<InvoiceItem> items) => db.InvoiceItems.RemoveRange(items);
+
+    public IQueryable<Receipt> Receipts => db.Receipts.AsNoTracking();
+
+    public void AddReceipt(Receipt receipt) => db.Receipts.Add(receipt);
+
+    public Task<Receipt?> GetReceiptAsync(Guid id, CancellationToken ct) => db.Receipts.FirstOrDefaultAsync(r => r.Id == id, ct);
+
+    public Task<List<Invoice>> GetInvoicesAsync(IReadOnlyCollection<Guid> ids, CancellationToken ct) =>
+        db.Invoices.Include(i => i.Items).Include(i => i.Payments).Include(i => i.Plans).Where(i => ids.Contains(i.Id)).ToListAsync(ct);
+
+    public IQueryable<PaymentPlan> Plans => db.PaymentPlans.AsNoTracking();
+
+    public void AddPlan(PaymentPlan plan) => db.PaymentPlans.Add(plan);
+
+    public IQueryable<CashSession> CashSessions => db.CashSessions.AsNoTracking();
+
+    public Task<CashSession?> GetCashSessionAsync(Guid id, CancellationToken ct) => db.CashSessions.FirstOrDefaultAsync(s => s.Id == id, ct);
+
+    public void AddCashSession(CashSession session) => db.CashSessions.Add(session);
+
+    public void AddCashMovement(CashMovement movement) => db.CashMovements.Add(movement);
+
+    public IQueryable<CardSettlement> Settlements => db.CardSettlements.AsNoTracking();
+
+    public IQueryable<CardSettlementLine> SettlementLines => db.CardSettlementLines.AsNoTracking();
+
+    public Task<CardSettlementLine?> GetSettlementLineAsync(Guid id, CancellationToken ct) =>
+        db.CardSettlementLines.Include(l => l.Settlement).FirstOrDefaultAsync(l => l.Id == id, ct);
+
+    public void AddSettlement(CardSettlement settlement) => db.CardSettlements.Add(settlement);
 
     public Task SaveAsync(CancellationToken ct) => db.SaveChangesAsync(ct);
 }

@@ -29,7 +29,7 @@ export class SettingsPage {
   readonly dirty = computed(() => {
     const saved = this.saved();
     const draft = this.draft();
-    return !!saved && !!draft && (['name', 'billingEnabled', 'autoInvoice', 'fiscalEnabled', 'taxId', 'taxCondition', 'pointOfSale'] as const).some((key) => (draft[key] ?? null) !== (saved[key] ?? null));
+    return !!saved && !!draft && (['name', 'billingEnabled', 'autoInvoice', 'fiscalEnabled', 'taxId', 'taxCondition', 'pointOfSale', 'autoAuthorize'] as const).some((key) => (draft[key] ?? null) !== (saved[key] ?? null));
   });
 
   constructor() {
@@ -51,7 +51,11 @@ export class SettingsPage {
   }
 
   setFiscal(fiscalEnabled: boolean) {
-    this.draft.update((draft) => draft && { ...draft, fiscalEnabled });
+    this.draft.update((draft) => draft && { ...draft, fiscalEnabled, autoAuthorize: fiscalEnabled && !!draft.autoAuthorize });
+  }
+
+  setAutoAuthorize(autoAuthorize: boolean) {
+    this.draft.update((draft) => draft && { ...draft, autoAuthorize });
   }
 
   setTaxId(taxId: string) {

@@ -1,0 +1,186 @@
+<header class="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2">
+  <h2 class="font-serif text-3xl tracking-tight">Caja</h2>
+  <ui-help title="Caja">
+    <p>La caja de cada sede. Se abre al empezar el día con el efectivo que hay en el cajón, y todo cobro o devolución que se hace en esa sede entra acá solo, con su medio de pago.</p>
+    <p>Los gastos y otros ingresos que no son de un paciente se cargan a mano como egreso o ingreso.</p>
+    <p>Al cerrar, contás el efectivo: la pantalla lo compara con lo esperado (apertura más lo que entró en efectivo, menos lo que salió) y queda registrada la diferencia. Mientras la caja de una sede está cerrada, no se puede cobrar ahí.</p>
+  </ui-help>
+</header>
+
+@if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
+
+@if (locationOptions().length > 1) {
+  <ui-field class="mb-6 sm:w-72" label="Sede">
+    <ui-select name="location" [options]="locationOptions()" [ngModel]="locationId()" (ngModelChange)="pickLocation($event)" />
+  </ui-field>
+}
+
+@if (loading()) {
+  <ui-skeleton label="Cargando caja" />
+} @else if (current(); as session) {
+  <section class="surface px-5 py-5 sm:px-6">
+    <div class="flex flex-wrap items-start justify-between gap-4">
+      <div>
+        <p class="text-sm text-ink/65">{{ session.location }} · abierta {{ session.openedAt | fecha }}@if (session.openedBy) { por {{ session.openedBy }} }</p>
+        <p class="mt-2 font-serif text-3xl tabular-nums">{{ money(session.expectedCash) }}</p>
+        <p class="text-sm text-ink/65">efectivo que debería haber en el cajón · apertura {{ money(session.openingCash) }}</p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <ui-button variant="outlined" (click)="openDialog(dialogs.Income)">Ingreso</ui-button>
+        <ui-button variant="outlined" (click)="openDialog(dialogs.Expense)">Egreso</ui-button>
+        <ui-button (click)="openDialog(dialogs.Close)">Cerrar caja</ui-button>
+      </div>
+    </div>
+    <dl class="mt-5 grid gap-3 sm:grid-cols-3">
+      @for (total of session.totals; track total.method) {
+        <div class="rounded-xl bg-mist px-4 py-3">
+          <dt class="text-xs font-semibold text-ink/60">{{ methodLabels[total.method] }}</dt>
+          <dd class="mt-1 text-lg font-bold tabular-nums">{{ money(total.net) }}</dd>
+          <dd class="text-xs text-ink/60 tabular-nums">entró {{ money(total.in) }} · salió {{ money(total.out) }}</dd>
+        </div>
+      }
+    </dl>
+  </section>
+
+  <section class="mt-8">
+    <h3 class="mb-3 font-serif text-xl">Movimientos</h3>
+    @if (!session.movements.length) {
+      <ui-empty message="Todavía no hubo movimientos en esta caja." />
+    } @else {
+      <ui-table>
+        <table class="cards">
+          <thead><tr><th>Hora</th><th>Movimiento</th><th>Medio</th><th>Detalle</th><th>Monto</th></tr></thead>
+          <tbody>
+            @for (item of session.movements; track item.id) {
+              <tr>
+                <td class="tabular-nums">{{ item.at | fecha:'hora' }}</td>
+                <td data-name="Movimiento"><ui-badge [tone]="signed(item.kind, 1) > 0 ? 'ok' : 'warn'">{{ kindLabels[item.kind] }}</ui-badge></td>
+                <td data-name="Medio">{{ methodLabels[item.method] }}</td>
+                <td data-name="Detalle">{{ item.description }}@if (item.user) { <span class="block text-xs text-ink/60">{{ item.user }}</span> }</td>
+                <td data-name="Monto" class="tabular-nums">{{ money(signed(item.kind, item.amount)) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </ui-table>
+    }
+  </section>
+} @else if (locationId()) {
+  <section class="surface max-w-xl px-5 py-5 sm:px-6">
+    <h3 class="font-serif text-xl">La caja de esta sede está cerrada</h3>
+    <p class="mt-2 text-sm text-ink/70">Abrila con el efectivo que hay en el cajón para empezar a cobrar.</p>
+    <form class="mt-4 flex flex-wrap items-end gap-3" (ngSubmit)="open()">
+      <ui-field class="w-48" label="Efectivo inicial">
+        <input name="openingCash" type="number" min="0" step="0.01" inputmode="decimal" [ngModel]="openingCash()" (ngModelChange)="openingCash.set($event)" required />
+      </ui-field>
+      <ui-button type="submit" [loading]="saving()">Abrir caja</ui-button>
+    </form>
+  </section>
+}
+
+@if (!loading() && history().length) {
+  <section class="mt-10">
+    <h3 class="mb-3 font-serif text-xl">Cajas anteriores</h3>
+    <ui-table>
+      <table class="cards">
+        <thead><tr><th>Apertura</th><th>Cierre</th><th>Esperado</th><th>Contado</th><th>Diferencia</th><th class="w-px"></th></tr></thead>
+        <tbody>
+          @for (item of history(); track item.id) {
+            <tr>
+              <td>{{ item.openedAt | fecha }}@if (item.openedBy) { <span class="block text-xs text-ink/60">{{ item.openedBy }}</span> }</td>
+              <td data-name="Cierre">{{ item.closedAt | fecha }}</td>
+              <td data-name="Esperado" class="tabular-nums">{{ money(item.expectedCash) }}</td>
+              <td data-name="Contado" class="tabular-nums">{{ money(item.countedCash) }}</td>
+              <td data-name="Diferencia"><ui-badge [tone]="differenceTone(item.difference)">{{ money(item.difference) }}</ui-badge></td>
+              <td class="w-px whitespace-nowrap"><ui-button variant="ghost" (click)="view(item)">Ver</ui-button></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </ui-table>
+  </section>
+}
+
+@if (dialog() === dialogs.Income || dialog() === dialogs.Expense) {
+  <ui-modal [open]="true" [title]="dialog() === dialogs.Income ? 'Ingreso a caja' : 'Egreso de caja'" (closed)="dialog.set(null)">
+    <form id="cash-movement-form" class="grid gap-4" (ngSubmit)="addMovement()">
+      <p class="text-sm text-ink/70">
+        @if (dialog() === dialogs.Income) { Plata que entra y no es el pago de un paciente, como la venta de un certificado. }
+        @else { Plata que sale de la caja, como un gasto de librería o un pago a un proveedor. }
+      </p>
+      <ui-field label="Medio">
+        <ui-select name="method" [options]="methodOptions" [ngModel]="movementMethod()" (ngModelChange)="movementMethod.set($event)" />
+      </ui-field>
+      <ui-field label="Monto">
+        <input name="amount" type="number" min="0.01" step="0.01" inputmode="decimal" [ngModel]="movementAmount()" (ngModelChange)="movementAmount.set($event)" required />
+      </ui-field>
+      <ui-field label="Detalle">
+        <input name="description" maxlength="200" [ngModel]="movementDescription()" (ngModelChange)="movementDescription.set($event)" required />
+      </ui-field>
+      @if (dialogError()) { <p class="text-sm text-pulse" role="alert">{{ dialogError() }}</p> }
+    </form>
+    <div uiModalFooter class="flex flex-wrap gap-3">
+      <ui-button type="submit" form="cash-movement-form" [loading]="saving()">Guardar</ui-button>
+      <ui-button variant="outlined" [disabled]="saving()" (click)="dialog.set(null)">Cancelar</ui-button>
+    </div>
+  </ui-modal>
+}
+
+@if (dialog() === dialogs.Close && current(); as session) {
+  <ui-modal [open]="true" title="Cerrar caja" (closed)="dialog.set(null)">
+    <form id="cash-close-form" class="grid gap-4" (ngSubmit)="close()">
+      <p class="text-sm text-ink/70">Contá el efectivo del cajón. Las tarjetas y transferencias no se cuentan: se ven en la liquidación y en el banco.</p>
+      <dl class="grid grid-cols-[1fr_auto] gap-x-6 gap-y-1 text-sm tabular-nums">
+        <dt class="text-ink/70">Apertura</dt><dd class="text-right">{{ money(session.openingCash) }}</dd>
+        @for (total of session.totals; track total.method) {
+          <dt class="text-ink/70">{{ methodLabels[total.method] }}</dt><dd class="text-right">{{ money(total.net) }}</dd>
+        }
+        <dt class="font-semibold">Efectivo esperado</dt><dd class="text-right font-semibold">{{ money(session.expectedCash) }}</dd>
+      </dl>
+      <ui-field label="Efectivo contado">
+        <input name="countedCash" type="number" min="0" step="0.01" inputmode="decimal" [ngModel]="countedCash()" (ngModelChange)="countedCash.set($event)" required />
+      </ui-field>
+      @if (difference() !== null) {
+        <p class="text-sm">
+          Diferencia:
+          <ui-badge [tone]="differenceTone(difference())">{{ money(difference()) }}</ui-badge>
+          @if (difference()! < 0) { falta efectivo. } @else if (difference()! > 0) { sobra efectivo. } @else { coincide. }
+        </p>
+      }
+      <ui-field label="Observaciones">
+        <textarea name="notes" rows="2" maxlength="500" [ngModel]="notes()" (ngModelChange)="notes.set($event)"></textarea>
+      </ui-field>
+      @if (dialogError()) { <p class="text-sm text-pulse" role="alert">{{ dialogError() }}</p> }
+    </form>
+    <div uiModalFooter class="flex flex-wrap gap-3">
+      <ui-button type="submit" form="cash-close-form" [loading]="saving()">Cerrar caja</ui-button>
+      <ui-button variant="outlined" [disabled]="saving()" (click)="dialog.set(null)">Cancelar</ui-button>
+    </div>
+  </ui-modal>
+}
+
+@if (viewing(); as session) {
+  <ui-modal [open]="true" [wide]="true" [title]="'Caja del ' + (session.openedAt | fecha)" (closed)="viewing.set(null)">
+    <p class="text-sm text-ink/70">
+      {{ session.location }} · abrió {{ session.openedBy || '—' }} · cerró {{ session.closedBy || '—' }} {{ session.closedAt | fecha }}
+    </p>
+    <dl class="mt-4 grid grid-cols-[1fr_auto] gap-x-6 gap-y-1 text-sm tabular-nums sm:max-w-sm">
+      <dt class="text-ink/70">Apertura</dt><dd class="text-right">{{ money(session.openingCash) }}</dd>
+      @for (total of session.totals; track total.method) {
+        <dt class="text-ink/70">{{ methodLabels[total.method] }}</dt><dd class="text-right">{{ money(total.net) }}</dd>
+      }
+      <dt class="text-ink/70">Efectivo esperado</dt><dd class="text-right">{{ money(session.expectedCash) }}</dd>
+      <dt class="text-ink/70">Efectivo contado</dt><dd class="text-right">{{ money(session.countedCash) }}</dd>
+      <dt class="font-semibold">Diferencia</dt><dd class="text-right font-semibold">{{ money(session.difference) }}</dd>
+    </dl>
+    @if (session.notes) { <p class="mt-3 text-sm">{{ session.notes }}</p> }
+    <ul class="mt-5 divide-y divide-rule text-sm">
+      @for (item of session.movements; track item.id) {
+        <li class="flex flex-wrap justify-between gap-3 py-1.5">
+          <span>{{ item.at | fecha:'hora' }} · {{ kindLabels[item.kind] }} · {{ methodLabels[item.method] }} · {{ item.description }}</span>
+          <span class="tabular-nums">{{ money(signed(item.kind, item.amount)) }}</span>
+        </li>
+      }
+    </ul>
+  </ui-modal>
+}

@@ -36,7 +36,15 @@ export type InvoiceView = {
   canPay: boolean;
   canAuthorize: boolean;
   canVoid: boolean;
+  // The installments of the payment plan, if there is one, with their status already as a label.
+  plan: { installments: { number: number; dueDate: string; amount: number; paid: number; status: string; tone: 'ok' | 'warn' | 'muted' }[] } | null;
+  canPlan: boolean;
+  // The patient's credit that can pay this invoice.
+  credit: number;
 };
+
+// What a card payment is settled by: the brand as the app's enum value, installments, batch and coupon.
+export type InvoiceCard = { brand: string; installments: number; batch: string; coupon: string };
 
 export type InvoiceEdit = {
   items: { description: string; quantity: number; unitPrice: number }[];
@@ -46,7 +54,10 @@ export type InvoiceEdit = {
 
 export type InvoiceSource = {
   save(edit: InvoiceEdit): Promise<void>;
-  pay(amount: number, method: string): Promise<void>;
+  pay(amount: number, method: string, card: InvoiceCard | null): Promise<void>;
+  applyCredit(): Promise<void>;
+  createPlan(installments: number, firstDueDate: string): Promise<void>;
+  cancelPlan(): Promise<void>;
   authorize(): Promise<void>;
   void(reason: string): Promise<void>;
   pdf(): Promise<void>;
@@ -56,12 +67,19 @@ export enum InvoiceMode {
   View = 'view',
   Edit = 'edit',
   Void = 'void',
+  Plan = 'plan',
 }
 
 const money = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 2 });
 
 export function formatMoney(amount: number | null | undefined) {
   return money.format(amount ?? 0);
+}
+
+function nextMonth() {
+  const date = new Date();
+  date.setMonth(date.getMonth() + 1);
+  return date.toISOString().slice(0, 10);
 }
 
 function failure(error: unknown, fallback: string) {
@@ -78,6 +96,9 @@ export class UiInvoice {
   readonly source = input.required<InvoiceSource>();
   // Payment methods as value/label pairs from the app's enum.
   readonly methods = input<SelectOption[]>([]);
+  // The method value that means a card, and the card brands to pick from.
+  readonly cardMethod = input('');
+  readonly brands = input<SelectOption[]>([]);
   readonly closed = output<void>();
 
   readonly modes = InvoiceMode;
@@ -90,6 +111,13 @@ export class UiInvoice {
   readonly amount = signal(0);
   readonly method = signal('');
   readonly reason = signal('');
+  readonly brand = signal('');
+  readonly cardInstallments = signal(1);
+  readonly batch = signal('');
+  readonly coupon = signal('');
+  readonly planCount = signal(3);
+  readonly planFirstDue = signal(nextMonth());
+  readonly isCard = computed(() => !!this.cardMethod() && this.method() === this.cardMethod());
   readonly draftSubtotal = computed(() => this.lines().reduce((sum, line) => sum + (Number(line.quantity) || 0) * (Number(line.unitPrice) || 0), 0));
   readonly draftTotal = computed(() => this.draftSubtotal() - (Number(this.discount()) || 0));
 
@@ -102,6 +130,10 @@ export class UiInvoice {
       untracked(() => {
         this.amount.set(view.balance);
         if (!this.method()) this.method.set(this.methods()[0]?.value ?? '');
+        if (!this.brand()) this.brand.set(this.brands()[0]?.value ?? '');
+        // With a plan, the next payment suggested is what is left of the next installment.
+        const next = view.plan?.installments.find((item) => item.paid < item.amount);
+        if (next) this.amount.set(Math.min(view.balance, Math.round((next.amount - next.paid) * 100) / 100));
       });
     });
   }
@@ -156,7 +188,41 @@ export class UiInvoice {
   }
 
   async pay() {
-    await this.run('pay', 'No se pudo registrar el pago.', () => this.source().pay(Number(this.amount()), this.method()));
+    const card = this.isCard()
+      ? { brand: this.brand(), installments: Number(this.cardInstallments()), batch: this.batch().trim(), coupon: this.coupon().trim() }
+      : null;
+    await this.run('pay', 'No se pudo registrar el pago.', async () => {
+      await this.source().pay(Number(this.amount()), this.method(), card);
+      this.batch.set('');
+      this.coupon.set('');
+    });
+  }
+
+  async applyCredit() {
+    await this.run('credit', 'No se pudo aplicar el saldo a favor.', () => this.source().applyCredit());
+  }
+
+  startPlan() {
+    this.planCount.set(3);
+    this.planFirstDue.set(nextMonth());
+    this.error.set('');
+    this.mode.set(InvoiceMode.Plan);
+  }
+
+  async createPlan() {
+    await this.run('plan', 'No se pudo armar el plan de pago.', async () => {
+      await this.source().createPlan(Number(this.planCount()), this.planFirstDue());
+      this.mode.set(InvoiceMode.View);
+    });
+  }
+
+  async cancelPlan() {
+    await this.run('cancel-plan', 'No se pudo cancelar el plan.', () => this.source().cancelPlan());
+  }
+
+  installmentShare() {
+    const count = Number(this.planCount()) || 1;
+    return Math.floor((this.view().balance / count) * 100) / 100;
   }
 
   async authorize() {
