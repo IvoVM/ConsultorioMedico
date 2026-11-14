@@ -164,10 +164,24 @@ public interface IBillingStore
     Task RemoveFeesEffectiveFromAsync(Guid appointmentTypeId, DateOnly day, string? payer, Guid? keepId, CancellationToken ct);
     Task<Fee> AddFeeAsync(Fee fee, CancellationToken ct);
     Task<Invoice> AddInvoiceAsync(Invoice invoice, CancellationToken ct);
+    // Tracked, with its items and payments.
     Task<Invoice?> GetInvoiceAsync(Guid id, CancellationToken ct);
     IQueryable<Invoice> Invoices { get; }
+    IQueryable<InvoicePayment> Payments { get; }
+    void AddPayment(InvoicePayment payment);
+    void AddItem(InvoiceItem item);
+    void RemoveItems(IEnumerable<InvoiceItem> items);
     Task SaveAsync(CancellationToken ct);
 }
+
+// The tax authority that numbers and authorizes fiscal vouchers (AFIP/ARCA web services, or a simulation).
+public interface IFiscalAuthority
+{
+    Task<FiscalAuthorization> AuthorizeAsync(FiscalRequest request, CancellationToken ct);
+}
+
+public record FiscalRequest(string TaxId, int PointOfSale, FiscalVoucherType Type, decimal Amount, string CustomerDocument, DateOnly Date);
+public record FiscalAuthorization(int Number, string Cae, DateOnly CaeDueDate, bool Simulated);
 
 public interface IClinicSettingsStore
 {

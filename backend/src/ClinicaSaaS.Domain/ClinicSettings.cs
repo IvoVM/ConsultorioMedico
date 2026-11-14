@@ -7,4 +7,9 @@ public class ClinicSettings
     public string Name { get; set; } = "";
     public bool BillingEnabled { get; set; } = true;
     public bool AutoInvoice { get; set; } = true;
+    // Electronic invoicing: invoices can be authorized with the tax authority, which needs the clinic's tax data.
+    public bool FiscalEnabled { get; set; }
+    public string? TaxId { get; set; }
+    public TaxCondition? TaxCondition { get; set; }
+    public int? PointOfSale { get; set; }
 }

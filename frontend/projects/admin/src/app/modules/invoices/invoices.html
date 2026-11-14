@@ -1,8 +1,8 @@
 <header class="mb-6">
   <h2 class="font-serif text-2xl tracking-tight">Comprobantes</h2>
   <p class="mt-2 max-w-prose text-sm leading-relaxed text-ink/70">
-    Cada fila es el cobro de una atención ya cerrada. El total es el importe de esa consulta.
-    Pendiente todavía no se cobró. Pagado indica el medio: efectivo, transferencia o tarjeta. Anulado es un cobro que se dejó sin efecto.
+    Cada fila es el cobro de una atención cerrada. Abrí uno para cobrarlo, también en partes, corregir sus ítems o el descuento mientras no tenga pagos,
+    autorizarlo ante ARCA, descargar el PDF o anularlo con un motivo. Si el paciente tiene obra social, el saldo es solo lo que le toca pagar a él.
   </p>
 </header>
 
@@ -10,36 +10,49 @@
 
 <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end">
   <ui-field class="sm:w-80" label="Buscar">
-    <input type="search" name="query" [ngModel]="query()" (ngModelChange)="onSearch($event)" placeholder="Paciente, estado o pago" />
+    <input type="search" name="query" [ngModel]="query()" (ngModelChange)="onSearch($event)" placeholder="Paciente, DNI, importe o número" />
+  </ui-field>
+  <ui-field class="sm:w-56" label="Estado">
+    <ui-select name="status" [options]="statusOptions" [ngModel]="status()" (ngModelChange)="onStatus($event)" />
   </ui-field>
 </div>
 
 @if (loading()) {
   <ui-skeleton label="Cargando comprobantes" />
 } @else if (!total()) {
-  <ui-empty [message]="query() ? 'Ningún comprobante coincide con esa búsqueda.' : 'Todavía no hay comprobantes. Se generan cuando se cierra una atención.'" />
+  <ui-empty [message]="query() || status() ? 'Ningún comprobante coincide con esa búsqueda.' : 'Todavía no hay comprobantes. Se generan cuando se cierra una atención.'" />
 } @else {
 <ui-table>
 <table class="cards">
   <thead>
     <tr>
+      <th><button type="button" sortCol [on]="sort().key === 'number'" [dir]="sort().dir" (click)="sortBy('number')">Número</button></th>
       <th><button type="button" sortCol [on]="sort().key === 'patient'" [dir]="sort().dir" (click)="sortBy('patient')">Paciente</button></th>
+      <th><button type="button" sortCol [on]="sort().key === 'date'" [dir]="sort().dir" (click)="sortBy('date')">Fecha</button></th>
       <th><button type="button" sortCol [on]="sort().key === 'total'" [dir]="sort().dir" (click)="sortBy('total')">Total</button></th>
+      <th>Saldo</th>
       <th><button type="button" sortCol [on]="sort().key === 'status'" [dir]="sort().dir" (click)="sortBy('status')">Estado</button></th>
-      <th><button type="button" sortCol [on]="sort().key === 'payment'" [dir]="sort().dir" (click)="sortBy('payment')">Pago</button></th>
+      <th class="w-px"></th>
     </tr>
   </thead>
   <tbody>
     @for (item of invoices(); track item.id) {
       <tr>
-        <td>{{ item.patient }}</td>
-        <td data-name="Total">{{ item.total }}</td>
-        <td data-name="Estado"><ui-badge [tone]="item.status === invoice.Paid ? 'ok' : 'warn'">{{ statusLabels[item.status] }}</ui-badge></td>
-        <td data-name="Pago">{{ item.paymentMethod ? methodLabels[item.paymentMethod] : '—' }}</td>
+        <td class="tabular-nums">{{ number(item.pointOfSale, item.number) || 'Sin autorizar' }}</td>
+        <td data-name="Paciente">{{ item.patient }}</td>
+        <td data-name="Fecha">{{ item.createdAt | fecha }}</td>
+        <td data-name="Total" class="tabular-nums">{{ money(item.total) }}</td>
+        <td data-name="Saldo" class="tabular-nums">{{ money(item.balance) }}</td>
+        <td data-name="Estado"><ui-badge [tone]="tone(item.status)">{{ statusLabels[item.status] }}</ui-badge></td>
+        <td class="w-px whitespace-nowrap"><ui-button variant="ghost" (click)="opened.set(item)">Abrir</ui-button></td>
       </tr>
     }
   </tbody>
 </table>
 </ui-table>
 <table-pager [total]="total()" [page]="page()" (pageChange)="go($event)" />
+}
+
+@if (openedView(); as view) {
+  <ui-invoice [view]="view" [source]="openedSource()!" [methods]="paymentOptions" (closed)="opened.set(null)" />
 }

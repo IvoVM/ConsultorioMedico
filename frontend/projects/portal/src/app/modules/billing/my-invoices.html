@@ -1,0 +1,33 @@
+@if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
+@if (loading()) {
+  <ui-skeleton [framed]="false" [count]="3" height="6rem" label="Cargando comprobantes" />
+} @else if (invoices().length === 0) {
+  <ui-empty message="Todavía no tenés comprobantes. Se generan cuando te atienden." />
+} @else {
+  @if (owed()) {
+    <p class="mb-6 text-sm">Tenés <strong class="tabular-nums">{{ money(owed()) }}</strong> pendientes de pago. Podés pagarlos en la recepción.</p>
+  }
+  <div class="space-y-4">
+    @for (invoice of invoices(); track invoice.id) {
+      <article class="surface surface-lift flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <div class="min-w-0">
+          <p class="font-serif text-lg leading-tight">{{ title(invoice) }}</p>
+          <p class="mt-1 text-sm text-ink/70">{{ invoice.appointmentStart | fecha }} · {{ invoice.professional }}</p>
+          <p class="mt-1 text-sm text-ink/70">
+            Total {{ money(invoice.total) }}
+            @if (invoice.insurerAmount) { · a tu cargo {{ money(invoice.patientAmount) }} }
+            @if (invoice.balance) { · <strong>saldo {{ money(invoice.balance) }}</strong> }
+          </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
+          <ui-badge [tone]="tone(invoice.status)">{{ statusLabels[invoice.status] }}</ui-badge>
+          <ui-button variant="ghost" (click)="opened.set(invoice)">Ver</ui-button>
+          <ui-button variant="outlined" [loading]="downloading() === invoice.id" (click)="download(invoice)">PDF</ui-button>
+        </div>
+      </article>
+    }
+  </div>
+}
+@if (openedView(); as view) {
+  <ui-invoice [view]="view" [source]="openedSource()!" (closed)="opened.set(null)" />
+}

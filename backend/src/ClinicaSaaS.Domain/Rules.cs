@@ -126,7 +126,89 @@ public static class BillingRules
         return total;
     }
 
-    public static bool CanPay(InvoiceStatus status) => status == InvoiceStatus.Pending;
+    public static bool CanPay(InvoiceStatus status) => status is InvoiceStatus.Pending or InvoiceStatus.PartiallyPaid;
+
+    // Items, discount and the insurer's share only change before any payment and before the tax authority numbers it.
+    public static bool CanEdit(Invoice invoice) =>
+        invoice.Status == InvoiceStatus.Pending && invoice.Number is null && invoice.Payments.Count == 0;
+
+    public static bool CanAuthorize(Invoice invoice) =>
+        invoice.Status != InvoiceStatus.Voided && invoice.Number is null && invoice.Total > 0;
+
+    public static decimal PatientAmount(decimal total, decimal insurerAmount) => Math.Max(0, total - insurerAmount);
+
+    public static decimal Balance(decimal total, decimal insurerAmount, decimal paid) =>
+        Math.Max(0, PatientAmount(total, insurerAmount) - paid);
+
+    // A zero invoice stays pending so someone loads its price; otherwise it is paid once the patient's share is covered.
+    public static InvoiceStatus StatusFor(decimal total, decimal insurerAmount, decimal paid)
+    {
+        if (total <= 0)
+            return InvoiceStatus.Pending;
+        if (Balance(total, insurerAmount, paid) == 0)
+            return InvoiceStatus.Paid;
+        return paid > 0 ? InvoiceStatus.PartiallyPaid : InvoiceStatus.Pending;
+    }
+
+    public static string? EditError(IReadOnlyList<(string Description, int Quantity, decimal UnitPrice)> items, decimal discount, decimal insurerAmount)
+    {
+        if (items.Count == 0)
+            return "El comprobante necesita al menos un ítem.";
+        if (items.Any(i => string.IsNullOrWhiteSpace(i.Description)))
+            return "Cada ítem necesita una descripción.";
+        if (items.Any(i => i.Quantity < 1))
+            return "La cantidad tiene que ser 1 o más.";
+        if (items.Any(i => i.UnitPrice < 0))
+            return "El precio no puede ser negativo.";
+        var subtotal = Total(items.Select(i => NormalizePrice(i.Quantity * i.UnitPrice)));
+        if (discount < 0)
+            return "El descuento no puede ser negativo.";
+        if (discount > subtotal)
+            return "El descuento no puede superar el subtotal.";
+        if (insurerAmount < 0)
+            return "Lo que cubre la obra social no puede ser negativo.";
+        if (insurerAmount > subtotal - discount)
+            return "Lo que cubre la obra social no puede superar el total.";
+        return null;
+    }
+
+    public static string? PaymentError(decimal amount, decimal balance)
+    {
+        if (amount <= 0)
+            return "El monto tiene que ser mayor a 0.";
+        if (amount > balance)
+            return "El monto supera lo que falta cobrar.";
+        return null;
+    }
+
+    // Patients are final consumers, so a registered taxpayer issues B and everyone else C.
+    public static FiscalVoucherType VoucherFor(TaxCondition condition) =>
+        condition == TaxCondition.ResponsableInscripto ? FiscalVoucherType.FacturaB : FiscalVoucherType.FacturaC;
+
+    public static FiscalVoucherType CreditNoteFor(FiscalVoucherType invoice) =>
+        invoice == FiscalVoucherType.FacturaB ? FiscalVoucherType.NotaCreditoB : FiscalVoucherType.NotaCreditoC;
+
+    // CUIT: eleven digits whose last one is a mod-11 check digit.
+    public static bool IsValidTaxId(string? value)
+    {
+        var digits = new string((value ?? "").Where(char.IsDigit).ToArray());
+        if (digits.Length != 11)
+            return false;
+        int[] weights = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
+        var sum = weights.Select((w, i) => w * (digits[i] - '0')).Sum();
+        var check = 11 - sum % 11;
+        check = check == 11 ? 0 : check == 10 ? 9 : check;
+        return check == digits[10] - '0';
+    }
+
+    public static string? CopayError(decimal? copay, string? payer)
+    {
+        if (copay is null or 0)
+            return null;
+        if (CanonicalPayer(payer) is null)
+            return "El coseguro solo va en el precio de una obra social.";
+        return copay < 0 ? "El coseguro no puede ser negativo." : null;
+    }
 
     public static decimal NormalizePrice(decimal amount) =>
         decimal.Round(amount, 2, MidpointRounding.AwayFromZero);

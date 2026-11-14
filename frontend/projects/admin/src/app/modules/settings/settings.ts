@@ -1,13 +1,14 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ClinicService, ClinicSettingsDto, errorMessage } from 'sdk';
-import { TabItem, ToastService, UiButton, UiField, UiSkeleton, UiSwitch, UiTabs } from 'ui';
+import { ClinicService, ClinicSettingsDto, TaxCondition, errorMessage } from 'sdk';
+import { SelectOption, TabItem, ToastService, UiButton, UiField, UiSelect, UiSkeleton, UiSwitch, UiTabs } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { clinicName } from '../../clinic-name';
 import { SettingsTab, settingsTabLabels } from './models/settings-tab';
+import { taxConditionLabels } from './models/tax-condition-labels';
 
 @Component({
-  imports: [FormsModule, UiButton, UiField, UiSkeleton, UiSwitch, UiTabs],
+  imports: [FormsModule, UiButton, UiField, UiSelect, UiSkeleton, UiSwitch, UiTabs],
   templateUrl: './settings.html',
 })
 export class SettingsPage {
@@ -19,6 +20,7 @@ export class SettingsPage {
     { key: SettingsTab.Facturacion, label: settingsTabLabels[SettingsTab.Facturacion], icon: 'receipt_long' },
   ];
   readonly tab = signal<string>(SettingsTab.General);
+  readonly taxConditions: SelectOption[] = Object.values(TaxCondition).map((value) => ({ value, label: taxConditionLabels[value] }));
   readonly saved = signal<ClinicSettingsDto | null>(null);
   readonly draft = signal<ClinicSettingsDto | null>(null);
   readonly error = signal('');
@@ -27,7 +29,7 @@ export class SettingsPage {
   readonly dirty = computed(() => {
     const saved = this.saved();
     const draft = this.draft();
-    return !!saved && !!draft && (draft.name !== saved.name || draft.billingEnabled !== saved.billingEnabled || draft.autoInvoice !== saved.autoInvoice);
+    return !!saved && !!draft && (['name', 'billingEnabled', 'autoInvoice', 'fiscalEnabled', 'taxId', 'taxCondition', 'pointOfSale'] as const).some((key) => (draft[key] ?? null) !== (saved[key] ?? null));
   });
 
   constructor() {
@@ -41,11 +43,28 @@ export class SettingsPage {
   }
 
   setBilling(billingEnabled: boolean) {
-    this.draft.update((draft) => draft && { ...draft, billingEnabled, autoInvoice: billingEnabled && draft.autoInvoice });
+    this.draft.update((draft) => draft && { ...draft, billingEnabled, autoInvoice: billingEnabled && draft.autoInvoice, fiscalEnabled: billingEnabled && draft.fiscalEnabled });
   }
 
   setAutoInvoice(autoInvoice: boolean) {
     this.draft.update((draft) => draft && { ...draft, autoInvoice });
+  }
+
+  setFiscal(fiscalEnabled: boolean) {
+    this.draft.update((draft) => draft && { ...draft, fiscalEnabled });
+  }
+
+  setTaxId(taxId: string) {
+    this.draft.update((draft) => draft && { ...draft, taxId: taxId.trim() || null });
+  }
+
+  setTaxCondition(taxCondition: string) {
+    this.draft.update((draft) => draft && { ...draft, taxCondition: (taxCondition as TaxCondition) || null });
+  }
+
+  setPointOfSale(value: number | string | null) {
+    const number = value === null || value === '' ? null : Number(value);
+    this.draft.update((draft) => draft && { ...draft, pointOfSale: Number.isNaN(number) ? null : number });
   }
 
   discard() {

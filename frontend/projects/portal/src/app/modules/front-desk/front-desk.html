@@ -57,11 +57,9 @@
               <span class="mt-1 block text-sm text-ink/70">{{ coverageLabel(appointment) }}</span>
               @if (charge(appointment); as bill) {
                 <span class="mt-1 block text-sm text-ink/70">
-                  {{ money(bill.total) }}
-                  @if (bill.status === invoice.Paid && bill.paymentMethod) {
-                    · cobrado en {{ paymentLabels[bill.paymentMethod] }}
-                  } @else {
-                    · {{ invoiceStatusLabels[bill.status] }}
+                  {{ money(bill.total) }} · {{ invoiceStatusLabels[bill.status] }}
+                  @if (bill.status === invoice.Pending || bill.status === invoice.PartiallyPaid) {
+                    · saldo {{ money(bill.balance) }}
                   }
                 </span>
               }
@@ -88,10 +86,10 @@
                   <ui-button [loading]="pending() === 'issue:' + appointment.id" (click)="issue(appointment)">Emitir comprobante</ui-button>
                 }
                 @if (charge(appointment); as bill) {
-                  @if (bill.status === invoice.Pending) {
-                    <ui-button [loading]="pending() === 'pay:' + bill.id + ':' + payment.Cash" (click)="pay(bill, payment.Cash)">Efectivo</ui-button>
-                    <ui-button variant="ghost" [loading]="pending() === 'pay:' + bill.id + ':' + payment.Transfer" (click)="pay(bill, payment.Transfer)">Transferencia</ui-button>
-                    <ui-button variant="ghost" [loading]="pending() === 'pay:' + bill.id + ':' + payment.Card" (click)="pay(bill, payment.Card)">Tarjeta</ui-button>
+                  @if (bill.status === invoice.Pending || bill.status === invoice.PartiallyPaid) {
+                    <ui-button (click)="opened.set(bill)">Cobrar</ui-button>
+                  } @else {
+                    <ui-button variant="ghost" (click)="opened.set(bill)">Comprobante</ui-button>
                   }
                 }
               </ui-actions>
@@ -103,6 +101,9 @@
 </ui-table>
     }
   </div>
+  @if (openedView(); as view) {
+    <ui-invoice [view]="view" [source]="openedSource()!" [methods]="paymentOptions" (closed)="opened.set(null)" />
+  }
   @if (moving(); as appointment) {
     <ui-modal [open]="true" [wide]="true" [title]="'Reprogramar a ' + appointment.patient" (closed)="cancelMove()">
       <form (ngSubmit)="loadSlots()">

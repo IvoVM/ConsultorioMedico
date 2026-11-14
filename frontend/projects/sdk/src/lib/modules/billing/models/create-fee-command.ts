@@ -4,4 +4,5 @@ export interface CreateFeeCommand {
   amount: number;
   effectiveFrom: string;
   payer?: string | null;
+  copay?: number | null;
 }

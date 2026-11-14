@@ -3,4 +3,5 @@ import type { PaymentMethod } from './payment-method';
 
 export interface PayInvoiceCommand {
   method: PaymentMethod;
+  amount?: number | null;
 }

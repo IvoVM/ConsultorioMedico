@@ -1,0 +1,146 @@
+<ui-modal [open]="true" [wide]="true" [title]="view().heading" (closed)="closed.emit()">
+  @let v = view();
+  <div class="flex flex-wrap items-start justify-between gap-4">
+    <div class="text-sm leading-relaxed">
+      <p class="font-serif text-lg leading-tight">{{ v.patient }}</p>
+      <p class="text-ink/70">DNI {{ v.patientDocument }}</p>
+      <p class="text-ink/70">Atención del {{ date(v.appointmentStart) }} · {{ v.professional }}</p>
+      @if (v.insurer) { <p class="text-ink/70">Obra social: {{ v.insurer }}</p> }
+    </div>
+    <ui-badge [tone]="v.tone">{{ v.status }}</ui-badge>
+  </div>
+
+  @if (mode() === modes.Edit) {
+    <form id="invoice-edit-form" class="mt-6" (ngSubmit)="save()">
+      <p class="mb-3 text-sm text-ink/70">Corregí los ítems, el descuento o lo que cubre la obra social. Después del primer pago ya no se puede cambiar.</p>
+      @for (line of lines(); track $index; let i = $index) {
+        <div class="mb-3 grid grid-cols-[1fr_auto] gap-2 sm:grid-cols-[1fr_5rem_8rem_auto] sm:items-end">
+          <ui-field class="col-span-2 sm:col-span-1" label="Descripción">
+            <input [name]="'description' + i" [ngModel]="line.description" (ngModelChange)="setLine(i, 'description', $event)" maxlength="160" required />
+          </ui-field>
+          <ui-field label="Cant.">
+            <input [name]="'quantity' + i" type="number" min="1" step="1" [ngModel]="line.quantity" (ngModelChange)="setLine(i, 'quantity', $event)" required />
+          </ui-field>
+          <ui-field label="Precio unit.">
+            <input [name]="'unitPrice' + i" type="number" min="0" step="0.01" inputmode="decimal" [ngModel]="line.unitPrice" (ngModelChange)="setLine(i, 'unitPrice', $event)" required />
+          </ui-field>
+          <ui-button variant="ghost" [disabled]="lines().length === 1" (click)="removeLine(i)"><ui-icon name="delete" [size]="18" />Quitar</ui-button>
+        </div>
+      }
+      <ui-button variant="outlined" (click)="addLine()"><ui-icon name="add" [size]="18" />Agregar ítem</ui-button>
+      <div class="mt-4 grid gap-3 sm:grid-cols-2">
+        <ui-field label="Descuento">
+          <input name="discount" type="number" min="0" step="0.01" inputmode="decimal" [ngModel]="discount()" (ngModelChange)="discount.set($event)" />
+        </ui-field>
+        @if (v.insurer) {
+          <ui-field [label]="'Cubre ' + v.insurer">
+            <input name="insurerAmount" type="number" min="0" step="0.01" inputmode="decimal" [ngModel]="insurerAmount()" (ngModelChange)="insurerAmount.set($event)" />
+          </ui-field>
+        }
+      </div>
+      <p class="mt-4 text-sm">Subtotal {{ money(draftSubtotal()) }} · <strong>Total {{ money(draftTotal()) }}</strong></p>
+    </form>
+  } @else {
+    <div class="mt-6 overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-rule text-left text-xs text-ink/60">
+            <th class="py-2 font-semibold">Descripción</th>
+            <th class="py-2 text-right font-semibold">Cant.</th>
+            <th class="py-2 text-right font-semibold">Precio unit.</th>
+            <th class="py-2 text-right font-semibold">Importe</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of v.items; track $index) {
+            <tr class="border-b border-rule/60">
+              <td class="py-2">{{ item.description }}</td>
+              <td class="py-2 text-right tabular-nums">{{ item.quantity }}</td>
+              <td class="py-2 text-right tabular-nums">{{ money(item.unitPrice) }}</td>
+              <td class="py-2 text-right tabular-nums">{{ money(item.amount) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <dl class="ml-auto mt-4 grid max-w-xs grid-cols-[1fr_auto] gap-x-6 gap-y-1 text-sm tabular-nums">
+      <dt class="text-ink/70">Subtotal</dt><dd class="text-right">{{ money(v.subtotal) }}</dd>
+      @if (v.discount) { <dt class="text-ink/70">Descuento</dt><dd class="text-right">- {{ money(v.discount) }}</dd> }
+      <dt class="font-semibold">Total</dt><dd class="text-right font-semibold">{{ money(v.total) }}</dd>
+      @if (v.insurerAmount) {
+        <dt class="text-ink/70">Cubre la obra social</dt><dd class="text-right">{{ money(v.insurerAmount) }}</dd>
+        <dt class="font-semibold">A cargo del paciente</dt><dd class="text-right font-semibold">{{ money(v.patientAmount) }}</dd>
+      }
+      <dt class="text-ink/70">Pagado</dt><dd class="text-right">{{ money(v.paid) }}</dd>
+      @if (!v.voidReason) { <dt class="font-semibold">Saldo</dt><dd class="text-right font-semibold">{{ money(v.balance) }}</dd> }
+    </dl>
+
+    @if (v.payments.length) {
+      <h3 class="mt-6 text-sm font-semibold">Pagos</h3>
+      <ul class="mt-2 divide-y divide-rule text-sm">
+        @for (payment of v.payments; track payment.id) {
+          <li class="flex justify-between gap-4 py-1.5"><span>{{ date(payment.paidAt) }} · {{ payment.method }}</span><span class="tabular-nums">{{ money(payment.amount) }}</span></li>
+        }
+      </ul>
+    }
+
+    @if (v.cae) {
+      <p class="mt-6 text-sm">CAE <strong class="tabular-nums">{{ v.cae }}</strong> · vence {{ date(v.caeDueDate) }}</p>
+      @if (v.fiscalSimulated) { <p class="mt-1 text-xs text-ink/60">CAE de prueba del simulador: no tiene validez ante ARCA.</p> }
+    }
+
+    @if (v.voidReason) {
+      <div class="mt-6 rounded-xl bg-mist p-4 text-sm">
+        <p class="font-semibold">Anulado</p>
+        <p class="mt-1 text-ink/75">{{ v.voidReason }}</p>
+        @if (v.creditNote) { <p class="mt-1 text-ink/75">{{ v.creditNote }}</p> }
+        @if (v.paid) { <p class="mt-1 text-ink/75">Tenía {{ money(v.paid) }} cobrados: hay que devolvérselos al paciente.</p> }
+      </div>
+    }
+
+    @if (mode() === modes.Void) {
+      <form id="invoice-void-form" class="mt-6" (ngSubmit)="confirmVoid()">
+        <ui-field label="Motivo de la anulación">
+          <textarea name="reason" rows="2" maxlength="300" [ngModel]="reason()" (ngModelChange)="reason.set($event)" required></textarea>
+        </ui-field>
+        <p class="mt-2 text-sm text-ink/70">
+          El comprobante queda anulado y no se puede deshacer.
+          @if (v.cae) { Como está autorizado, se emite una nota de crédito. }
+          @if (v.paid) { Los pagos quedan registrados: devolvéselos al paciente. }
+        </p>
+      </form>
+    } @else if (v.canPay) {
+      <form id="invoice-pay-form" class="mt-6 grid gap-3 sm:grid-cols-[10rem_12rem_auto] sm:items-end" (ngSubmit)="pay()">
+        <ui-field label="Monto a cobrar">
+          <input name="amount" type="number" min="0.01" [max]="v.balance" step="0.01" inputmode="decimal" [ngModel]="amount()" (ngModelChange)="amount.set($event)" required />
+        </ui-field>
+        <ui-field label="Medio de pago">
+          <ui-select name="method" [options]="methods()" [ngModel]="method()" (ngModelChange)="method.set($event)" />
+        </ui-field>
+        <ui-button type="submit" [loading]="busy() === 'pay'">Registrar pago</ui-button>
+      </form>
+      <p class="mt-2 text-xs text-ink/60">Podés cobrar una parte: el resto queda como saldo.</p>
+    }
+  }
+
+  @if (error()) { <p class="mt-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
+
+  <div uiModalFooter class="flex flex-wrap gap-3">
+    @switch (mode()) {
+      @case (modes.Edit) {
+        <ui-button type="submit" form="invoice-edit-form" [loading]="busy() === 'save'">Guardar</ui-button>
+        <ui-button variant="outlined" [disabled]="busy() === 'save'" (click)="back()">Cancelar</ui-button>
+      }
+      @case (modes.Void) {
+        <ui-button type="submit" variant="danger" form="invoice-void-form" [loading]="busy() === 'void'" [disabled]="!reason().trim()">Anular</ui-button>
+        <ui-button variant="outlined" [disabled]="busy() === 'void'" (click)="back()">Volver</ui-button>
+      }
+      @default {
+        <ui-button variant="outlined" [loading]="busy() === 'pdf'" (click)="pdf()"><ui-icon name="download" [size]="18" />Descargar PDF</ui-button>
+        @if (v.editable) { <ui-button variant="ghost" (click)="startEdit()">Corregir</ui-button> }
+        @if (v.canAuthorize) { <ui-button variant="ghost" [loading]="busy() === 'authorize'" (click)="authorize()">Autorizar ante ARCA</ui-button> }
+        @if (v.canVoid) { <ui-button variant="ghost" (click)="startVoid()">Anular</ui-button> }
+      }
+    }
+  </div>
+</ui-modal>

@@ -6,4 +6,5 @@ export interface FeeDto {
   amount: number;
   effectiveFrom: string;
   payer?: string | null;
+  copay?: number | null;
 }

@@ -116,5 +116,11 @@ public class SaveClinicSettingsValidator : AbstractValidator<SaveClinicSettingsC
     public SaveClinicSettingsValidator()
     {
         RuleFor(x => x.Name).NotEmpty().MaximumLength(120);
+        When(x => x.BillingEnabled && x.FiscalEnabled, () =>
+        {
+            RuleFor(x => x.TaxId).Must(BillingRules.IsValidTaxId).WithMessage("El CUIT no es válido.");
+            RuleFor(x => x.TaxCondition).NotNull().WithMessage("Elegí la condición fiscal.");
+            RuleFor(x => x.PointOfSale).NotNull().InclusiveBetween(1, 99999).WithMessage("El punto de venta va de 1 a 99999.");
+        });
     }
 }

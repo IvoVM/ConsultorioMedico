@@ -43,6 +43,7 @@ export class ShellPage {
           { label: 'Recetas', path: AppRoute.Recetas, icon: 'prescriptions' },
         ],
       });
+      nodes.push({ label: 'Mis comprobantes', path: AppRoute.MisComprobantes, icon: 'receipt_long' });
       // The profile holds the patient's own details, not their health, so it gets its own entry.
       nodes.push({ label: 'Mi perfil', path: AppRoute.Perfil, icon: 'person' });
     } else if (role === TenantRole.Secretary || role === TenantRole.TenantAdmin) {

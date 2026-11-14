@@ -368,10 +368,24 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                     b.Property<bool>("BillingEnabled")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("FiscalEnabled")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(120)
                         .HasColumnType("character varying(120)");
+
+                    b.Property<int?>("PointOfSale")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("TaxCondition")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("TaxId")
+                        .HasMaxLength(11)
+                        .HasColumnType("character varying(11)");
 
                     b.HasKey("Id");
 
@@ -523,6 +537,10 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                     b.Property<Guid>("AppointmentTypeId")
                         .HasColumnType("uuid");
 
+                    b.Property<decimal?>("Copay")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)");
+
                     b.Property<DateOnly>("EffectiveFrom")
                         .HasColumnType("date");
 
@@ -568,18 +586,56 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                     b.Property<Guid>("AppointmentId")
                         .HasColumnType("uuid");
 
+                    b.Property<DateTimeOffset?>("AuthorizedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Cae")
+                        .HasMaxLength(14)
+                        .HasColumnType("character varying(14)");
+
+                    b.Property<DateOnly?>("CaeDueDate")
+                        .HasColumnType("date");
+
                     b.Property<Guid>("ClientId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("CreditNoteCae")
+                        .HasMaxLength(14)
+                        .HasColumnType("character varying(14)");
+
+                    b.Property<int?>("CreditNoteNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("CreditNoteType")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<decimal>("Discount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)");
+
+                    b.Property<bool>("FiscalSimulated")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Insurer")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<decimal>("InsurerAmount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)");
+
+                    b.Property<int?>("Number")
+                        .HasColumnType("integer");
+
                     b.Property<DateTimeOffset?>("PaidAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("PaymentMethod")
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
+                    b.Property<int?>("PointOfSale")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -590,12 +646,31 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                         .HasPrecision(12, 2)
                         .HasColumnType("numeric(12,2)");
 
+                    b.Property<string>("VoidReason")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<DateTimeOffset?>("VoidedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("VoucherType")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("AppointmentId")
                         .IsUnique();
 
                     b.HasIndex("ClientId");
+
+                    b.HasIndex("PointOfSale", "CreditNoteType", "CreditNoteNumber")
+                        .IsUnique()
+                        .HasFilter("\"CreditNoteNumber\" IS NOT NULL");
+
+                    b.HasIndex("PointOfSale", "VoucherType", "Number")
+                        .IsUnique()
+                        .HasFilter("\"Number\" IS NOT NULL");
 
                     b.ToTable("Invoices");
                 });
@@ -618,11 +693,51 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                     b.Property<Guid>("InvoiceId")
                         .HasColumnType("uuid");
 
+                    b.Property<int>("Position")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("InvoiceId");
 
                     b.ToTable("InvoiceItems");
+                });
+
+            modelBuilder.Entity("ClinicaSaaS.Domain.InvoicePayment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)");
+
+                    b.Property<Guid>("InvoiceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Method")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTimeOffset>("PaidAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InvoiceId");
+
+                    b.HasIndex("PaidAt");
+
+                    b.ToTable("InvoicePayments");
                 });
 
             modelBuilder.Entity("ClinicaSaaS.Domain.Location", b =>
@@ -1482,6 +1597,17 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                     b.Navigation("Invoice");
                 });
 
+            modelBuilder.Entity("ClinicaSaaS.Domain.InvoicePayment", b =>
+                {
+                    b.HasOne("ClinicaSaaS.Domain.Invoice", "Invoice")
+                        .WithMany("Payments")
+                        .HasForeignKey("InvoiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Invoice");
+                });
+
             modelBuilder.Entity("ClinicaSaaS.Domain.MedicalRecord", b =>
                 {
                     b.HasOne("ClinicaSaaS.Domain.Client", "Client")
@@ -1739,6 +1865,8 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
             modelBuilder.Entity("ClinicaSaaS.Domain.Invoice", b =>
                 {
                     b.Navigation("Items");
+
+                    b.Navigation("Payments");
                 });
 
             modelBuilder.Entity("ClinicaSaaS.Domain.Location", b =>

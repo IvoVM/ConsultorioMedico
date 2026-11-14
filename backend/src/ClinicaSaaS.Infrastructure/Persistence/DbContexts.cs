@@ -32,6 +32,7 @@ public class TenantDbContext(DbContextOptions<TenantDbContext> options)
     public DbSet<Fee> Fees => Set<Fee>();
     public DbSet<Invoice> Invoices => Set<Invoice>();
     public DbSet<InvoiceItem> InvoiceItems => Set<InvoiceItem>();
+    public DbSet<InvoicePayment> InvoicePayments => Set<InvoicePayment>();
     public DbSet<AuditEntry> AuditEntries => Set<AuditEntry>();
     public DbSet<RefreshSession> RefreshSessions => Set<RefreshSession>();
     public DbSet<ClinicSettings> ClinicSettings => Set<ClinicSettings>();
@@ -60,7 +61,12 @@ public class TenantDbContext(DbContextOptions<TenantDbContext> options)
         builder.Entity<IdentityUserLogin<Guid>>().ToTable("UserLogins");
         builder.Entity<IdentityUserToken<Guid>>().ToTable("UserTokens");
         builder.Entity<IdentityRoleClaim<Guid>>().ToTable("RoleClaims");
-        builder.Entity<ClinicSettings>(e => e.Property(c => c.Name).HasMaxLength(120));
+        builder.Entity<ClinicSettings>(e =>
+        {
+            e.Property(c => c.Name).HasMaxLength(120);
+            e.Property(c => c.TaxId).HasMaxLength(11);
+            e.Property(c => c.TaxCondition).HasConversion<string>().HasMaxLength(30);
+        });
         builder.Entity<Location>(e =>
         {
             e.Property(l => l.Name).HasMaxLength(120);
@@ -220,23 +226,42 @@ public class TenantDbContext(DbContextOptions<TenantDbContext> options)
         builder.Entity<Fee>(e =>
         {
             e.Property(f => f.Amount).HasPrecision(12, 2);
+            e.Property(f => f.Copay).HasPrecision(12, 2);
             e.Property(f => f.Payer).HasMaxLength(120);
             e.HasOne(f => f.AppointmentType).WithMany(t => t.Fees).HasForeignKey(f => f.AppointmentTypeId).OnDelete(DeleteBehavior.Restrict);
         });
         builder.Entity<Invoice>(e =>
         {
             e.Property(i => i.Total).HasPrecision(12, 2);
+            e.Property(i => i.Discount).HasPrecision(12, 2);
+            e.Property(i => i.InsurerAmount).HasPrecision(12, 2);
+            e.Property(i => i.Insurer).HasMaxLength(120);
             e.Property(i => i.Status).HasConversion<string>().HasMaxLength(20);
-            e.Property(i => i.PaymentMethod).HasConversion<string>().HasMaxLength(20);
+            e.Property(i => i.VoucherType).HasConversion<string>().HasMaxLength(20);
+            e.Property(i => i.CreditNoteType).HasConversion<string>().HasMaxLength(20);
+            e.Property(i => i.Cae).HasMaxLength(14);
+            e.Property(i => i.CreditNoteCae).HasMaxLength(14);
+            e.Property(i => i.VoidReason).HasMaxLength(300);
             e.HasIndex(i => i.AppointmentId).IsUnique();
+            // The tax authority numbers each voucher type per point of sale, so a number is never repeated there.
+            e.HasIndex(i => new { i.PointOfSale, i.VoucherType, i.Number }).IsUnique().HasFilter("\"Number\" IS NOT NULL");
+            e.HasIndex(i => new { i.PointOfSale, i.CreditNoteType, i.CreditNoteNumber }).IsUnique().HasFilter("\"CreditNoteNumber\" IS NOT NULL");
             e.HasOne(i => i.Appointment).WithOne(a => a.Invoice).HasForeignKey<Invoice>(i => i.AppointmentId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(i => i.Client).WithMany(c => c.Invoices).HasForeignKey(i => i.ClientId).OnDelete(DeleteBehavior.Restrict);
         });
         builder.Entity<InvoiceItem>(e =>
         {
             e.Property(i => i.Description).HasMaxLength(160);
+            e.Property(i => i.UnitPrice).HasPrecision(12, 2);
             e.Property(i => i.Amount).HasPrecision(12, 2);
             e.HasOne(i => i.Invoice).WithMany(i => i.Items).HasForeignKey(i => i.InvoiceId);
+        });
+        builder.Entity<InvoicePayment>(e =>
+        {
+            e.Property(p => p.Amount).HasPrecision(12, 2);
+            e.Property(p => p.Method).HasConversion<string>().HasMaxLength(20);
+            e.HasIndex(p => p.PaidAt);
+            e.HasOne(p => p.Invoice).WithMany(i => i.Payments).HasForeignKey(p => p.InvoiceId).OnDelete(DeleteBehavior.Cascade);
         });
         builder.Entity<AuditEntry>(e =>
         {

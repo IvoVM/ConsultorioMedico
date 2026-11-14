@@ -54,6 +54,11 @@ export const routes: Routes = [
             loadComponent: () => import('./modules/prescriptions/prescriptions').then((m) => m.PrescriptionsPage),
           },
           {
+            path: routePath(AppRoute.MisComprobantes),
+            canActivate: [roleGuard(TenantRole.Patient)],
+            loadComponent: () => import('./modules/billing/my-invoices').then((m) => m.MyInvoicesPage),
+          },
+          {
             path: routePath(AppRoute.DarTurno),
             canActivate: [roleGuard(TenantRole.Secretary, TenantRole.TenantAdmin)],
             loadComponent: () => import('./modules/appointments/desk-booking').then((m) => m.DeskBookingPage),

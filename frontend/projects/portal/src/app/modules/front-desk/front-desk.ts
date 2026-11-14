@@ -1,21 +1,16 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { AppointmentDto, AppointmentStatus, AppointmentsService, BillingService, ClinicService, InvoiceDto, InvoiceStatus, PatientLookupDto, PatientsService, PaymentMethod, ScheduleService, SlotDto, WaitlistEntryDto, errorMessage } from 'sdk';
-import { FechaPipe, ToastService, UiActions, UiBadge, UiButton, UiCalendar, UiEmpty, UiField, UiModal, UiSkeleton, UiTable, formatFecha } from 'ui';
+import { AppointmentDto, AppointmentStatus, AppointmentsService, BillingService, ClinicService, InvoiceDto, InvoiceStatus, PatientLookupDto, PatientsService, ScheduleService, SlotDto, WaitlistEntryDto, errorMessage } from 'sdk';
+import { FechaPipe, ToastService, UiActions, UiBadge, UiButton, UiCalendar, UiEmpty, UiField, UiInvoice, UiModal, UiSkeleton, UiTable, formatFecha, formatMoney } from 'ui';
 import { Observable, firstValueFrom } from 'rxjs';
 import { appointmentStatusLabels } from '../appointments/models/appointment-status-labels';
-import { invoiceStatusLabels } from './models/invoice-labels';
+import { invoiceStatusLabels } from '../billing/models/invoice-labels';
+import { invoiceSource, invoiceView, paymentOptions } from '../billing/models/invoice-view';
 import { AppRoute, patientParams } from '../../app.routes.enum';
 
-const paymentLabels: Record<PaymentMethod, string> = {
-  [PaymentMethod.Cash]: 'efectivo',
-  [PaymentMethod.Transfer]: 'transferencia',
-  [PaymentMethod.Card]: 'tarjeta',
-};
-
 @Component({
-  imports: [FormsModule, RouterLink, FechaPipe, UiActions, UiBadge, UiButton, UiCalendar, UiEmpty, UiField, UiModal, UiSkeleton, UiTable],
+  imports: [FormsModule, RouterLink, FechaPipe, UiActions, UiBadge, UiButton, UiCalendar, UiEmpty, UiField, UiInvoice, UiModal, UiSkeleton, UiTable],
   templateUrl: './front-desk.html',
 })
 export class FrontDeskPage {
@@ -23,7 +18,6 @@ export class FrontDeskPage {
   readonly patientParams = patientParams;
   readonly status = AppointmentStatus;
   readonly invoice = InvoiceStatus;
-  readonly payment = PaymentMethod;
   private readonly appointmentsApi = inject(AppointmentsService);
   private readonly billing = inject(BillingService);
   private readonly clinic = inject(ClinicService);
@@ -34,12 +28,28 @@ export class FrontDeskPage {
   private searchTimer = 0;
   readonly statusLabels = appointmentStatusLabels;
   readonly invoiceStatusLabels = invoiceStatusLabels;
-  readonly paymentLabels = paymentLabels;
+  readonly paymentOptions = paymentOptions;
   readonly appointments = signal<AppointmentDto[]>([]);
   readonly waitlist = signal<WaitlistEntryDto[]>([]);
   readonly invoices = signal<InvoiceDto[]>([]);
   // With automatic invoicing off, front desk issues the invoice of an attended appointment by hand.
   readonly billingEnabled = signal(false);
+  readonly fiscalEnabled = signal(false);
+  // The invoice open in the detail dialog, where front desk charges, corrects, authorizes or voids it.
+  readonly opened = signal<InvoiceDto | null>(null);
+  readonly openedView = computed(() => {
+    const invoice = this.opened();
+    return invoice ? invoiceView(invoice, { staff: true, fiscalEnabled: this.fiscalEnabled() }) : null;
+  });
+  readonly openedSource = computed(() => {
+    const invoice = this.opened();
+    return invoice
+      ? invoiceSource(this.billing, invoice, async (updated) => {
+          this.opened.set(updated);
+          await this.fetchDay();
+        })
+      : null;
+  });
   readonly slots = signal<SlotDto[]>([]);
   readonly moving = signal<AppointmentDto | null>(null);
   readonly error = signal('');
@@ -60,7 +70,10 @@ export class FrontDeskPage {
   constructor() {
     void this.load();
     void firstValueFrom(this.clinic.clinicProfile())
-      .then((profile) => this.billingEnabled.set(profile.billingEnabled))
+      .then((profile) => {
+        this.billingEnabled.set(profile.billingEnabled);
+        this.fiscalEnabled.set(profile.fiscalEnabled);
+      })
       .catch(() => undefined);
   }
 
@@ -85,7 +98,7 @@ export class FrontDeskPage {
   }
 
   money(amount: number) {
-    return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(amount);
+    return formatMoney(amount);
   }
 
   canMove(appointment: AppointmentDto) {
@@ -225,11 +238,17 @@ export class FrontDeskPage {
   }
 
   async issue(appointment: AppointmentDto) {
-    await this.run(`issue:${appointment.id}`, () => this.billing.issueInvoice({ appointmentId: appointment.id }));
-  }
-
-  async pay(item: InvoiceDto, method: PaymentMethod) {
-    await this.run(`pay:${item.id}:${method}`, () => this.billing.payInvoice(item.id, { method }));
+    this.pending.set(`issue:${appointment.id}`);
+    this.error.set('');
+    try {
+      const invoice = await firstValueFrom(this.billing.issueInvoice({ appointmentId: appointment.id }));
+      await this.fetchDay();
+      this.opened.set(invoice);
+    } catch (error) {
+      this.error.set(errorMessage(error));
+    } finally {
+      this.pending.set('');
+    }
   }
 
   private async fetchDay() {

@@ -1,5 +1,5 @@
 import { sessionStore, type Session } from './session';
-import type { LoginAccount } from './status';
+import type { InvoiceStatus, LoginAccount, PaymentMethod } from './status';
 
 export const apiUrl = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:5080';
 
@@ -143,11 +143,20 @@ export type Invoice = {
   appointmentId: string;
   patientId: string;
   patient: string;
+  professional: string;
+  appointmentStart: string;
   total: number;
-  status: string;
-  paymentMethod?: string | null;
+  insurer?: string | null;
+  insurerAmount: number;
+  patientAmount: number;
+  paid: number;
+  balance: number;
+  status: InvoiceStatus;
   createdAt: string;
-  paidAt?: string | null;
+  pointOfSale?: number | null;
+  number?: number | null;
+  items: { description: string; quantity: number; unitPrice: number; amount: number }[];
+  payments: { id: string; amount: number; method: PaymentMethod; paidAt: string }[];
 };
 export type AuditEntry = { id: string; action: string; entity: string; detail?: string | null; timestamp: string };
 export type ScheduleBlock = { id: string; day: string; startTime: string; endTime: string; locationId: string; appointmentTypeId: string };
@@ -330,8 +339,10 @@ export const api = {
   createFee: (appointmentTypeId: string, amount: number, effectiveFrom: string) =>
     request<Fee>('/api/aranceles', { method: 'POST', body: JSON.stringify({ appointmentTypeId, amount, effectiveFrom }) }),
   invoices: () => request<Invoice[]>('/api/comprobantes'),
-  pay: (id: string, method: 'Cash' | 'Transfer' | 'Card') =>
-    request<Invoice>(`/api/comprobantes/${id}/pagar`, { method: 'POST', body: JSON.stringify({ method }) }),
+  myInvoices: () => request<Invoice[]>('/api/comprobantes/mios'),
+  // Without an amount the payment covers the whole balance.
+  pay: (id: string, method: PaymentMethod, amount?: number) =>
+    request<Invoice>(`/api/comprobantes/${id}/pagar`, { method: 'POST', body: JSON.stringify({ method, amount }) }),
   audit: () => request<AuditEntry[]>('/api/auditoria'),
 };
 

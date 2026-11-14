@@ -40,3 +40,5 @@ export type { ChartPoint, ChartSeries, ChartSlice } from './ui-chart';
 export { UiDonut } from './ui-donut.component';
 export { UiBarList } from './ui-bar-list.component';
 export type { BarListRow } from './ui-bar-list.component';
+export { InvoiceMode, UiInvoice, formatMoney } from './ui-invoice.component';
+export type { InvoiceEdit, InvoiceSource, InvoiceView } from './ui-invoice.component';

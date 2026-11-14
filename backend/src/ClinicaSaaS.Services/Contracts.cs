@@ -13,9 +13,16 @@ public record TenantAccount(
     public string Name => $"{FirstName} {LastName}".Trim();
 }
 
-public record ClinicDto(string Slug, string Name, bool BillingEnabled);
-public record ClinicSettingsDto(string Name, bool BillingEnabled, bool AutoInvoice);
-public record SaveClinicSettingsCommand(string Name, bool BillingEnabled, bool AutoInvoice);
+public record ClinicDto(string Slug, string Name, bool BillingEnabled, bool FiscalEnabled);
+public record ClinicSettingsDto(string Name, bool BillingEnabled, bool AutoInvoice, bool FiscalEnabled, string? TaxId, TaxCondition? TaxCondition, int? PointOfSale);
+public record SaveClinicSettingsCommand(
+    string Name,
+    bool BillingEnabled,
+    bool AutoInvoice,
+    bool FiscalEnabled = false,
+    string? TaxId = null,
+    TaxCondition? TaxCondition = null,
+    int? PointOfSale = null);
 
 public record LoginCommand(string DocumentNumber, string Password, LoginAccount? Account = null);
 public record ChangePasswordCommand(string Password);
@@ -249,25 +256,54 @@ public record SaveMedicalRecordCommand(
     string? EmergencyPhone,
     string? Notes);
 
-public record FeeDto(Guid Id, Guid AppointmentTypeId, string AppointmentType, decimal Amount, DateOnly EffectiveFrom, string? Payer);
-public record CreateFeeCommand(Guid AppointmentTypeId, decimal Amount, DateOnly EffectiveFrom, string? Payer = null);
-public record InsurerPriceDto(string Payer, decimal Amount, DateOnly EffectiveFrom);
+public record FeeDto(Guid Id, Guid AppointmentTypeId, string AppointmentType, decimal Amount, DateOnly EffectiveFrom, string? Payer, decimal? Copay);
+public record CreateFeeCommand(Guid AppointmentTypeId, decimal Amount, DateOnly EffectiveFrom, string? Payer = null, decimal? Copay = null);
+public record InsurerPriceDto(string Payer, decimal Amount, DateOnly EffectiveFrom, decimal? Copay);
 public record PrestacionDto(Guid Id, string Name, int DurationMinutes, decimal? Particular, DateOnly? ParticularFrom, IReadOnlyList<InsurerPriceDto> Insurers, AppointmentKind Kind);
 public record PrestacionesDto(IReadOnlyList<PrestacionDto> Items, IReadOnlyList<string> Insurers);
-public record InvoiceItemDto(string Description, decimal Amount);
+public record InvoiceItemDto(string Description, int Quantity, decimal UnitPrice, decimal Amount);
+public record InvoicePaymentDto(Guid Id, decimal Amount, PaymentMethod Method, DateTimeOffset PaidAt);
 public record InvoiceDto(
     Guid Id,
     Guid AppointmentId,
     Guid PatientId,
     string Patient,
+    string PatientDocument,
+    string Professional,
+    DateTimeOffset AppointmentStart,
+    decimal Subtotal,
+    decimal Discount,
     decimal Total,
+    string? Insurer,
+    decimal InsurerAmount,
+    decimal PatientAmount,
+    decimal Paid,
+    decimal Balance,
     InvoiceStatus Status,
-    PaymentMethod? PaymentMethod,
     DateTimeOffset CreatedAt,
     DateTimeOffset? PaidAt,
-    IReadOnlyList<InvoiceItemDto> Items);
-public record PayInvoiceCommand(PaymentMethod Method);
+    DateTimeOffset? AuthorizedAt,
+    FiscalVoucherType? VoucherType,
+    int? PointOfSale,
+    int? Number,
+    string? Cae,
+    DateOnly? CaeDueDate,
+    bool FiscalSimulated,
+    DateTimeOffset? VoidedAt,
+    string? VoidReason,
+    FiscalVoucherType? CreditNoteType,
+    int? CreditNoteNumber,
+    string? CreditNoteCae,
+    bool Editable,
+    IReadOnlyList<InvoiceItemDto> Items,
+    IReadOnlyList<InvoicePaymentDto> Payments);
+// Without an amount the payment covers whatever the patient still owes.
+public record PayInvoiceCommand(PaymentMethod Method, decimal? Amount = null);
 public record IssueInvoiceCommand(Guid AppointmentId);
+public record InvoiceLineCommand(string Description, int Quantity, decimal UnitPrice);
+public record UpdateInvoiceCommand(IReadOnlyList<InvoiceLineCommand> Items, decimal Discount, decimal InsurerAmount);
+public record VoidInvoiceCommand(string Reason);
+public record FileDto(byte[] Content, string ContentType, string Name);
 
 public record AuditEntryDto(Guid Id, Guid? UserId, string Action, string Entity, string? EntityId, string? Detail, DateTimeOffset Timestamp);
 

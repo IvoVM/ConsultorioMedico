@@ -42,11 +42,31 @@ public enum PaymentMethod
     Card
 }
 
+// Pending until the patient pays something, partially paid while their share is not covered, paid once it is.
 public enum InvoiceStatus
 {
     Pending,
+    PartiallyPaid,
     Paid,
     Voided
+}
+
+// The fiscal vouchers a clinic issues to patients, who are final consumers: a registered taxpayer
+// issues B, a monotributista or exempt clinic issues C, and each has its own credit note to cancel it.
+public enum FiscalVoucherType
+{
+    FacturaB,
+    FacturaC,
+    NotaCreditoB,
+    NotaCreditoC
+}
+
+// The clinic's standing with the tax authority, which decides the voucher letter.
+public enum TaxCondition
+{
+    ResponsableInscripto,
+    Monotributista,
+    Exento
 }
 
 public enum AppointmentKind

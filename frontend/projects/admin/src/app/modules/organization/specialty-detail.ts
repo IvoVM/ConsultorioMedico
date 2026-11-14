@@ -46,8 +46,13 @@ export class SpecialtyDetailPage {
   readonly insurerMode = signal(false);
   readonly durationDraft = signal(30);
   readonly amountDraft = signal<number | null>(null);
+  // What the patient pays on top of an insurer's price (coseguro).
+  readonly copayDraft = signal<number | null>(null);
   readonly serviceName = signal('');
-  readonly priceError = computed(() => priceError(this.amountDraft(), this.currentAmount()));
+  // Moving only the copay is a change too, so the same amount passes when the copay differs.
+  readonly priceError = computed(() =>
+    priceError(this.amountDraft(), (this.copayDraft() ?? 0) === (this.currentCopay() ?? 0) ? this.currentAmount() : null, this.copayDraft()),
+  );
 
   constructor() {
     effect(() => {
@@ -89,6 +94,18 @@ export class SpecialtyDetailPage {
     return item.insurers.find((row) => row.payer.toLowerCase() === payer.toLowerCase())?.amount ?? null;
   }
 
+  currentCopay() {
+    const item = this.selected();
+    const payer = this.payer().trim();
+    if (!item || !payer) return null;
+    return item.insurers.find((row) => row.payer.toLowerCase() === payer.toLowerCase())?.copay ?? null;
+  }
+
+  onCopay(value: number | string | null) {
+    const copay = value === null || value === '' ? null : Number(value);
+    this.copayDraft.set(copay === null || Number.isNaN(copay) ? null : copay);
+  }
+
   openDuration(item: PrestacionDto) {
     this.error.set('');
     this.selected.set(item);
@@ -107,6 +124,7 @@ export class SpecialtyDetailPage {
         ? null
         : item.particular;
     this.amountDraft.set(current);
+    this.copayDraft.set(payer ? item.insurers.find((row) => row.payer.toLowerCase() === payer.toLowerCase())?.copay ?? null : null);
     this.dialog.set('price');
   }
 
@@ -187,7 +205,7 @@ export class SpecialtyDetailPage {
   async savePrice() {
     const item = this.selected();
     const amount = this.amountDraft();
-    const message = this.insurerMode() && !this.payer().trim() ? 'La obra social necesita un nombre.' : priceError(amount, this.currentAmount());
+    const message = this.insurerMode() && !this.payer().trim() ? 'La obra social necesita un nombre.' : this.priceError();
     if (!item || amount === null || message) {
       this.error.set(message);
       return;
@@ -199,6 +217,7 @@ export class SpecialtyDetailPage {
           amount,
           effectiveFrom: new Date().toISOString().slice(0, 10),
           payer: this.payer().trim() || null,
+          copay: this.insurerMode() && this.payer().trim() ? this.copayDraft() || null : null,
         }),
       );
     });
@@ -292,7 +311,8 @@ export class SpecialtyDetailPage {
   }
 }
 
-function priceError(amount: number | null, current: number | null) {
+function priceError(amount: number | null, current: number | null, copay: number | null = null) {
+  if (copay !== null && copay < 0) return 'El coseguro no puede ser negativo.';
   if (amount === null || Number.isNaN(amount)) return 'Escribí un importe.';
   const rounded = Math.round(amount * 100) / 100;
   if (rounded < 0) return 'El valor no puede ser negativo.';

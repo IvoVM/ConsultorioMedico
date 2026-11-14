@@ -486,9 +486,17 @@ public class BillingStore(TenantDbContext db) : IBillingStore
     }
 
     public Task<Invoice?> GetInvoiceAsync(Guid id, CancellationToken ct) =>
-        db.Invoices.FirstOrDefaultAsync(i => i.Id == id, ct);
+        db.Invoices.Include(i => i.Items).Include(i => i.Payments).FirstOrDefaultAsync(i => i.Id == id, ct);
 
     public IQueryable<Invoice> Invoices => db.Invoices.AsNoTracking();
+
+    public IQueryable<InvoicePayment> Payments => db.InvoicePayments.AsNoTracking();
+
+    public void AddPayment(InvoicePayment payment) => db.InvoicePayments.Add(payment);
+
+    public void AddItem(InvoiceItem item) => db.InvoiceItems.Add(item);
+
+    public void RemoveItems(IEnumerable<InvoiceItem> items) => db.InvoiceItems.RemoveRange(items);
 
     public Task SaveAsync(CancellationToken ct) => db.SaveChangesAsync(ct);
 }

@@ -353,6 +353,42 @@
         "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/InvoiceDto" } } } } }
       }
     },
+    "/api/comprobantes/mios": {
+      "get": {
+        "operationId": "myInvoices",
+        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/InvoiceDto" } } } } } }
+      }
+    },
+    "/api/comprobantes/{id}": {
+      "put": {
+        "operationId": "updateInvoice",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateInvoiceCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/InvoiceDto" } } } } }
+      }
+    },
+    "/api/comprobantes/{id}/autorizar": {
+      "post": {
+        "operationId": "authorizeInvoice",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/InvoiceDto" } } } } }
+      }
+    },
+    "/api/comprobantes/{id}/anular": {
+      "post": {
+        "operationId": "voidInvoice",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/VoidInvoiceCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/InvoiceDto" } } } } }
+      }
+    },
+    "/api/comprobantes/{id}/pdf": {
+      "get": {
+        "operationId": "invoicePdf",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "content": { "application/pdf": { "schema": { "type": "string", "format": "binary" } } } } }
+      }
+    },
     "/api/auditoria": {
       "get": {
         "operationId": "auditLog",
@@ -366,11 +402,11 @@
       "AppointmentStatus": { "type": "string", "enum": ["Booked", "CheckedIn", "InProgress", "Completed", "Cancelled", "NoShow"] },
       "WaitlistStatus": { "type": "string", "enum": ["Pending", "Offered", "Accepted", "Cancelled"] },
       "PaymentMethod": { "type": "string", "enum": ["Cash", "Transfer", "Card"] },
-      "InvoiceStatus": { "type": "string", "enum": ["Pending", "Paid", "Voided"] },
+      "InvoiceStatus": { "type": "string", "enum": ["Pending", "PartiallyPaid", "Paid", "Voided"] },
       "DayOfWeek": { "type": "string", "enum": ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] },
-      "ClinicDto": { "type": "object", "required": ["slug", "name", "billingEnabled"], "properties": { "slug": { "type": "string" }, "name": { "type": "string" }, "billingEnabled": { "type": "boolean" } } },
-      "ClinicSettingsDto": { "type": "object", "required": ["name", "billingEnabled", "autoInvoice"], "properties": { "name": { "type": "string" }, "billingEnabled": { "type": "boolean" }, "autoInvoice": { "type": "boolean" } } },
-      "SaveClinicSettingsCommand": { "type": "object", "required": ["name", "billingEnabled", "autoInvoice"], "properties": { "name": { "type": "string" }, "billingEnabled": { "type": "boolean" }, "autoInvoice": { "type": "boolean" } } },
+      "ClinicDto": { "type": "object", "required": ["slug", "name", "billingEnabled", "fiscalEnabled"], "properties": { "slug": { "type": "string" }, "name": { "type": "string" }, "billingEnabled": { "type": "boolean" }, "fiscalEnabled": { "type": "boolean" } } },
+      "ClinicSettingsDto": { "type": "object", "required": ["name", "billingEnabled", "autoInvoice", "fiscalEnabled"], "properties": { "name": { "type": "string" }, "billingEnabled": { "type": "boolean" }, "autoInvoice": { "type": "boolean" }, "fiscalEnabled": { "type": "boolean" }, "taxId": { "type": "string", "nullable": true }, "taxCondition": { "allOf": [{ "$ref": "#/components/schemas/TaxCondition" }], "nullable": true }, "pointOfSale": { "type": "integer", "nullable": true } } },
+      "SaveClinicSettingsCommand": { "type": "object", "required": ["name", "billingEnabled", "autoInvoice"], "properties": { "name": { "type": "string" }, "billingEnabled": { "type": "boolean" }, "autoInvoice": { "type": "boolean" }, "fiscalEnabled": { "type": "boolean" }, "taxId": { "type": "string", "nullable": true }, "taxCondition": { "allOf": [{ "$ref": "#/components/schemas/TaxCondition" }], "nullable": true }, "pointOfSale": { "type": "integer", "nullable": true } } },
       "LoginCommand": { "type": "object", "required": ["documentNumber", "password"], "properties": { "documentNumber": { "type": "string" }, "password": { "type": "string" } } },
       "TokenDto": { "type": "object", "required": ["token", "email", "name", "role", "mustChangePassword"], "properties": { "token": { "type": "string" }, "email": { "type": "string" }, "name": { "type": "string" }, "role": { "type": "string" }, "tenantSlug": { "type": "string", "nullable": true }, "mustChangePassword": { "type": "boolean" } } },
       "RegisterPatientCommand": { "type": "object", "required": ["email", "password", "firstName", "lastName", "documentNumber", "birthDate", "phone"], "properties": { "email": { "type": "string" }, "password": { "type": "string" }, "firstName": { "type": "string" }, "lastName": { "type": "string" }, "documentNumber": { "type": "string" }, "birthDate": { "type": "string" }, "phone": { "type": "string" } } },
@@ -416,11 +452,17 @@
       "PatientLookupDto": { "type": "object", "required": ["patientId", "firstName", "lastName", "documentNumber", "birthDate", "phone"], "properties": { "patientId": { "type": "string" }, "firstName": { "type": "string" }, "lastName": { "type": "string" }, "documentNumber": { "type": "string" }, "birthDate": { "type": "string" }, "phone": { "type": "string" }, "healthInsurance": { "type": "string", "nullable": true }, "memberNumber": { "type": "string", "nullable": true }, "emergencyContact": { "type": "string", "nullable": true }, "emergencyPhone": { "type": "string", "nullable": true } } },
       "MedicalRecordDto": { "type": "object", "required": ["patientId", "firstName", "lastName", "email", "documentNumber", "birthDate", "phone"], "properties": { "patientId": { "type": "string" }, "firstName": { "type": "string" }, "lastName": { "type": "string" }, "email": { "type": "string" }, "documentNumber": { "type": "string" }, "birthDate": { "type": "string" }, "phone": { "type": "string" }, "bloodType": { "type": "string", "nullable": true }, "allergies": { "type": "string", "nullable": true }, "personalHistory": { "type": "string", "nullable": true }, "familyHistory": { "type": "string", "nullable": true }, "currentMedication": { "type": "string", "nullable": true }, "habits": { "type": "string", "nullable": true }, "healthInsurance": { "type": "string", "nullable": true }, "memberNumber": { "type": "string", "nullable": true }, "emergencyContact": { "type": "string", "nullable": true }, "emergencyPhone": { "type": "string", "nullable": true }, "notes": { "type": "string", "nullable": true }, "updatedAt": { "type": "string", "nullable": true } } },
       "SaveMedicalRecordCommand": { "type": "object", "required": ["firstName", "lastName", "documentNumber", "birthDate", "phone"], "properties": { "firstName": { "type": "string" }, "lastName": { "type": "string" }, "documentNumber": { "type": "string" }, "birthDate": { "type": "string" }, "phone": { "type": "string" }, "bloodType": { "type": "string", "nullable": true }, "allergies": { "type": "string", "nullable": true }, "personalHistory": { "type": "string", "nullable": true }, "familyHistory": { "type": "string", "nullable": true }, "currentMedication": { "type": "string", "nullable": true }, "habits": { "type": "string", "nullable": true }, "healthInsurance": { "type": "string", "nullable": true }, "memberNumber": { "type": "string", "nullable": true }, "emergencyContact": { "type": "string", "nullable": true }, "emergencyPhone": { "type": "string", "nullable": true }, "notes": { "type": "string", "nullable": true } } },
-      "FeeDto": { "type": "object", "required": ["id", "appointmentTypeId", "appointmentType", "amount", "effectiveFrom"], "properties": { "id": { "type": "string" }, "appointmentTypeId": { "type": "string" }, "appointmentType": { "type": "string" }, "amount": { "type": "number" }, "effectiveFrom": { "type": "string" } } },
-      "CreateFeeCommand": { "type": "object", "required": ["appointmentTypeId", "amount", "effectiveFrom"], "properties": { "appointmentTypeId": { "type": "string" }, "amount": { "type": "number" }, "effectiveFrom": { "type": "string" } } },
-      "InvoiceItemDto": { "type": "object", "required": ["description", "amount"], "properties": { "description": { "type": "string" }, "amount": { "type": "number" } } },
-      "InvoiceDto": { "type": "object", "required": ["id", "appointmentId", "patientId", "patient", "total", "status", "createdAt", "items"], "properties": { "id": { "type": "string" }, "appointmentId": { "type": "string" }, "patientId": { "type": "string" }, "patient": { "type": "string" }, "total": { "type": "number" }, "status": { "$ref": "#/components/schemas/InvoiceStatus" }, "paymentMethod": { "allOf": [{ "$ref": "#/components/schemas/PaymentMethod" }], "nullable": true }, "createdAt": { "type": "string" }, "paidAt": { "type": "string", "nullable": true }, "items": { "type": "array", "items": { "$ref": "#/components/schemas/InvoiceItemDto" } } } },
-      "PayInvoiceCommand": { "type": "object", "required": ["method"], "properties": { "method": { "$ref": "#/components/schemas/PaymentMethod" } } },
+      "FeeDto": { "type": "object", "required": ["id", "appointmentTypeId", "appointmentType", "amount", "effectiveFrom"], "properties": { "id": { "type": "string" }, "appointmentTypeId": { "type": "string" }, "appointmentType": { "type": "string" }, "amount": { "type": "number" }, "effectiveFrom": { "type": "string" }, "copay": { "type": "number", "nullable": true } } },
+      "CreateFeeCommand": { "type": "object", "required": ["appointmentTypeId", "amount", "effectiveFrom"], "properties": { "appointmentTypeId": { "type": "string" }, "amount": { "type": "number" }, "effectiveFrom": { "type": "string" }, "copay": { "type": "number", "nullable": true } } },
+      "InvoiceItemDto": { "type": "object", "required": ["description", "quantity", "unitPrice", "amount"], "properties": { "description": { "type": "string" }, "quantity": { "type": "integer" }, "unitPrice": { "type": "number" }, "amount": { "type": "number" } } },
+      "InvoiceDto": { "type": "object", "required": ["id", "appointmentId", "patientId", "patient", "patientDocument", "professional", "appointmentStart", "subtotal", "discount", "total", "insurerAmount", "patientAmount", "paid", "balance", "status", "createdAt", "fiscalSimulated", "editable", "items", "payments"], "properties": { "id": { "type": "string" }, "appointmentId": { "type": "string" }, "patientId": { "type": "string" }, "patient": { "type": "string" }, "patientDocument": { "type": "string" }, "professional": { "type": "string" }, "appointmentStart": { "type": "string" }, "subtotal": { "type": "number" }, "discount": { "type": "number" }, "total": { "type": "number" }, "insurer": { "type": "string", "nullable": true }, "insurerAmount": { "type": "number" }, "patientAmount": { "type": "number" }, "paid": { "type": "number" }, "balance": { "type": "number" }, "status": { "$ref": "#/components/schemas/InvoiceStatus" }, "createdAt": { "type": "string" }, "paidAt": { "type": "string", "nullable": true }, "authorizedAt": { "type": "string", "nullable": true }, "voucherType": { "allOf": [{ "$ref": "#/components/schemas/FiscalVoucherType" }], "nullable": true }, "pointOfSale": { "type": "integer", "nullable": true }, "number": { "type": "integer", "nullable": true }, "cae": { "type": "string", "nullable": true }, "caeDueDate": { "type": "string", "nullable": true }, "fiscalSimulated": { "type": "boolean" }, "voidedAt": { "type": "string", "nullable": true }, "voidReason": { "type": "string", "nullable": true }, "creditNoteType": { "allOf": [{ "$ref": "#/components/schemas/FiscalVoucherType" }], "nullable": true }, "creditNoteNumber": { "type": "integer", "nullable": true }, "creditNoteCae": { "type": "string", "nullable": true }, "editable": { "type": "boolean" }, "items": { "type": "array", "items": { "$ref": "#/components/schemas/InvoiceItemDto" } }, "payments": { "type": "array", "items": { "$ref": "#/components/schemas/InvoicePaymentDto" } } } },
+      "PayInvoiceCommand": { "type": "object", "required": ["method"], "properties": { "method": { "$ref": "#/components/schemas/PaymentMethod" }, "amount": { "type": "number", "nullable": true } } },
+      "FiscalVoucherType": { "type": "string", "enum": ["FacturaB", "FacturaC", "NotaCreditoB", "NotaCreditoC"] },
+      "TaxCondition": { "type": "string", "enum": ["ResponsableInscripto", "Monotributista", "Exento"] },
+      "InvoicePaymentDto": { "type": "object", "required": ["id", "amount", "method", "paidAt"], "properties": { "id": { "type": "string" }, "amount": { "type": "number" }, "method": { "$ref": "#/components/schemas/PaymentMethod" }, "paidAt": { "type": "string" } } },
+      "InvoiceLineCommand": { "type": "object", "required": ["description", "quantity", "unitPrice"], "properties": { "description": { "type": "string" }, "quantity": { "type": "integer" }, "unitPrice": { "type": "number" } } },
+      "UpdateInvoiceCommand": { "type": "object", "required": ["items", "discount", "insurerAmount"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/InvoiceLineCommand" } }, "discount": { "type": "number" }, "insurerAmount": { "type": "number" } } },
+      "VoidInvoiceCommand": { "type": "object", "required": ["reason"], "properties": { "reason": { "type": "string" } } },
       "IssueInvoiceCommand": { "type": "object", "required": ["appointmentId"], "properties": { "appointmentId": { "type": "string" } } },
       "MetricsRange": { "type": "string", "enum": ["Today", "Week", "Month"] },
       "StatusShareDto": { "type": "object", "required": ["count"], "properties": { "count": { "type": "integer" }, "percent": { "type": "number", "nullable": true } } },

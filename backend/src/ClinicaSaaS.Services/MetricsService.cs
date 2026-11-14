@@ -73,13 +73,15 @@ public class MetricsService(
             .Where(i => i.Status != InvoiceStatus.Voided && i.CreatedAt >= start && i.CreatedAt < end)
             .Select(i => new { i.CreatedAt, i.Total })
             .ToListAsync(ct);
-        var paid = await billing.Invoices
-            .Where(i => i.Status == InvoiceStatus.Paid && i.PaidAt >= start && i.PaidAt < end)
-            .Select(i => new { PaidAt = i.PaidAt!.Value, i.Total })
+        // Collected is every payment received in the period, partial ones included, on invoices still in force.
+        var paid = await billing.Payments
+            .Where(p => p.Invoice!.Status != InvoiceStatus.Voided && p.PaidAt >= start && p.PaidAt < end)
+            .Select(p => new { p.PaidAt, Total = p.Amount })
             .ToListAsync(ct);
+        // Outstanding is what patients still owe; the insurer's share is billed to the insurer.
         var outstanding = await billing.Invoices
-            .Where(i => i.Status == InvoiceStatus.Pending)
-            .SumAsync(i => i.Total, ct);
+            .Where(i => i.Status == InvoiceStatus.Pending || i.Status == InvoiceStatus.PartiallyPaid)
+            .SumAsync(i => i.Total - i.InsurerAmount - i.Payments.Sum(p => p.Amount), ct);
 
         DateOnly BucketOf(DateTimeOffset moment)
         {

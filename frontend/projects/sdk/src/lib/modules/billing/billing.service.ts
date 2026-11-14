@@ -9,6 +9,8 @@ import type { FeeRowDto } from './models/fee-row-dto';
 import type { InvoiceDto } from './models/invoice-dto';
 import type { IssueInvoiceCommand } from './models/issue-invoice-command';
 import type { PayInvoiceCommand } from './models/pay-invoice-command';
+import type { UpdateInvoiceCommand } from './models/update-invoice-command';
+import type { VoidInvoiceCommand } from './models/void-invoice-command';
 
 @Injectable({ providedIn: 'root' })
 export class BillingService extends ApiClient {
@@ -32,11 +34,31 @@ export class BillingService extends ApiClient {
     return this.http.get<PageDto<InvoiceDto>>(`${this.base}/api/comprobantes${queryString(query)}`);
   }
 
+  myInvoices() {
+    return this.http.get<InvoiceDto[]>(`${this.base}/api/comprobantes/mios`);
+  }
+
   issueInvoice(body: IssueInvoiceCommand) {
     return this.http.post<InvoiceDto>(`${this.base}/api/comprobantes`, body);
   }
 
+  updateInvoice(id: string, body: UpdateInvoiceCommand) {
+    return this.http.put<InvoiceDto>(`${this.base}/api/comprobantes/${id}`, body);
+  }
+
   payInvoice(id: string, body: PayInvoiceCommand) {
     return this.http.post<InvoiceDto>(`${this.base}/api/comprobantes/${id}/pagar`, body);
+  }
+
+  authorizeInvoice(id: string) {
+    return this.http.post<InvoiceDto>(`${this.base}/api/comprobantes/${id}/autorizar`, {});
+  }
+
+  voidInvoice(id: string, body: VoidInvoiceCommand) {
+    return this.http.post<InvoiceDto>(`${this.base}/api/comprobantes/${id}/anular`, body);
+  }
+
+  invoicePdf(id: string) {
+    return this.http.get(`${this.base}/api/comprobantes/${id}/pdf`, { responseType: 'blob' });
   }
 }

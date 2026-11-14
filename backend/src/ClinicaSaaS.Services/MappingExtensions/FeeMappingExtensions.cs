@@ -6,7 +6,7 @@ namespace ClinicaSaaS.Services.MappingExtensions;
 public static class FeeMappingExtensions
 {
     public static FeeDto MapToFeeDto(this Fee fee) =>
-        new(fee.Id, fee.AppointmentTypeId, fee.AppointmentType.Name, fee.Amount, fee.EffectiveFrom, fee.Payer);
+        new(fee.Id, fee.AppointmentTypeId, fee.AppointmentType.Name, fee.Amount, fee.EffectiveFrom, fee.Payer, fee.Copay);
 
     public static Expression<Func<Fee, Fee>> MapForFeeDto() =>
         fee => new Fee
@@ -16,6 +16,7 @@ public static class FeeMappingExtensions
             Amount = fee.Amount,
             EffectiveFrom = fee.EffectiveFrom,
             Payer = fee.Payer,
+            Copay = fee.Copay,
             AppointmentType = new AppointmentType
             {
                 Name = fee.AppointmentType.Name

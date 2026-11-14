@@ -2,10 +2,15 @@
 export { BillingService } from './billing.service';
 export * from './models/payment-method';
 export * from './models/invoice-status';
+export * from './models/fiscal-voucher-type';
 export * from './models/fee-dto';
 export * from './models/fee-row-dto';
 export * from './models/create-fee-command';
 export * from './models/invoice-item-dto';
+export * from './models/invoice-payment-dto';
 export * from './models/invoice-dto';
 export * from './models/pay-invoice-command';
 export * from './models/issue-invoice-command';
+export * from './models/invoice-line-command';
+export * from './models/update-invoice-command';
+export * from './models/void-invoice-command';

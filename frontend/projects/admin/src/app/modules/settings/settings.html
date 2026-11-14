@@ -37,7 +37,32 @@
             [disabled]="!form.billingEnabled"
             (checkedChange)="setAutoInvoice($event)"
           />
+          <div class="border-t border-rule"></div>
+          <ui-switch
+            label="Factura electrónica"
+            description="Permite autorizar cada comprobante ante ARCA para que tenga número fiscal y CAE. Por ahora se autoriza con un simulador de prueba: los CAE no tienen validez hasta conectar el certificado de la clínica."
+            [checked]="form.fiscalEnabled"
+            [disabled]="!form.billingEnabled"
+            (checkedChange)="setFiscal($event)"
+          />
         </section>
+        @if (form.billingEnabled && form.fiscalEnabled) {
+          <section class="mt-6 rounded-2xl bg-white p-5 shadow-[var(--shadow-card)] sm:p-6">
+            <h3 class="font-serif text-lg tracking-tight">Datos fiscales</h3>
+            <div class="mt-4 grid gap-4 sm:grid-cols-2">
+              <ui-field label="CUIT">
+                <input name="taxId" inputmode="numeric" maxlength="13" placeholder="20-12345678-6" [ngModel]="form.taxId" (ngModelChange)="setTaxId($event)" required />
+              </ui-field>
+              <ui-field label="Punto de venta">
+                <input name="pointOfSale" type="number" min="1" max="99999" step="1" [ngModel]="form.pointOfSale" (ngModelChange)="setPointOfSale($event)" required />
+              </ui-field>
+              <ui-field class="sm:col-span-2" label="Condición fiscal">
+                <ui-select name="taxCondition" placeholder="Elegir condición" [options]="taxConditions" [ngModel]="form.taxCondition ?? ''" (ngModelChange)="setTaxCondition($event)" />
+              </ui-field>
+            </div>
+            <p class="mt-3 text-sm text-ink/60">Los pacientes son consumidores finales: un responsable inscripto emite factura B y un monotributista o exento, factura C.</p>
+          </section>
+        }
       }
     }
 

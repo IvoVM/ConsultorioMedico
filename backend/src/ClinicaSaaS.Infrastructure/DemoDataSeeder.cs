@@ -396,9 +396,10 @@ public class DemoDataSeeder(TenantDbContext db, UserManager<TenantUser> users)
             ClientId = patient.Id,
             Total = bill.Amount,
             Status = bill.Status,
-            PaymentMethod = bill.Method,
             CreatedAt = start.AddMinutes(duration),
-            PaidAt = bill.Status == InvoiceStatus.Paid ? start.AddHours(2) : null
+            PaidAt = bill.Status == InvoiceStatus.Paid ? start.AddHours(2) : null,
+            VoidedAt = bill.Status == InvoiceStatus.Voided ? start.AddHours(1) : null,
+            VoidReason = bill.Status == InvoiceStatus.Voided ? "Se cargó dos veces." : null
         };
         db.Invoices.Add(invoice);
         db.InvoiceItems.Add(new InvoiceItem
@@ -406,8 +407,19 @@ public class DemoDataSeeder(TenantDbContext db, UserManager<TenantUser> users)
             Id = Guid.NewGuid(),
             InvoiceId = invoice.Id,
             Description = bill.Description,
+            Quantity = 1,
+            UnitPrice = bill.Amount,
             Amount = bill.Amount
         });
+        if (bill.Method is PaymentMethod method)
+            db.InvoicePayments.Add(new InvoicePayment
+            {
+                Id = Guid.NewGuid(),
+                InvoiceId = invoice.Id,
+                Amount = bill.Amount,
+                Method = method,
+                PaidAt = start.AddHours(2)
+            });
     }
 
     private void Weekdays(Guid professionalId, TimeOnly start, TimeOnly end, Guid locationId, Guid typeId)

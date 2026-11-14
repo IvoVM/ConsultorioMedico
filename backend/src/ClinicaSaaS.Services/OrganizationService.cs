@@ -124,7 +124,7 @@ public class OrganizationService(
                 t.Kind,
                 Fees = t.Fees
                     .Where(f => f.EffectiveFrom <= today)
-                    .Select(f => new { f.Id, f.Payer, f.Amount, f.EffectiveFrom })
+                    .Select(f => new { f.Id, f.Payer, f.Amount, f.Copay, f.EffectiveFrom })
                     .ToList()
             })
             .ToListAsync(ct);
@@ -141,7 +141,7 @@ public class OrganizationService(
                 var insurers = current
                     .Where(f => BillingRules.CanonicalPayer(f.Payer) is string)
                     .OrderBy(f => f.Payer)
-                    .Select(f => new InsurerPriceDto(f.Payer!, f.Amount, f.EffectiveFrom))
+                    .Select(f => new InsurerPriceDto(f.Payer!, f.Amount, f.EffectiveFrom, f.Copay))
                     .ToList();
                 return new PrestacionDto(t.Id, t.Name, t.DurationMinutes, particular?.Amount, particular?.EffectiveFrom, insurers, t.Kind);
             })

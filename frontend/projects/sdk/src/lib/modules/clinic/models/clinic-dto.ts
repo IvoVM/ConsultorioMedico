@@ -3,4 +3,5 @@ export interface ClinicDto {
   slug: string;
   name: string;
   billingEnabled: boolean;
+  fiscalEnabled: boolean;
 }

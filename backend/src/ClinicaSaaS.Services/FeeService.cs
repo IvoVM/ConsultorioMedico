@@ -56,7 +56,10 @@ public class FeeService(
         var today = DateOnly.FromDateTime(clock.GetUtcNow().DateTime);
         var payer = BillingRules.CanonicalPayer(command.Payer);
         var current = await store.GetCurrentFeeAsync(command.AppointmentTypeId, today, payer, ct);
-        var error = BillingRules.PriceChangeError(command.Amount, current?.Amount);
+        var copay = command.Copay is decimal value && value > 0 ? BillingRules.NormalizePrice(value) : (decimal?)null;
+        // Changing only the copay is a change too, so the same amount is accepted when the copay moves.
+        var sameCopay = (current?.Copay ?? 0) == (copay ?? 0);
+        var error = BillingRules.CopayError(command.Copay, payer) ?? BillingRules.PriceChangeError(command.Amount, sameCopay ? current?.Amount : null);
         if (error is not null)
             throw new BusinessRuleException(error);
 
@@ -65,6 +68,7 @@ public class FeeService(
         if (current is not null && current.EffectiveFrom == today)
         {
             current.Amount = amount;
+            current.Copay = copay;
             current.Payer = payer;
             await store.RemoveFeesEffectiveFromAsync(command.AppointmentTypeId, today, payer, current.Id, ct);
             await store.SaveAsync(ct);
@@ -79,11 +83,12 @@ public class FeeService(
                 AppointmentTypeId = command.AppointmentTypeId,
                 Payer = payer,
                 Amount = amount,
+                Copay = copay,
                 EffectiveFrom = today
             }, ct);
         }
 
-        await audit.RecordAsync(currentUser.Id, "arancel", "Arancel", fee.Id.ToString(), $"{fee.Payer ?? "Particular"} {fee.Amount:0.00}", ct);
+        await audit.RecordAsync(currentUser.Id, "arancel", "Arancel", fee.Id.ToString(), $"{fee.Payer ?? "Particular"} {fee.Amount:0.00}{(fee.Copay is decimal c ? $" + coseguro {c:0.00}" : "")}", ct);
         var saved = await store.Fees.Where(f => f.Id == fee.Id).Select(FeeMappingExtensions.MapForFeeDto()).FirstAsync(ct);
         return saved.MapToFeeDto();
     }

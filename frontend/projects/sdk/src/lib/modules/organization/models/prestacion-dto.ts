@@ -2,6 +2,7 @@ export interface InsurerPriceDto {
   payer: string;
   amount: number;
   effectiveFrom: string;
+  copay?: number | null;
 }
 
 import type { AppointmentKind } from './appointment-kind';

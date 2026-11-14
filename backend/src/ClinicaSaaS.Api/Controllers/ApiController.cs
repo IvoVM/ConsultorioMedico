@@ -11,6 +11,13 @@ public abstract class ApiController : ControllerBase
     protected Task<IActionResult> Run<T>(Func<Task<T>> action) =>
         Guard(async () => Ok(await action()));
 
+    protected Task<IActionResult> RunFile(Func<Task<FileDto>> action) =>
+        Guard(async () =>
+        {
+            var file = await action();
+            return File(file.Content, file.ContentType, file.Name);
+        });
+
     protected Task<IActionResult> Run(Func<Task> action) =>
         Guard(async () =>
         {
