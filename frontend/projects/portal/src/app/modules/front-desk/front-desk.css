@@ -1,0 +1,117 @@
+/* El mostrador: una columna por etapa del paciente en el día. */
+
+.desk-board {
+  display: grid;
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (min-width: 1024px) {
+  .desk-board {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.desk-col {
+  --tone: var(--color-leaf);
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.6rem;
+  border-radius: 1.25rem;
+  background: var(--color-mist);
+  padding: 0.9rem;
+  box-shadow: inset 0 3px 0 var(--tone);
+}
+
+.desk-col[data-stage='arriving'] { --tone: var(--color-sky); }
+.desk-col[data-stage='inside'] { --tone: #e08a1e; }
+.desk-col[data-stage='checkout'] { --tone: var(--color-leaf); }
+
+.desk-col-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 700;
+}
+
+.desk-col-title span {
+  border-radius: 999px;
+  background: white;
+  padding: 0 0.55rem;
+  font-size: 0.8rem;
+  color: rgb(14 42 34 / 0.6);
+}
+
+.desk-empty {
+  padding: 0.5rem 0.25rem;
+  font-size: 0.875rem;
+  color: rgb(14 42 34 / 0.5);
+}
+
+.desk-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  border-radius: 1rem;
+  background: white;
+  padding: 0.85rem 0.95rem;
+  box-shadow: var(--shadow-card);
+  animation: rise 0.35s var(--ease-out-soft) both;
+}
+
+.desk-name {
+  min-width: 0;
+  overflow: hidden;
+  font-family: var(--font-serif, inherit);
+  font-size: 1.05rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.desk-time {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: rgb(14 42 34 / 0.7);
+}
+
+.desk-meta {
+  font-size: 0.85rem;
+  color: rgb(14 42 34 / 0.65);
+}
+
+.desk-state {
+  align-self: flex-start;
+  border-radius: 999px;
+  background: var(--color-ochre-wash);
+  padding: 0.1rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-ochre);
+}
+
+.desk-state.is-busy {
+  background: #e8f0fd;
+  color: #1d4fa6;
+}
+
+.desk-ask {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.2rem;
+  border-radius: 0.75rem;
+  background: var(--color-ochre-wash);
+  padding: 0.55rem 0.7rem;
+  font-size: 0.85rem;
+  color: var(--color-ochre);
+}
+
+.desk-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.75rem;
+  margin-top: 0.35rem;
+}

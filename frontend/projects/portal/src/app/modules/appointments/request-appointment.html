@@ -135,7 +135,7 @@
             } @else if (step() === Step.Done) {
               <div class="mt-8 flex flex-wrap gap-4">
                 @if (forDesk()) {
-                  <a [routerLink]="route.Secretaria" class="action-link">Volver a secretaría</a>
+                  <a [routerLink]="route.Pacientes" class="action-link">Volver a pacientes</a>
                 } @else if (session.token()) {
                   <a [routerLink]="route.Panel" class="action-link">Volver al inicio</a>
                 } @else {

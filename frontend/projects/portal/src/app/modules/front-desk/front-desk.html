@@ -1,171 +1,92 @@
-<section class="mb-10 max-w-3xl">
-  <h2 class="font-serif text-2xl tracking-tight">Buscar paciente</h2>
-  <ui-field class="mt-4" label="Documento, nombre, teléfono o afiliado">
-    <input type="search" name="q" autocomplete="off" placeholder="Ej.: 30111222" [ngModel]="query" (ngModelChange)="onQuery($event)" />
-  </ui-field>
-  @if (searchError()) { <p class="mt-3 text-sm text-pulse" role="alert">{{ searchError() }}</p> }
-  @if (searching()) { <p class="mt-3 text-sm text-ink/60">Buscando…</p> }
-  @if (matches().length) {
-    <ul class="mt-4 divide-y divide-rule overflow-hidden rounded-2xl bg-white shadow-[var(--shadow-card)]">
-      @for (patient of matches(); track patient.patientId) {
-        <li class="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p class="font-serif text-lg leading-tight">{{ patient.lastName }}, {{ patient.firstName }}</p>
-            <p class="mt-1 text-sm text-ink/70">
-              DNI {{ patient.documentNumber }}
-              @if (age(patient.birthDate) !== null) { <span>— {{ age(patient.birthDate) }} años</span> }
-              <span>· {{ patient.phone }}</span>
-            </p>
-            <p class="mt-1 text-sm text-ink/70">
-              {{ patient.healthInsurance || 'Particular' }}
-              @if (patient.memberNumber) { <span>· afiliado {{ patient.memberNumber }}</span> }
-            </p>
-          </div>
-          <div class="flex gap-4">
-            <a class="text-link" [routerLink]="route.ReservarPaciente" [queryParams]="patientParams(patient.patientId)">Reservar</a>
-            <a class="text-link" [routerLink]="route.HistorialTurnos" [queryParams]="patientParams(patient.patientId)">Historial</a>
-            <a class="text-link" [routerLink]="route.Cuenta" [queryParams]="patientParams(patient.patientId)">Cuenta</a>
-          </div>
-        </li>
-      }
-    </ul>
-  } @else if (!searching() && query.trim().length >= 2 && !searchError()) {
-    <ui-empty message="Ningún paciente coincide con esa búsqueda." />
-    <a class="text-link mt-4" [routerLink]="route.DarTurno">Dar un turno</a>
-  }
-</section>
-<ui-calendar [date]="date" (dateChange)="date = $event; load()">
-  <ui-button [loading]="loading() || refreshing()" (click)="load()">Actualizar</ui-button>
-</ui-calendar>
-@if (error()) { <p class="mt-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
-<section class="mt-10">
-  <h2 class="font-serif text-2xl tracking-tight">Agenda del día</h2>
-  <div class="mt-4">
-    @if (loading()) {
-      <ui-skeleton label="Cargando agenda" />
-    } @else if (!appointments().length) {
-      <ui-empty message="No hay turnos en este día." />
-    } @else {
-    <ui-table>
-<table class="cards">
-      <thead><tr><th>Hora</th><th>Paciente</th><th>Profesional</th><th>Estado</th><th></th></tr></thead>
-      <tbody>
-        @for (appointment of appointments(); track appointment.id) {
-          <tr>
-            <td class="whitespace-nowrap tabular-nums">{{ appointment.start | fecha:'hora' }}</td>
-            <td data-name="Paciente">
-              {{ appointment.patient }}
-              <span class="mt-1 block text-sm text-ink/70">{{ coverageLabel(appointment) }}</span>
-              @if (charge(appointment); as bill) {
-                <span class="mt-1 block text-sm text-ink/70">
-                  {{ money(bill.total) }} · {{ invoiceStatusLabels[bill.status] }}
-                  @if (bill.status === invoice.Pending || bill.status === invoice.PartiallyPaid) {
-                    · saldo {{ money(bill.balance) }}
-                  }
-                </span>
+<header class="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2">
+  <h2 class="font-serif text-3xl tracking-tight">Mostrador</h2>
+  <ui-help title="Mostrador">
+    <p>El día de hoy según dónde está cada paciente. Cuando llega, revisás el número de afiliado contra la credencial y lo pasás a la sala de espera. Cuando el profesional cierra la consulta, aparece para cobrar.</p>
+    <p>Para mover o cancelar un turno, abrilo en la agenda con Ver en la agenda: ahí se controlan los consultorios, los equipos y los sobreturnos.</p>
+    <p>La pantalla se actualiza sola cada medio minuto.</p>
+  </ui-help>
+  <nav class="ml-auto flex flex-wrap gap-2" aria-label="Accesos rápidos">
+    <a [routerLink]="route.Agenda" class="action-link"><ui-icon name="calendar_view_week" [size]="18" />Agenda</a>
+    <a [routerLink]="route.Pacientes" class="action-link"><ui-icon name="person_search" [size]="18" />Buscar paciente</a>
+  </nav>
+</header>
+
+@if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
+
+@if (loading()) {
+  <ui-skeleton label="Cargando el día" [count]="3" />
+} @else if (!appointments().length) {
+  <ui-empty message="Hoy no hay turnos." />
+} @else {
+  <div class="desk-board">
+    @for (stage of stageOrder; track stage) {
+      @let items = board()[stage];
+      <section class="desk-col" [attr.data-stage]="stage" [attr.aria-label]="stageLabels[stage].title">
+        <h3 class="desk-col-title">{{ stageLabels[stage].title }}<span>{{ items.length }}</span></h3>
+        @if (!items.length) {
+          <p class="desk-empty">{{ stageLabels[stage].empty }}</p>
+        }
+        @for (appointment of items; track appointment.id) {
+          <article class="desk-card">
+            <div class="flex items-baseline justify-between gap-3">
+              <p class="desk-name">{{ appointment.patient }}</p>
+              <span class="desk-time">{{ appointment.start | fecha:'hora' }}</span>
+            </div>
+            <p class="desk-meta">{{ place(appointment) }}</p>
+            @switch (stage) {
+              @case (stages.Arriving) {
+                <p class="desk-meta">{{ coverageLabel(appointment) }}</p>
+                @if (needsCoverage(appointment)) {
+                  <div class="desk-ask">
+                    <span>¿El afiliado coincide con la credencial?</span>
+                    <div class="flex gap-2">
+                      <ui-button variant="outlined" [loading]="pending() === 'coverage:' + appointment.id + ':true'" (click)="review(appointment, true)">Sí</ui-button>
+                      <ui-button variant="ghost" [loading]="pending() === 'coverage:' + appointment.id + ':false'" (click)="review(appointment, false)">No coincide</ui-button>
+                    </div>
+                  </div>
+                }
+                <div class="desk-actions">
+                  <ui-button [loading]="pending() === 'checkin:' + appointment.id" (click)="checkIn(appointment)"><ui-icon name="chair" [size]="18" />Llegó</ui-button>
+                  <ui-button variant="ghost" [loading]="pending() === 'absent:' + appointment.id" (click)="absent(appointment)">No vino</ui-button>
+                  <a class="text-link" [routerLink]="route.Agenda" [queryParams]="appointmentParams(appointment)">Ver en la agenda</a>
+                </div>
               }
-            </td>
-            <td data-name="Profesional">{{ appointment.professional }}</td>
-            <td data-name="Estado"><ui-badge>{{ statusLabels[appointment.status] }}</ui-badge></td>
-            <td class="whitespace-nowrap">
-              <ui-actions>
-                @if (appointment.insurer && appointment.coverageAccepted == null && appointment.status !== status.Cancelled && appointment.status !== status.NoShow) {
-                  <ui-button [loading]="pending() === 'coverage:' + appointment.id + ':true'" (click)="review(appointment, true)">Es correcto</ui-button>
-                  <ui-button variant="outlined" [loading]="pending() === 'coverage:' + appointment.id + ':false'" (click)="review(appointment, false)">No coincide</ui-button>
-                }
-                @if (appointment.status === status.Booked || appointment.status === status.Rescheduled) { <ui-button [loading]="pending() === 'checkin:' + appointment.id" (click)="checkIn(appointment)">Sala de espera</ui-button> }
-                @if (canMove(appointment)) {
-                  <ui-button variant="ghost" (click)="startMove(appointment)">Reprogramar</ui-button>
-                }
-                @if (canMove(appointment) || appointment.status === status.CheckedIn) {
-                  <ui-button variant="ghost" [loading]="pending() === 'absent:' + appointment.id" (click)="absent(appointment)">No se presentó</ui-button>
-                }
-                @if (appointment.status === status.Booked || appointment.status === status.Rescheduled || appointment.status === status.CheckedIn) {
-                  <ui-button variant="ghost" (click)="confirming.set(appointment)">Cancelar turno</ui-button>
-                }
-                @if (canIssue(appointment)) {
-                  <ui-button [loading]="pending() === 'issue:' + appointment.id" (click)="issue(appointment)">Emitir comprobante</ui-button>
-                }
-                @if (charge(appointment); as bill) {
-                  @if (bill.status === invoice.Pending || bill.status === invoice.PartiallyPaid) {
-                    <ui-button (click)="opened.set(bill)">Cobrar</ui-button>
-                  } @else {
-                    <ui-button variant="ghost" (click)="opened.set(bill)">Comprobante</ui-button>
+              @case (stages.Inside) {
+                <p class="desk-state" [class.is-busy]="appointment.status === status.InProgress">{{ statusLabels[appointment.status] }}</p>
+                <div class="desk-actions">
+                  @if (appointment.status === status.CheckedIn) {
+                    <ui-button variant="ghost" [loading]="pending() === 'absent:' + appointment.id" (click)="absent(appointment)">Se fue sin atenderse</ui-button>
                   }
+                  <a class="text-link" [routerLink]="route.Agenda" [queryParams]="appointmentParams(appointment)">Ver en la agenda</a>
+                </div>
+              }
+              @case (stages.Checkout) {
+                @if (charge(appointment); as bill) {
+                  <p class="desk-meta">
+                    {{ money(bill.total) }} · {{ invoiceStatusLabels[bill.status] }}
+                    @if (bill.status === invoice.PartiallyPaid) { · saldo {{ money(bill.balance) }} }
+                  </p>
+                  <div class="desk-actions">
+                    <ui-button (click)="opened.set(bill)"><ui-icon name="point_of_sale" [size]="18" />Cobrar</ui-button>
+                  </div>
+                } @else {
+                  <p class="desk-meta">Atendido, todavía sin comprobante.</p>
+                  <div class="desk-actions">
+                    <ui-button [loading]="pending() === 'issue:' + appointment.id" (click)="issue(appointment)"><ui-icon name="receipt_long" [size]="18" />Emitir comprobante</ui-button>
+                  </div>
                 }
-              </ui-actions>
-            </td>
-          </tr>
-        }
-      </tbody>
-    </table>
-</ui-table>
-    }
-  </div>
-  @if (openedView(); as view) {
-    <ui-invoice [view]="view" [source]="openedSource()!" [methods]="paymentOptions" [cardMethod]="cardMethod" [brands]="brandOptions" (closed)="opened.set(null)" />
-  }
-  @if (moving(); as appointment) {
-    <ui-modal [open]="true" [wide]="true" [title]="'Reprogramar a ' + appointment.patient" (closed)="cancelMove()">
-      <form (ngSubmit)="loadSlots()">
-        <p class="text-sm text-ink/70">{{ appointment.professional }} · {{ appointment.appointmentType }}. Elegí un día y un hueco libre.</p>
-        <ui-field class="mt-4 sm:w-64" label="Día">
-          <input name="moveDate" type="date" [(ngModel)]="moveDate" (ngModelChange)="loadSlots()" required />
-        </ui-field>
-        @if (slotsError()) {
-          <p class="mt-4 text-sm text-pulse" role="alert">{{ slotsError() }}</p>
-        } @else if (slotsLoading()) {
-          <p class="mt-4 text-sm text-ink/60">Buscando huecos…</p>
-        } @else if (!slots().length) {
-          <p class="mt-4 text-sm text-ink/70">Ese día no tiene horarios libres para esta prestación.</p>
-        } @else {
-          <div class="mt-4 flex flex-wrap gap-2">
-            @for (slot of slots(); track slot.start) {
-              <ui-button type="button" variant="outlined" [loading]="pending() === 'move:' + appointment.id" (click)="moveTo(slot)">{{ slot.start | fecha:'hora' }}</ui-button>
+              }
             }
-          </div>
+          </article>
         }
-      </form>
-    </ui-modal>
-  }
-</section>
-<section class="mt-12">
-  <h2 class="font-serif text-2xl tracking-tight">Lista de espera</h2>
-  <div class="mt-4">
-    @if (loading()) {
-      <ui-skeleton label="Cargando lista de espera" />
-    } @else if (!waitlist().length) {
-      <ui-empty message="La lista de espera está vacía." />
-    } @else {
-    <ui-table>
-<table class="cards">
-      <thead><tr><th>Paciente</th><th>Para</th><th>Notas</th><th></th></tr></thead>
-      <tbody>
-        @for (item of waitlist(); track item.id) {
-          <tr>
-            <td class="font-serif text-lg leading-tight">{{ item.patient }}</td>
-            <td data-name="Para">
-              {{ item.specialty }}
-              @if (item.professional) { <span class="mt-1 block text-sm text-ink/70">{{ item.professional }}</span> }
-            </td>
-            <td data-name="Notas">{{ item.notes || '—' }}</td>
-            <td class="whitespace-nowrap">
-              <ui-button [loading]="pending() === 'offer:' + item.id" (click)="offer(item)">Ofrecer próximo hueco</ui-button>
-            </td>
-          </tr>
-        }
-      </tbody>
-    </table>
-</ui-table>
+      </section>
     }
   </div>
-</section>
-@if (confirming(); as appointment) {
-  <ui-modal [open]="true" title="Cancelar turno" (closed)="confirming.set(null)">
-    <p class="max-w-prose leading-relaxed">Se cancela el turno de {{ appointment.patient }} del {{ appointment.start | fecha }}: sale de la agenda y el horario queda libre. No se puede deshacer.</p>
-    <div uiModalFooter class="flex flex-wrap gap-3">
-      <ui-button variant="error" [loading]="pending() === 'cancel:' + appointment.id" (click)="cancel(appointment)">Sí, cancelar turno</ui-button>
-      <ui-button variant="outlined" [disabled]="pending() === 'cancel:' + appointment.id" (click)="confirming.set(null)">Volver</ui-button>
-    </div>
-  </ui-modal>
+  <p class="mt-4 text-sm text-ink/60">
+    {{ done() }} {{ done() === 1 ? 'paciente terminó' : 'pacientes terminaron' }} hoy@if (missed()) { · {{ missed() }} {{ missed() === 1 ? 'ausente o cancelado' : 'ausentes o cancelados' }}}.
+  </p>
+}
+
+@if (openedView(); as view) {
+  <ui-invoice [view]="view" [source]="openedSource()!" [methods]="paymentOptions" [cardMethod]="cardMethod" [brands]="brandOptions" (closed)="opened.set(null)" />
 }

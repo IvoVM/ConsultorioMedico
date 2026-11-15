@@ -31,7 +31,7 @@
   <div class="mb-8 flex flex-wrap gap-3">
     <ui-button (click)="openDialog(dialogs.Payment)">Cobrar a cuenta</ui-button>
     @if (acc.credit > 0) { <ui-button variant="outlined" (click)="openDialog(dialogs.Refund)">Devolver saldo a favor</ui-button> }
-    <a class="text-link self-center" [routerLink]="route.Secretaria">Volver a la secretaría</a>
+    <a class="text-link self-center" [routerLink]="route.Pacientes">Volver a pacientes</a>
   </div>
 
   <section class="mb-10">

@@ -94,9 +94,21 @@ export const routes: Routes = [
             loadComponent: () => import('./modules/appointments/request-appointment').then((m) => m.RequestAppointmentPage),
           },
           {
-            path: routePath(AppRoute.Secretaria),
+            path: routePath(AppRoute.Mostrador),
             canActivate: [roleGuard(TenantRole.Secretary, TenantRole.TenantAdmin)],
             loadComponent: () => import('./modules/front-desk/front-desk').then((m) => m.FrontDeskPage),
+          },
+          // The front desk screen used to be called Secretaría; old bookmarks land on the new one.
+          { path: 'secretaria', redirectTo: routePath(AppRoute.Mostrador) },
+          {
+            path: routePath(AppRoute.Pacientes),
+            canActivate: [roleGuard(TenantRole.Secretary, TenantRole.TenantAdmin)],
+            loadComponent: () => import('./modules/front-desk/patient-search').then((m) => m.PatientSearchPage),
+          },
+          {
+            path: routePath(AppRoute.ListaEspera),
+            canActivate: [roleGuard(TenantRole.Secretary, TenantRole.TenantAdmin)],
+            loadComponent: () => import('./modules/appointments/waitlist').then((m) => m.WaitlistPage),
           },
           { path: routePath(AppRoute.Medico), canActivate: [roleGuard(TenantRole.Doctor)], loadComponent: () => import('./modules/clinical/doctor').then((m) => m.DoctorPage) },
         ],

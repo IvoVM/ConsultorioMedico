@@ -13,6 +13,8 @@ import {
   errorMessage,
 } from 'sdk';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
+import { RouteParam } from '../../app.routes.enum';
 import { SelectOption, ToastService, UiAvatar, UiButton, UiIcon, UiModal, UiMonth, UiSelect, formatFecha, localDate } from 'ui';
 import { appointmentStatusLabels } from '../appointments/models/appointment-status-labels';
 import {
@@ -124,6 +126,8 @@ export class AgendaPage {
   readonly openRequest = signal<BookingRequestDto | null>(null);
   readonly helpOpen = signal(false);
   readonly view = signal(this.savedView());
+  // An appointment asked for in the link, opened once its day has loaded.
+  private pendingOpen: string | null = null;
 
   readonly title = computed(() => dayTitle(this.day()));
   readonly dayTitle = dayTitle;
@@ -196,6 +200,11 @@ export class AgendaPage {
   });
 
   constructor() {
+    // The front desk opens an appointment here with ?fecha=…&turno=…: show its day and its detail.
+    const params = inject(ActivatedRoute).snapshot.queryParamMap;
+    const day = params.get(RouteParam.Fecha);
+    if (day && /^\d{4}-\d{2}-\d{2}$/.test(day)) this.day.set(day);
+    this.pendingOpen = params.get(RouteParam.Turno);
     void this.load();
     // Other people change the agenda too: refresh quietly while the tab is visible and nobody is mid-action here.
     const timer = setInterval(() => void this.refresh(), 30000);
@@ -567,6 +576,11 @@ export class AgendaPage {
     try {
       this.data.set(await firstValueFrom(this.agendaApi.day(this.day())));
       this.remember(this.data()?.professionals ?? []);
+      if (this.pendingOpen) {
+        const linked = this.data()?.appointments.find((item) => item.id === this.pendingOpen);
+        this.pendingOpen = null;
+        if (linked) this.open.set(linked);
+      }
       if (this.data()?.canEdit) this.requests.set(await firstValueFrom(this.appointmentsApi.pendingRequests()));
     } catch (error) {
       this.data.set(null);

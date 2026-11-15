@@ -1,38 +1,39 @@
-import { Component, computed, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { AppointmentDto, AppointmentStatus, AppointmentsService, BillingService, ClinicService, InvoiceDto, InvoiceStatus, PatientLookupDto, PatientsService, PaymentMethod, ScheduleService, SlotDto, WaitlistEntryDto, errorMessage } from 'sdk';
-import { FechaPipe, ToastService, UiActions, UiBadge, UiButton, UiCalendar, UiEmpty, UiField, UiInvoice, UiModal, UiSkeleton, UiTable, formatFecha, formatMoney } from 'ui';
+import { AppointmentDto, AppointmentStatus, AppointmentsService, BillingService, ClinicService, InvoiceDto, InvoiceStatus, PaymentMethod, errorMessage } from 'sdk';
+import { FechaPipe, UiButton, UiEmpty, UiHelp, UiIcon, UiInvoice, UiSkeleton, formatMoney, localDate } from 'ui';
 import { Observable, firstValueFrom } from 'rxjs';
 import { appointmentStatusLabels } from '../appointments/models/appointment-status-labels';
 import { invoiceStatusLabels } from '../billing/models/invoice-labels';
 import { cardBrandOptions, invoiceSource, invoiceView, paymentOptions } from '../billing/models/invoice-view';
-import { AppRoute, patientParams } from '../../app.routes.enum';
+import { AppRoute, appointmentParams } from '../../app.routes.enum';
+import { DeskStage, deskStageLabels } from './models/desk-stage';
 
+// The front desk's day, by where each patient is: arriving (check the coverage, send them to the waiting
+// room or mark them absent), inside (waiting or being seen) and done (issue and charge the invoice).
+// Moving or cancelling a booking is done on the agenda, the one place that knows rooms, equipment and overbooks.
 @Component({
-  imports: [FormsModule, RouterLink, FechaPipe, UiActions, UiBadge, UiButton, UiCalendar, UiEmpty, UiField, UiInvoice, UiModal, UiSkeleton, UiTable],
+  imports: [RouterLink, FechaPipe, UiButton, UiEmpty, UiHelp, UiIcon, UiInvoice, UiSkeleton],
   templateUrl: './front-desk.html',
+  styleUrl: './front-desk.css',
 })
 export class FrontDeskPage {
   readonly route = AppRoute;
-  readonly patientParams = patientParams;
+  readonly appointmentParams = appointmentParams;
   readonly status = AppointmentStatus;
   readonly invoice = InvoiceStatus;
+  readonly stages = DeskStage;
+  readonly stageLabels = deskStageLabels;
+  readonly stageOrder = [DeskStage.Arriving, DeskStage.Inside, DeskStage.Checkout];
   private readonly appointmentsApi = inject(AppointmentsService);
   private readonly billing = inject(BillingService);
   private readonly clinic = inject(ClinicService);
-  private readonly patientsApi = inject(PatientsService);
-  private readonly schedule = inject(ScheduleService);
-  private readonly toasts = inject(ToastService);
-  private searchSeq = 0;
-  private searchTimer = 0;
   readonly statusLabels = appointmentStatusLabels;
   readonly invoiceStatusLabels = invoiceStatusLabels;
   readonly paymentOptions = paymentOptions;
   readonly brandOptions = cardBrandOptions;
   readonly cardMethod = PaymentMethod.Card;
   readonly appointments = signal<AppointmentDto[]>([]);
-  readonly waitlist = signal<WaitlistEntryDto[]>([]);
   readonly invoices = signal<InvoiceDto[]>([]);
   // With automatic invoicing off, front desk issues the invoice of an attended appointment by hand.
   readonly billingEnabled = signal(false);
@@ -52,22 +53,21 @@ export class FrontDeskPage {
         })
       : null;
   });
-  readonly slots = signal<SlotDto[]>([]);
-  readonly moving = signal<AppointmentDto | null>(null);
   readonly error = signal('');
-  readonly slotsError = signal('');
   readonly loading = signal(true);
-  readonly refreshing = signal(false);
   readonly pending = signal('');
-  // Removing a booking cannot be undone, so front desk confirms it first.
-  readonly confirming = signal<AppointmentDto | null>(null);
-  readonly slotsLoading = signal(false);
-  readonly searchError = signal('');
-  readonly searching = signal(false);
-  readonly matches = signal<PatientLookupDto[]>([]);
-  query = '';
-  date = new Date().toISOString().slice(0, 10);
-  moveDate = this.date;
+
+  readonly board = computed(() => {
+    const columns: Record<DeskStage, AppointmentDto[]> = { [DeskStage.Arriving]: [], [DeskStage.Inside]: [], [DeskStage.Checkout]: [] };
+    for (const appointment of this.appointments()) {
+      const stage = this.stageOf(appointment);
+      if (stage) columns[stage].push(appointment);
+    }
+    return columns;
+  });
+  // What no longer needs the desk today: paid or free visits, and the ones that did not happen.
+  readonly done = computed(() => this.appointments().filter((item) => item.status === AppointmentStatus.Completed && !this.stageOf(item)).length);
+  readonly missed = computed(() => this.appointments().filter((item) => item.status === AppointmentStatus.NoShow || item.status === AppointmentStatus.Cancelled).length);
 
   constructor() {
     void this.load();
@@ -77,22 +77,29 @@ export class FrontDeskPage {
         this.fiscalEnabled.set(profile.fiscalEnabled);
       })
       .catch(() => undefined);
+    // Doctors and other desks change the day too: refresh quietly while nobody is mid-action here.
+    const timer = setInterval(() => {
+      if (!document.hidden && !this.pending() && !this.opened()) void this.fetchDay().catch(() => undefined);
+    }, 30000);
+    inject(DestroyRef).onDestroy(() => clearInterval(timer));
   }
 
-  onQuery(value: string) {
-    this.query = value;
-    window.clearTimeout(this.searchTimer);
-    this.searchTimer = window.setTimeout(() => void this.searchPatients(), 250);
-  }
-
-  age(birthDate: string) {
-    const birth = new Date(`${birthDate}T00:00:00`);
-    if (Number.isNaN(birth.getTime()) || birth.getFullYear() < 1901) return null;
-    const today = new Date();
-    let years = today.getFullYear() - birth.getFullYear();
-    const months = today.getMonth() - birth.getMonth();
-    if (months < 0 || (months === 0 && today.getDate() < birth.getDate())) years--;
-    return years;
+  private stageOf(appointment: AppointmentDto): DeskStage | null {
+    switch (appointment.status) {
+      case AppointmentStatus.Booked:
+      case AppointmentStatus.Rescheduled:
+        return DeskStage.Arriving;
+      case AppointmentStatus.CheckedIn:
+      case AppointmentStatus.InProgress:
+        return DeskStage.Inside;
+      case AppointmentStatus.Completed: {
+        const bill = this.charge(appointment);
+        if (bill) return bill.status === InvoiceStatus.Pending || bill.status === InvoiceStatus.PartiallyPaid ? DeskStage.Checkout : null;
+        return this.billingEnabled() ? DeskStage.Checkout : null;
+      }
+      default:
+        return null;
+    }
   }
 
   charge(appointment: AppointmentDto) {
@@ -103,36 +110,24 @@ export class FrontDeskPage {
     return formatMoney(amount);
   }
 
-  canMove(appointment: AppointmentDto) {
-    return appointment.status === AppointmentStatus.Booked || appointment.status === AppointmentStatus.Rescheduled;
+  coverageLabel(appointment: AppointmentDto) {
+    if (!appointment.insurer) return 'Particular';
+    const number = appointment.memberNumber ? ` · afiliado ${appointment.memberNumber}` : '';
+    if (appointment.coverageAccepted === true) return `${appointment.insurer}${number} · número correcto`;
+    if (appointment.coverageAccepted === false) return `${appointment.insurer}${number} · no coincide`;
+    return `${appointment.insurer}${number}`;
   }
 
-  private async searchPatients() {
-    const q = this.query.trim();
-    const seq = ++this.searchSeq;
-    if (q.length < 2) {
-      this.matches.set([]);
-      this.searchError.set('');
-      this.searching.set(false);
-      return;
-    }
-    this.searching.set(true);
-    this.searchError.set('');
-    try {
-      const matches = await firstValueFrom(this.patientsApi.searchPatients({ q }));
-      if (seq !== this.searchSeq) return;
-      this.matches.set(matches);
-    } catch (error) {
-      if (seq !== this.searchSeq) return;
-      this.matches.set([]);
-      this.searchError.set(errorMessage(error));
-    } finally {
-      if (seq === this.searchSeq) this.searching.set(false);
-    }
+  // The member number is checked against the card when the patient arrives.
+  needsCoverage(appointment: AppointmentDto) {
+    return !!appointment.insurer && appointment.coverageAccepted == null;
+  }
+
+  place(appointment: AppointmentDto) {
+    return [appointment.professional, appointment.room].filter(Boolean).join(' · ');
   }
 
   async load() {
-    if (!this.loading()) this.refreshing.set(true);
     this.error.set('');
     try {
       await this.fetchDay();
@@ -140,16 +135,7 @@ export class FrontDeskPage {
       this.error.set(errorMessage(error));
     } finally {
       this.loading.set(false);
-      this.refreshing.set(false);
     }
-  }
-
-  coverageLabel(appointment: AppointmentDto) {
-    if (!appointment.insurer) return 'Particular';
-    const number = appointment.memberNumber ? ` · afiliado ${appointment.memberNumber}` : '';
-    if (appointment.coverageAccepted === true) return `${appointment.insurer}${number} · número correcto`;
-    if (appointment.coverageAccepted === false) return `${appointment.insurer}${number} · no coincide`;
-    return `${appointment.insurer}${number} · pendiente de revisión`;
   }
 
   async review(appointment: AppointmentDto, accepted: boolean) {
@@ -162,81 +148,6 @@ export class FrontDeskPage {
 
   async absent(appointment: AppointmentDto) {
     await this.run(`absent:${appointment.id}`, () => this.appointmentsApi.markNoShow(appointment.id));
-  }
-
-  async cancel(appointment: AppointmentDto) {
-    await this.run(`cancel:${appointment.id}`, () => this.appointmentsApi.cancelAppointment(appointment.id));
-    this.confirming.set(null);
-  }
-
-  async startMove(appointment: AppointmentDto) {
-    this.moving.set(appointment);
-    this.moveDate = appointment.start.slice(0, 10);
-    this.slots.set([]);
-    this.slotsError.set('');
-    await this.loadSlots();
-  }
-
-  cancelMove() {
-    this.moving.set(null);
-    this.slots.set([]);
-    this.slotsError.set('');
-  }
-
-  async loadSlots() {
-    const appointment = this.moving();
-    if (!appointment || !this.moveDate) return;
-    this.slotsLoading.set(true);
-    this.slotsError.set('');
-    try {
-      const slots = await firstValueFrom(
-        this.schedule.availability({
-          locationId: appointment.locationId,
-          specialtyId: '00000000-0000-0000-0000-000000000000',
-          professionalId: appointment.professionalId,
-          date: this.moveDate,
-        }),
-      );
-      this.slots.set(slots.filter((slot) => slot.appointmentTypeId === appointment.appointmentTypeId));
-    } catch (error) {
-      this.slots.set([]);
-      this.slotsError.set(errorMessage(error));
-    } finally {
-      this.slotsLoading.set(false);
-    }
-  }
-
-  async moveTo(slot: SlotDto) {
-    const appointment = this.moving();
-    if (!appointment) return;
-    this.pending.set(`move:${appointment.id}`);
-    try {
-      await firstValueFrom(this.appointmentsApi.rescheduleAppointment(appointment.id, { start: slot.start }));
-      this.toasts.success('Turno reprogramado', `${appointment.patient} quedó para el ${formatFecha(slot.start)}.`);
-      this.cancelMove();
-      await this.fetchDay();
-    } catch (error) {
-      this.toasts.error('No se pudo reprogramar', errorMessage(error));
-    } finally {
-      this.pending.set('');
-    }
-  }
-
-  async offer(item: WaitlistEntryDto) {
-    this.pending.set(`offer:${item.id}`);
-    try {
-      const appointment = await firstValueFrom(this.appointmentsApi.offerWaitlist(item.id));
-      this.toasts.success('Turno asignado', `${item.patient} tiene turno el ${formatFecha(appointment.start)} con ${appointment.professional}.`);
-      await this.fetchDay();
-    } catch (error) {
-      this.toasts.error('No se pudo asignar el turno', errorMessage(error));
-    } finally {
-      this.pending.set('');
-    }
-  }
-
-  canIssue(appointment: AppointmentDto) {
-    return this.billingEnabled() && appointment.status === AppointmentStatus.Completed && !this.charge(appointment);
   }
 
   async issue(appointment: AppointmentDto) {
@@ -254,14 +165,12 @@ export class FrontDeskPage {
   }
 
   private async fetchDay() {
-      const [appointments, waitlist, invoices] = await Promise.all([
-        firstValueFrom(this.appointmentsApi.appointmentsForDay({ date: this.date })),
-        firstValueFrom(this.appointmentsApi.waitlist()),
-        firstValueFrom(this.billing.invoices()),
-      ]);
-      this.appointments.set(appointments);
-      this.waitlist.set(waitlist);
-      this.invoices.set(invoices);
+    const [appointments, invoices] = await Promise.all([
+      firstValueFrom(this.appointmentsApi.appointmentsForDay({ date: localDate(new Date()) })),
+      firstValueFrom(this.billing.invoices()),
+    ]);
+    this.appointments.set(appointments);
+    this.invoices.set(invoices);
   }
 
   private async run(key: string, call: () => Observable<unknown>) {

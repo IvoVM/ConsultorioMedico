@@ -53,6 +53,7 @@ export class ShellPage {
         children: [
           { label: 'Dar un turno', path: AppRoute.DarTurno, icon: 'add_circle' },
           { label: 'Solicitudes', path: AppRoute.Solicitudes, icon: 'pending_actions' },
+          { label: 'Lista de espera', path: AppRoute.ListaEspera, icon: 'hourglass_top' },
           { label: 'Historial', path: AppRoute.HistorialTurnos, icon: 'history' },
         ],
       });
@@ -71,7 +72,8 @@ export class ShellPage {
       });
     }
     if (role === TenantRole.Secretary || role === TenantRole.TenantAdmin) {
-      nodes.push({ label: 'Secretaría', path: AppRoute.Secretaria, icon: 'desk' });
+      nodes.push({ label: 'Mostrador', path: AppRoute.Mostrador, icon: 'desk' });
+      nodes.push({ label: 'Pacientes', path: AppRoute.Pacientes, icon: 'person_search' });
       nodes.push({ label: 'Caja', path: AppRoute.Caja, icon: 'point_of_sale' });
       nodes.push({ label: 'Insumos', path: AppRoute.Insumos, icon: 'inventory_2' });
     }

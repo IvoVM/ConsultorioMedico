@@ -1,0 +1,36 @@
+<header class="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2">
+  <h2 class="font-serif text-3xl tracking-tight">Lista de espera</h2>
+  <ui-help title="Lista de espera">
+    <p>Pacientes que quieren un turno antes del que había. Con Ofrecer próximo hueco, el sistema busca el primer horario libre de las próximas tres semanas para esa especialidad o ese profesional y le da el turno.</p>
+    <p>Avisale al paciente el día y la hora que le quedó.</p>
+  </ui-help>
+</header>
+
+@if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
+
+@if (loading()) {
+  <ui-skeleton label="Cargando lista de espera" />
+} @else if (!waitlist().length) {
+  <ui-empty message="La lista de espera está vacía." />
+} @else {
+  <ui-table>
+    <table class="cards">
+      <thead><tr><th>Paciente</th><th>Para</th><th>Notas</th><th></th></tr></thead>
+      <tbody>
+        @for (item of waitlist(); track item.id) {
+          <tr>
+            <td class="font-serif text-lg leading-tight">{{ item.patient }}</td>
+            <td data-name="Para">
+              {{ item.specialty }}
+              @if (item.professional) { <span class="mt-1 block text-sm text-ink/70">{{ item.professional }}</span> }
+            </td>
+            <td data-name="Notas">{{ item.notes || '—' }}</td>
+            <td class="whitespace-nowrap">
+              <ui-button [loading]="pending() === item.id" (click)="offer(item)">Ofrecer próximo hueco</ui-button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </ui-table>
+}
