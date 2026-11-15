@@ -64,6 +64,11 @@ export const routes: Routes = [
             loadComponent: () => import('./modules/cash/cash').then((m) => m.CashPage),
           },
           {
+            path: routePath(AppRoute.Insumos),
+            canActivate: [roleGuard(TenantRole.Secretary, TenantRole.TenantAdmin)],
+            loadComponent: () => import('./modules/supplies/supplies').then((m) => m.SuppliesPage),
+          },
+          {
             path: routePath(AppRoute.Cuenta),
             canActivate: [roleGuard(TenantRole.Secretary, TenantRole.TenantAdmin)],
             loadComponent: () => import('./modules/billing/account').then((m) => m.AccountPage),

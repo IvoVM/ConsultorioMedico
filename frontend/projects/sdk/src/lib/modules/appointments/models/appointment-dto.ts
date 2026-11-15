@@ -24,4 +24,9 @@ export interface AppointmentDto {
   createdBy?: string | null;
   updatedAt?: string | null;
   updatedBy?: string | null;
+  roomId?: string | null;
+  room?: string | null;
+  equipmentId?: string | null;
+  equipment?: string | null;
+  practiceCode?: string | null;
 }

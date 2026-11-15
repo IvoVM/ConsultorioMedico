@@ -40,6 +40,7 @@
     <tr>
       <th><button type="button" sortCol [on]="blockSort().key === 'day'" [dir]="blockSort().dir" (click)="sortBlocks('day')">Día</button></th>
       <th><button type="button" sortCol [on]="blockSort().key === 'time'" [dir]="blockSort().dir" (click)="sortBlocks('time')">Horario</button></th>
+      <th>Dónde</th>
       <th class="w-px"></th>
     </tr>
   </thead>
@@ -48,6 +49,7 @@
       <tr>
         <td>{{ dayLabels[block.day] }}</td>
         <td data-name="Horario">{{ block.startTime | fecha }} – {{ block.endTime | fecha }}</td>
+        <td data-name="Dónde">{{ place(block) }}</td>
         <td><ui-button variant="ghost" (click)="removeBlock(block.id)">Quitar</ui-button></td>
       </tr>
     }
@@ -94,7 +96,7 @@
 }
 
 @if (addingBlock()) {
-  <ui-modal [open]="true" title="Crear horario" (closed)="addingBlock.set(false)">
+  <ui-modal [open]="true" title="Crear horario" (closed)="addingBlock.set(false); error.set('')">
     <form id="add-block-form" class="grid gap-4" (ngSubmit)="addBlock()">
       <ui-field label="Día">
         <ui-select name="day" [(ngModel)]="day" [options]="dayOptions" />
@@ -107,9 +109,17 @@
       @if (!typeOptions().length) {
         <p class="text-sm text-ink/70">Este médico no tiene prestaciones. Cargalas en su especialidad.</p>
       }
+      <ui-field label="Sede">
+        <ui-select name="locationId" [ngModel]="locationId" (ngModelChange)="pickLocation($event)" [options]="locationOptions()" />
+      </ui-field>
+      <ui-field label="Consultorio">
+        <ui-select name="roomId" [(ngModel)]="roomId" [options]="roomOptions()" />
+      </ui-field>
+      <p class="text-sm text-ink/60">Los turnos de este horario toman ese consultorio. Un consultorio no puede estar en la agenda de dos profesionales a la misma hora.</p>
+      @if (error()) { <p class="text-sm text-pulse" role="alert">{{ error() }}</p> }
     </form>
     <div uiModalFooter class="flex flex-wrap gap-3">
-      <ui-button type="submit" form="add-block-form">Crear</ui-button>
+      <ui-button type="submit" form="add-block-form" [loading]="publishing()">Crear</ui-button>
       <ui-button variant="outlined" (click)="addingBlock.set(false)">Cancelar</ui-button>
     </div>
   </ui-modal>

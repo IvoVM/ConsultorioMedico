@@ -9,6 +9,7 @@ public class OrganizationService(
     ITenantUserStore users,
     IEmployeeStore employees,
     IClientStore clients,
+    ISupplyStore supplies,
     IAuditStore audit,
     ICurrentUser currentUser,
     TimeProvider clock)
@@ -122,6 +123,10 @@ public class OrganizationService(
                 t.Name,
                 t.DurationMinutes,
                 t.Kind,
+                t.Code,
+                t.EquipmentId,
+                Equipment = t.Equipment != null ? t.Equipment.Name : null,
+                Supplies = t.Supplies.OrderBy(s => s.Supply.Name).Select(s => new PracticeSupplyDto(s.SupplyId, s.Supply.Name, s.Supply.Unit, s.Quantity)).ToList(),
                 Fees = t.Fees
                     .Where(f => f.EffectiveFrom <= today)
                     .Select(f => new { f.Id, f.Payer, f.Amount, f.Copay, f.EffectiveFrom })
@@ -143,7 +148,7 @@ public class OrganizationService(
                     .OrderBy(f => f.Payer)
                     .Select(f => new InsurerPriceDto(f.Payer!, f.Amount, f.EffectiveFrom, f.Copay))
                     .ToList();
-                return new PrestacionDto(t.Id, t.Name, t.DurationMinutes, particular?.Amount, particular?.EffectiveFrom, insurers, t.Kind);
+                return new PrestacionDto(t.Id, t.Name, t.DurationMinutes, particular?.Amount, particular?.EffectiveFrom, insurers, t.Kind, t.Code, t.EquipmentId, t.Equipment, t.Supplies);
             })
             .ToList();
         var names = await clients.Clients
@@ -176,8 +181,140 @@ public class OrganizationService(
             Kind = command.Kind
         }, ct);
         await RecordAsync("alta", "TipoTurno", type.Id, type.Name, ct);
-        return new AppointmentTypeDto(type.Id, type.Name, type.DurationMinutes, type.SpecialtyId, type.Kind);
+        return new AppointmentTypeDto(type.Id, type.Name, type.DurationMinutes, type.SpecialtyId, type.Kind, type.Code, type.EquipmentId);
     }
+
+    // The practice behind a service: its nomenclator code, the equipment it needs and what each appointment uses up.
+    public async Task<AppointmentTypeDto> SavePracticeAsync(Guid id, SavePracticeCommand command, CancellationToken ct)
+    {
+        var type = await store.GetAppointmentTypeAsync(id, ct) ?? throw new NotFoundException("Prestación no encontrada.");
+        var code = string.IsNullOrWhiteSpace(command.Code) ? null : command.Code.Trim();
+        if (code is { Length: > 20 })
+            throw new BusinessRuleException("El código de la práctica tiene hasta 20 caracteres.");
+        if (command.EquipmentId is Guid equipmentId && !await store.Equipment.AnyAsync(e => e.Id == equipmentId && e.IsActive, ct))
+            throw new BusinessRuleException("Ese equipo no está activo.");
+        var lines = command.Supplies ?? [];
+        if (lines.Select(s => s.SupplyId).Distinct().Count() != lines.Count)
+            throw new BusinessRuleException("Cada insumo va una sola vez; sumá las cantidades.");
+        if (lines.Any(s => s.Quantity <= 0 || s.Quantity > 1000))
+            throw new BusinessRuleException("La cantidad de cada insumo va de más de 0 a 1000.");
+        var supplyIds = lines.Select(s => s.SupplyId).ToList();
+        var active = await supplies.Supplies.CountAsync(s => supplyIds.Contains(s.Id) && s.IsActive, ct);
+        if (active != supplyIds.Count)
+            throw new BusinessRuleException("Algún insumo no existe o está dado de baja.");
+
+        type.Code = code;
+        type.EquipmentId = command.EquipmentId;
+        await store.ReplaceTypeSuppliesAsync(type.Id, lines.Select(s => new AppointmentTypeSupply
+        {
+            AppointmentTypeId = type.Id,
+            SupplyId = s.SupplyId,
+            Quantity = Math.Round(s.Quantity, 2)
+        }).ToList(), ct);
+        await store.SaveAsync(ct);
+        await RecordAsync("edicion", "Practica", type.Id, $"{type.Name} · código {code ?? "-"} · {lines.Count} insumos", ct);
+        return new AppointmentTypeDto(type.Id, type.Name, type.DurationMinutes, type.SpecialtyId, type.Kind, type.Code, type.EquipmentId);
+    }
+
+    public async Task<IReadOnlyList<RoomDto>> RoomsAsync(CancellationToken ct) =>
+        await store.Rooms.OrderBy(r => r.Location.Name).ThenBy(r => r.Name).ToRoomDtos().ToListAsync(ct);
+
+    public async Task<RoomDto> CreateRoomAsync(SaveResourceCommand command, CancellationToken ct)
+    {
+        var name = await ResourceNameAsync(command, lower => RoomsNamed(command.LocationId, lower), null, "consultorio", ct);
+        var room = new Room { Id = Guid.NewGuid(), LocationId = command.LocationId, Name = name, IsActive = true };
+        store.AddRoom(room);
+        await store.SaveAsync(ct);
+        await RecordAsync("alta", "Consultorio", room.Id, room.Name, ct);
+        return await store.Rooms.Where(r => r.Id == room.Id).ToRoomDtos().FirstAsync(ct);
+    }
+
+    public async Task<RoomDto> UpdateRoomAsync(Guid id, SaveResourceCommand command, CancellationToken ct)
+    {
+        var room = await store.GetRoomAsync(id, ct) ?? throw new NotFoundException("Consultorio no encontrado.");
+        var name = await ResourceNameAsync(command, lower => RoomsNamed(command.LocationId, lower), id, "consultorio", ct);
+        if (room.LocationId != command.LocationId && await UsedByBlocksAsync(id, ct) is string who)
+            throw new BusinessRuleException($"No se puede pasar a otra sede: lo usa la agenda de {who}.");
+        room.Name = name;
+        room.LocationId = command.LocationId;
+        await store.SaveAsync(ct);
+        await RecordAsync("edicion", "Consultorio", room.Id, room.Name, ct);
+        return await store.Rooms.Where(r => r.Id == room.Id).ToRoomDtos().FirstAsync(ct);
+    }
+
+    public async Task<RoomDto> SetRoomActiveAsync(Guid id, bool active, CancellationToken ct)
+    {
+        var room = await store.GetRoomAsync(id, ct) ?? throw new NotFoundException("Consultorio no encontrado.");
+        if (!active && await UsedByBlocksAsync(id, ct) is string who)
+            throw new BusinessRuleException($"Lo usa la agenda de {who}. Sacalo de esa agenda antes de darlo de baja.");
+        room.IsActive = active;
+        await store.SaveAsync(ct);
+        await RecordAsync(active ? "alta" : "baja", "Consultorio", room.Id, room.Name, ct);
+        return await store.Rooms.Where(r => r.Id == room.Id).ToRoomDtos().FirstAsync(ct);
+    }
+
+    public async Task<IReadOnlyList<EquipmentDto>> EquipmentAsync(CancellationToken ct) =>
+        await store.Equipment.OrderBy(e => e.Location.Name).ThenBy(e => e.Name).ToEquipmentDtos().ToListAsync(ct);
+
+    public async Task<EquipmentDto> CreateEquipmentAsync(SaveResourceCommand command, CancellationToken ct)
+    {
+        var name = await ResourceNameAsync(command, lower => EquipmentNamed(command.LocationId, lower), null, "equipo", ct);
+        var equipment = new Equipment { Id = Guid.NewGuid(), LocationId = command.LocationId, Name = name, IsActive = true };
+        store.AddEquipment(equipment);
+        await store.SaveAsync(ct);
+        await RecordAsync("alta", "Equipo", equipment.Id, equipment.Name, ct);
+        return await store.Equipment.Where(e => e.Id == equipment.Id).ToEquipmentDtos().FirstAsync(ct);
+    }
+
+    public async Task<EquipmentDto> UpdateEquipmentAsync(Guid id, SaveResourceCommand command, CancellationToken ct)
+    {
+        var equipment = await store.GetEquipmentAsync(id, ct) ?? throw new NotFoundException("Equipo no encontrado.");
+        equipment.Name = await ResourceNameAsync(command, lower => EquipmentNamed(command.LocationId, lower), id, "equipo", ct);
+        equipment.LocationId = command.LocationId;
+        await store.SaveAsync(ct);
+        await RecordAsync("edicion", "Equipo", equipment.Id, equipment.Name, ct);
+        return await store.Equipment.Where(e => e.Id == equipment.Id).ToEquipmentDtos().FirstAsync(ct);
+    }
+
+    public async Task<EquipmentDto> SetEquipmentActiveAsync(Guid id, bool active, CancellationToken ct)
+    {
+        var equipment = await store.GetEquipmentAsync(id, ct) ?? throw new NotFoundException("Equipo no encontrado.");
+        if (!active)
+        {
+            var practice = await store.AppointmentTypes.Where(t => t.EquipmentId == id).Select(t => t.Name).FirstOrDefaultAsync(ct);
+            if (practice is not null)
+                throw new BusinessRuleException($"Lo necesita la prestación {practice}. Sacáselo antes de darlo de baja.");
+        }
+        equipment.IsActive = active;
+        await store.SaveAsync(ct);
+        await RecordAsync(active ? "alta" : "baja", "Equipo", equipment.Id, equipment.Name, ct);
+        return await store.Equipment.Where(e => e.Id == equipment.Id).ToEquipmentDtos().FirstAsync(ct);
+    }
+
+    // sameName lists the ids of the site's rooms or equipment already called that (lowercase) name.
+    private async Task<string> ResourceNameAsync(SaveResourceCommand command, Func<string, IQueryable<Guid>> sameName, Guid? self, string what, CancellationToken ct)
+    {
+        var name = command.Name?.Trim() ?? "";
+        if (name.Length is 0 or > 80)
+            throw new BusinessRuleException($"El {what} necesita un nombre de hasta 80 caracteres.");
+        if (!await store.Locations.AnyAsync(l => l.Id == command.LocationId, ct))
+            throw new NotFoundException("Sede no encontrada.");
+        if (await sameName(name.ToLower()).AnyAsync(id => id != self, ct))
+            throw new BusinessRuleException($"Ya hay un {what} con ese nombre en esa sede.");
+        return name;
+    }
+
+    private IQueryable<Guid> RoomsNamed(Guid locationId, string lower) =>
+        store.Rooms.Where(r => r.LocationId == locationId && r.Name.ToLower() == lower).Select(r => r.Id);
+
+    private IQueryable<Guid> EquipmentNamed(Guid locationId, string lower) =>
+        store.Equipment.Where(e => e.LocationId == locationId && e.Name.ToLower() == lower).Select(e => e.Id);
+
+    private Task<string?> UsedByBlocksAsync(Guid roomId, CancellationToken ct) =>
+        users.Users
+            .Where(u => u.ScheduleBlocks.Any(b => b.RoomId == roomId))
+            .Select(u => (u.FirstName + " " + u.LastName).Trim())
+            .FirstOrDefaultAsync(ct);
 
     public async Task<AppointmentTypeDto> UpdateAppointmentTypeAsync(Guid id, SaveAppointmentTypeCommand command, CancellationToken ct)
     {
@@ -188,7 +325,7 @@ public class OrganizationService(
         type.SpecialtyId = command.SpecialtyId;
         type.Kind = command.Kind;
         await store.SaveAsync(ct);
-        return new AppointmentTypeDto(type.Id, type.Name, type.DurationMinutes, type.SpecialtyId, type.Kind);
+        return new AppointmentTypeDto(type.Id, type.Name, type.DurationMinutes, type.SpecialtyId, type.Kind, type.Code, type.EquipmentId);
     }
 
     public async Task<IReadOnlyList<ProfessionalDto>> ProfessionalsAsync(Guid? specialtyId, CancellationToken ct)

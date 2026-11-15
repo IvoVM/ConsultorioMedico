@@ -10,6 +10,7 @@ public class ClinicalService(
     IAppointmentStore appointments,
     IClientStore clients,
     InvoiceService invoices,
+    SupplyService supplies,
     IOrganizationStore organization,
     IEmployeeStore employees,
     ICurrentUser currentUser,
@@ -79,6 +80,7 @@ public class ClinicalService(
         appointment.Status = AppointmentStatus.Completed;
         await clinical.SaveAsync(ct);
         await appointments.SaveAsync(ct);
+        await supplies.ConsumeForAsync(appointment.Id, appointment.AppointmentTypeId, ct);
         await invoices.IssueOnCloseAsync(appointment, ct);
         await audit.RecordAsync(currentUser.Id, "cierre", "Encuentro", encounter.Id.ToString(), null, ct);
         return await LoadEncounterAsync(encounter.Id, ct);

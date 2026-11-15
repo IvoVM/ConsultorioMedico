@@ -7,7 +7,7 @@ namespace ClinicaSaaS.Services;
 
 public partial class ScheduleService
 {
-    private readonly record struct Placement(DateTimeOffset End, Guid LocationId, bool Overbook);
+    private readonly record struct Placement(DateTimeOffset End, Guid LocationId, Guid? RoomId, Guid? EquipmentId, bool Overbook);
 
     public async Task<AgendaDayDto> AgendaAsync(DateOnly date, CancellationToken ct)
     {
@@ -43,13 +43,33 @@ public partial class ScheduleService
         var types = await organization.AppointmentTypes
             .Where(t => t.SpecialtyId != null && specialtyIds.Contains(t.SpecialtyId.Value))
             .OrderBy(t => t.Name)
-            .Select(t => new { t.SpecialtyId, Type = new AgendaTypeDto(t.Id, t.Name, t.DurationMinutes) })
+            .Select(t => new
+            {
+                t.SpecialtyId,
+                t.Id,
+                t.Name,
+                t.DurationMinutes,
+                t.Code,
+                Equipment = t.Equipment != null ? t.Equipment.Name : null,
+                Supplies = t.Supplies.OrderBy(s => s.Supply.Name).Select(s => new PracticeSupplyDto(s.SupplyId, s.Supply.Name, s.Supply.Unit, s.Quantity)).ToList()
+            })
             .ToListAsync(ct);
         var shown = await appointments.Appointments
             .Where(a => ids.Contains(a.ProfessionalId) && a.Start >= dayStart && a.Start < dayEnd && a.Status != AppointmentStatus.Cancelled)
             .OrderBy(a => a.Start)
             .ToAppointmentDtos(currentUser.Id)
             .ToListAsync(ct);
+        var rooms = await organization.Rooms
+            .Where(r => r.IsActive && r.Location.IsActive)
+            .OrderBy(r => r.Location.Name).ThenBy(r => r.Name)
+            .Select(r => new AgendaResourceDto(r.Id, r.Name, r.LocationId, r.Location.Name))
+            .ToListAsync(ct);
+        var equipment = await organization.Equipment
+            .Where(e => e.IsActive && e.Location.IsActive)
+            .OrderBy(e => e.Location.Name).ThenBy(e => e.Name)
+            .Select(e => new AgendaResourceDto(e.Id, e.Name, e.LocationId, e.Location.Name))
+            .ToListAsync(ct);
+        var settings = await clinicSettings.GetAsync(ct);
 
         var professionals = people.Select(p => new AgendaProfessionalDto(
             p.UserId,
@@ -61,10 +81,10 @@ public partial class ScheduleService
                 .Select(r => new AgendaRangeDto(r.Start, r.End))
                 .ToList(),
             offs.Where(o => o.ProfessionalId == p.UserId).Select(o => new AgendaRangeDto(o.Start, o.End)).ToList(),
-            types.Where(t => t.SpecialtyId == p.SpecialtyId).Select(t => t.Type).ToList(),
+            types.Where(t => t.SpecialtyId == p.SpecialtyId).Select(t => new AgendaTypeDto(t.Id, t.Name, t.DurationMinutes, t.Code, t.Equipment, t.Supplies)).ToList(),
             p.Insurers)).ToList();
 
-        return new AgendaDayDto(date, !doctor, professionals, shown);
+        return new AgendaDayDto(date, !doctor, professionals, shown, rooms, equipment, settings.MaxOverbooksPerDay);
     }
 
     public async Task<AppointmentDto> MoveOnAgendaAsync(Guid id, MoveAppointmentCommand command, CancellationToken ct)
@@ -74,9 +94,14 @@ public partial class ScheduleService
             var appointment = await appointments.GetAsync(id, ct) ?? throw new NotFoundException("Turno no encontrado.");
             if (!SchedulingRules.CanReschedule(appointment.Status))
                 throw new BusinessRuleException("Ese turno ya no se puede mover.");
-            var placement = await PlaceAsync(command.ProfessionalId, appointment.AppointmentTypeId, command.Start, appointment.Id, null, ct);
+            // Moving within the same professional's day keeps a room front desk chose by hand; anything else takes the block's room.
+            var sameDay = SchedulingRules.LocalDate(appointment.Start, timeZone.Zone) == SchedulingRules.LocalDate(command.Start, timeZone.Zone);
+            var room = command.RoomId ?? (sameDay && command.ProfessionalId == appointment.ProfessionalId ? appointment.RoomId : null);
+            var placement = await PlaceAsync(command.ProfessionalId, appointment.AppointmentTypeId, command.Start, appointment.Id, null, ct, room);
             appointment.ProfessionalId = command.ProfessionalId;
             appointment.LocationId = placement.LocationId;
+            appointment.RoomId = placement.RoomId;
+            appointment.EquipmentId = placement.EquipmentId;
             appointment.Start = command.Start;
             appointment.End = placement.End;
             appointment.IsOverbook = placement.Overbook;
@@ -106,6 +131,8 @@ public partial class ScheduleService
                 ClientId = clientId,
                 ProfessionalId = command.ProfessionalId,
                 LocationId = placement.LocationId,
+                RoomId = placement.RoomId,
+                EquipmentId = placement.EquipmentId,
                 AppointmentTypeId = command.AppointmentTypeId,
                 Start = command.Start,
                 End = placement.End,
@@ -133,6 +160,8 @@ public partial class ScheduleService
                 ClientId = clientId,
                 ProfessionalId = command.ProfessionalId,
                 LocationId = placement.LocationId,
+                RoomId = placement.RoomId,
+                EquipmentId = placement.EquipmentId,
                 AppointmentTypeId = request.AppointmentTypeId,
                 Start = command.Start,
                 End = placement.End,
@@ -174,7 +203,8 @@ public partial class ScheduleService
     }
 
     // The one check every agenda write goes through. requestId is the public request being placed, whose own hold must not block it.
-    private async Task<Placement> PlaceAsync(Guid professionalId, Guid appointmentTypeId, DateTimeOffset start, Guid? movingId, Guid? requestId, CancellationToken ct)
+    // roomId puts the appointment in that room instead of the one its block uses.
+    private async Task<Placement> PlaceAsync(Guid professionalId, Guid appointmentTypeId, DateTimeOffset start, Guid? movingId, Guid? requestId, CancellationToken ct, Guid? roomId = null)
     {
         if (start <= clock.GetUtcNow())
             throw new BusinessRuleException("No se puede dar un turno en un horario que ya pasó.");
@@ -185,7 +215,7 @@ public partial class ScheduleService
             ?? throw new BusinessRuleException("Ese profesional no está activo.");
         var type = await organization.AppointmentTypes
             .Where(t => t.Id == appointmentTypeId)
-            .Select(t => new { t.SpecialtyId, t.DurationMinutes })
+            .Select(t => new { t.SpecialtyId, t.DurationMinutes, t.EquipmentId })
             .FirstOrDefaultAsync(ct)
             ?? throw new NotFoundException("Esa prestación no existe.");
         if (type.SpecialtyId != professional.SpecialtyId)
@@ -212,22 +242,98 @@ public partial class ScheduleService
         if (held is not null)
             throw new ConflictException($"Ese horario lo pidió {held} y está esperando confirmación. Ubicá o rechazá esa solicitud primero.");
 
-        var date = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(start, timeZone.Zone).DateTime);
+        var date = SchedulingRules.LocalDate(start, timeZone.Zone);
         var blocks = await schedules.Blocks
             .Where(b => b.ProfessionalId == professionalId && b.Day == date.DayOfWeek)
-            .Select(b => new { b.StartTime, b.EndTime, b.LocationId })
+            .Select(b => new { b.StartTime, b.EndTime })
             .ToListAsync(ct);
         var agenda = blocks.Select(b => new TimeRange(SchedulingRules.Combine(date, b.StartTime, timeZone.Zone), SchedulingRules.Combine(date, b.EndTime, timeZone.Zone)));
-        // The site comes from the block the slot falls in, or the closest one for an overbook, not just the first block of the day.
+        var overbook = SchedulingRules.IsOverbook(agenda, candidate);
+        if (overbook)
+            await CheckOverbookLimitAsync(professionalId, date, movingId, ct);
+
+        var (location, room) = await SiteAsync(professionalId, start, ct);
+        if (roomId is Guid chosen)
+        {
+            location = await organization.Rooms
+                .Where(r => r.Id == chosen && r.IsActive)
+                .Select(r => (Guid?)r.LocationId)
+                .FirstOrDefaultAsync(ct)
+                ?? throw new BusinessRuleException("Ese consultorio no está activo.");
+            room = chosen;
+        }
+        await CheckResourcesAsync(room, type.EquipmentId, candidate, movingId, ct);
+        return new Placement(candidate.End, location, room, type.EquipmentId, overbook);
+    }
+
+    // The site and room of the block the moment falls in, or of the closest block that day for an overbook,
+    // not just the first block of the day; with no block at all, the first active site and no room.
+    private async Task<(Guid LocationId, Guid? RoomId)> SiteAsync(Guid professionalId, DateTimeOffset start, CancellationToken ct)
+    {
+        var date = SchedulingRules.LocalDate(start, timeZone.Zone);
         var local = TimeOnly.FromDateTime(TimeZoneInfo.ConvertTime(start, timeZone.Zone).DateTime);
-        var location = blocks
-                .OrderBy(b => b.StartTime <= local && local < b.EndTime ? 0 : 1)
-                .ThenBy(b => Math.Min(Math.Abs((b.StartTime - local).TotalMinutes), Math.Abs((b.EndTime - local).TotalMinutes)))
-                .Select(b => (Guid?)b.LocationId)
-                .FirstOrDefault()
-            ?? await organization.Locations.Where(l => l.IsActive).Select(l => (Guid?)l.Id).FirstOrDefaultAsync(ct)
+        var blocks = await schedules.Blocks
+            .Where(b => b.ProfessionalId == professionalId && b.Day == date.DayOfWeek)
+            .Select(b => new { b.StartTime, b.EndTime, b.LocationId, b.RoomId })
+            .ToListAsync(ct);
+        var block = blocks
+            .OrderBy(b => b.StartTime <= local && local < b.EndTime ? 0 : 1)
+            .ThenBy(b => Math.Min(Math.Abs((b.StartTime - local).TotalMinutes), Math.Abs((b.EndTime - local).TotalMinutes)))
+            .FirstOrDefault();
+        if (block is not null)
+            return (block.LocationId, block.RoomId);
+        var location = await organization.Locations.Where(l => l.IsActive).Select(l => (Guid?)l.Id).FirstOrDefaultAsync(ct)
             ?? throw new BusinessRuleException("No hay una sede activa.");
-        return new Placement(candidate.End, location, SchedulingRules.IsOverbook(agenda, candidate));
+        return (location, null);
+    }
+
+    // A room or a piece of equipment holds one appointment at a time, whoever the professional is.
+    private async Task CheckResourcesAsync(Guid? roomId, Guid? equipmentId, TimeRange candidate, Guid? movingId, CancellationToken ct)
+    {
+        var overlapping = appointments.Appointments
+            .Where(a => a.Id != movingId && a.Start < candidate.End && a.End > candidate.Start)
+            .Where(a => a.Status != AppointmentStatus.Cancelled && a.Status != AppointmentStatus.NoShow);
+        if (roomId is Guid room)
+        {
+            var clash = await overlapping
+                .Where(a => a.RoomId == room)
+                .Select(a => new { Room = a.Room!.Name, Professional = (a.Professional.FirstName + " " + a.Professional.LastName).Trim() })
+                .FirstOrDefaultAsync(ct);
+            if (clash is not null)
+                throw new ConflictException($"El consultorio {clash.Room} está ocupado a esa hora por un turno de {clash.Professional}.");
+        }
+        if (equipmentId is Guid equipment)
+        {
+            var clash = await overlapping
+                .Where(a => a.EquipmentId == equipment)
+                .Select(a => new { Equipment = a.Equipment!.Name, Professional = (a.Professional.FirstName + " " + a.Professional.LastName).Trim() })
+                .FirstOrDefaultAsync(ct);
+            if (clash is not null)
+                throw new ConflictException($"El equipo {clash.Equipment} está en uso a esa hora en un turno de {clash.Professional}.");
+        }
+    }
+
+    private async Task CheckOverbookLimitAsync(Guid professionalId, DateOnly date, Guid? movingId, CancellationToken ct)
+    {
+        var max = (await clinicSettings.GetAsync(ct)).MaxOverbooksPerDay;
+        if (max is null)
+            return;
+        if (max == 0)
+            throw new BusinessRuleException("La clínica no da sobreturnos. Elegí un horario dentro de la agenda del profesional.");
+        var dayStart = SchedulingRules.Combine(date, TimeOnly.MinValue, timeZone.Zone);
+        var dayEnd = dayStart.AddDays(1);
+        var already = await appointments.Appointments
+            .Where(a => a.ProfessionalId == professionalId && a.IsOverbook && a.Id != movingId && a.Start >= dayStart && a.Start < dayEnd)
+            .CountAsync(a => a.Status != AppointmentStatus.Cancelled && a.Status != AppointmentStatus.NoShow, ct);
+        if (!SchedulingRules.OverbookAllowed(max, already))
+            throw new BusinessRuleException($"Ese profesional ya tiene {already} {(already == 1 ? "sobreturno" : "sobreturnos")} ese día, el máximo que permite la clínica.");
+    }
+
+    private async Task<(Guid? RoomId, Guid? EquipmentId)> ResourcesAsync(Guid professionalId, Guid appointmentTypeId, DateTimeOffset start, CancellationToken ct)
+    {
+        var (_, room) = await SiteAsync(professionalId, start, ct);
+        var equipment = await organization.AppointmentTypes.Where(t => t.Id == appointmentTypeId).Select(t => t.EquipmentId).FirstOrDefaultAsync(ct);
+        return (room, equipment);
     }
 
     private Task<bool> AcceptsInsurerAsync(Guid professionalId, Guid insurerId, CancellationToken ct) =>

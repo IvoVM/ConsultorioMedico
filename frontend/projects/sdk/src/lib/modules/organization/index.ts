@@ -13,3 +13,5 @@ export * from './models/specialty-row-dto';
 export * from './models/save-appointment-type-command';
 export * from './models/prestacion-dto';
 export * from './models/insurer-dto';
+export * from './models/practice-dto';
+export * from './models/resource-dto';

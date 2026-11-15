@@ -15,6 +15,8 @@ import type { SpecialtyDto } from './models/specialty-dto';
 import type { PrestacionesDto } from './models/prestacion-dto';
 import type { InsurerDto } from './models/insurer-dto';
 import type { SpecialtyRowDto } from './models/specialty-row-dto';
+import type { SavePracticeCommand } from './models/practice-dto';
+import type { EquipmentDto, RoomDto, SaveResourceCommand } from './models/resource-dto';
 
 @Injectable({ providedIn: 'root' })
 export class OrganizationService extends ApiClient {
@@ -72,6 +74,42 @@ export class OrganizationService extends ApiClient {
 
   updateAppointmentType(id: string, body: SaveAppointmentTypeCommand) {
     return this.http.put<AppointmentTypeDto>(`${this.base}/api/tipos-turno/${id}`, body);
+  }
+
+  savePractice(id: string, body: SavePracticeCommand) {
+    return this.http.put<AppointmentTypeDto>(`${this.base}/api/tipos-turno/${id}/practica`, body);
+  }
+
+  rooms() {
+    return this.http.get<RoomDto[]>(`${this.base}/api/consultorios`);
+  }
+
+  createRoom(body: SaveResourceCommand) {
+    return this.http.post<RoomDto>(`${this.base}/api/consultorios`, body);
+  }
+
+  updateRoom(id: string, body: SaveResourceCommand) {
+    return this.http.put<RoomDto>(`${this.base}/api/consultorios/${id}`, body);
+  }
+
+  setRoomActive(id: string, active: boolean) {
+    return this.http.put<RoomDto>(`${this.base}/api/consultorios/${id}/estado`, { active });
+  }
+
+  equipment() {
+    return this.http.get<EquipmentDto[]>(`${this.base}/api/equipos`);
+  }
+
+  createEquipment(body: SaveResourceCommand) {
+    return this.http.post<EquipmentDto>(`${this.base}/api/equipos`, body);
+  }
+
+  updateEquipment(id: string, body: SaveResourceCommand) {
+    return this.http.put<EquipmentDto>(`${this.base}/api/equipos/${id}`, body);
+  }
+
+  setEquipmentActive(id: string, active: boolean) {
+    return this.http.put<EquipmentDto>(`${this.base}/api/equipos/${id}/estado`, { active });
   }
 
   insurersPage(query: ListParams) {

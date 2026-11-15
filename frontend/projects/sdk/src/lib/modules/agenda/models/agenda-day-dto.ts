@@ -1,5 +1,6 @@
 import type { AppointmentDto } from '../../appointments/models/appointment-dto';
 import type { InsurerDto } from '../../organization/models/insurer-dto';
+import type { PracticeSupplyDto } from '../../organization/models/practice-dto';
 
 export interface AgendaRangeDto {
   start: string;
@@ -10,6 +11,17 @@ export interface AgendaTypeDto {
   id: string;
   name: string;
   durationMinutes: number;
+  code?: string | null;
+  equipment?: string | null;
+  supplies: PracticeSupplyDto[];
+}
+
+// A column of the agenda when it is shown by room or by equipment.
+export interface AgendaResourceDto {
+  id: string;
+  name: string;
+  locationId: string;
+  location: string;
 }
 
 export interface AgendaProfessionalDto {
@@ -27,11 +39,15 @@ export interface AgendaDayDto {
   canEdit: boolean;
   professionals: AgendaProfessionalDto[];
   appointments: AppointmentDto[];
+  rooms: AgendaResourceDto[];
+  equipment: AgendaResourceDto[];
+  maxOverbooksPerDay?: number | null;
 }
 
 export interface MoveAppointmentCommand {
   professionalId: string;
   start: string;
+  roomId?: string | null;
 }
 
 export interface AgendaBookCommand {

@@ -130,3 +130,11 @@ public enum AccountMovementKind
     Payment,
     Refund
 }
+
+// What changed a supply's stock: a delivery, a visit that used it, or a correction after counting.
+public enum SupplyMovementKind
+{
+    Entry,
+    Consumption,
+    Adjustment
+}

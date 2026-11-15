@@ -18,8 +18,28 @@
         </div>
         <dl class="ag-facts">
           <div><dt>Profesional</dt><dd>{{ item.professional }}</dd></div>
-          <div><dt>Prestación</dt><dd>{{ item.appointmentType }} · {{ duration() }} min</dd></div>
-          <div><dt>Sede</dt><dd>{{ item.location }}</dd></div>
+          <div>
+            <dt>Prestación</dt>
+            <dd>
+              {{ item.appointmentType }} · {{ duration() }} min
+              @if (item.practiceCode) { <span class="block text-xs text-ink/55">Código {{ item.practiceCode }}</span> }
+            </dd>
+          </div>
+          <div><dt>Sede</dt><dd>{{ item.location }}@if (item.room) { · {{ item.room }} }</dd></div>
+          @if (item.equipment) {
+            <div><dt>Equipo</dt><dd>{{ item.equipment }}</dd></div>
+          }
+          @if (practice()?.supplies?.length) {
+            <div>
+              <dt>Insumos que usa</dt>
+              <dd>
+                @for (supply of practice()!.supplies; track supply.supplyId; let last = $last) {
+                  {{ supply.quantity }} {{ supply.unit }} {{ supply.supply.toLowerCase() }}@if (!last) {, }
+                }
+                <span class="block text-xs text-ink/55">Se descuentan del stock al cerrar la consulta.</span>
+              </dd>
+            </div>
+          }
           @if (!canEditData()) {
           <div>
             <dt>Cobertura</dt>

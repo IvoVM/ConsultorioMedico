@@ -6,7 +6,7 @@ namespace ClinicaSaaS.Services.MappingExtensions;
 public static class ScheduleMappings
 {
     public static IQueryable<ScheduleBlockDto> ToScheduleBlockDtos(this IQueryable<ScheduleBlock> query) =>
-        query.Select(b => new ScheduleBlockDto(b.Id, b.Day, b.StartTime, b.EndTime, b.LocationId, b.AppointmentTypeId));
+        query.Select(b => new ScheduleBlockDto(b.Id, b.Day, b.StartTime, b.EndTime, b.LocationId, b.AppointmentTypeId, b.RoomId));
 
     public static IQueryable<BlockoutDto> ToBlockoutDtos(this IQueryable<ScheduleBlockout> query) =>
         query.Select(b => new BlockoutDto(b.Id, b.ProfessionalId, b.Start, b.End, b.Reason));
@@ -22,7 +22,9 @@ public static class ScheduleMappings
             AppointmentType = b.AppointmentType.Name,
             DurationMinutes = b.AppointmentType.DurationMinutes,
             StartTime = b.StartTime,
-            EndTime = b.EndTime
+            EndTime = b.EndTime,
+            RoomId = b.RoomId,
+            EquipmentId = b.AppointmentType.EquipmentId
         });
 
     public static IQueryable<BusyInterval> ToBusyIntervals(this IQueryable<Appointment> query) =>
@@ -58,7 +60,12 @@ public static class ScheduleMappings
             a.CreatedAt,
             a.CreatedByUser != null ? (a.CreatedByUser.FirstName + " " + a.CreatedByUser.LastName).Trim() : null,
             a.UpdatedAt,
-            a.UpdatedByUser != null ? (a.UpdatedByUser.FirstName + " " + a.UpdatedByUser.LastName).Trim() : null));
+            a.UpdatedByUser != null ? (a.UpdatedByUser.FirstName + " " + a.UpdatedByUser.LastName).Trim() : null,
+            a.RoomId,
+            a.Room != null ? a.Room.Name : null,
+            a.EquipmentId,
+            a.Equipment != null ? a.Equipment.Name : null,
+            a.AppointmentType.Code));
 
     public static IQueryable<AppointmentChangeDto> ToAppointmentChangeDtos(this IQueryable<AppointmentChange> query) =>
         query.Select(c => new AppointmentChangeDto(

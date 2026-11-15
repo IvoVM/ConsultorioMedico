@@ -11,9 +11,12 @@ public class ScheduleBlock
     public TimeOnly EndTime { get; set; }
     public Guid LocationId { get; set; }
     public Guid AppointmentTypeId { get; set; }
+    // The consulting room the professional works in during this block, which their appointments take.
+    public Guid? RoomId { get; set; }
 
 
     public virtual TenantUser Professional { get; set; } = null!;
     public virtual Location Location { get; set; } = null!;
     public virtual AppointmentType AppointmentType { get; set; } = null!;
+    public virtual Room? Room { get; set; }
 }

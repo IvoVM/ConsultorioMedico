@@ -9,6 +9,8 @@ public class Location
 
 
     public virtual ICollection<MedicalService> Services { get; set; } = [];
+    public virtual ICollection<Room> Rooms { get; set; } = [];
+    public virtual ICollection<Equipment> Equipment { get; set; } = [];
     public virtual ICollection<ScheduleBlock> ScheduleBlocks { get; set; } = [];
     public virtual ICollection<Appointment> Appointments { get; set; } = [];
     public virtual ICollection<WaitlistEntry> WaitlistEntries { get; set; } = [];

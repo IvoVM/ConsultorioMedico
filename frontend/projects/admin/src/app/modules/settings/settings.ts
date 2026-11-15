@@ -17,6 +17,7 @@ export class SettingsPage {
   readonly settingsTab = SettingsTab;
   readonly tabs: TabItem[] = [
     { key: SettingsTab.General, label: settingsTabLabels[SettingsTab.General], icon: 'apartment' },
+    { key: SettingsTab.Turnos, label: settingsTabLabels[SettingsTab.Turnos], icon: 'more_time' },
     { key: SettingsTab.Facturacion, label: settingsTabLabels[SettingsTab.Facturacion], icon: 'receipt_long' },
   ];
   readonly tab = signal<string>(SettingsTab.General);
@@ -29,7 +30,7 @@ export class SettingsPage {
   readonly dirty = computed(() => {
     const saved = this.saved();
     const draft = this.draft();
-    return !!saved && !!draft && (['name', 'billingEnabled', 'autoInvoice', 'fiscalEnabled', 'taxId', 'taxCondition', 'pointOfSale', 'autoAuthorize'] as const).some((key) => (draft[key] ?? null) !== (saved[key] ?? null));
+    return !!saved && !!draft && (['name', 'billingEnabled', 'autoInvoice', 'fiscalEnabled', 'taxId', 'taxCondition', 'pointOfSale', 'autoAuthorize', 'maxOverbooksPerDay'] as const).some((key) => (draft[key] ?? null) !== (saved[key] ?? null));
   });
 
   constructor() {
@@ -69,6 +70,16 @@ export class SettingsPage {
   setPointOfSale(value: number | string | null) {
     const number = value === null || value === '' ? null : Number(value);
     this.draft.update((draft) => draft && { ...draft, pointOfSale: Number.isNaN(number) ? null : number });
+  }
+
+  // Off means no cap at all; turning it on starts from 2 a day.
+  setOverbookCap(capped: boolean) {
+    this.draft.update((draft) => draft && { ...draft, maxOverbooksPerDay: capped ? (this.saved()?.maxOverbooksPerDay ?? 2) : null });
+  }
+
+  setMaxOverbooks(value: number | string | null) {
+    const number = value === null || value === '' ? 0 : Math.trunc(Number(value));
+    this.draft.update((draft) => draft && { ...draft, maxOverbooksPerDay: Number.isNaN(number) ? 0 : number });
   }
 
   discard() {

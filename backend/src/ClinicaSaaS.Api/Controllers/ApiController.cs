@@ -48,7 +48,12 @@ internal static class ErrorMap
         ConflictException conflict => new(StatusCodes.Status409Conflict, conflict.Message),
         AccountChoiceException choice => new(StatusCodes.Status409Conflict, choice.Message),
         BusinessRuleException rule => new(StatusCodes.Status400BadRequest, rule.Message),
-        // The database refuses two active appointments of one professional at the same time (EX_Appointments_NoOverlap).
+        // The database refuses two active appointments at the same time in one room or on one piece of equipment
+        // (EX_Appointments_RoomNoOverlap, EX_Appointments_EquipmentNoOverlap) or of one professional (EX_Appointments_NoOverlap).
+        DbUpdateException { InnerException: PostgresException { SqlState: PostgresErrorCodes.ExclusionViolation, ConstraintName: "EX_Appointments_RoomNoOverlap" } } =>
+            new(StatusCodes.Status409Conflict, "Ese consultorio se acaba de ocupar a esa hora. Elegí otro horario."),
+        DbUpdateException { InnerException: PostgresException { SqlState: PostgresErrorCodes.ExclusionViolation, ConstraintName: "EX_Appointments_EquipmentNoOverlap" } } =>
+            new(StatusCodes.Status409Conflict, "Ese equipo se acaba de ocupar a esa hora. Elegí otro horario."),
         DbUpdateException { InnerException: PostgresException { SqlState: PostgresErrorCodes.ExclusionViolation } } =>
             new(StatusCodes.Status409Conflict, "Ese horario se acaba de ocupar. Elegí otro."),
         _ => null

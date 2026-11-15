@@ -6,6 +6,7 @@ export interface InsurerPriceDto {
 }
 
 import type { AppointmentKind } from './appointment-kind';
+import type { PracticeSupplyDto } from './practice-dto';
 
 export interface PrestacionDto {
   id: string;
@@ -15,6 +16,10 @@ export interface PrestacionDto {
   particularFrom: string | null;
   insurers: InsurerPriceDto[];
   kind: AppointmentKind;
+  code: string | null;
+  equipmentId: string | null;
+  equipment: string | null;
+  supplies: PracticeSupplyDto[];
 }
 
 export interface PrestacionesDto {

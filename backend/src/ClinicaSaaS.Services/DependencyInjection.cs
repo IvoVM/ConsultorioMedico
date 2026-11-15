@@ -54,6 +54,7 @@ public static class DependencyInjection
         services.AddScoped<IValidator<SaveClinicSettingsCommand>, SaveClinicSettingsValidator>();
         services.AddScoped<AuthService>();
         services.AddScoped<OrganizationService>();
+        services.AddScoped<SupplyService>();
         services.AddScoped<EmployeesService>();
         services.AddScoped<UsersService>();
         services.AddScoped<ScheduleService>();

@@ -11,4 +11,6 @@ public sealed class ScheduleOpening
     public int DurationMinutes { get; init; }
     public TimeOnly StartTime { get; init; }
     public TimeOnly EndTime { get; init; }
+    public Guid? RoomId { get; init; }
+    public Guid? EquipmentId { get; init; }
 }

@@ -6,16 +6,20 @@ import {
   AppointmentKind,
   BillingService,
   EmployeesService,
+  EquipmentDto,
   OrganizationService,
+  PracticeSupplyCommand,
   PrestacionDto,
   ProfessionalDto,
   SpecialtyDto,
+  SuppliesService,
+  SupplyDto,
   errorMessage,
 } from 'sdk';
 import { SelectOption, UiActions, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable, UiHelp } from 'ui';
 import { firstValueFrom } from 'rxjs';
 
-type Dialog = 'duration' | 'price' | 'service';
+type Dialog = 'duration' | 'price' | 'service' | 'practice';
 
 @Component({
   imports: [FormsModule, RouterLink, UiHelp, UiActions, UiButton, UiEmpty, UiField, UiModal, UiSelect, UiSkeleton, UiTable],
@@ -26,6 +30,7 @@ export class SpecialtyDetailPage {
   private readonly organization = inject(OrganizationService);
   private readonly employees = inject(EmployeesService);
   private readonly billing = inject(BillingService);
+  private readonly suppliesApi = inject(SuppliesService);
   private readonly params = toSignal(inject(ActivatedRoute).paramMap);
   private request = 0;
   readonly specialty = signal<SpecialtyDto | null>(null);
@@ -48,6 +53,19 @@ export class SpecialtyDetailPage {
   // What the patient pays on top of an insurer's price (coseguro).
   readonly copayDraft = signal<number | null>(null);
   readonly serviceName = signal('');
+  // The practice dialog: nomenclator code, the equipment it needs and what each appointment uses up.
+  readonly equipment = signal<EquipmentDto[]>([]);
+  readonly supplies = signal<SupplyDto[]>([]);
+  readonly codeDraft = signal('');
+  readonly equipmentDraft = signal('');
+  readonly linesDraft = signal<PracticeSupplyCommand[]>([]);
+  readonly equipmentOptions = computed((): SelectOption[] => [
+    { value: '', label: 'No necesita equipo' },
+    ...this.equipment().filter((item) => item.isActive).map((item) => ({ value: item.id, label: `${item.name} · ${item.location}` })),
+  ]);
+  readonly supplyOptions = computed((): SelectOption[] =>
+    this.supplies().filter((item) => item.isActive).map((item) => ({ value: item.id, label: `${item.name} (${item.unit})` })),
+  );
   // Moving only the copay is a change too, so the same amount passes when the copay differs.
   readonly priceError = computed(() =>
     priceError(this.amountDraft(), (this.copayDraft() ?? 0) === (this.currentCopay() ?? 0) ? this.currentAmount() : null, this.copayDraft()),
@@ -132,6 +150,54 @@ export class SpecialtyDetailPage {
     this.serviceName.set('');
     this.durationDraft.set(30);
     this.dialog.set('service');
+  }
+
+  async openPractice(item: PrestacionDto) {
+    this.error.set('');
+    this.selected.set(item);
+    this.codeDraft.set(item.code ?? '');
+    this.equipmentDraft.set(item.equipmentId ?? '');
+    this.linesDraft.set(item.supplies.map((line) => ({ supplyId: line.supplyId, quantity: line.quantity })));
+    this.dialog.set('practice');
+    try {
+      const [equipment, supplies] = await Promise.all([firstValueFrom(this.organization.equipment()), firstValueFrom(this.suppliesApi.supplies())]);
+      this.equipment.set(equipment);
+      this.supplies.set(supplies);
+    } catch (error) {
+      this.error.set(errorMessage(error));
+    }
+  }
+
+  addLine() {
+    const used = new Set(this.linesDraft().map((line) => line.supplyId));
+    const next = this.supplyOptions().find((option) => !used.has(option.value));
+    if (next) this.linesDraft.update((lines) => [...lines, { supplyId: next.value, quantity: 1 }]);
+  }
+
+  setLine(index: number, patch: Partial<PracticeSupplyCommand>) {
+    this.linesDraft.update((lines) => lines.map((line, i) => (i === index ? { ...line, ...patch } : line)));
+  }
+
+  removeLine(index: number) {
+    this.linesDraft.update((lines) => lines.filter((_, i) => i !== index));
+  }
+
+  unitOf(supplyId: string) {
+    return this.supplies().find((item) => item.id === supplyId)?.unit ?? '';
+  }
+
+  async savePractice() {
+    const item = this.selected();
+    if (!item) return;
+    await this.saveDialog(async () => {
+      await firstValueFrom(
+        this.organization.savePractice(item.id, {
+          code: this.codeDraft().trim() || null,
+          equipmentId: this.equipmentDraft() || null,
+          supplies: this.linesDraft().map((line) => ({ supplyId: line.supplyId, quantity: Number(line.quantity) })),
+        }),
+      );
+    });
   }
 
   close() {

@@ -64,6 +64,40 @@ public class OrganizationController(OrganizationService organization) : ApiContr
     public Task<IActionResult> UpdateAppointmentType(Guid id, SaveAppointmentTypeCommand command, CancellationToken ct) =>
         Run(() => organization.UpdateAppointmentTypeAsync(id, command, ct));
 
+    [HttpPut("tipos-turno/{id:guid}/practica")]
+    public Task<IActionResult> SavePractice(Guid id, SavePracticeCommand command, CancellationToken ct) =>
+        Run(() => organization.SavePracticeAsync(id, command, ct));
+
+    [HttpGet("consultorios")]
+    public Task<IActionResult> Rooms(CancellationToken ct) => Run(() => organization.RoomsAsync(ct));
+
+    [HttpPost("consultorios")]
+    public Task<IActionResult> CreateRoom(SaveResourceCommand command, CancellationToken ct) =>
+        Run(() => organization.CreateRoomAsync(command, ct));
+
+    [HttpPut("consultorios/{id:guid}")]
+    public Task<IActionResult> UpdateRoom(Guid id, SaveResourceCommand command, CancellationToken ct) =>
+        Run(() => organization.UpdateRoomAsync(id, command, ct));
+
+    [HttpPut("consultorios/{id:guid}/estado")]
+    public Task<IActionResult> SetRoomActive(Guid id, SetResourceActiveCommand command, CancellationToken ct) =>
+        Run(() => organization.SetRoomActiveAsync(id, command.Active, ct));
+
+    [HttpGet("equipos")]
+    public Task<IActionResult> Equipment(CancellationToken ct) => Run(() => organization.EquipmentAsync(ct));
+
+    [HttpPost("equipos")]
+    public Task<IActionResult> CreateEquipment(SaveResourceCommand command, CancellationToken ct) =>
+        Run(() => organization.CreateEquipmentAsync(command, ct));
+
+    [HttpPut("equipos/{id:guid}")]
+    public Task<IActionResult> UpdateEquipment(Guid id, SaveResourceCommand command, CancellationToken ct) =>
+        Run(() => organization.UpdateEquipmentAsync(id, command, ct));
+
+    [HttpPut("equipos/{id:guid}/estado")]
+    public Task<IActionResult> SetEquipmentActive(Guid id, SetResourceActiveCommand command, CancellationToken ct) =>
+        Run(() => organization.SetEquipmentActiveAsync(id, command.Active, ct));
+
     [AllowAnonymous]
     [HttpGet("profesionales")]
     public Task<IActionResult> Professionals([FromQuery] Guid? specialtyId, CancellationToken ct) =>

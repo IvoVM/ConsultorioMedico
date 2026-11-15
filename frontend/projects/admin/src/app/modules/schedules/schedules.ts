@@ -5,8 +5,10 @@ import {
   BlockoutDto,
   DayOfWeek,
   EmployeesService,
+  LocationDto,
   OrganizationService,
   ProfessionalDto,
+  RoomDto,
   ScheduleBlockDto,
   ScheduleService,
   errorMessage,
@@ -31,6 +33,18 @@ export class SchedulesPage {
   readonly days: DayOfWeek[] = [DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday, DayOfWeek.Saturday];
   readonly professionals = signal<ProfessionalDto[]>([]);
   readonly appointmentTypes = signal<AppointmentTypeDto[]>([]);
+  readonly locations = signal<LocationDto[]>([]);
+  readonly rooms = signal<RoomDto[]>([]);
+  readonly locationOptions = computed(() => this.locations().filter((item) => item.isActive).map((item) => ({ value: item.id, label: item.name })));
+  readonly locationPick = signal('');
+  // Only the active rooms of the chosen site; with none, the block has no room.
+  readonly roomOptions = computed(() => [
+    { value: '', label: 'Sin consultorio' },
+    ...this.rooms()
+      .filter((item) => item.isActive && item.locationId === this.locationPick())
+      .map((item) => ({ value: item.id, label: item.name })),
+  ]);
+  roomId = '';
   readonly professionalOptions = computed(() =>
     this.professionals().map((pro) => ({ value: pro.id, label: `${pro.lastName}, ${pro.firstName}` })),
   );
@@ -77,15 +91,19 @@ export class SchedulesPage {
 
   async loadBase() {
     try {
-      const [professionals, locations, appointmentTypes] = await Promise.all([
+      const [professionals, locations, appointmentTypes, rooms] = await Promise.all([
         firstValueFrom(this.employees.professionals({})),
         firstValueFrom(this.organization.locations()),
         firstValueFrom(this.organization.appointmentTypes()),
+        firstValueFrom(this.organization.rooms()),
       ]);
       this.professionals.set(professionals);
       this.appointmentTypes.set(appointmentTypes);
+      this.locations.set(locations);
+      this.rooms.set(rooms);
       this.professionalId = professionals[0]?.id ?? '';
-      this.locationId = locations[0]?.id ?? '';
+      this.locationId = locations.find((item) => item.isActive)?.id ?? '';
+      this.locationPick.set(this.locationId);
       this.appointmentTypeId = appointmentTypes.find((type) => type.specialtyId === professionals[0]?.specialtyId)?.id ?? '';
       if (this.professionalId) await this.loadSchedule();
     } catch (error) {
@@ -161,6 +179,19 @@ export class SchedulesPage {
     void this.loadSchedule();
   }
 
+  pickLocation(id: string) {
+    this.locationId = id;
+    this.locationPick.set(id);
+    this.roomId = '';
+  }
+
+  // Where the block is attended: the site, and the room when it has one.
+  place(block: ScheduleBlockDto) {
+    const site = this.locations().find((item) => item.id === block.locationId)?.name ?? '';
+    const room = this.rooms().find((item) => item.id === block.roomId)?.name;
+    return room ? `${site} · ${room}` : site;
+  }
+
   async addBlock() {
     this.blocks.update((list) => [
       ...list,
@@ -171,10 +202,13 @@ export class SchedulesPage {
         endTime: this.to.length === 5 ? `${this.to}:00` : this.to,
         locationId: this.locationId,
         appointmentTypeId: this.appointmentTypeId,
+        roomId: this.roomId || null,
       },
     ]);
-    this.addingBlock.set(false);
     await this.save();
+    // A refused block (a room another professional uses) stays out and the dialog stays open with the reason.
+    if (!this.error()) this.addingBlock.set(false);
+    else this.blocks.update((list) => list.slice(0, -1));
   }
 
   async removeBlock(id: string) {

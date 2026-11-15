@@ -122,5 +122,7 @@ public class SaveClinicSettingsValidator : AbstractValidator<SaveClinicSettingsC
             RuleFor(x => x.TaxCondition).NotNull().WithMessage("Elegí la condición fiscal.");
             RuleFor(x => x.PointOfSale).NotNull().InclusiveBetween(1, 99999).WithMessage("El punto de venta va de 1 a 99999.");
         });
+        RuleFor(x => x.MaxOverbooksPerDay).InclusiveBetween(0, 20).When(x => x.MaxOverbooksPerDay is not null)
+            .WithMessage("Los sobreturnos por día van de 0 a 20, o dejalo vacío para no poner tope.");
     }
 }

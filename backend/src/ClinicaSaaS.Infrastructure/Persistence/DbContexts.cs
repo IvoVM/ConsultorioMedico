@@ -12,6 +12,11 @@ public class TenantDbContext(DbContextOptions<TenantDbContext> options)
 {
     public DbSet<Location> Locations => Set<Location>();
     public DbSet<MedicalService> MedicalServices => Set<MedicalService>();
+    public DbSet<Room> Rooms => Set<Room>();
+    public DbSet<Equipment> Equipment => Set<Equipment>();
+    public DbSet<Supply> Supplies => Set<Supply>();
+    public DbSet<AppointmentTypeSupply> AppointmentTypeSupplies => Set<AppointmentTypeSupply>();
+    public DbSet<SupplyMovement> SupplyMovements => Set<SupplyMovement>();
     public DbSet<Specialty> Specialties => Set<Specialty>();
     public DbSet<AppointmentType> AppointmentTypes => Set<AppointmentType>();
     public DbSet<ScheduleBlock> ScheduleBlocks => Set<ScheduleBlock>();
@@ -84,6 +89,44 @@ public class TenantDbContext(DbContextOptions<TenantDbContext> options)
             e.Property(s => s.Name).HasMaxLength(120);
             e.HasOne(s => s.Location).WithMany(l => l.Services).HasForeignKey(s => s.LocationId).OnDelete(DeleteBehavior.Restrict);
         });
+        builder.Entity<Room>(e =>
+        {
+            e.Property(r => r.Name).HasMaxLength(80);
+            e.HasIndex(r => new { r.LocationId, r.Name }).IsUnique();
+            e.HasOne(r => r.Location).WithMany(l => l.Rooms).HasForeignKey(r => r.LocationId).OnDelete(DeleteBehavior.Restrict);
+        });
+        builder.Entity<Equipment>(e =>
+        {
+            e.Property(x => x.Name).HasMaxLength(80);
+            e.HasIndex(x => new { x.LocationId, x.Name }).IsUnique();
+            e.HasOne(x => x.Location).WithMany(l => l.Equipment).HasForeignKey(x => x.LocationId).OnDelete(DeleteBehavior.Restrict);
+        });
+        builder.Entity<Supply>(e =>
+        {
+            e.Property(s => s.Name).HasMaxLength(120);
+            e.Property(s => s.Unit).HasMaxLength(20);
+            e.Property(s => s.Stock).HasPrecision(12, 2);
+            e.Property(s => s.MinStock).HasPrecision(12, 2);
+            e.HasIndex(s => s.Name).IsUnique();
+        });
+        builder.Entity<AppointmentTypeSupply>(e =>
+        {
+            e.HasKey(x => new { x.AppointmentTypeId, x.SupplyId });
+            e.Property(x => x.Quantity).HasPrecision(12, 2);
+            e.HasOne(x => x.AppointmentType).WithMany(t => t.Supplies).HasForeignKey(x => x.AppointmentTypeId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Supply).WithMany().HasForeignKey(x => x.SupplyId).OnDelete(DeleteBehavior.Restrict);
+        });
+        builder.Entity<SupplyMovement>(e =>
+        {
+            e.Property(m => m.Kind).HasConversion<string>().HasMaxLength(20);
+            e.Property(m => m.Quantity).HasPrecision(12, 2);
+            e.Property(m => m.Note).HasMaxLength(200);
+            e.HasIndex(m => new { m.SupplyId, m.At });
+            e.HasIndex(m => m.AppointmentId);
+            e.HasOne(m => m.Supply).WithMany(s => s.Movements).HasForeignKey(m => m.SupplyId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(m => m.Appointment).WithMany().HasForeignKey(m => m.AppointmentId).OnDelete(DeleteBehavior.SetNull);
+            e.HasOne(m => m.User).WithMany().HasForeignKey(m => m.UserId).OnDelete(DeleteBehavior.SetNull);
+        });
         builder.Entity<Specialty>(e =>
         {
             e.Property(s => s.Name).HasMaxLength(120);
@@ -92,7 +135,9 @@ public class TenantDbContext(DbContextOptions<TenantDbContext> options)
         builder.Entity<AppointmentType>(e =>
         {
             e.Property(t => t.Name).HasMaxLength(120);
+            e.Property(t => t.Code).HasMaxLength(20);
             e.HasOne(t => t.Specialty).WithMany(s => s.AppointmentTypes).HasForeignKey(t => t.SpecialtyId).OnDelete(DeleteBehavior.SetNull);
+            e.HasOne(t => t.Equipment).WithMany().HasForeignKey(t => t.EquipmentId).OnDelete(DeleteBehavior.Restrict);
         });
         builder.Entity<ScheduleBlock>(e =>
         {
@@ -101,6 +146,7 @@ public class TenantDbContext(DbContextOptions<TenantDbContext> options)
             e.HasOne(b => b.Professional).WithMany(u => u.ScheduleBlocks).HasForeignKey(b => b.ProfessionalId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(b => b.Location).WithMany(l => l.ScheduleBlocks).HasForeignKey(b => b.LocationId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(b => b.AppointmentType).WithMany(t => t.ScheduleBlocks).HasForeignKey(b => b.AppointmentTypeId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(b => b.Room).WithMany().HasForeignKey(b => b.RoomId).OnDelete(DeleteBehavior.Restrict);
         });
         builder.Entity<ScheduleBlockout>(e =>
             e.HasOne(b => b.Professional).WithMany(u => u.ScheduleBlockouts).HasForeignKey(b => b.ProfessionalId).OnDelete(DeleteBehavior.Restrict));
@@ -163,6 +209,8 @@ public class TenantDbContext(DbContextOptions<TenantDbContext> options)
             e.HasOne(a => a.Professional).WithMany(u => u.Appointments).HasForeignKey(a => a.ProfessionalId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(a => a.Location).WithMany(l => l.Appointments).HasForeignKey(a => a.LocationId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(a => a.AppointmentType).WithMany(t => t.Appointments).HasForeignKey(a => a.AppointmentTypeId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(a => a.Room).WithMany().HasForeignKey(a => a.RoomId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(a => a.Equipment).WithMany().HasForeignKey(a => a.EquipmentId).OnDelete(DeleteBehavior.Restrict);
         });
         builder.Entity<BookingRequest>(e =>
         {

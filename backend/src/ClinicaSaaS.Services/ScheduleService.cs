@@ -16,6 +16,7 @@ public partial class ScheduleService(
     IWaitlistStore waitlist,
     IBookingRequestStore requests,
     IMedicalRecordStore records,
+    IClinicSettingsStore clinicSettings,
     ITimeZoneProvider timeZone,
     ICurrentUser currentUser,
     IAuditStore audit,
@@ -52,12 +53,31 @@ public partial class ScheduleService(
 
     public async Task<IReadOnlyList<ScheduleBlockDto>> SaveScheduleAsync(SaveScheduleCommand command, CancellationToken ct)
     {
+        var roomIds = command.Blocks.Where(b => b.RoomId != null).Select(b => b.RoomId!.Value).Distinct().ToList();
+        var rooms = await organization.Rooms
+            .Where(r => roomIds.Contains(r.Id))
+            .Select(r => new { r.Id, r.LocationId, r.Name, r.IsActive })
+            .ToDictionaryAsync(r => r.Id, ct);
+        // Another professional's weekly blocks in the same rooms: a room is one person's at a time.
+        var others = await schedules.Blocks
+            .Where(b => b.ProfessionalId != command.ProfessionalId && b.RoomId != null && roomIds.Contains(b.RoomId.Value))
+            .Select(b => new { b.RoomId, b.Day, b.StartTime, b.EndTime, Professional = (b.Professional.FirstName + " " + b.Professional.LastName).Trim() })
+            .ToListAsync(ct);
         foreach (var block in command.Blocks)
         {
             if (block.EndTime <= block.StartTime)
                 throw new BusinessRuleException("El horario de fin debe ser posterior al de inicio.");
             _ = await organization.GetAppointmentTypeAsync(block.AppointmentTypeId, ct)
                 ?? throw new NotFoundException("Tipo de turno no encontrado.");
+            if (block.RoomId is not Guid roomId)
+                continue;
+            if (!rooms.TryGetValue(roomId, out var room) || !room.IsActive)
+                throw new BusinessRuleException("Ese consultorio no está activo.");
+            if (room.LocationId != block.LocationId)
+                throw new BusinessRuleException($"El consultorio {room.Name} es de otra sede.");
+            var clash = others.FirstOrDefault(o => o.RoomId == roomId && o.Day == block.Day && SchedulingRules.BlocksOverlap(o.StartTime, o.EndTime, block.StartTime, block.EndTime));
+            if (clash is not null)
+                throw new BusinessRuleException($"El consultorio {room.Name} ya lo usa {clash.Professional} los {SchedulingRules.DayName(clash.Day)} de {clash.StartTime:HH\\:mm} a {clash.EndTime:HH\\:mm}.");
         }
 
         var entities = command.Blocks.Select(b => new ScheduleBlock
@@ -68,11 +88,12 @@ public partial class ScheduleService(
             StartTime = b.StartTime,
             EndTime = b.EndTime,
             LocationId = b.LocationId,
-            AppointmentTypeId = b.AppointmentTypeId
+            AppointmentTypeId = b.AppointmentTypeId,
+            RoomId = b.RoomId
         }).ToList();
         await schedules.ReplaceBlocksAsync(command.ProfessionalId, entities, ct);
         await audit.RecordAsync(currentUser.Id, "agenda", "AgendaSemanal", command.ProfessionalId.ToString(), $"{entities.Count} bloques", ct);
-        return entities.Select(b => new ScheduleBlockDto(b.Id, b.Day, b.StartTime, b.EndTime, b.LocationId, b.AppointmentTypeId)).ToList();
+        return entities.Select(b => new ScheduleBlockDto(b.Id, b.Day, b.StartTime, b.EndTime, b.LocationId, b.AppointmentTypeId, b.RoomId)).ToList();
     }
 
     public async Task<IReadOnlyList<BlockoutDto>> BlockoutsAsync(Guid professionalId, CancellationToken ct) =>
@@ -162,6 +183,14 @@ public partial class ScheduleService(
             .Where(r => r.UpdatedAt >= holdsSince)
             .Select(r => new BusyInterval { ProfessionalId = r.ProfessionalId, Start = r.Start, End = r.End })
             .ToListAsync(ct);
+        // A block's room and its practice's equipment can be taken by someone else's appointment (an overbook, a move).
+        var roomIds = openings.Where(o => o.RoomId != null).Select(o => o.RoomId!.Value).Distinct().ToList();
+        var equipmentIds = openings.Where(o => o.EquipmentId != null).Select(o => o.EquipmentId!.Value).Distinct().ToList();
+        var resourceBusy = await appointments.Appointments
+            .Where(a => a.Start < dayEnd && a.End > dayStart && a.Status != AppointmentStatus.Cancelled && a.Status != AppointmentStatus.NoShow)
+            .Where(a => (a.RoomId != null && roomIds.Contains(a.RoomId.Value)) || (a.EquipmentId != null && equipmentIds.Contains(a.EquipmentId.Value)))
+            .Select(a => new { a.RoomId, a.EquipmentId, a.Start, a.End })
+            .ToListAsync(ct);
 
         var result = new List<SlotDto>();
         foreach (var group in openings.GroupBy(o => o.ProfessionalId))
@@ -174,8 +203,11 @@ public partial class ScheduleService(
                 .ToList();
             foreach (var opening in group)
             {
+                var taken = resourceBusy
+                    .Where(b => (opening.RoomId != null && b.RoomId == opening.RoomId) || (opening.EquipmentId != null && b.EquipmentId == opening.EquipmentId))
+                    .Select(b => new TimeRange(b.Start, b.End));
                 var slots = SchedulingRules.GenerateSlots(
-                    query.Date, opening.StartTime, opening.EndTime, opening.DurationMinutes, timeZone.Zone, occupied);
+                    query.Date, opening.StartTime, opening.EndTime, opening.DurationMinutes, timeZone.Zone, occupied.Concat(taken).ToList());
                 var name = $"{opening.ProfessionalFirstName} {opening.ProfessionalLastName}".Trim();
                 coverageByProfessional.TryGetValue(opening.ProfessionalId, out var coverage);
                 foreach (var slot in slots)
@@ -209,6 +241,7 @@ public partial class ScheduleService(
             ?? throw new ConflictException("Ese horario ya no está disponible.");
 
         var (insurerId, memberNumber) = await CoverageAsync(command.ProfessionalId, command.InsurerId, command.MemberNumber, ct);
+        var (roomId, equipmentId) = await ResourcesAsync(command.ProfessionalId, command.AppointmentTypeId, slot.Start, ct);
 
         var appointment = await appointments.BookAsync(new Appointment
         {
@@ -216,6 +249,8 @@ public partial class ScheduleService(
             ClientId = client.Id,
             ProfessionalId = command.ProfessionalId,
             LocationId = command.LocationId,
+            RoomId = roomId,
+            EquipmentId = equipmentId,
             AppointmentTypeId = command.AppointmentTypeId,
             Start = slot.Start,
             End = slot.End,
@@ -393,6 +428,7 @@ public partial class ScheduleService(
             var slots = await AvailabilityAsync(new AvailabilityQuery(appointment.LocationId, Guid.Empty, appointment.ProfessionalId, date), ct);
             var slot = slots.FirstOrDefault(s => s.Start.UtcDateTime == command.Start.UtcDateTime && s.AppointmentTypeId == appointment.AppointmentTypeId)
                 ?? throw new ConflictException("Ese horario ya no está disponible.");
+            (appointment.RoomId, appointment.EquipmentId) = await ResourcesAsync(appointment.ProfessionalId, appointment.AppointmentTypeId, slot.Start, ct);
             appointment.Start = slot.Start;
             appointment.End = slot.End;
             appointment.Status = AppointmentStatus.Rescheduled;
@@ -733,6 +769,8 @@ public partial class ScheduleService(
         if (SchedulingRules.RequestExpired(request.Start, clock.GetUtcNow(), timeZone.Zone))
             throw new BusinessRuleException("Esa solicitud ya venció. Reprogramala a un horario libre.");
 
+        var (roomId, equipmentId) = await ResourcesAsync(request.ProfessionalId, request.AppointmentTypeId, request.Start, ct);
+        await CheckResourcesAsync(roomId, equipmentId, new TimeRange(request.Start, request.End), null, ct);
         return await unitOfWork.InTransactionAsync(async () =>
         {
             var clientId = await EnsureClientAsync(request, ct);
@@ -742,6 +780,8 @@ public partial class ScheduleService(
                 ClientId = clientId,
                 ProfessionalId = request.ProfessionalId,
                 LocationId = request.LocationId,
+                RoomId = roomId,
+                EquipmentId = equipmentId,
                 AppointmentTypeId = request.AppointmentTypeId,
                 Start = request.Start,
                 End = request.End,

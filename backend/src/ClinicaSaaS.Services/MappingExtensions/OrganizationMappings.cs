@@ -14,7 +14,13 @@ public static class OrganizationMappings
         query.Select(s => new SpecialtyDto(s.Id, s.Name));
 
     public static IQueryable<AppointmentTypeDto> ToAppointmentTypeDtos(this IQueryable<AppointmentType> query) =>
-        query.Select(t => new AppointmentTypeDto(t.Id, t.Name, t.DurationMinutes, t.SpecialtyId, t.Kind));
+        query.Select(t => new AppointmentTypeDto(t.Id, t.Name, t.DurationMinutes, t.SpecialtyId, t.Kind, t.Code, t.EquipmentId));
+
+    public static IQueryable<RoomDto> ToRoomDtos(this IQueryable<Room> query) =>
+        query.Select(r => new RoomDto(r.Id, r.LocationId, r.Location.Name, r.Name, r.IsActive));
+
+    public static IQueryable<EquipmentDto> ToEquipmentDtos(this IQueryable<Equipment> query) =>
+        query.Select(e => new EquipmentDto(e.Id, e.LocationId, e.Location.Name, e.Name, e.IsActive));
 
     public static IQueryable<ProfessionalDto> ToProfessionalDtos(this IQueryable<Employee> query) =>
         query.Select(e => new ProfessionalDto(

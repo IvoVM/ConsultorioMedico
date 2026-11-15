@@ -61,6 +61,25 @@ public static class SchedulingRules
     public static bool IsOverbook(IEnumerable<TimeRange> agenda, TimeRange candidate) =>
         !MergeRanges(agenda).Any(range => range.Start <= candidate.Start && candidate.End <= range.End);
 
+    // The clinic's cap on overbooks per professional and day: no cap when it is not set, none at all when it is 0.
+    public static bool OverbookAllowed(int? maxPerDay, int alreadyThatDay) =>
+        maxPerDay is not int max || alreadyThatDay < max;
+
+    // Two weekly blocks on the same day share some time.
+    public static bool BlocksOverlap(TimeOnly aStart, TimeOnly aEnd, TimeOnly bStart, TimeOnly bEnd) =>
+        aStart < bEnd && bStart < aEnd;
+
+    public static string DayName(DayOfWeek day) => day switch
+    {
+        DayOfWeek.Monday => "lunes",
+        DayOfWeek.Tuesday => "martes",
+        DayOfWeek.Wednesday => "miércoles",
+        DayOfWeek.Thursday => "jueves",
+        DayOfWeek.Friday => "viernes",
+        DayOfWeek.Saturday => "sábados",
+        _ => "domingos"
+    };
+
     // Once the patient is in the waiting room the slot is theirs: it can be cancelled, not moved.
     public static bool CanReschedule(AppointmentStatus status) =>
         status is AppointmentStatus.Booked or AppointmentStatus.Rescheduled;

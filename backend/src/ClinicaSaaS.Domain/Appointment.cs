@@ -17,6 +17,8 @@ public class Appointment : Auditable
     public string? MemberNumber { get; set; }
     public bool? CoverageAccepted { get; set; }
     public bool IsOverbook { get; set; }
+    public Guid? RoomId { get; set; }
+    public Guid? EquipmentId { get; set; }
 
 
     public virtual Client Client { get; set; } = null!;
@@ -24,6 +26,8 @@ public class Appointment : Auditable
     public virtual TenantUser Professional { get; set; } = null!;
     public virtual Location Location { get; set; } = null!;
     public virtual AppointmentType AppointmentType { get; set; } = null!;
+    public virtual Room? Room { get; set; }
+    public virtual Equipment? Equipment { get; set; }
     public virtual Encounter? Encounter { get; set; }
     public virtual Invoice? Invoice { get; set; }
     public virtual ICollection<AppointmentChange> Changes { get; set; } = [];

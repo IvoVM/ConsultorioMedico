@@ -7,4 +7,6 @@ export interface AppointmentTypeDto {
   durationMinutes: number;
   specialtyId?: string | null;
   kind: AppointmentKind;
+  code?: string | null;
+  equipmentId?: string | null;
 }

@@ -1,0 +1,66 @@
+<header class="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2">
+  <h2 class="font-serif text-2xl tracking-tight">Consultorios y equipos</h2>
+  <ui-help title="Consultorios y equipos">
+    <p>Los consultorios y los equipos de cada sede. Un consultorio o un equipo atiende un turno a la vez: el sistema no deja dar dos turnos en el mismo consultorio, ni con el mismo equipo, a la misma hora.</p>
+    <p><strong>Por qué lo editás:</strong> El consultorio de cada profesional se elige en su agenda semanal, y el equipo que necesita cada práctica, en la especialidad. La recepción ve la agenda por consultorio o por equipo en el portal.</p>
+    <p>Para dar de baja un consultorio, primero sacalo de las agendas que lo usan; para un equipo, de las prácticas que lo necesitan.</p>
+  </ui-help>
+</header>
+
+@if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
+
+@if (loading()) {
+  <ui-skeleton label="Cargando consultorios y equipos" />
+} @else if (!locationOptions().length) {
+  <ui-empty message="Todavía no hay sedes activas. Cargá una sede para sumarle consultorios y equipos." />
+} @else {
+  @for (kind of [kinds.Room, kinds.Equipment]; track kind) {
+    @let list = kind === kinds.Room ? rooms() : equipment();
+    <section class="mb-10">
+      <div class="mb-4 flex flex-wrap items-end justify-between gap-3">
+        <h3>{{ labels[kind].many }}</h3>
+        <ui-button (click)="open(kind)">Crear {{ labels[kind].one }}</ui-button>
+      </div>
+      @if (!list.length) {
+        <ui-empty [message]="kind === kinds.Room ? 'Todavía no hay consultorios. Sin consultorios, los turnos no controlan dónde se atienden.' : 'Todavía no hay equipos.'" />
+      } @else {
+        <ui-table>
+          <table class="cards">
+            <thead><tr><th>Nombre</th><th>Sede</th><th>Estado</th><th class="w-px"></th></tr></thead>
+            <tbody>
+              @for (item of list; track item.id) {
+                <tr>
+                  <td class="font-serif text-lg leading-tight">{{ item.name }}</td>
+                  <td data-name="Sede">{{ item.location }}</td>
+                  <td data-name="Estado"><ui-badge [tone]="item.isActive ? 'ok' : 'muted'">{{ item.isActive ? 'En uso' : 'De baja' }}</ui-badge></td>
+                  <td class="whitespace-nowrap">
+                    <ui-button variant="ghost" (click)="open(kind, item)">Editar</ui-button>
+                    <ui-button [variant]="item.isActive ? 'danger' : 'outlined'" [loading]="busy() === item.id" (click)="toggle(kind, item)">{{ item.isActive ? 'Dar de baja' : 'Reactivar' }}</ui-button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </ui-table>
+      }
+    </section>
+  }
+}
+
+@if (editing(); as form) {
+  <ui-modal [open]="true" [title]="(form.id ? 'Editar ' : 'Crear ') + labels[form.kind].one" (closed)="editing.set(null)">
+    <form id="resource-form" class="grid gap-4" (ngSubmit)="save()">
+      <ui-field label="Nombre">
+        <input name="name" maxlength="80" required [ngModel]="form.name" (ngModelChange)="update({ name: $event })" [placeholder]="form.kind === kinds.Room ? 'Consultorio 1' : 'Ecógrafo'" />
+      </ui-field>
+      <ui-field label="Sede">
+        <ui-select name="locationId" [ngModel]="form.locationId" (ngModelChange)="update({ locationId: $event })" [options]="locationOptions()" />
+      </ui-field>
+      @if (dialogError()) { <p class="text-sm text-pulse" role="alert">{{ dialogError() }}</p> }
+    </form>
+    <div uiModalFooter class="flex flex-wrap gap-3">
+      <ui-button type="submit" form="resource-form" [loading]="saving()">{{ form.id ? 'Guardar' : 'Crear' }}</ui-button>
+      <ui-button variant="outlined" [disabled]="saving()" (click)="editing.set(null)">Cancelar</ui-button>
+    </div>
+  </ui-modal>
+}

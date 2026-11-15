@@ -46,6 +46,9 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                     b.Property<DateTimeOffset>("End")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("EquipmentId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid?>("InsurerId")
                         .HasColumnType("uuid");
 
@@ -60,6 +63,9 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                         .HasColumnType("character varying(40)");
 
                     b.Property<Guid>("ProfessionalId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("RoomId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTimeOffset>("Start")
@@ -88,9 +94,13 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
 
                     b.HasIndex("CreatedBy");
 
+                    b.HasIndex("EquipmentId");
+
                     b.HasIndex("InsurerId");
 
                     b.HasIndex("LocationId");
+
+                    b.HasIndex("RoomId");
 
                     b.HasIndex("UpdatedBy");
 
@@ -153,8 +163,15 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Code")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
                     b.Property<int>("DurationMinutes")
                         .HasColumnType("integer");
+
+                    b.Property<Guid?>("EquipmentId")
+                        .HasColumnType("uuid");
 
                     b.Property<int>("Kind")
                         .HasColumnType("integer");
@@ -169,9 +186,30 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
 
                     b.HasKey("Id");
 
+                    b.HasIndex("EquipmentId");
+
                     b.HasIndex("SpecialtyId");
 
                     b.ToTable("AppointmentTypes");
+                });
+
+            modelBuilder.Entity("ClinicaSaaS.Domain.AppointmentTypeSupply", b =>
+                {
+                    b.Property<Guid>("AppointmentTypeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("SupplyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)");
+
+                    b.HasKey("AppointmentTypeId", "SupplyId");
+
+                    b.HasIndex("SupplyId");
+
+                    b.ToTable("AppointmentTypeSupplies");
                 });
 
             modelBuilder.Entity("ClinicaSaaS.Domain.AuditEntry", b =>
@@ -549,6 +587,9 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                     b.Property<bool>("FiscalEnabled")
                         .HasColumnType("boolean");
 
+                    b.Property<int?>("MaxOverbooksPerDay")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(120)
@@ -700,6 +741,31 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                     b.HasIndex("DiagnosisId");
 
                     b.ToTable("EncounterDiagnoses");
+                });
+
+            modelBuilder.Entity("ClinicaSaaS.Domain.Equipment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("LocationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LocationId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("Equipment");
                 });
 
             modelBuilder.Entity("ClinicaSaaS.Domain.Fee", b =>
@@ -1224,6 +1290,31 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                     b.ToTable("Receipts");
                 });
 
+            modelBuilder.Entity("ClinicaSaaS.Domain.Room", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("LocationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LocationId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("Rooms");
+                });
+
             modelBuilder.Entity("ClinicaSaaS.Domain.ScheduleBlock", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1247,6 +1338,9 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                     b.Property<Guid>("ProfessionalId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("RoomId")
+                        .HasColumnType("uuid");
+
                     b.Property<TimeOnly>("StartTime")
                         .HasColumnType("time without time zone");
 
@@ -1257,6 +1351,8 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                     b.HasIndex("LocationId");
 
                     b.HasIndex("ProfessionalId");
+
+                    b.HasIndex("RoomId");
 
                     b.ToTable("ScheduleBlocks");
                 });
@@ -1304,6 +1400,83 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                         .IsUnique();
 
                     b.ToTable("Specialties");
+                });
+
+            modelBuilder.Entity("ClinicaSaaS.Domain.Supply", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<decimal>("MinStock")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<decimal>("Stock")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)");
+
+                    b.Property<string>("Unit")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Supplies");
+                });
+
+            modelBuilder.Entity("ClinicaSaaS.Domain.SupplyMovement", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("AppointmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("At")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)");
+
+                    b.Property<Guid>("SupplyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppointmentId");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("SupplyId", "At");
+
+                    b.ToTable("SupplyMovements");
                 });
 
             modelBuilder.Entity("ClinicaSaaS.Domain.WaitlistEntry", b =>
@@ -1628,6 +1801,11 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                         .HasForeignKey("CreatedBy")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("ClinicaSaaS.Domain.Equipment", "Equipment")
+                        .WithMany()
+                        .HasForeignKey("EquipmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("ClinicaSaaS.Domain.Insurer", "Insurer")
                         .WithMany()
                         .HasForeignKey("InsurerId")
@@ -1645,6 +1823,11 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("ClinicaSaaS.Domain.Room", "Room")
+                        .WithMany()
+                        .HasForeignKey("RoomId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("ClinicaSaaS.Infrastructure.Identity.TenantUser", "UpdatedByUser")
                         .WithMany()
                         .HasForeignKey("UpdatedBy")
@@ -1656,11 +1839,15 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
 
                     b.Navigation("CreatedByUser");
 
+                    b.Navigation("Equipment");
+
                     b.Navigation("Insurer");
 
                     b.Navigation("Location");
 
                     b.Navigation("Professional");
+
+                    b.Navigation("Room");
 
                     b.Navigation("UpdatedByUser");
                 });
@@ -1700,12 +1887,38 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
 
             modelBuilder.Entity("ClinicaSaaS.Domain.AppointmentType", b =>
                 {
+                    b.HasOne("ClinicaSaaS.Domain.Equipment", "Equipment")
+                        .WithMany()
+                        .HasForeignKey("EquipmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("ClinicaSaaS.Domain.Specialty", "Specialty")
                         .WithMany("AppointmentTypes")
                         .HasForeignKey("SpecialtyId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.Navigation("Equipment");
+
                     b.Navigation("Specialty");
+                });
+
+            modelBuilder.Entity("ClinicaSaaS.Domain.AppointmentTypeSupply", b =>
+                {
+                    b.HasOne("ClinicaSaaS.Domain.AppointmentType", "AppointmentType")
+                        .WithMany("Supplies")
+                        .HasForeignKey("AppointmentTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ClinicaSaaS.Domain.Supply", "Supply")
+                        .WithMany()
+                        .HasForeignKey("SupplyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AppointmentType");
+
+                    b.Navigation("Supply");
                 });
 
             modelBuilder.Entity("ClinicaSaaS.Domain.BookingRequest", b =>
@@ -1892,6 +2105,17 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                     b.Navigation("Encounter");
                 });
 
+            modelBuilder.Entity("ClinicaSaaS.Domain.Equipment", b =>
+                {
+                    b.HasOne("ClinicaSaaS.Domain.Location", "Location")
+                        .WithMany("Equipment")
+                        .HasForeignKey("LocationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Location");
+                });
+
             modelBuilder.Entity("ClinicaSaaS.Domain.Fee", b =>
                 {
                     b.HasOne("ClinicaSaaS.Domain.AppointmentType", "AppointmentType")
@@ -2058,6 +2282,17 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                     b.Navigation("Location");
                 });
 
+            modelBuilder.Entity("ClinicaSaaS.Domain.Room", b =>
+                {
+                    b.HasOne("ClinicaSaaS.Domain.Location", "Location")
+                        .WithMany("Rooms")
+                        .HasForeignKey("LocationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Location");
+                });
+
             modelBuilder.Entity("ClinicaSaaS.Domain.ScheduleBlock", b =>
                 {
                     b.HasOne("ClinicaSaaS.Domain.AppointmentType", "AppointmentType")
@@ -2078,11 +2313,18 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("ClinicaSaaS.Domain.Room", "Room")
+                        .WithMany()
+                        .HasForeignKey("RoomId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("AppointmentType");
 
                     b.Navigation("Location");
 
                     b.Navigation("Professional");
+
+                    b.Navigation("Room");
                 });
 
             modelBuilder.Entity("ClinicaSaaS.Domain.ScheduleBlockout", b =>
@@ -2094,6 +2336,31 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                         .IsRequired();
 
                     b.Navigation("Professional");
+                });
+
+            modelBuilder.Entity("ClinicaSaaS.Domain.SupplyMovement", b =>
+                {
+                    b.HasOne("ClinicaSaaS.Domain.Appointment", "Appointment")
+                        .WithMany()
+                        .HasForeignKey("AppointmentId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("ClinicaSaaS.Domain.Supply", "Supply")
+                        .WithMany("Movements")
+                        .HasForeignKey("SupplyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ClinicaSaaS.Infrastructure.Identity.TenantUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Appointment");
+
+                    b.Navigation("Supply");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("ClinicaSaaS.Domain.WaitlistEntry", b =>
@@ -2223,6 +2490,8 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                     b.Navigation("Fees");
 
                     b.Navigation("ScheduleBlocks");
+
+                    b.Navigation("Supplies");
                 });
 
             modelBuilder.Entity("ClinicaSaaS.Domain.CardSettlement", b =>
@@ -2275,6 +2544,10 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                 {
                     b.Navigation("Appointments");
 
+                    b.Navigation("Equipment");
+
+                    b.Navigation("Rooms");
+
                     b.Navigation("ScheduleBlocks");
 
                     b.Navigation("Services");
@@ -2306,6 +2579,11 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                     b.Navigation("Encounters");
 
                     b.Navigation("WaitlistEntries");
+                });
+
+            modelBuilder.Entity("ClinicaSaaS.Domain.Supply", b =>
+                {
+                    b.Navigation("Movements");
                 });
 
             modelBuilder.Entity("ClinicaSaaS.Infrastructure.Identity.TenantUser", b =>

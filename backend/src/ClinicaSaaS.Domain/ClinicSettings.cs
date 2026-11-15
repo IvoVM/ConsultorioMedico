@@ -14,4 +14,6 @@ public class ClinicSettings
     public int? PointOfSale { get; set; }
     // Authorize each invoice as soon as it is issued, instead of with a separate step.
     public bool AutoAuthorize { get; set; }
+    // How many overbooks each professional may get per day: null means no limit, 0 means none at all.
+    public int? MaxOverbooksPerDay { get; set; }
 }

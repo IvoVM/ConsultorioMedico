@@ -8,4 +8,5 @@ export interface ScheduleBlockDto {
   endTime: string;
   locationId: string;
   appointmentTypeId: string;
+  roomId?: string | null;
 }

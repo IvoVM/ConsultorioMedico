@@ -10,4 +10,5 @@ export interface ClinicSettingsDto {
   taxCondition?: TaxCondition | null;
   pointOfSale?: number | null;
   autoAuthorize?: boolean;
+  maxOverbooksPerDay?: number | null;
 }

@@ -70,6 +70,8 @@ export class AgendaDetail {
   readonly duration = computed(() => durationOf(this.appointment()));
   readonly day = computed(() => this.appointment().start.slice(0, 10));
   readonly professional = computed(() => this.professionals().find((item) => item.id === this.appointment().professionalId) ?? null);
+  // The practice behind the appointment: its code, its equipment and what it uses up.
+  readonly practice = computed(() => this.professional()?.types.find((type) => type.id === this.appointment().appointmentTypeId) ?? null);
   readonly insurerOptions = computed((): SelectOption[] => [
     { value: '', label: 'Particular' },
     ...(this.professional()?.insurers ?? []).map((insurer) => ({ value: insurer.id, label: insurer.name })),

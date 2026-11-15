@@ -80,6 +80,27 @@ public interface IOrganizationStore
     IQueryable<Insurer> Insurers { get; }
     Task<Insurer> AddInsurerAsync(Insurer insurer, CancellationToken ct);
     Task<Insurer?> GetInsurerAsync(Guid id, CancellationToken ct);
+    IQueryable<Room> Rooms { get; }
+    void AddRoom(Room room);
+    Task<Room?> GetRoomAsync(Guid id, CancellationToken ct);
+    IQueryable<Equipment> Equipment { get; }
+    void AddEquipment(Equipment equipment);
+    Task<Equipment?> GetEquipmentAsync(Guid id, CancellationToken ct);
+    IQueryable<AppointmentTypeSupply> TypeSupplies { get; }
+    // Replaces what one appointment of the practice uses up.
+    Task ReplaceTypeSuppliesAsync(Guid appointmentTypeId, IReadOnlyList<AppointmentTypeSupply> supplies, CancellationToken ct);
+    Task SaveAsync(CancellationToken ct);
+}
+
+public interface ISupplyStore
+{
+    IQueryable<Supply> Supplies { get; }
+    IQueryable<SupplyMovement> Movements { get; }
+    void Add(Supply supply);
+    // Tracked, so its stock can change.
+    Task<Supply?> GetAsync(Guid id, CancellationToken ct);
+    Task<List<Supply>> GetManyAsync(IReadOnlyCollection<Guid> ids, CancellationToken ct);
+    void AddMovement(SupplyMovement movement);
     Task SaveAsync(CancellationToken ct);
 }
 

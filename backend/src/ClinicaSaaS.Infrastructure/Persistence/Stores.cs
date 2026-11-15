@@ -232,6 +232,45 @@ public class OrganizationStore(TenantDbContext db) : IOrganizationStore
     public Task<Insurer?> GetInsurerAsync(Guid id, CancellationToken ct) =>
         db.Insurers.FirstOrDefaultAsync(i => i.Id == id, ct);
 
+    public IQueryable<Room> Rooms => db.Rooms.AsNoTracking();
+
+    public void AddRoom(Room room) => db.Rooms.Add(room);
+
+    public Task<Room?> GetRoomAsync(Guid id, CancellationToken ct) => db.Rooms.FirstOrDefaultAsync(r => r.Id == id, ct);
+
+    public IQueryable<Equipment> Equipment => db.Equipment.AsNoTracking();
+
+    public void AddEquipment(Equipment equipment) => db.Equipment.Add(equipment);
+
+    public Task<Equipment?> GetEquipmentAsync(Guid id, CancellationToken ct) => db.Equipment.FirstOrDefaultAsync(e => e.Id == id, ct);
+
+    public IQueryable<AppointmentTypeSupply> TypeSupplies => db.AppointmentTypeSupplies.AsNoTracking();
+
+    public async Task ReplaceTypeSuppliesAsync(Guid appointmentTypeId, IReadOnlyList<AppointmentTypeSupply> supplies, CancellationToken ct)
+    {
+        var current = await db.AppointmentTypeSupplies.Where(s => s.AppointmentTypeId == appointmentTypeId).ToListAsync(ct);
+        db.AppointmentTypeSupplies.RemoveRange(current);
+        db.AppointmentTypeSupplies.AddRange(supplies);
+    }
+
+    public Task SaveAsync(CancellationToken ct) => db.SaveChangesAsync(ct);
+}
+
+public class SupplyStore(TenantDbContext db) : ISupplyStore
+{
+    public IQueryable<Supply> Supplies => db.Supplies.AsNoTracking();
+
+    public IQueryable<SupplyMovement> Movements => db.SupplyMovements.AsNoTracking();
+
+    public void Add(Supply supply) => db.Supplies.Add(supply);
+
+    public Task<Supply?> GetAsync(Guid id, CancellationToken ct) => db.Supplies.FirstOrDefaultAsync(s => s.Id == id, ct);
+
+    public Task<List<Supply>> GetManyAsync(IReadOnlyCollection<Guid> ids, CancellationToken ct) =>
+        db.Supplies.Where(s => ids.Contains(s.Id)).ToListAsync(ct);
+
+    public void AddMovement(SupplyMovement movement) => db.SupplyMovements.Add(movement);
+
     public Task SaveAsync(CancellationToken ct) => db.SaveChangesAsync(ct);
 }
 

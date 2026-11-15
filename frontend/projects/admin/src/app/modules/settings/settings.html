@@ -21,6 +21,25 @@
           <p class="mt-2 text-sm text-ink/60">Es el nombre que ven los pacientes al entrar al portal.</p>
         </section>
       }
+      @case (settingsTab.Turnos) {
+        <section class="rounded-2xl bg-white px-5 py-2 shadow-[var(--shadow-card)] sm:px-6">
+          <ui-switch
+            label="Limitar los sobreturnos"
+            description="Un sobreturno es un turno fuera de la agenda del profesional. Con el límite, la recepción no puede dar más que esa cantidad por profesional y por día; la agenda muestra cuántos quedan. Si lo apagás, no hay tope."
+            [checked]="form.maxOverbooksPerDay != null"
+            (checkedChange)="setOverbookCap($event)"
+          />
+          @if (form.maxOverbooksPerDay != null) {
+            <div class="border-t border-rule"></div>
+            <div class="py-4">
+              <ui-field class="sm:w-60" label="Sobreturnos por profesional y por día">
+                <input name="maxOverbooks" type="number" min="0" max="20" step="1" [ngModel]="form.maxOverbooksPerDay" (ngModelChange)="setMaxOverbooks($event)" />
+              </ui-field>
+              <p class="mt-2 text-sm text-ink/60">Con 0 no se dan sobreturnos: todo turno tiene que caer dentro de la agenda.</p>
+            </div>
+          }
+        </section>
+      }
       @case (settingsTab.Facturacion) {
         <section class="rounded-2xl bg-white px-5 py-2 shadow-[var(--shadow-card)] sm:px-6">
           <ui-switch

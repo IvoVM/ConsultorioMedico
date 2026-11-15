@@ -73,6 +73,7 @@ export class ShellPage {
     if (role === TenantRole.Secretary || role === TenantRole.TenantAdmin) {
       nodes.push({ label: 'Secretaría', path: AppRoute.Secretaria, icon: 'desk' });
       nodes.push({ label: 'Caja', path: AppRoute.Caja, icon: 'point_of_sale' });
+      nodes.push({ label: 'Insumos', path: AppRoute.Insumos, icon: 'inventory_2' });
     }
     return nodes;
   });

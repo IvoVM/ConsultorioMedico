@@ -45,7 +45,16 @@
         <tbody>
           @for (row of prestaciones(); track row.id) {
             <tr>
-              <td class="font-serif text-lg leading-tight">{{ row.name }}</td>
+              <td>
+                <span class="font-serif text-lg leading-tight">{{ row.name }}</span>
+                @if (row.code || row.equipment || row.supplies.length) {
+                  <span class="block text-xs text-ink/60">
+                    @if (row.code) { Código {{ row.code }} }
+                    @if (row.equipment) { · {{ row.equipment }} }
+                    @if (row.supplies.length) { · {{ row.supplies.length === 1 ? '1 insumo' : row.supplies.length + ' insumos' }} }
+                  </span>
+                }
+              </td>
               <td data-name="Duración">{{ row.durationMinutes }} min</td>
               <td data-name="Particular">{{ money(row.particular) }}</td>
               <td data-name="Obras sociales">
@@ -60,6 +69,7 @@
               <td class="w-px whitespace-nowrap">
                 <ui-actions>
                   <button type="button" class="text-link" (click)="openDuration(row)">Duración</button>
+                  <button type="button" class="text-link" (click)="openPractice(row)">Práctica</button>
                   <button type="button" class="text-link" (click)="openPrice(row)">{{ row.particular != null ? 'Precio' : 'Cargar precio' }}</button>
                   <button type="button" class="text-link" (click)="openPrice(row, '', true)">Obra social</button>
                 </ui-actions>
@@ -144,6 +154,47 @@
     </form>
     <div uiModalFooter class="flex flex-wrap gap-3">
       <ui-button type="submit" form="save-price-form" [loading]="saving()" [disabled]="!!priceError()">Guardar</ui-button>
+      <ui-button variant="outlined" [disabled]="saving()" (click)="close()">Cancelar</ui-button>
+    </div>
+  </ui-modal>
+}
+
+@if (dialog() === 'practice' && selected(); as row) {
+  <ui-modal [open]="true" [title]="'Práctica: ' + row.name" (closed)="close()">
+    <form id="save-practice-form" class="grid gap-4" (ngSubmit)="savePractice()">
+      <p class="text-sm leading-relaxed text-ink/80">Cada turno de {{ row.name }} sabe qué práctica es, qué equipo ocupa mientras dura y qué insumos usa. Los insumos se descuentan del stock al cerrar la consulta.</p>
+      <ui-field label="Código (nomenclador)">
+        <input name="code" maxlength="20" [ngModel]="codeDraft()" (ngModelChange)="codeDraft.set($event)" placeholder="42.01.01" />
+      </ui-field>
+      <ui-field label="Equipo que necesita">
+        <ui-select name="equipment" [ngModel]="equipmentDraft()" (ngModelChange)="equipmentDraft.set($event)" [options]="equipmentOptions()" />
+      </ui-field>
+      <div>
+        <p class="mb-2 text-sm font-semibold">Insumos por turno</p>
+        @if (!linesDraft().length) {
+          <p class="text-sm text-ink/60">No usa insumos.</p>
+        }
+        @for (line of linesDraft(); track $index; let i = $index) {
+          <div class="mb-2 flex flex-wrap items-end gap-2">
+            <ui-field class="min-w-48 flex-1" label="Insumo">
+              <ui-select [name]="'supply' + i" [ngModel]="line.supplyId" (ngModelChange)="setLine(i, { supplyId: $event })" [options]="supplyOptions()" />
+            </ui-field>
+            <ui-field class="w-32" [label]="'Cantidad' + (unitOf(line.supplyId) ? ' (' + unitOf(line.supplyId) + ')' : '')">
+              <input [name]="'quantity' + i" type="number" min="0.01" step="0.01" [ngModel]="line.quantity" (ngModelChange)="setLine(i, { quantity: +$event })" />
+            </ui-field>
+            <ui-button variant="ghost" (click)="removeLine(i)">Quitar</ui-button>
+          </div>
+        }
+        @if (linesDraft().length < supplyOptions().length) {
+          <ui-button variant="outlined" (click)="addLine()">Sumar insumo</ui-button>
+        } @else if (!supplyOptions().length) {
+          <p class="text-sm text-ink/60">No hay insumos cargados. Se cargan en Insumos.</p>
+        }
+      </div>
+      @if (error()) { <p class="text-sm text-pulse" role="alert">{{ error() }}</p> }
+    </form>
+    <div uiModalFooter class="flex flex-wrap gap-3">
+      <ui-button type="submit" form="save-practice-form" [loading]="saving()">Guardar</ui-button>
       <ui-button variant="outlined" [disabled]="saving()" (click)="close()">Cancelar</ui-button>
     </div>
   </ui-modal>

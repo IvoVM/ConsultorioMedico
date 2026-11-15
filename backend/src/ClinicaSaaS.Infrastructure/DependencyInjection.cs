@@ -116,6 +116,7 @@ public class ClinicSeeder(TenantDbContext db, UserManager<TenantUser> users, ICo
         await InsurerCatalog.EnsureAsync(db, ct);
         await new BillingDemoSeeder(db, zone, configuration["Clinic:Name"] ?? "Consultorio demo").SeedAsync(ct);
         await new CashDemoSeeder(db, zone).SeedAsync(ct);
+        await new ResourcesDemoSeeder(db).SeedAsync(ct);
     }
 
     private async Task<TenantUser> EnsureUserAsync(
@@ -226,6 +227,7 @@ public static class DependencyInjection
         services.AddScoped<IEmployeeStore, EmployeeStore>();
         services.AddScoped<IRefreshSessionStore, RefreshSessionStore>();
         services.AddScoped<IOrganizationStore, OrganizationStore>();
+        services.AddScoped<ISupplyStore, SupplyStore>();
         services.AddScoped<IScheduleStore, ScheduleStore>();
         services.AddScoped<IAppointmentStore, AppointmentStore>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();

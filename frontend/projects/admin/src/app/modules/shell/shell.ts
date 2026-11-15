@@ -48,6 +48,8 @@ export class ShellPage {
         children: [
           { label: 'Especialidades', path: '/organizacion/especialidades', icon: 'medical_services' },
           { label: 'Servicios', path: '/organizacion/servicios', icon: 'vaccines' },
+          { label: 'Consultorios y equipos', path: '/organizacion/consultorios', icon: 'meeting_room' },
+          { label: 'Insumos', path: '/insumos', icon: 'inventory_2' },
         ],
       },
       {

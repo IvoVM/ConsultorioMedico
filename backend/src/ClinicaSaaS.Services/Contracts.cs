@@ -14,7 +14,7 @@ public record TenantAccount(
 }
 
 public record ClinicDto(string Slug, string Name, bool BillingEnabled, bool FiscalEnabled);
-public record ClinicSettingsDto(string Name, bool BillingEnabled, bool AutoInvoice, bool FiscalEnabled, string? TaxId, TaxCondition? TaxCondition, int? PointOfSale, bool AutoAuthorize);
+public record ClinicSettingsDto(string Name, bool BillingEnabled, bool AutoInvoice, bool FiscalEnabled, string? TaxId, TaxCondition? TaxCondition, int? PointOfSale, bool AutoAuthorize, int? MaxOverbooksPerDay);
 public record SaveClinicSettingsCommand(
     string Name,
     bool BillingEnabled,
@@ -23,7 +23,8 @@ public record SaveClinicSettingsCommand(
     string? TaxId = null,
     TaxCondition? TaxCondition = null,
     int? PointOfSale = null,
-    bool AutoAuthorize = false);
+    bool AutoAuthorize = false,
+    int? MaxOverbooksPerDay = null);
 
 public record LoginCommand(string DocumentNumber, string Password, LoginAccount? Account = null);
 public record ChangePasswordCommand(string Password);
@@ -46,8 +47,26 @@ public record MedicalServiceDto(Guid Id, Guid LocationId, string Name);
 public record SaveMedicalServiceCommand(Guid LocationId, string Name);
 public record SpecialtyDto(Guid Id, string Name);
 public record SaveSpecialtyCommand(string Name);
-public record AppointmentTypeDto(Guid Id, string Name, int DurationMinutes, Guid? SpecialtyId, AppointmentKind Kind);
+public record AppointmentTypeDto(Guid Id, string Name, int DurationMinutes, Guid? SpecialtyId, AppointmentKind Kind, string? Code = null, Guid? EquipmentId = null);
 public record SaveAppointmentTypeCommand(string Name, int DurationMinutes, Guid? SpecialtyId, AppointmentKind Kind);
+// What a practice is beyond its name and length: its nomenclator code, the equipment it needs and what it uses up.
+public record PracticeSupplyDto(Guid SupplyId, string Supply, string Unit, decimal Quantity);
+public record PracticeSupplyCommand(Guid SupplyId, decimal Quantity);
+public record SavePracticeCommand(string? Code, Guid? EquipmentId, IReadOnlyList<PracticeSupplyCommand> Supplies);
+
+// A consulting room or a piece of equipment, both kept per site.
+public record RoomDto(Guid Id, Guid LocationId, string Location, string Name, bool IsActive);
+public record EquipmentDto(Guid Id, Guid LocationId, string Location, string Name, bool IsActive);
+public record SaveResourceCommand(Guid LocationId, string Name);
+public record SetResourceActiveCommand(bool Active);
+
+public record SupplyDto(Guid Id, string Name, string Unit, decimal Stock, decimal MinStock, bool IsActive, bool Low);
+public record SaveSupplyCommand(string Name, string Unit, decimal MinStock);
+// Stock that came in: a delivery or a purchase.
+public record SupplyEntryCommand(decimal Quantity, string? Note);
+// What was counted on the shelf; the difference with the system goes in as an adjustment with its reason.
+public record SupplyCountCommand(decimal Stock, string Reason);
+public record SupplyMovementDto(Guid Id, SupplyMovementKind Kind, decimal Quantity, DateTimeOffset At, string? Note, string? User, Guid? AppointmentId, string? Patient);
 public record ProfessionalDto(Guid Id, string FirstName, string LastName, string Email, string? LicenseNumber, Guid? SpecialtyId);
 public record AssignSpecialtyCommand(Guid? SpecialtyId);
 
@@ -62,7 +81,7 @@ public record CreatedEmployeeDto(int Row, string DocumentNumber, string Temporar
 public record RejectedRowDto(int Row, string Reason);
 public record EmployeeImportDto(IReadOnlyList<CreatedEmployeeDto> Created, IReadOnlyList<RejectedRowDto> Rejected);
 
-public record ScheduleBlockDto(Guid Id, DayOfWeek Day, TimeOnly StartTime, TimeOnly EndTime, Guid LocationId, Guid AppointmentTypeId);
+public record ScheduleBlockDto(Guid Id, DayOfWeek Day, TimeOnly StartTime, TimeOnly EndTime, Guid LocationId, Guid AppointmentTypeId, Guid? RoomId = null);
 public record SaveScheduleCommand(Guid ProfessionalId, IReadOnlyList<ScheduleBlockDto> Blocks);
 public record BlockoutDto(Guid Id, Guid ProfessionalId, DateTimeOffset Start, DateTimeOffset End, string Reason);
 public record CreateBlockoutCommand(Guid ProfessionalId, DateTimeOffset Start, DateTimeOffset End, string Reason);
@@ -102,7 +121,12 @@ public record AppointmentDto(
     DateTimeOffset? CreatedAt = null,
     string? CreatedBy = null,
     DateTimeOffset? UpdatedAt = null,
-    string? UpdatedBy = null);
+    string? UpdatedBy = null,
+    Guid? RoomId = null,
+    string? Room = null,
+    Guid? EquipmentId = null,
+    string? Equipment = null,
+    string? PracticeCode = null);
 public record RescheduleAppointmentCommand(DateTimeOffset Start);
 
 public sealed class AppointmentHistoryFilter
@@ -260,7 +284,18 @@ public record SaveMedicalRecordCommand(
 public record FeeDto(Guid Id, Guid AppointmentTypeId, string AppointmentType, decimal Amount, DateOnly EffectiveFrom, string? Payer, decimal? Copay);
 public record CreateFeeCommand(Guid AppointmentTypeId, decimal Amount, DateOnly EffectiveFrom, string? Payer = null, decimal? Copay = null);
 public record InsurerPriceDto(string Payer, decimal Amount, DateOnly EffectiveFrom, decimal? Copay);
-public record PrestacionDto(Guid Id, string Name, int DurationMinutes, decimal? Particular, DateOnly? ParticularFrom, IReadOnlyList<InsurerPriceDto> Insurers, AppointmentKind Kind);
+public record PrestacionDto(
+    Guid Id,
+    string Name,
+    int DurationMinutes,
+    decimal? Particular,
+    DateOnly? ParticularFrom,
+    IReadOnlyList<InsurerPriceDto> Insurers,
+    AppointmentKind Kind,
+    string? Code,
+    Guid? EquipmentId,
+    string? Equipment,
+    IReadOnlyList<PracticeSupplyDto> Supplies);
 public record PrestacionesDto(IReadOnlyList<PrestacionDto> Items, IReadOnlyList<string> Insurers);
 public record InvoiceItemDto(string Description, int Quantity, decimal UnitPrice, decimal Amount);
 public record InvoicePaymentDto(Guid Id, decimal Amount, PaymentMethod Method, DateTimeOffset PaidAt, CardBrand? CardBrand, int? CardInstallments);
@@ -395,7 +430,9 @@ public record FeeRowDto(Guid AppointmentTypeId, string Service, decimal? Amount,
 public record MedicalRecordPageDto(IReadOnlyList<MedicalRecordDto> Items, int Total, int Page, int PageSize, int All, int Allergies, int Incomplete);
 
 public record AgendaRangeDto(DateTimeOffset Start, DateTimeOffset End);
-public record AgendaTypeDto(Guid Id, string Name, int DurationMinutes);
+public record AgendaTypeDto(Guid Id, string Name, int DurationMinutes, string? Code, string? Equipment, IReadOnlyList<PracticeSupplyDto> Supplies);
+// A column of the agenda when it is shown by room or by equipment.
+public record AgendaResourceDto(Guid Id, string Name, Guid LocationId, string Location);
 public record AgendaProfessionalDto(
     Guid Id,
     string Name,
@@ -404,8 +441,17 @@ public record AgendaProfessionalDto(
     IReadOnlyList<AgendaRangeDto> Blockouts,
     IReadOnlyList<AgendaTypeDto> Types,
     IReadOnlyList<InsurerDto> Insurers);
-public record AgendaDayDto(DateOnly Date, bool CanEdit, IReadOnlyList<AgendaProfessionalDto> Professionals, IReadOnlyList<AppointmentDto> Appointments);
-public record MoveAppointmentCommand(Guid ProfessionalId, DateTimeOffset Start);
+// MaxOverbooksPerDay is the clinic's cap per professional and day (null: no cap), so the agenda can warn before trying.
+public record AgendaDayDto(
+    DateOnly Date,
+    bool CanEdit,
+    IReadOnlyList<AgendaProfessionalDto> Professionals,
+    IReadOnlyList<AppointmentDto> Appointments,
+    IReadOnlyList<AgendaResourceDto> Rooms,
+    IReadOnlyList<AgendaResourceDto> Equipment,
+    int? MaxOverbooksPerDay);
+// RoomId moves the appointment to another room (from the agenda by room); without it the room comes from the block.
+public record MoveAppointmentCommand(Guid ProfessionalId, DateTimeOffset Start, Guid? RoomId = null);
 public record AgendaBookCommand(
     string DocumentNumber,
     string? FirstName,

@@ -1,0 +1,135 @@
+<header class="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2">
+  <h2 class="font-serif text-2xl tracking-tight">Insumos</h2>
+  <ui-help title="Insumos">
+    <p>Los insumos que usan las prácticas, con su unidad, su stock y el mínimo por debajo del cual hay que pedir. Cada consulta que se cierra descuenta lo que usa su práctica; la recepción carga lo que llega desde el portal.</p>
+    <p><strong>Por qué lo editás:</strong> Qué usa cada práctica se arma en la especialidad, en Práctica. Acá corregís el stock cuando el conteo del estante no coincide, y queda el motivo.</p>
+    <p>Un insumo que todavía usa alguna práctica no se puede dar de baja: sacalo de esa práctica primero.</p>
+  </ui-help>
+</header>
+
+@if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
+
+<div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+  <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
+    <ui-field class="sm:w-80" label="Buscar">
+      <input type="search" name="query" [ngModel]="query()" (ngModelChange)="onSearch($event)" placeholder="Insumo o unidad" />
+    </ui-field>
+    <label class="flex items-center gap-2 pb-2 text-sm">
+      <input type="checkbox" [checked]="lowOnly()" (change)="setLow($any($event.target).checked)" />
+      Solo bajo el mínimo
+    </label>
+  </div>
+  <ui-button (click)="openEdit()">Crear</ui-button>
+</div>
+
+@if (loading()) {
+  <ui-skeleton label="Cargando insumos" />
+} @else if (!total()) {
+  <ui-empty [message]="lowOnly() ? 'Ningún insumo está bajo el mínimo.' : query() ? 'Ningún insumo coincide con esa búsqueda.' : 'Todavía no hay insumos cargados.'" />
+} @else {
+  <ui-table>
+    <table class="cards">
+      <thead>
+        <tr>
+          <th><button type="button" sortCol [on]="sort().key === 'name'" [dir]="sort().dir" (click)="sortBy('name')">Insumo</button></th>
+          <th><button type="button" sortCol [on]="sort().key === 'stock'" [dir]="sort().dir" (click)="sortBy('stock')">Stock</button></th>
+          <th>Mínimo</th>
+          <th>Estado</th>
+          <th class="w-px"></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of rows(); track item.id) {
+          <tr>
+            <td class="font-serif text-lg leading-tight">{{ item.name }}</td>
+            <td data-name="Stock" class="whitespace-nowrap">{{ amount(item.stock, item.unit) }}</td>
+            <td data-name="Mínimo" class="whitespace-nowrap">{{ item.minStock ? amount(item.minStock, item.unit) : 'Sin mínimo' }}</td>
+            <td data-name="Estado">
+              @if (!item.isActive) {
+                <ui-badge tone="muted">De baja</ui-badge>
+              } @else {
+                <ui-badge [tone]="item.low ? 'warn' : 'ok'">{{ item.low ? 'Bajo el mínimo' : 'Alcanza' }}</ui-badge>
+              }
+            </td>
+            <td class="whitespace-nowrap">
+              <ui-button variant="ghost" (click)="openHistory(item)">Movimientos</ui-button>
+              <ui-button variant="ghost" (click)="openEdit(item)">Editar</ui-button>
+              @if (item.isActive) {
+                <ui-button variant="outlined" (click)="openCount(item)">Corregir stock</ui-button>
+              }
+              <ui-button [variant]="item.isActive ? 'danger' : 'outlined'" [loading]="busy() === item.id" (click)="toggle(item)">{{ item.isActive ? 'Dar de baja' : 'Reactivar' }}</ui-button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </ui-table>
+  <table-pager [total]="total()" [page]="page()" (pageChange)="go($event)" />
+}
+
+@if (editing(); as form) {
+  <ui-modal [open]="true" [title]="form.id ? 'Editar insumo' : 'Crear insumo'" (closed)="editing.set(null)">
+    <form id="supply-form" class="grid gap-4" (ngSubmit)="saveEdit()">
+      <ui-field label="Nombre">
+        <input name="name" maxlength="120" required [ngModel]="form.name" (ngModelChange)="edit({ name: $event })" placeholder="Guantes de látex" />
+      </ui-field>
+      <ui-field label="Unidad en que se cuenta">
+        <input name="unit" maxlength="20" required [ngModel]="form.unit" (ngModelChange)="edit({ unit: $event })" placeholder="unidad, par, caja, ml" />
+      </ui-field>
+      <ui-field label="Stock mínimo">
+        <input name="minStock" type="number" min="0" step="0.01" [ngModel]="form.minStock" (ngModelChange)="edit({ minStock: +$event })" />
+      </ui-field>
+      <p class="text-sm text-ink/60">Cuando el stock llega al mínimo, aparece para pedir. Con 0 no avisa. El stock arranca en 0: lo que hay lo carga la recepción como ingreso.</p>
+      @if (dialogError()) { <p class="text-sm text-pulse" role="alert">{{ dialogError() }}</p> }
+    </form>
+    <div uiModalFooter class="flex flex-wrap gap-3">
+      <ui-button type="submit" form="supply-form" [loading]="saving()">{{ form.id ? 'Guardar' : 'Crear' }}</ui-button>
+      <ui-button variant="outlined" [disabled]="saving()" (click)="editing.set(null)">Cancelar</ui-button>
+    </div>
+  </ui-modal>
+}
+
+@if (counting(); as form) {
+  <ui-modal [open]="true" [title]="'Corregir stock de ' + form.supply.name.toLowerCase()" (closed)="counting.set(null)">
+    <form id="count-form" class="grid gap-4" (ngSubmit)="saveCount()">
+      <p class="text-sm text-ink/70">El sistema dice {{ amount(form.supply.stock, form.supply.unit) }}. Escribí lo que contaste en el estante; la diferencia queda como ajuste con su motivo.</p>
+      <ui-field [label]="'Stock contado (' + form.supply.unit + ')'">
+        <input name="stock" type="number" min="0" step="0.01" required [ngModel]="form.stock" (ngModelChange)="count({ stock: $event === '' || $event === null ? null : +$event })" />
+      </ui-field>
+      <ui-field label="Motivo">
+        <input name="reason" maxlength="200" required [ngModel]="form.reason" (ngModelChange)="count({ reason: $event })" placeholder="Conteo mensual, rotura, vencimiento" />
+      </ui-field>
+      @if (dialogError()) { <p class="text-sm text-pulse" role="alert">{{ dialogError() }}</p> }
+    </form>
+    <div uiModalFooter class="flex flex-wrap gap-3">
+      <ui-button type="submit" form="count-form" [loading]="saving()">Corregir</ui-button>
+      <ui-button variant="outlined" [disabled]="saving()" (click)="counting.set(null)">Cancelar</ui-button>
+    </div>
+  </ui-modal>
+}
+
+@if (history(); as item) {
+  <ui-modal [open]="true" [wide]="true" [title]="'Movimientos de ' + item.name.toLowerCase()" (closed)="history.set(null)">
+    @if (!movements().length) {
+      <ui-empty message="Este insumo todavía no tuvo movimientos." />
+    } @else {
+      <ui-table>
+        <table class="cards">
+          <thead><tr><th>Cuándo</th><th>Movimiento</th><th>Cantidad</th><th>Detalle</th><th>Quién</th></tr></thead>
+          <tbody>
+            @for (movement of movements(); track movement.id) {
+              <tr>
+                <td class="whitespace-nowrap">{{ movement.at | fecha }}</td>
+                <td data-name="Movimiento"><ui-badge [tone]="movementTone(movement.kind)">{{ kinds[movement.kind] }}</ui-badge></td>
+                <td data-name="Cantidad" class="whitespace-nowrap">{{ signed(movement, item.unit) }}</td>
+                <td data-name="Detalle">{{ movement.note || '—' }}@if (movement.patient) { · {{ movement.patient }} }</td>
+                <td data-name="Quién">{{ movement.user || 'Sistema' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </ui-table>
+      <table-pager [total]="movementTotal()" [page]="movementPage()" (pageChange)="goMovements($event)" />
+    }
+  </ui-modal>
+}

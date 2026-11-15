@@ -16,3 +16,4 @@ export * from './lib/modules/audit';
 export * from './lib/modules/users';
 export * from './lib/modules/agenda';
 export * from './lib/modules/metrics';
+export * from './lib/modules/supplies';

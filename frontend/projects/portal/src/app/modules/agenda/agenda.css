@@ -119,6 +119,64 @@
   max-width: 100%;
 }
 
+/* Ver la agenda por profesional, consultorio o equipo. */
+.ag-views {
+  display: inline-flex;
+  gap: 0.2rem;
+  border-radius: 999px;
+  background: var(--color-mist);
+  padding: 0.2rem;
+}
+
+.ag-views button {
+  height: 2rem;
+  border-radius: 999px;
+  padding: 0 0.85rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: rgb(14 42 34 / 0.65);
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.ag-views button:hover {
+  color: var(--color-clinic);
+}
+
+.ag-views button.is-current {
+  background: white;
+  color: var(--color-forest);
+  box-shadow: 0 2px 8px -4px rgb(14 42 34 / 0.4);
+}
+
+.ag-head-icon {
+  display: inline-flex;
+  width: 2rem;
+  height: 2rem;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--color-clinic-wash);
+  color: var(--color-clinic-deep);
+}
+
+.ag-quota {
+  display: inline-block;
+  margin-top: 0.15rem;
+  border-radius: 999px;
+  background: var(--color-mist);
+  padding: 0 0.45rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: rgb(14 42 34 / 0.6);
+}
+
+.ag-quota.is-full {
+  background: var(--color-ochre-wash);
+  color: var(--color-ochre);
+}
+
 .ag-clear {
   display: inline-flex;
   height: 2.4rem;
