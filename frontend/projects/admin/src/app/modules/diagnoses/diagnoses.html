@@ -1,0 +1,42 @@
+<header class="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2">
+  <h2 class="font-serif text-2xl tracking-tight">Diagnósticos CIE-10</h2>
+  <ui-help title="Diagnósticos CIE-10">
+    <p>El catálogo del que los profesionales eligen los diagnósticos de cada consulta. La ley pide nomenclatura de la OMS, que en la práctica es la CIE-10.</p>
+    <p><strong>Por qué lo cargás:</strong> el sistema trae unos pocos códigos de ejemplo. Cargá el catálogo oficial que tu consultorio usa, en un archivo de texto con una línea por diagnóstico: código y nombre separados por punto y coma (por ejemplo <em>J06.9;Infección aguda de las vías respiratorias superiores</em>).</p>
+    <p>Los códigos que ya existen se renombran y los nuevos se agregan. Ninguno se borra, porque puede estar en consultas firmadas.</p>
+  </ui-help>
+</header>
+
+@if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
+@if (imported(); as result) {
+  <p class="mb-4 text-sm" role="status">Se leyeron {{ result.read }} diagnósticos y {{ result.added }} son nuevos. El catálogo tiene {{ result.total }}.</p>
+}
+
+<div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+  <ui-field class="sm:w-96" label="Buscar">
+    <input type="search" name="query" placeholder="Código o nombre" [(ngModel)]="query" (ngModelChange)="onSearch()" />
+  </ui-field>
+  <label class="inline-flex cursor-pointer">
+    <input class="sr-only" type="file" accept=".csv,.txt,text/csv,text/plain" [disabled]="importing()" (change)="load($event)" />
+    <ui-button [loading]="importing()" (click)="$any($event.currentTarget).parentElement.querySelector('input').click()">Cargar catálogo</ui-button>
+  </label>
+</div>
+
+@if (results().length) {
+  <ui-table>
+    <table class="cards">
+      <thead><tr><th>Código</th><th>Diagnóstico</th></tr></thead>
+      <tbody>
+        @for (item of results(); track item.id) {
+          <tr>
+            <td class="whitespace-nowrap tabular-nums font-semibold">{{ item.code }}</td>
+            <td data-name="Diagnóstico">{{ item.name }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </ui-table>
+  <p class="mt-2 text-sm text-ink/55">Se muestran hasta 30 resultados.</p>
+} @else if (searched()) {
+  <ui-empty message="Ningún diagnóstico coincide con esa búsqueda." />
+}

@@ -53,16 +53,10 @@ export const routes: Routes = [
           { path: 'solicitudes', loadComponent: () => import('./modules/appointments/requests').then((m) => m.AppointmentRequestsPage) },
         ],
       },
-      {
-        path: 'historias',
-        canActivate: [roleGuard(TenantRole.TenantAdmin)],
-        loadComponent: () => import('./modules/medical-records/medical-records').then((m) => m.MedicalRecordsPage),
-      },
-      {
-        path: 'historias/:patientId',
-        canActivate: [roleGuard(TenantRole.TenantAdmin)],
-        loadComponent: () => import('./modules/medical-records/medical-record-detail').then((m) => m.MedicalRecordDetailPage),
-      },
+      // Clinical data left the admin: the old record screens open the patient's administrative file.
+      { path: 'historias', redirectTo: 'pacientes' },
+      { path: 'historias/:patientId', redirectTo: 'pacientes/:patientId' },
+      { path: 'diagnosticos', canActivate: [roleGuard(TenantRole.TenantAdmin)], loadComponent: () => import('./modules/diagnoses/diagnoses').then((m) => m.DiagnosesPage) },
       { path: 'aranceles', redirectTo: 'organizacion/especialidades' },
       { path: 'insumos', canActivate: [roleGuard(TenantRole.TenantAdmin)], loadComponent: () => import('./modules/supplies/supplies').then((m) => m.SuppliesPage) },
       { path: 'comprobantes', canActivate: [roleGuard(TenantRole.TenantAdmin)], loadComponent: () => import('./modules/invoices/invoices').then((m) => m.InvoicesPage) },

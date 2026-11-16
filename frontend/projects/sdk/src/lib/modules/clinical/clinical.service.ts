@@ -2,40 +2,77 @@
 import { Injectable } from '@angular/core';
 import { ApiClient } from '../../core/api-client';
 import { queryString } from '../../core/query-string';
+import type { AddBackgroundCommand } from './models/add-background-command';
+import type { AddConsentCommand } from './models/add-consent-command';
+import type { AmendEntryCommand } from './models/amend-entry-command';
+import type { ClinicalAccessDto } from './models/clinical-access-dto';
+import type { ClinicalEntryDto } from './models/clinical-entry-dto';
 import type { ClinicalHistoryDto } from './models/clinical-history-dto';
-import type { CreatePrescriptionCommand } from './models/create-prescription-command';
 import type { DiagnosisDto } from './models/diagnosis-dto';
 import type { EncounterDto } from './models/encounter-dto';
-import type { PrescriptionDto } from './models/prescription-dto';
+import type { ImportDiagnosesCommand } from './models/import-diagnoses-command';
+import type { ImportedDiagnosesDto } from './models/imported-diagnoses-dto';
 import type { SaveEncounterCommand } from './models/save-encounter-command';
+import type { SignCommand } from './models/sign-command';
 
 @Injectable({ providedIn: 'root' })
 export class ClinicalService extends ApiClient {
-  diagnoses() {
-    return this.http.get<DiagnosisDto[]>(`${this.base}/api/diagnosticos`);
+  diagnoses(query?: { q?: string }) {
+    return this.http.get<DiagnosisDto[]>(`${this.base}/api/diagnosticos${queryString(query)}`);
+  }
+
+  importDiagnoses(body: ImportDiagnosesCommand) {
+    return this.http.post<ImportedDiagnosesDto>(`${this.base}/api/diagnosticos/catalogo`, body);
   }
 
   saveEncounter(body: SaveEncounterCommand) {
     return this.http.post<EncounterDto>(`${this.base}/api/encuentros`, body);
   }
 
-  closeEncounter(id: string) {
-    return this.http.post<EncounterDto>(`${this.base}/api/encuentros/${id}/cerrar`, {});
+  encounterForAppointment(appointmentId: string) {
+    return this.http.get<EncounterDto>(`${this.base}/api/encuentros/turno/${appointmentId}`);
   }
 
-  createPrescription(body: CreatePrescriptionCommand) {
-    return this.http.post<PrescriptionDto>(`${this.base}/api/recetas`, body);
+  pendingEncounters() {
+    return this.http.get<EncounterDto[]>(`${this.base}/api/encuentros/pendientes`);
   }
 
-  myPrescriptions() {
-    return this.http.get<PrescriptionDto[]>(`${this.base}/api/recetas/mias`);
-  }
-
-  getPrescription(id: string) {
-    return this.http.get<PrescriptionDto>(`${this.base}/api/recetas/${id}`);
+  signEncounter(id: string, body: SignCommand) {
+    return this.http.post<ClinicalEntryDto>(`${this.base}/api/encuentros/${id}/firmar`, body);
   }
 
   clinicalHistory(query?: { patientId?: string; specialtyId?: string }) {
     return this.http.get<ClinicalHistoryDto>(`${this.base}/api/historia${queryString(query)}`);
+  }
+
+  clinicalHistoryCopy(query?: { patientId?: string }) {
+    return this.http.get(`${this.base}/api/historia/copia${queryString(query)}`, {
+      responseType: 'blob',
+    });
+  }
+
+  myClinicalAccesses() {
+    return this.http.get<ClinicalAccessDto[]>(`${this.base}/api/historia/accesos`);
+  }
+
+  addBackground(body: AddBackgroundCommand) {
+    return this.http.post<ClinicalEntryDto>(`${this.base}/api/historia/antecedentes`, body);
+  }
+
+  addConsent(body: AddConsentCommand) {
+    return this.http.post<ClinicalEntryDto>(`${this.base}/api/historia/consentimientos`, body);
+  }
+
+  amendEntry(id: string, body: AmendEntryCommand) {
+    return this.http.post<ClinicalEntryDto>(
+      `${this.base}/api/historia/folios/${id}/correcciones`,
+      body,
+    );
+  }
+
+  entryAttachment(id: string) {
+    return this.http.get(`${this.base}/api/historia/folios/${id}/adjunto`, {
+      responseType: 'blob',
+    });
   }
 }

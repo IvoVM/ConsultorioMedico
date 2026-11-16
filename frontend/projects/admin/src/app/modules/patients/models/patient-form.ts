@@ -1,28 +1,21 @@
 import { MedicalRecordDto, SaveMedicalRecordCommand } from 'sdk';
 import { formatFecha } from 'ui';
 
-export const BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', '0+', '0-'];
+// The administrative file as the form edits it. Clinical data is not part of it: only professionals write the
+// clinical record, from the portal.
+export type PatientForm = { [K in keyof SaveMedicalRecordCommand]-?: string };
 
-export type MedicalRecordForm = { [K in keyof SaveMedicalRecordCommand]-?: string };
-
-export function toForm(record: MedicalRecordDto): MedicalRecordForm {
+export function toForm(record: MedicalRecordDto): PatientForm {
   return {
     firstName: record.firstName,
     lastName: record.lastName,
     documentNumber: record.documentNumber,
     birthDate: record.birthDate.startsWith('0001') ? '' : record.birthDate,
     phone: record.phone,
-    bloodType: record.bloodType ?? '',
-    allergies: record.allergies ?? '',
-    personalHistory: record.personalHistory ?? '',
-    familyHistory: record.familyHistory ?? '',
-    currentMedication: record.currentMedication ?? '',
-    habits: record.habits ?? '',
     healthInsurance: record.healthInsurance ?? '',
     memberNumber: record.memberNumber ?? '',
     emergencyContact: record.emergencyContact ?? '',
     emergencyPhone: record.emergencyPhone ?? '',
-    notes: record.notes ?? '',
   };
 }
 

@@ -241,7 +241,17 @@
     "/api/diagnosticos": {
       "get": {
         "operationId": "diagnoses",
-        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/DiagnosisDto" } } } } } }
+        "parameters": [{ "name": "q", "in": "query", "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/DiagnosisDto" } } } } }
+        }
+      }
+    },
+    "/api/diagnosticos/catalogo": {
+      "post": {
+        "operationId": "importDiagnoses",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ImportDiagnosesCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ImportedDiagnosesDto" } } } } }
       }
     },
     "/api/encuentros": {
@@ -251,38 +261,88 @@
         "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EncounterDto" } } } } }
       }
     },
-    "/api/encuentros/{id}/cerrar": {
-      "post": {
-        "operationId": "closeEncounter",
-        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
-        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EncounterDto" } } } } }
-      }
-    },
-    "/api/recetas": {
-      "post": {
-        "operationId": "createPrescription",
-        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreatePrescriptionCommand" } } } },
-        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PrescriptionDto" } } } } }
-      }
-    },
-    "/api/recetas/mias": {
+    "/api/encuentros/turno/{appointmentId}": {
       "get": {
-        "operationId": "myPrescriptions",
-        "responses": { "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/PrescriptionDto" } } } } } }
+        "operationId": "encounterForAppointment",
+        "parameters": [{ "name": "appointmentId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": {
+            "content": { "application/json": { "schema": { "allOf": [{ "$ref": "#/components/schemas/EncounterDto" }], "nullable": true } } }
+          }
+        }
       }
     },
-    "/api/recetas/{id}": {
+    "/api/encuentros/pendientes": {
       "get": {
-        "operationId": "getPrescription",
-        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
-        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PrescriptionDto" } } } } }
+        "operationId": "pendingEncounters",
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/EncounterDto" } } } } }
+        }
       }
     },
+    "/api/encuentros/{id}/firmar": {
+      "post": {
+        "operationId": "signEncounter",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SignCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ClinicalEntryDto" } } } } }
+      }
+    },
+    
+    
+    
+    
     "/api/historia": {
       "get": {
         "operationId": "clinicalHistory",
         "parameters": [{ "name": "patientId", "in": "query", "schema": { "type": "string" } }, { "name": "specialtyId", "in": "query", "schema": { "type": "string" } }],
         "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ClinicalHistoryDto" } } } } }
+      }
+    },
+    "/api/historia/copia": {
+      "get": {
+        "operationId": "clinicalHistoryCopy",
+        "parameters": [{ "name": "patientId", "in": "query", "schema": { "type": "string" } }],
+        "responses": { "200": { "content": { "application/pdf": { "schema": { "type": "string", "format": "binary" } } } } }
+      }
+    },
+    "/api/historia/accesos": {
+      "get": {
+        "operationId": "myClinicalAccesses",
+        "responses": {
+          "200": {
+            "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/ClinicalAccessDto" } } } }
+          }
+        }
+      }
+    },
+    "/api/historia/antecedentes": {
+      "post": {
+        "operationId": "addBackground",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AddBackgroundCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ClinicalEntryDto" } } } } }
+      }
+    },
+    "/api/historia/consentimientos": {
+      "post": {
+        "operationId": "addConsent",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AddConsentCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ClinicalEntryDto" } } } } }
+      }
+    },
+    "/api/historia/folios/{id}/correcciones": {
+      "post": {
+        "operationId": "amendEntry",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AmendEntryCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ClinicalEntryDto" } } } } }
+      }
+    },
+    "/api/historia/folios/{id}/adjunto": {
+      "get": {
+        "operationId": "entryAttachment",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "content": { "application/pdf": { "schema": { "type": "string", "format": "binary" } } } } }
       }
     },
     "/api/pacientes": {
@@ -553,19 +613,109 @@
       "CreateWaitlistEntryCommand": { "type": "object", "required": ["locationId", "specialtyId"], "properties": { "patientId": { "type": "string", "nullable": true }, "professionalId": { "type": "string", "nullable": true }, "locationId": { "type": "string" }, "specialtyId": { "type": "string" }, "notes": { "type": "string", "nullable": true } } },
       "AssignWaitlistEntryCommand": { "type": "object", "required": ["start", "appointmentTypeId"], "properties": { "start": { "type": "string" }, "appointmentTypeId": { "type": "string" } } },
       "DiagnosisDto": { "type": "object", "required": ["id", "code", "name"], "properties": { "id": { "type": "string" }, "code": { "type": "string" }, "name": { "type": "string" } } },
-      "SaveEncounterCommand": { "type": "object", "required": ["appointmentId", "diagnosisIds"], "properties": { "appointmentId": { "type": "string" }, "note": { "type": "string", "nullable": true }, "bloodPressure": { "type": "string", "nullable": true }, "heartRate": { "type": "integer", "nullable": true }, "temperature": { "type": "number", "nullable": true }, "weightKg": { "type": "number", "nullable": true }, "diagnosisIds": { "type": "array", "items": { "type": "string" } } } },
-      "EncounterDto": { "type": "object", "required": ["id", "appointmentId", "patientId", "professionalId", "isClosed", "createdAt", "diagnoses"], "properties": { "id": { "type": "string" }, "appointmentId": { "type": "string" }, "patientId": { "type": "string" }, "professionalId": { "type": "string" }, "specialtyId": { "type": "string", "nullable": true }, "note": { "type": "string", "nullable": true }, "bloodPressure": { "type": "string", "nullable": true }, "heartRate": { "type": "integer", "nullable": true }, "temperature": { "type": "number", "nullable": true }, "weightKg": { "type": "number", "nullable": true }, "isClosed": { "type": "boolean" }, "createdAt": { "type": "string" }, "diagnoses": { "type": "array", "items": { "$ref": "#/components/schemas/DiagnosisDto" } } } },
-      "PrescriptionItemDto": { "type": "object", "required": ["medication", "dose", "frequency", "duration"], "properties": { "medication": { "type": "string" }, "dose": { "type": "string" }, "frequency": { "type": "string" }, "duration": { "type": "string" } } },
-      "CreatePrescriptionCommand": { "type": "object", "required": ["encounterId", "items"], "properties": { "encounterId": { "type": "string" }, "instructions": { "type": "string", "nullable": true }, "items": { "type": "array", "items": { "$ref": "#/components/schemas/PrescriptionItemDto" } } } },
-      "PrescriptionDto": { "type": "object", "required": ["id", "encounterId", "patientId", "professionalId", "professional", "createdAt", "items"], "properties": { "id": { "type": "string" }, "encounterId": { "type": "string" }, "patientId": { "type": "string" }, "professionalId": { "type": "string" }, "professional": { "type": "string" }, "instructions": { "type": "string", "nullable": true }, "createdAt": { "type": "string" }, "items": { "type": "array", "items": { "$ref": "#/components/schemas/PrescriptionItemDto" } } } },
-      "PatientSummaryDto": { "type": "object", "required": ["id", "name", "documentNumber", "birthDate", "phone"], "properties": { "id": { "type": "string" }, "name": { "type": "string" }, "documentNumber": { "type": "string" }, "birthDate": { "type": "string" }, "phone": { "type": "string" } } },
+      "SaveEncounterCommand": {
+        "type": "object",
+        "required": ["appointmentId", "diagnosisIds"],
+        "properties": {
+          "appointmentId": { "type": "string" },
+          "note": { "type": "string", "nullable": true },
+          "plan": { "type": "string", "nullable": true },
+          "bloodPressure": { "type": "string", "nullable": true },
+          "heartRate": { "type": "integer", "nullable": true },
+          "temperature": { "type": "number", "nullable": true },
+          "weightKg": { "type": "number", "nullable": true },
+          "diagnosisIds": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "EncounterDto": {
+        "type": "object",
+        "required": ["id", "appointmentId", "appointmentStart", "patientId", "patient", "professionalId", "isClosed", "createdAt", "diagnoses"],
+        "properties": {
+          "id": { "type": "string" },
+          "appointmentId": { "type": "string" },
+          "appointmentStart": { "type": "string" },
+          "patientId": { "type": "string" },
+          "patient": { "type": "string" },
+          "professionalId": { "type": "string" },
+          "specialtyId": { "type": "string", "nullable": true },
+          "note": { "type": "string", "nullable": true },
+          "plan": { "type": "string", "nullable": true },
+          "bloodPressure": { "type": "string", "nullable": true },
+          "heartRate": { "type": "integer", "nullable": true },
+          "temperature": { "type": "number", "nullable": true },
+          "weightKg": { "type": "number", "nullable": true },
+          "isClosed": { "type": "boolean" },
+          "createdAt": { "type": "string" },
+          "diagnoses": { "type": "array", "items": { "$ref": "#/components/schemas/DiagnosisDto" } }
+        }
+      },
+      
+      
+      
+      "PatientSummaryDto": {
+        "type": "object",
+        "required": ["id", "historyNumber", "name", "documentNumber", "birthDate", "phone"],
+        "properties": {
+          "id": { "type": "string" },
+          "historyNumber": { "type": "integer" },
+          "name": { "type": "string" },
+          "documentNumber": { "type": "string" },
+          "birthDate": { "type": "string" },
+          "phone": { "type": "string" },
+          "healthInsurance": { "type": "string", "nullable": true },
+          "memberNumber": { "type": "string", "nullable": true }
+        }
+      },
       "HistorySpecialtyDto": { "type": "object", "required": ["id", "name", "encounters"], "properties": { "id": { "type": "string" }, "name": { "type": "string" }, "encounters": { "type": "integer" } } },
-      "ClinicalHistoryDto": { "type": "object", "required": ["patient", "specialties", "encounters", "prescriptions"], "properties": { "patient": { "$ref": "#/components/schemas/PatientSummaryDto" }, "specialty": { "allOf": [{ "$ref": "#/components/schemas/HistorySpecialtyDto" }], "nullable": true }, "specialties": { "type": "array", "items": { "$ref": "#/components/schemas/HistorySpecialtyDto" } }, "encounters": { "type": "array", "items": { "$ref": "#/components/schemas/EncounterDto" } }, "prescriptions": { "type": "array", "items": { "$ref": "#/components/schemas/PrescriptionDto" } } } },
+      "ClinicalHistoryDto": {
+        "type": "object",
+        "required": ["patient", "specialties", "background", "entries"],
+        "properties": {
+          "patient": { "$ref": "#/components/schemas/PatientSummaryDto" },
+          "specialty": { "allOf": [{ "$ref": "#/components/schemas/HistorySpecialtyDto" }], "nullable": true },
+          "specialties": { "type": "array", "items": { "$ref": "#/components/schemas/HistorySpecialtyDto" } },
+          "background": { "type": "array", "items": { "$ref": "#/components/schemas/BackgroundItemDto" } },
+          "entries": { "type": "array", "items": { "$ref": "#/components/schemas/ClinicalEntryDto" } },
+          "brokenFolio": { "type": "integer", "nullable": true }
+        }
+      },
       "CreatePatientCommand": { "type": "object", "required": ["firstName", "lastName", "documentNumber", "birthDate", "phone"], "properties": { "firstName": { "type": "string" }, "lastName": { "type": "string" }, "documentNumber": { "type": "string" }, "birthDate": { "type": "string" }, "phone": { "type": "string" }, "healthInsurance": { "type": "string", "nullable": true }, "memberNumber": { "type": "string", "nullable": true }, "emergencyContact": { "type": "string", "nullable": true }, "emergencyPhone": { "type": "string", "nullable": true } } },
       "CreatedPatientDto": { "type": "object", "required": ["patient", "temporaryPassword"], "properties": { "patient": { "$ref": "#/components/schemas/MedicalRecordDto" }, "temporaryPassword": { "type": "string" } } },
       "PatientLookupDto": { "type": "object", "required": ["patientId", "firstName", "lastName", "documentNumber", "birthDate", "phone"], "properties": { "patientId": { "type": "string" }, "firstName": { "type": "string" }, "lastName": { "type": "string" }, "documentNumber": { "type": "string" }, "birthDate": { "type": "string" }, "phone": { "type": "string" }, "healthInsurance": { "type": "string", "nullable": true }, "memberNumber": { "type": "string", "nullable": true }, "emergencyContact": { "type": "string", "nullable": true }, "emergencyPhone": { "type": "string", "nullable": true } } },
-      "MedicalRecordDto": { "type": "object", "required": ["patientId", "firstName", "lastName", "email", "documentNumber", "birthDate", "phone"], "properties": { "patientId": { "type": "string" }, "firstName": { "type": "string" }, "lastName": { "type": "string" }, "email": { "type": "string" }, "documentNumber": { "type": "string" }, "birthDate": { "type": "string" }, "phone": { "type": "string" }, "bloodType": { "type": "string", "nullable": true }, "allergies": { "type": "string", "nullable": true }, "personalHistory": { "type": "string", "nullable": true }, "familyHistory": { "type": "string", "nullable": true }, "currentMedication": { "type": "string", "nullable": true }, "habits": { "type": "string", "nullable": true }, "healthInsurance": { "type": "string", "nullable": true }, "memberNumber": { "type": "string", "nullable": true }, "emergencyContact": { "type": "string", "nullable": true }, "emergencyPhone": { "type": "string", "nullable": true }, "notes": { "type": "string", "nullable": true }, "updatedAt": { "type": "string", "nullable": true } } },
-      "SaveMedicalRecordCommand": { "type": "object", "required": ["firstName", "lastName", "documentNumber", "birthDate", "phone"], "properties": { "firstName": { "type": "string" }, "lastName": { "type": "string" }, "documentNumber": { "type": "string" }, "birthDate": { "type": "string" }, "phone": { "type": "string" }, "bloodType": { "type": "string", "nullable": true }, "allergies": { "type": "string", "nullable": true }, "personalHistory": { "type": "string", "nullable": true }, "familyHistory": { "type": "string", "nullable": true }, "currentMedication": { "type": "string", "nullable": true }, "habits": { "type": "string", "nullable": true }, "healthInsurance": { "type": "string", "nullable": true }, "memberNumber": { "type": "string", "nullable": true }, "emergencyContact": { "type": "string", "nullable": true }, "emergencyPhone": { "type": "string", "nullable": true }, "notes": { "type": "string", "nullable": true } } },
+      "MedicalRecordDto": {
+        "type": "object",
+        "required": ["patientId", "historyNumber", "firstName", "lastName", "email", "documentNumber", "birthDate", "phone"],
+        "properties": {
+          "patientId": { "type": "string" },
+          "historyNumber": { "type": "integer" },
+          "firstName": { "type": "string" },
+          "lastName": { "type": "string" },
+          "email": { "type": "string" },
+          "documentNumber": { "type": "string" },
+          "birthDate": { "type": "string" },
+          "phone": { "type": "string" },
+          "healthInsurance": { "type": "string", "nullable": true },
+          "memberNumber": { "type": "string", "nullable": true },
+          "emergencyContact": { "type": "string", "nullable": true },
+          "emergencyPhone": { "type": "string", "nullable": true },
+          "updatedAt": { "type": "string", "nullable": true }
+        }
+      },
+      "SaveMedicalRecordCommand": {
+        "type": "object",
+        "required": ["firstName", "lastName", "documentNumber", "birthDate", "phone"],
+        "properties": {
+          "firstName": { "type": "string" },
+          "lastName": { "type": "string" },
+          "documentNumber": { "type": "string" },
+          "birthDate": { "type": "string" },
+          "phone": { "type": "string" },
+          "healthInsurance": { "type": "string", "nullable": true },
+          "memberNumber": { "type": "string", "nullable": true },
+          "emergencyContact": { "type": "string", "nullable": true },
+          "emergencyPhone": { "type": "string", "nullable": true }
+        }
+      },
       "FeeDto": { "type": "object", "required": ["id", "appointmentTypeId", "appointmentType", "amount", "effectiveFrom"], "properties": { "id": { "type": "string" }, "appointmentTypeId": { "type": "string" }, "appointmentType": { "type": "string" }, "amount": { "type": "number" }, "effectiveFrom": { "type": "string" }, "copay": { "type": "number", "nullable": true } } },
       "CreateFeeCommand": { "type": "object", "required": ["appointmentTypeId", "amount", "effectiveFrom"], "properties": { "appointmentTypeId": { "type": "string" }, "amount": { "type": "number" }, "effectiveFrom": { "type": "string" }, "copay": { "type": "number", "nullable": true } } },
       "InvoiceItemDto": { "type": "object", "required": ["description", "quantity", "unitPrice", "amount"], "properties": { "description": { "type": "string" }, "quantity": { "type": "integer" }, "unitPrice": { "type": "number" }, "amount": { "type": "number" } } },
@@ -611,7 +761,99 @@
       "BillingBucketDto": { "type": "object", "required": ["date", "invoiced", "collected"], "properties": { "date": { "type": "string" }, "invoiced": { "type": "number" }, "collected": { "type": "number" } } },
       "BillingMetricsDto": { "type": "object", "required": ["invoiced", "collected", "outstanding", "bucketDays", "series"], "properties": { "invoiced": { "type": "number" }, "collected": { "type": "number" }, "outstanding": { "type": "number" }, "bucketDays": { "type": "integer" }, "series": { "type": "array", "items": { "$ref": "#/components/schemas/BillingBucketDto" } } } },
       "MetricsDto": { "type": "object", "required": ["range", "from", "to", "appointments", "professionals"], "properties": { "range": { "$ref": "#/components/schemas/MetricsRange" }, "from": { "type": "string" }, "to": { "type": "string" }, "appointments": { "$ref": "#/components/schemas/AppointmentMetricsDto" }, "professionals": { "type": "array", "items": { "$ref": "#/components/schemas/RankRowDto" } }, "billing": { "allOf": [{ "$ref": "#/components/schemas/BillingMetricsDto" }], "nullable": true } } },
-      "AuditEntryDto": { "type": "object", "required": ["id", "action", "entity", "timestamp"], "properties": { "id": { "type": "string" }, "userId": { "type": "string", "nullable": true }, "action": { "type": "string" }, "entity": { "type": "string" }, "entityId": { "type": "string", "nullable": true }, "detail": { "type": "string", "nullable": true }, "timestamp": { "type": "string" } } }
+      "AuditEntryDto": { "type": "object", "required": ["id", "action", "entity", "timestamp"], "properties": { "id": { "type": "string" }, "userId": { "type": "string", "nullable": true }, "action": { "type": "string" }, "entity": { "type": "string" }, "entityId": { "type": "string", "nullable": true }, "detail": { "type": "string", "nullable": true }, "timestamp": { "type": "string" } } },
+      "ImportDiagnosesCommand": { "type": "object", "required": ["csv"], "properties": { "csv": { "type": "string" } } },
+      "ImportedDiagnosesDto": {
+        "type": "object",
+        "required": ["read", "added", "total"],
+        "properties": { "read": { "type": "integer" }, "added": { "type": "integer" }, "total": { "type": "integer" } }
+      },
+      "SignCommand": { "type": "object", "required": ["password"], "properties": { "password": { "type": "string" } } },
+      "AmendEntryCommand": {
+        "type": "object",
+        "required": ["text", "password"],
+        "properties": { "text": { "type": "string" }, "password": { "type": "string" } }
+      },
+      "BackgroundKind": {
+        "type": "string",
+        "enum": ["BloodType", "Allergies", "Medication", "PersonalHistory", "FamilyHistory", "Habits", "Notes"]
+      },
+      "ClinicalEntryKind": { "type": "string", "enum": ["Visit", "Amendment", "Background", "Consent"] },
+      "ConsentDecision": { "type": "string", "enum": ["Accepted", "Revoked"] },
+      "ClinicalAccessAction": { "type": "string", "enum": ["View", "Copy", "Sign", "Amend", "Attachment"] },
+      "AddBackgroundCommand": {
+        "type": "object",
+        "required": ["patientId", "kind", "text", "password"],
+        "properties": {
+          "patientId": { "type": "string" },
+          "kind": { "$ref": "#/components/schemas/BackgroundKind" },
+          "text": { "type": "string" },
+          "password": { "type": "string" }
+        }
+      },
+      "AddConsentCommand": {
+        "type": "object",
+        "required": ["patientId", "procedure", "decision", "fileName", "contentType", "contentBase64", "password"],
+        "properties": {
+          "patientId": { "type": "string" },
+          "procedure": { "type": "string" },
+          "decision": { "$ref": "#/components/schemas/ConsentDecision" },
+          "fileName": { "type": "string" },
+          "contentType": { "type": "string" },
+          "contentBase64": { "type": "string" },
+          "password": { "type": "string" }
+        }
+      },
+      "ClinicalEntryDto": {
+        "type": "object",
+        "required": ["id", "folio", "kind", "recordedAt", "signed", "authorName", "specialtyName", "text", "hasAttachment", "hash", "canAmend"],
+        "properties": {
+          "id": { "type": "string" },
+          "folio": { "type": "integer" },
+          "kind": { "$ref": "#/components/schemas/ClinicalEntryKind" },
+          "recordedAt": { "type": "string" },
+          "signed": { "type": "boolean" },
+          "authorName": { "type": "string" },
+          "authorLicense": { "type": "string", "nullable": true },
+          "specialtyName": { "type": "string" },
+          "text": { "type": "string" },
+          "plan": { "type": "string", "nullable": true },
+          "bloodPressure": { "type": "string", "nullable": true },
+          "heartRate": { "type": "integer", "nullable": true },
+          "temperature": { "type": "number", "nullable": true },
+          "weightKg": { "type": "number", "nullable": true },
+          "diagnoses": { "type": "string", "nullable": true },
+          "backgroundKind": { "allOf": [{ "$ref": "#/components/schemas/BackgroundKind" }], "nullable": true },
+          "consentDecision": { "allOf": [{ "$ref": "#/components/schemas/ConsentDecision" }], "nullable": true },
+          "hasAttachment": { "type": "boolean" },
+          "amendsId": { "type": "string", "nullable": true },
+          "amendsFolio": { "type": "integer", "nullable": true },
+          "hash": { "type": "string" },
+          "canAmend": { "type": "boolean" }
+        }
+      },
+      "BackgroundItemDto": {
+        "type": "object",
+        "required": ["kind", "text", "folio", "recordedAt", "authorName"],
+        "properties": {
+          "kind": { "$ref": "#/components/schemas/BackgroundKind" },
+          "text": { "type": "string" },
+          "folio": { "type": "integer" },
+          "recordedAt": { "type": "string" },
+          "authorName": { "type": "string" }
+        }
+      },
+      "ClinicalAccessDto": {
+        "type": "object",
+        "required": ["at", "userName", "action"],
+        "properties": {
+          "at": { "type": "string" },
+          "userName": { "type": "string" },
+          "role": { "allOf": [{ "$ref": "#/components/schemas/TenantRole" }], "nullable": true },
+          "action": { "$ref": "#/components/schemas/ClinicalAccessAction" },
+          "detail": { "type": "string", "nullable": true }
+        }
+      }
     }
   }
 }

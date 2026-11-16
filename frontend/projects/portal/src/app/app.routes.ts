@@ -49,11 +49,6 @@ export const routes: Routes = [
             loadComponent: () => import('./modules/account/profile').then((m) => m.ProfilePage),
           },
           {
-            path: routePath(AppRoute.Recetas),
-            canActivate: [roleGuard(TenantRole.Patient)],
-            loadComponent: () => import('./modules/prescriptions/prescriptions').then((m) => m.PrescriptionsPage),
-          },
-          {
             path: routePath(AppRoute.MisComprobantes),
             canActivate: [roleGuard(TenantRole.Patient)],
             loadComponent: () => import('./modules/billing/my-invoices').then((m) => m.MyInvoicesPage),

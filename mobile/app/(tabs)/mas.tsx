@@ -7,7 +7,6 @@ const links: Record<string, { href: string; label: string }[]> = {
     { href: '/(tabs)/turnos', label: 'Mis turnos' },
     { href: '/(tabs)/historia', label: 'Historia clínica' },
     { href: '/(tabs)/perfil', label: 'Perfil' },
-    { href: '/(tabs)/recetas', label: 'Recetas' },
     { href: '/(tabs)/comprobantes', label: 'Mis comprobantes' },
   ],
   Doctor: [
@@ -23,7 +22,6 @@ const links: Record<string, { href: string; label: string }[]> = {
     { href: '/(tabs)/pacientes', label: 'Pacientes' },
     { href: '/(tabs)/empleados', label: 'Empleados' },
     { href: '/(tabs)/agendas', label: 'Agendas' },
-    { href: '/(tabs)/historias', label: 'Historias clínicas' },
     { href: '/(tabs)/aranceles', label: 'Aranceles' },
     { href: '/(tabs)/comprobantes', label: 'Comprobantes' },
     { href: '/(tabs)/auditoria', label: 'Auditoría' },

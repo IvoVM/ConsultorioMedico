@@ -4,7 +4,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { MedicalRecordDto, MedicalRecordsService, errorMessage } from 'sdk';
 import { UiButton, UiField, UiSkeleton, formatPhone, UiHelp } from 'ui';
 import { firstValueFrom } from 'rxjs';
-import { BLOOD_TYPES, MedicalRecordForm, age, shortDate, toForm } from '../medical-records/models/medical-record-form';
+import { PatientForm, age, shortDate, toForm } from './models/patient-form';
 
 @Component({
   imports: [FormsModule, RouterLink, UiHelp, UiButton, UiField, UiSkeleton],
@@ -13,7 +13,6 @@ import { BLOOD_TYPES, MedicalRecordForm, age, shortDate, toForm } from '../medic
 export class PatientFilePage {
   private readonly recordsApi = inject(MedicalRecordsService);
   private readonly patientId = inject(ActivatedRoute).snapshot.paramMap.get('patientId') ?? '';
-  readonly bloodTypes = BLOOD_TYPES;
   readonly shortDate = shortDate;
   readonly today = new Date().toISOString().slice(0, 10);
   readonly temporaryPassword = signal<string>(history.state?.temporaryPassword ?? '');
@@ -22,12 +21,10 @@ export class PatientFilePage {
     { id: 'identity', label: 'Datos personales' },
     { id: 'coverage', label: 'Cobertura' },
     { id: 'emergency', label: 'Contacto de emergencia' },
-    { id: 'clinical', label: 'Datos clínicos' },
-    { id: 'history', label: 'Antecedentes' },
   ];
 
   readonly record = signal<MedicalRecordDto | null>(null);
-  readonly form = signal<MedicalRecordForm | null>(null);
+  readonly form = signal<PatientForm | null>(null);
   readonly original = signal('');
   readonly error = signal('');
   readonly saving = signal(false);

@@ -4,10 +4,13 @@ import type { DiagnosisDto } from './diagnosis-dto';
 export interface EncounterDto {
   id: string;
   appointmentId: string;
+  appointmentStart: string;
   patientId: string;
+  patient: string;
   professionalId: string;
   specialtyId?: string | null;
   note?: string | null;
+  plan?: string | null;
   bloodPressure?: string | null;
   heartRate?: number | null;
   temperature?: number | null;

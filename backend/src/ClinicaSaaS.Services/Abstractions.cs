@@ -172,8 +172,12 @@ public interface IClinicalStore
     Task<Encounter> AddEncounterAsync(Encounter encounter, CancellationToken ct);
     Task ReplaceDiagnosesAsync(Guid encounterId, IReadOnlyList<Guid> diagnosisIds, CancellationToken ct);
     IQueryable<Encounter> Encounters { get; }
-    Task<Prescription> AddPrescriptionAsync(Prescription prescription, CancellationToken ct);
-    IQueryable<Prescription> Prescriptions { get; }
+    IQueryable<ClinicalEntry> Entries { get; }
+    IQueryable<ClinicalAccess> Accesses { get; }
+    Task<ClinicalAttachment?> GetAttachmentAsync(Guid id, CancellationToken ct);
+    Task AppendAsync(ClinicalEntry entry, ClinicalAttachment? attachment, CancellationToken ct);
+    Task RecordAccessAsync(ClinicalAccess access, CancellationToken ct);
+    Task<int> ImportDiagnosesAsync(IReadOnlyList<(string Code, string Name)> rows, CancellationToken ct);
     Task SaveAsync(CancellationToken ct);
 }
 

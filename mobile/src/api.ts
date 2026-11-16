@@ -1,3 +1,4 @@
+import type { BackgroundKind, ClinicalEntryKind } from './clinical';
 import { sessionStore, type Session } from './session';
 import type { InvoiceStatus, LoginAccount, PaymentMethod } from './status';
 
@@ -85,29 +86,42 @@ export type Diagnosis = { id: string; code: string; name: string };
 export type Encounter = {
   id: string;
   appointmentId: string;
+  appointmentStart: string;
   patientId: string;
+  patient: string;
   professionalId: string;
   note?: string | null;
+  plan?: string | null;
+  bloodPressure?: string | null;
   isClosed: boolean;
   createdAt: string;
   diagnoses: Diagnosis[];
 };
-export type Prescription = {
+// One signed page (folio) of the clinical record. It is never edited: a mistake is fixed with a new page.
+export type ClinicalEntry = {
   id: string;
-  encounterId: string;
-  patientId: string;
-  professional: string;
-  instructions?: string | null;
-  createdAt: string;
-  items: { medication: string; dose: string; frequency: string; duration: string }[];
+  folio: number;
+  kind: ClinicalEntryKind;
+  recordedAt: string;
+  signed: boolean;
+  authorName: string;
+  authorLicense?: string | null;
+  specialtyName: string;
+  text: string;
+  plan?: string | null;
+  diagnoses?: string | null;
+  backgroundKind?: BackgroundKind | null;
+  amendsFolio?: number | null;
 };
+export type BackgroundItem = { kind: BackgroundKind; text: string; folio: number; recordedAt: string; authorName: string };
 export type HistorySpecialty = { id: string; name: string; encounters: number };
 export type History = {
-  patient: { id: string; name: string; documentNumber: string; birthDate: string; phone: string };
+  patient: { id: string; historyNumber: number; name: string; documentNumber: string; birthDate: string; phone: string };
   specialty?: HistorySpecialty | null;
   specialties: HistorySpecialty[];
-  encounters: Encounter[];
-  prescriptions: Prescription[];
+  background: BackgroundItem[];
+  entries: ClinicalEntry[];
+  brokenFolio?: number | null;
 };
 export type PatientCard = {
   patientId: string;
@@ -119,23 +133,17 @@ export type PatientCard = {
 };
 export type MedicalRecord = {
   patientId: string;
+  historyNumber: number;
   firstName: string;
   lastName: string;
   email: string;
   documentNumber: string;
   birthDate: string;
   phone: string;
-  bloodType?: string | null;
-  allergies?: string | null;
-  personalHistory?: string | null;
-  familyHistory?: string | null;
-  currentMedication?: string | null;
-  habits?: string | null;
   healthInsurance?: string | null;
   memberNumber?: string | null;
   emergencyContact?: string | null;
   emergencyPhone?: string | null;
-  notes?: string | null;
 };
 export type Fee = { id: string; appointmentTypeId: string; appointmentType: string; amount: number; effectiveFrom: string; payer?: string | null };
 export type Invoice = {
@@ -317,18 +325,16 @@ export const api = {
     request<WaitlistEntry>('/api/lista-espera', { method: 'POST', body: JSON.stringify(body) }),
   assignWaitlist: (id: string, start: string, appointmentTypeId: string) =>
     request<Appointment>(`/api/lista-espera/${id}/asignar`, { method: 'POST', body: JSON.stringify({ start, appointmentTypeId }) }),
-  diagnoses: () => request<Diagnosis[]>('/api/diagnosticos'),
-  saveEncounter: (body: { appointmentId: string; note?: string | null; bloodPressure?: string | null; heartRate?: number | null; temperature?: number | null; weightKg?: number | null; diagnosisIds: string[] }) =>
+  diagnoses: (q: string) => request<Diagnosis[]>(`/api/diagnosticos${query({ q })}`),
+  encounterFor: (appointmentId: string) => request<Encounter | undefined>(`/api/encuentros/turno/${appointmentId}`),
+  saveEncounter: (body: { appointmentId: string; note?: string | null; plan?: string | null; bloodPressure?: string | null; heartRate?: number | null; temperature?: number | null; weightKg?: number | null; diagnosisIds: string[] }) =>
     request<Encounter>('/api/encuentros', { method: 'POST', body: JSON.stringify(body) }),
-  closeEncounter: (id: string) => request<Encounter>(`/api/encuentros/${id}/cerrar`, { method: 'POST' }),
-  prescribe: (body: { encounterId: string; instructions?: string | null; items: Prescription['items'] }) =>
-    request<Prescription>('/api/recetas', { method: 'POST', body: JSON.stringify(body) }),
-  myPrescriptions: () => request<Prescription[]>('/api/recetas/mias'),
+  signEncounter: (id: string, password: string) =>
+    request<ClinicalEntry>(`/api/encuentros/${id}/firmar`, { method: 'POST', body: JSON.stringify({ password }) }),
   history: (patientId?: string, specialtyId?: string) => request<History>(`/api/historia${query({ patientId, specialtyId })}`),
   searchPatients: (q: string) => request<PatientCard[]>(`/api/pacientes${query({ q })}`),
   createPatient: (body: { email: string; firstName: string; lastName: string; documentNumber: string; birthDate: string; phone: string; healthInsurance?: string; memberNumber?: string; emergencyContact?: string; emergencyPhone?: string }) =>
     request<{ patient: MedicalRecord; temporaryPassword: string }>('/api/pacientes', { method: 'POST', body: JSON.stringify(body) }),
-  records: () => request<MedicalRecord[]>('/api/historias-medicas'),
   record: (patientId: string) => request<MedicalRecord>(`/api/historias-medicas/${patientId}`),
   saveRecord: (patientId: string, body: Omit<MedicalRecord, 'patientId' | 'email'>) =>
     request<MedicalRecord>(`/api/historias-medicas/${patientId}`, { method: 'PUT', body: JSON.stringify(body) }),

@@ -164,9 +164,7 @@ public class MedicalRecordsService(
     {
         if (!query.Paged) return await ListAsync(ct);
         var source = clients.Clients.AsQueryable();
-        if (query.Filter == "allergies")
-            source = source.Where(c => c.Record != null && c.Record.Allergies != null && c.Record.Allergies != "");
-        else if (query.Filter == "incomplete")
+        if (query.Filter == "incomplete")
             source = source.Where(c => c.Record == null);
         if (query.Term is string term)
             source = source.Where(c =>
@@ -178,8 +176,7 @@ public class MedicalRecordsService(
                 (c.Record != null && c.Record.MemberNumber != null && c.Record.MemberNumber.ToLower().Contains(term)) ||
                 (c.Record != null && c.Record.EmergencyContact != null && c.Record.EmergencyContact.ToLower().Contains(term)) ||
                 (c.Record != null && c.Record.EmergencyPhone != null && c.Record.EmergencyPhone.ToLower().Contains(term)) ||
-                (c.Record != null && c.Record.BloodType != null && c.Record.BloodType.ToLower().Contains(term)) ||
-                (c.Record != null && c.Record.Allergies != null && c.Record.Allergies.ToLower().Contains(term)));
+                c.HistoryNumber.ToString() == term);
         var ordered = (query.Sort, query.Desc) switch
         {
             ("phone", false) => source.OrderBy(c => c.Phone).ThenBy(c => c.LastName),
@@ -188,10 +185,8 @@ public class MedicalRecordsService(
             ("coverage", true) => source.OrderByDescending(c => c.Record != null ? c.Record.HealthInsurance ?? "Particular" : "Particular").ThenBy(c => c.LastName),
             ("emergency", false) => source.OrderBy(c => c.Record != null ? c.Record.EmergencyContact ?? "" : "").ThenBy(c => c.LastName),
             ("emergency", true) => source.OrderByDescending(c => c.Record != null ? c.Record.EmergencyContact ?? "" : "").ThenBy(c => c.LastName),
-            ("blood", false) => source.OrderBy(c => c.Record != null ? c.Record.BloodType ?? "" : "").ThenBy(c => c.LastName),
-            ("blood", true) => source.OrderByDescending(c => c.Record != null ? c.Record.BloodType ?? "" : "").ThenBy(c => c.LastName),
-            ("allergies", false) => source.OrderBy(c => c.Record != null ? c.Record.Allergies ?? "" : "").ThenBy(c => c.LastName),
-            ("allergies", true) => source.OrderByDescending(c => c.Record != null ? c.Record.Allergies ?? "" : "").ThenBy(c => c.LastName),
+            ("history", false) => source.OrderBy(c => c.HistoryNumber),
+            ("history", true) => source.OrderByDescending(c => c.HistoryNumber),
             ("updated", false) => source.OrderBy(c => c.Record != null ? c.Record.UpdatedAt : DateTimeOffset.MinValue).ThenBy(c => c.LastName),
             ("updated", true) => source.OrderByDescending(c => c.Record != null ? c.Record.UpdatedAt : DateTimeOffset.MinValue).ThenBy(c => c.LastName),
             ("patient", true) or ("name", true) => source.OrderByDescending(c => c.LastName).ThenByDescending(c => c.FirstName),
@@ -199,9 +194,8 @@ public class MedicalRecordsService(
         };
         var page = await Pages.Materialize(ordered.ToMedicalRecordDtos(), query, ct);
         var all = await clients.Clients.CountAsync(ct);
-        var allergies = await clients.Clients.CountAsync(c => c.Record != null && c.Record.Allergies != null && c.Record.Allergies != "", ct);
         var incomplete = await clients.Clients.CountAsync(c => c.Record == null, ct);
-        return new MedicalRecordPageDto(page.Items, page.Total, page.Page, page.PageSize, all, allergies, incomplete);
+        return new MedicalRecordPageDto(page.Items, page.Total, page.Page, page.PageSize, all, incomplete);
     }
 
     public async Task<MedicalRecordDto> GetAsync(Guid patientId, CancellationToken ct) =>
@@ -233,24 +227,17 @@ public class MedicalRecordsService(
             record = new MedicalRecord { Id = Guid.NewGuid(), ClientId = patientId };
             records.Add(record);
         }
-        record.BloodType = Clean(command.BloodType);
-        record.Allergies = Clean(command.Allergies);
-        record.PersonalHistory = Clean(command.PersonalHistory);
-        record.FamilyHistory = Clean(command.FamilyHistory);
-        record.CurrentMedication = Clean(command.CurrentMedication);
-        record.Habits = Clean(command.Habits);
         record.HealthInsurance = Clean(command.HealthInsurance);
         record.MemberNumber = Clean(command.MemberNumber);
         record.EmergencyContact = Clean(command.EmergencyContact);
         record.EmergencyPhone = PhoneRules.Optional(command.EmergencyPhone);
-        record.Notes = Clean(command.Notes);
         record.UpdatedAt = clock.GetUtcNow();
         record.UpdatedBy = currentUser.Id;
         await records.SaveAsync(ct);
 
         if (client.UserId is Guid userId)
             await users.UpdateNameAsync(userId, command.FirstName.Trim(), command.LastName.Trim(), ct);
-        await audit.RecordAsync(currentUser.Id, "historia", "HistoriaMedica", record.Id.ToString(), client.Id.ToString(), ct);
+        await audit.RecordAsync(currentUser.Id, "ficha", "Paciente", record.Id.ToString(), client.Id.ToString(), ct);
         return await GetAsync(patientId, ct);
     }
 

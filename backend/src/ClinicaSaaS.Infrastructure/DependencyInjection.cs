@@ -88,6 +88,7 @@ public class ClinicSeeder(TenantDbContext db, UserManager<TenantUser> users, ICo
         if (slug != "demo")
         {
             await InsurerCatalog.EnsureAsync(db, ct);
+            await ClinicalLedgerSealer.SealAsync(db, false, ct);
             return;
         }
 
@@ -117,6 +118,7 @@ public class ClinicSeeder(TenantDbContext db, UserManager<TenantUser> users, ICo
         await new BillingDemoSeeder(db, zone, configuration["Clinic:Name"] ?? "Consultorio demo").SeedAsync(ct);
         await new CashDemoSeeder(db, zone).SeedAsync(ct);
         await new ResourcesDemoSeeder(db).SeedAsync(ct);
+        await ClinicalLedgerSealer.SealAsync(db, true, ct);
     }
 
     private async Task<TenantUser> EnsureUserAsync(

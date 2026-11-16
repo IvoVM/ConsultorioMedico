@@ -90,15 +90,15 @@ public class DemoDataSeeder(TenantDbContext db, UserManager<TenantUser> users)
         Blockout(julian.Id, today.AddDays(9), 10, 0, 13, 0, "Capacitación");
         Blockout(sofia.Id, today.AddDays(8), 15, 0, 18, 0, "Congreso de cardiología");
 
-        File(recorded, ana, adminId, "O+", "Penicilina", "Asma en la infancia.", "Madre con hipertensión.", "Salbutamol a demanda.", "Camina tres veces por semana.", "OSDE", "210045778", "Carlos Pérez", "1144448899", "Prefiere los turnos de la mañana.");
-        File(recorded, bruno, adminId, "A-", "Polen", "Rinitis estacional.", "Padre con diabetes.", null, "No fuma.", "Swiss Medical", "SM-8821", "Laura Díaz", "1155550199", null);
-        File(recorded, camila, adminId, "O+", null, "Controles pediátricos al día.", null, null, null, "IOMA", "IO-4412", "Marina Ortiz", "1166660299", "Viene con la madre.");
-        File(recorded, diego, adminId, "B+", null, "Lumbago recurrente.", null, "Ibuprofeno ocasional.", "Trabajo de pie.", null, null, "Silvia Fernández", "1177770399", "Particular, sin cobertura.");
-        File(recorded, mateo, adminId, "A+", null, "Desarrollo acorde a la edad.", null, null, null, "OSDE", "210088331", "Pablo Ruiz", "1188880499", null);
-        File(recorded, nora, adminId, "AB+", "AAS", "Hipertensión en tratamiento.", "Hermanos con cardiopatía.", "Enalapril 10 mg.", "Camina todas las mañanas.", "PAMI", "PA-22910", "Rosa Acosta", "1199990599", null);
-        File(recorded, lucia, adminId, "O-", null, "Palpitaciones ocasionales.", null, null, "Toma café por la mañana.", "Galeno", "GL-1002", "Andrés Romero", "1140406099", null);
-        File(recorded, hugo, adminId, "A+", null, "Resfríos de repetición en invierno.", null, null, null, "OSDE", "210077120", "Marta Pereyra", "1130307099", null);
-        File(recorded, valentina, adminId, "B-", null, "Dolor de rodilla al subir escaleras.", null, null, "Corre dos veces por semana.", "Medicus", "ME-5520", "Iván Sosa", "1120208099", "Pide turno de traumatología.");
+        File(recorded, ana, martin, "O+", "Penicilina", "Asma en la infancia.", "Madre con hipertensión.", "Salbutamol a demanda.", "Camina tres veces por semana.", "OSDE", "210045778", "Carlos Pérez", "1144448899", "Prefiere los turnos de la mañana.");
+        File(recorded, bruno, martin, "A-", "Polen", "Rinitis estacional.", "Padre con diabetes.", null, "No fuma.", "Swiss Medical", "SM-8821", "Laura Díaz", "1155550199", null);
+        File(recorded, camila, martin, "O+", null, "Controles pediátricos al día.", null, null, null, "IOMA", "IO-4412", "Marina Ortiz", "1166660299", "Viene con la madre.");
+        File(recorded, diego, martin, "B+", null, "Lumbago recurrente.", null, "Ibuprofeno ocasional.", "Trabajo de pie.", null, null, "Silvia Fernández", "1177770399", "Particular, sin cobertura.");
+        File(recorded, mateo, martin, "A+", null, "Desarrollo acorde a la edad.", null, null, null, "OSDE", "210088331", "Pablo Ruiz", "1188880499", null);
+        File(recorded, nora, martin, "AB+", "AAS", "Hipertensión en tratamiento.", "Hermanos con cardiopatía.", "Enalapril 10 mg.", "Camina todas las mañanas.", "PAMI", "PA-22910", "Rosa Acosta", "1199990599", null);
+        File(recorded, lucia, martin, "O-", null, "Palpitaciones ocasionales.", null, null, "Toma café por la mañana.", "Galeno", "GL-1002", "Andrés Romero", "1140406099", null);
+        File(recorded, hugo, martin, "A+", null, "Resfríos de repetición en invierno.", null, null, null, "OSDE", "210077120", "Marta Pereyra", "1130307099", null);
+        File(recorded, valentina, martin, "B-", null, "Dolor de rodilla al subir escaleras.", null, null, "Corre dos veces por semana.", "Medicus", "ME-5520", "Iván Sosa", "1120208099", "Pide turno de traumatología.");
 
         var lumbago = new Rx("Tomar con comida. Si el dolor sigue, volver.", [("Ibuprofeno 400 mg", "1 comprimido", "cada 8 horas", "3 días")]);
         var resfrio = new Rx("Reposo e hidratación. Control si aparece fiebre alta.", [("Paracetamol 500 mg", "1 comprimido", "cada 8 horas", "3 días")]);
@@ -270,10 +270,12 @@ public class DemoDataSeeder(TenantDbContext db, UserManager<TenantUser> users)
         return patient;
     }
 
+    // The administrative file, plus the background the demo doctor wrote in the record. Those pages are left
+    // unsealed here; the ledger sealer numbers and signs them at startup like any page brought over.
     private void File(
         HashSet<Guid> recorded,
         Client patient,
-        Guid? updatedBy,
+        TenantUser author,
         string? blood,
         string? allergies,
         string? personal,
@@ -293,20 +295,46 @@ public class DemoDataSeeder(TenantDbContext db, UserManager<TenantUser> users)
         {
             Id = Guid.NewGuid(),
             ClientId = patient.Id,
-            BloodType = blood,
-            Allergies = allergies,
-            PersonalHistory = personal,
-            FamilyHistory = family,
-            CurrentMedication = medication,
-            Habits = habits,
             HealthInsurance = insurance,
             MemberNumber = member,
             EmergencyContact = emergency,
             EmergencyPhone = emergencyPhone,
-            Notes = notes,
             UpdatedAt = DateTimeOffset.UtcNow.AddDays(-2),
-            UpdatedBy = updatedBy
+            UpdatedBy = author.Id
         });
+
+        var employee = db.Employees.Local.First(e => e.UserId == author.Id);
+        var specialty = db.Specialties.Local.First(s => s.Id == employee.SpecialtyId);
+        var at = DateTimeOffset.UtcNow.AddDays(-40);
+        foreach (var (kind, text) in new (BackgroundKind, string?)[]
+        {
+            (BackgroundKind.BloodType, blood),
+            (BackgroundKind.Allergies, allergies),
+            (BackgroundKind.PersonalHistory, personal),
+            (BackgroundKind.FamilyHistory, family),
+            (BackgroundKind.Medication, medication),
+            (BackgroundKind.Habits, habits),
+            (BackgroundKind.Notes, notes)
+        })
+        {
+            if (string.IsNullOrWhiteSpace(text))
+                continue;
+            at = at.AddMinutes(1);
+            db.ClinicalEntries.Add(new ClinicalEntry
+            {
+                Id = Guid.NewGuid(),
+                ClientId = patient.Id,
+                Kind = ClinicalEntryKind.Background,
+                BackgroundKind = kind,
+                SpecialtyId = specialty.Id,
+                SpecialtyName = specialty.Name,
+                AuthorId = author.Id,
+                AuthorName = $"{author.FirstName} {author.LastName}",
+                AuthorLicense = employee.LicenseNumber,
+                RecordedAt = at,
+                Text = text
+            });
+        }
     }
 
     private void AddVisit(

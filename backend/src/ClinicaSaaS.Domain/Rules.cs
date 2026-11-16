@@ -257,7 +257,7 @@ public static class BillingRules
 
 public static class EncounterRules
 {
-    public static bool CanClose(string? note) => !string.IsNullOrWhiteSpace(note);
+    public static bool CanSign(string? note) => !string.IsNullOrWhiteSpace(note);
 }
 
 public static class CashRules

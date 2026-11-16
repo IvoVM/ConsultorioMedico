@@ -2,52 +2,162 @@
   <ui-empty message="Abrí la historia desde un turno de tu agenda." />
 }
 @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
+@if (notice()) { <p class="mb-4 text-sm text-ink/70" role="status">{{ notice() }}</p> }
 @if (loading() && !history()) {
   <ui-skeleton [framed]="false" [count]="3" height="6rem" label="Cargando historia" />
 } @else if (history(); as data) {
-  <header class="mb-2">
-    <h2 class="font-serif text-2xl tracking-tight">{{ data.patient.name }}</h2>
-    <p class="mt-1 text-sm text-ink/70">Documento {{ data.patient.documentNumber }}</p>
-    <p class="text-sm text-ink/70">{{ data.patient.phone }}</p>
-    <p class="text-sm text-ink/70">
-      {{ data.patient.healthInsurance || 'Particular' }}
-      @if (data.patient.memberNumber) { <span>· afiliado {{ data.patient.memberNumber }}</span> }
-    </p>
-    @if (data.specialty) {
-      <p class="mt-2 text-sm font-semibold text-clinic">Historia de {{ data.specialty.name }}</p>
-    }
+  <header class="mb-4 flex flex-wrap items-start justify-between gap-4">
+    <div>
+      <h2 class="font-serif text-2xl tracking-tight">{{ data.patient.name }}</h2>
+      <p class="mt-1 text-sm text-ink/70">Historia clínica N.º {{ data.patient.historyNumber }} · DNI {{ data.patient.documentNumber }}</p>
+      <p class="text-sm text-ink/70">
+        {{ data.patient.healthInsurance || 'Particular' }}
+        @if (data.patient.memberNumber) { <span>· afiliado {{ data.patient.memberNumber }}</span> }
+      </p>
+      <p class="mt-2">
+        @if (data.brokenFolio == null) {
+          <ui-badge tone="ok">Integridad verificada</ui-badge>
+        } @else {
+          <ui-badge tone="warn">El folio {{ data.brokenFolio }} no coincide con su sello</ui-badge>
+        }
+      </p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <ui-button variant="outlined" [loading]="downloading()" (click)="copy()">Descargar copia (PDF)</ui-button>
+      @if (isDoctor()) {
+        <ui-button variant="ghost" (click)="start(signing.Background)">Agregar antecedente</ui-button>
+        <ui-button variant="ghost" (click)="start(signing.Consent)">Registrar consentimiento</ui-button>
+      }
+    </div>
   </header>
+
+  @if (allergies(); as allergy) {
+    <p class="mb-4 rounded-md border border-pulse/40 bg-pulse/10 px-4 py-2 text-sm" role="note"><strong>Alergias:</strong> {{ allergy.text }}</p>
+  }
+
+  <section class="mb-6 rounded-lg border border-rule p-4" aria-labelledby="background-title">
+    <h3 id="background-title" class="font-semibold">Antecedentes</h3>
+    @if (data.background.length) {
+      <dl class="mt-3 grid gap-3 sm:grid-cols-2">
+        @for (item of data.background; track item.kind) {
+          <div>
+            <dt class="text-sm text-ink/60">{{ backgroundLabels[item.kind] }}</dt>
+            <dd class="mt-0.5 whitespace-pre-wrap">{{ item.text }}</dd>
+            <dd class="text-xs text-ink/55">Folio {{ item.folio }} · {{ item.authorName || 'consultorio' }} · {{ item.recordedAt | fecha }}</dd>
+          </div>
+        }
+      </dl>
+    } @else {
+      <p class="mt-2 text-sm text-ink/70">Todavía no hay antecedentes cargados.</p>
+    }
+  </section>
+
   @if (session.role() === roles.Patient && tabs().length > 1) {
     <ui-tabs class="my-4" label="Especialidades" [tabs]="tabs()" [active]="data.specialty?.id ?? ''" (activeChange)="pick($event)" />
   }
-  @for (encounter of data.encounters; track encounter.id) {
-    <article class="border-t border-rule py-5">
-      <p class="text-sm text-ink/60">{{ encounter.createdAt | fecha }}</p>
-      <p class="mt-3 max-w-prose whitespace-pre-wrap leading-relaxed">{{ encounter.note }}</p>
-      <dl class="mt-4 grid grid-cols-2 gap-px bg-rule sm:grid-cols-4">
-        <div class="bg-white px-3 py-2">
-          <dt class="text-sm text-ink/60">Tensión</dt>
-          <dd class="mt-1 font-serif text-lg">{{ encounter.bloodPressure || '—' }}</dd>
-        </div>
-        <div class="bg-white px-3 py-2">
-          <dt class="text-sm text-ink/60">Frecuencia</dt>
-          <dd class="mt-1 font-serif text-lg">{{ encounter.heartRate || '—' }}</dd>
-        </div>
-        <div class="bg-white px-3 py-2">
-          <dt class="text-sm text-ink/60">Temperatura</dt>
-          <dd class="mt-1 font-serif text-lg">{{ encounter.temperature || '—' }}</dd>
-        </div>
-        <div class="bg-white px-3 py-2">
-          <dt class="text-sm text-ink/60">Peso</dt>
-          <dd class="mt-1 font-serif text-lg">{{ encounter.weightKg || '—' }}</dd>
-        </div>
-      </dl>
-      @if (encounter.diagnoses.length) {
-        <p class="mt-3 max-w-prose text-sm leading-relaxed">{{ diagnosesText(encounter.diagnoses) }}</p>
+  @if (data.specialty) {
+    <p class="mb-2 text-sm font-semibold text-clinic">Folios de {{ data.specialty.name }} y antecedentes</p>
+  }
+
+  @for (entry of data.entries; track entry.id) {
+    <article class="border-t border-rule py-5" [attr.aria-label]="'Folio ' + entry.folio">
+      <div class="flex flex-wrap items-baseline justify-between gap-2">
+        <h3 class="font-semibold">Folio {{ entry.folio }} · {{ entryTitle(entry) }}</h3>
+        <span class="text-sm text-ink/60">{{ entry.recordedAt | fecha }}</span>
+      </div>
+      <p class="mt-1 text-sm text-ink/70">
+        @if (entry.signed) {
+          Firmó {{ entry.authorName }}@if (entry.authorLicense) {, matrícula {{ entry.authorLicense }}} · {{ entry.specialtyName }}
+        } @else {
+          <ui-badge tone="warn">Sin firma</ui-badge> Cargado por {{ entry.authorName || 'el consultorio' }} antes de la firma electrónica
+        }
+      </p>
+      <p class="mt-3 max-w-prose whitespace-pre-wrap leading-relaxed">{{ entry.text }}</p>
+      @if (entry.plan) {
+        <p class="mt-2 max-w-prose whitespace-pre-wrap leading-relaxed"><strong>Indicaciones:</strong> {{ entry.plan }}</p>
       }
+      @if (vitals(entry)) { <p class="mt-2 text-sm">{{ vitals(entry) }}</p> }
+      @if (entry.diagnoses) { <p class="mt-2 text-sm"><strong>CIE-10:</strong> {{ entry.diagnoses }}</p> }
+      @if (entry.hasAttachment) {
+        <button type="button" class="text-link mt-2 cursor-pointer text-sm" (click)="attachment(entry)">Ver consentimiento firmado por el paciente</button>
+      }
+      @for (fix of amendmentsOf(entry); track fix.id) {
+        <p class="mt-2 text-sm text-ochre">Corregido en el folio {{ fix.folio }}.</p>
+      }
+      <div class="mt-2 flex flex-wrap items-center gap-3">
+        <span class="font-mono text-xs text-ink/45" [title]="entry.hash">Sello {{ entry.hash.slice(0, 16) }}…</span>
+        @if (entry.canAmend) {
+          <ui-button variant="ghost" (click)="start(signing.Amendment, entry)">Corregir</ui-button>
+        }
+      </div>
     </article>
   }
-  @if (data.encounters.length === 0) {
-    <ui-empty [message]="data.specialty ? 'La historia de ' + data.specialty.name + ' todavía no tiene consultas.' : 'Esta historia todavía no tiene consultas.'" />
+  @if (data.entries.length === 0) {
+    <ui-empty message="Esta historia todavía no tiene folios." />
   }
+
+  @if (session.role() === roles.Patient) {
+    <section class="mt-8 border-t border-rule pt-6" aria-labelledby="access-title">
+      <h3 id="access-title" class="font-semibold">Quién abrió tu historia</h3>
+      <p class="mt-1 text-sm text-ink/70">Cada vez que alguien del consultorio abre, copia o firma tu historia queda registrado.</p>
+      @if (accesses(); as list) {
+        @if (list.length) {
+          <ul class="mt-3 grid gap-2 text-sm">
+            @for (item of list; track $index) {
+              <li>{{ item.at | fecha }} · {{ item.userName }}@if (item.role) { ({{ roleLabels[item.role] }}) } · {{ accessLabels[item.action] }}@if (item.detail) { · {{ item.detail }} }</li>
+            }
+          </ul>
+        } @else {
+          <p class="mt-3 text-sm">Nadie del consultorio abrió tu historia todavía.</p>
+        }
+      } @else {
+        <ui-button class="mt-3" variant="ghost" (click)="showAccesses()">Ver registro</ui-button>
+      }
+    </section>
+  }
+}
+
+@if (form(); as current) {
+  <app-sign-modal [title]="title(current)" [busy]="busy()" [error]="signError()" (signed)="sign($event)" (closed)="form.set(null)">
+    @switch (current) {
+      @case (signing.Background) {
+        <ui-field label="Antecedente">
+          <select name="backgroundKind" [(ngModel)]="backgroundKind">
+            @for (kind of backgroundKinds; track kind) { <option [value]="kind">{{ backgroundLabels[kind] }}</option> }
+          </select>
+        </ui-field>
+        @if (backgroundKind === backgroundKindEnum.BloodType) {
+          <ui-field label="Grupo y factor">
+            <select name="backgroundText" [(ngModel)]="backgroundText">
+              <option value="" disabled>Elegí</option>
+              @for (blood of bloodTypes; track blood) { <option [value]="blood">{{ blood }}</option> }
+            </select>
+          </ui-field>
+        } @else {
+          <ui-field label="Detalle"><textarea name="backgroundText" rows="4" maxlength="2000" [(ngModel)]="backgroundText"></textarea></ui-field>
+        }
+        <p class="text-sm text-ink/70">Reemplaza al valor anterior en el resumen, que sigue en la historia como un folio más.</p>
+      }
+      @case (signing.Consent) {
+        <ui-field label="Tipo">
+          <select name="decision" [(ngModel)]="decision">
+            @for (item of decisions; track item) { <option [value]="item">{{ consentLabels[item] }}</option> }
+          </select>
+        </ui-field>
+        <ui-field label="Procedimiento y lo que se le explicó">
+          <textarea name="procedure" rows="4" maxlength="2000" placeholder="Procedimiento, riesgos, alternativas" [(ngModel)]="procedure"></textarea>
+        </ui-field>
+        <ui-field label="Consentimiento firmado por el paciente (PDF, JPG o PNG, hasta 5 MB)">
+          <input name="consentFile" type="file" accept="application/pdf,image/jpeg,image/png" (change)="pickFile($event)" />
+        </ui-field>
+        <p class="text-sm text-ink/70">La ley pide consentimiento escrito para internaciones, cirugías, procedimientos invasivos y de riesgo, y para revocarlo.</p>
+      }
+      @case (signing.Amendment) {
+        @if (amending(); as original) {
+          <p class="text-sm">Folio {{ original.folio }} · {{ entryTitle(original) }}: el original queda como está, visible, y la corrección se agrega como un folio nuevo que lo cita.</p>
+        }
+        <ui-field label="Corrección"><textarea name="amendText" rows="4" maxlength="4000" [(ngModel)]="amendText"></textarea></ui-field>
+      }
+    }
+  </app-sign-modal>
 }

@@ -176,21 +176,29 @@ public record CreateWaitlistEntryCommand(Guid? PatientId, Guid? ProfessionalId, 
 public record AssignWaitlistEntryCommand(DateTimeOffset Start, Guid AppointmentTypeId);
 
 public record DiagnosisDto(Guid Id, string Code, string Name);
+// The official catalog as CSV text: one diagnosis per line, code and name separated by ";" or ",".
+public record ImportDiagnosesCommand(string Csv);
+public record ImportedDiagnosesDto(int Read, int Added, int Total);
 public record SaveEncounterCommand(
     Guid AppointmentId,
     string? Note,
+    string? Plan,
     string? BloodPressure,
     int? HeartRate,
     decimal? Temperature,
     decimal? WeightKg,
     IReadOnlyList<Guid> DiagnosisIds);
+// A visit while the professional writes it. It is not part of the clinical record until it is signed.
 public record EncounterDto(
     Guid Id,
     Guid AppointmentId,
+    DateTimeOffset AppointmentStart,
     Guid PatientId,
+    string Patient,
     Guid ProfessionalId,
     Guid? SpecialtyId,
     string? Note,
+    string? Plan,
     string? BloodPressure,
     int? HeartRate,
     decimal? Temperature,
@@ -199,26 +207,58 @@ public record EncounterDto(
     DateTimeOffset CreatedAt,
     IReadOnlyList<DiagnosisDto> Diagnoses);
 
-public record PrescriptionItemDto(string Medication, string Dose, string Frequency, string Duration);
-public record CreatePrescriptionCommand(Guid EncounterId, string? Instructions, IReadOnlyList<PrescriptionItemDto> Items);
-public record PrescriptionDto(
-    Guid Id,
-    Guid EncounterId,
+// Electronic signature: the professional types their password again for each page they sign.
+public record SignCommand(string Password);
+public record AmendEntryCommand(string Text, string Password);
+public record AddBackgroundCommand(Guid PatientId, BackgroundKind Kind, string Text, string Password);
+// The written consent the patient signed on paper, scanned (PDF, JPG or PNG, up to 5 MB) and sent as base64.
+public record AddConsentCommand(
     Guid PatientId,
-    Guid ProfessionalId,
-    string Professional,
-    string? Instructions,
-    DateTimeOffset CreatedAt,
-    IReadOnlyList<PrescriptionItemDto> Items);
+    string Procedure,
+    ConsentDecision Decision,
+    string FileName,
+    string ContentType,
+    string ContentBase64,
+    string Password);
+
+// One page of the clinical record as it was signed.
+public record ClinicalEntryDto(
+    Guid Id,
+    int Folio,
+    ClinicalEntryKind Kind,
+    DateTimeOffset RecordedAt,
+    bool Signed,
+    string AuthorName,
+    string? AuthorLicense,
+    string SpecialtyName,
+    string Text,
+    string? Plan,
+    string? BloodPressure,
+    int? HeartRate,
+    decimal? Temperature,
+    decimal? WeightKg,
+    string? Diagnoses,
+    BackgroundKind? BackgroundKind,
+    ConsentDecision? ConsentDecision,
+    bool HasAttachment,
+    Guid? AmendsId,
+    int? AmendsFolio,
+    string Hash,
+    bool CanAmend);
+// The latest signed value of a background fact, which every professional sees.
+public record BackgroundItemDto(BackgroundKind Kind, string Text, int Folio, DateTimeOffset RecordedAt, string AuthorName);
 
 public record ClinicalHistoryDto(
     PatientSummaryDto Patient,
     HistorySpecialtyDto? Specialty,
     IReadOnlyList<HistorySpecialtyDto> Specialties,
-    IReadOnlyList<EncounterDto> Encounters,
-    IReadOnlyList<PrescriptionDto> Prescriptions);
+    IReadOnlyList<BackgroundItemDto> Background,
+    IReadOnlyList<ClinicalEntryDto> Entries,
+    // Null when every page still matches its seal; otherwise the first folio that does not.
+    int? BrokenFolio);
 public record HistorySpecialtyDto(Guid Id, string Name, int Encounters);
-public record PatientSummaryDto(Guid Id, string Name, string DocumentNumber, DateOnly BirthDate, string Phone, string? HealthInsurance, string? MemberNumber);
+public record PatientSummaryDto(Guid Id, int HistoryNumber, string Name, string DocumentNumber, DateOnly BirthDate, string Phone, string? HealthInsurance, string? MemberNumber);
+public record ClinicalAccessDto(DateTimeOffset At, string UserName, TenantRole? Role, ClinicalAccessAction Action, string? Detail);
 
 public record CreatePatientCommand(
     string FirstName,
@@ -243,25 +283,20 @@ public record PatientLookupDto(
     string? EmergencyContact,
     string? EmergencyPhone);
 
+// The patient's administrative file. Clinical data is not here: only professionals reach it, through the record.
 public record MedicalRecordDto(
     Guid PatientId,
+    int HistoryNumber,
     string FirstName,
     string LastName,
     string Email,
     string DocumentNumber,
     DateOnly BirthDate,
     string Phone,
-    string? BloodType,
-    string? Allergies,
-    string? PersonalHistory,
-    string? FamilyHistory,
-    string? CurrentMedication,
-    string? Habits,
     string? HealthInsurance,
     string? MemberNumber,
     string? EmergencyContact,
     string? EmergencyPhone,
-    string? Notes,
     DateTimeOffset? UpdatedAt);
 public record SaveMedicalRecordCommand(
     string FirstName,
@@ -269,17 +304,10 @@ public record SaveMedicalRecordCommand(
     string DocumentNumber,
     DateOnly BirthDate,
     string Phone,
-    string? BloodType,
-    string? Allergies,
-    string? PersonalHistory,
-    string? FamilyHistory,
-    string? CurrentMedication,
-    string? Habits,
     string? HealthInsurance,
     string? MemberNumber,
     string? EmergencyContact,
-    string? EmergencyPhone,
-    string? Notes);
+    string? EmergencyPhone);
 
 public record FeeDto(Guid Id, Guid AppointmentTypeId, string AppointmentType, decimal Amount, DateOnly EffectiveFrom, string? Payer, decimal? Copay);
 public record CreateFeeCommand(Guid AppointmentTypeId, decimal Amount, DateOnly EffectiveFrom, string? Payer = null, decimal? Copay = null);
@@ -427,7 +455,7 @@ public record PageDto<T>(IReadOnlyList<T> Items, int Total, int Page, int PageSi
 public record SpecialtyRowDto(Guid Id, string Name, int Professionals);
 public record AppointmentTypeRowDto(Guid Id, string Name, int DurationMinutes, string Specialty, int Professionals);
 public record FeeRowDto(Guid AppointmentTypeId, string Service, decimal? Amount, DateOnly? EffectiveFrom);
-public record MedicalRecordPageDto(IReadOnlyList<MedicalRecordDto> Items, int Total, int Page, int PageSize, int All, int Allergies, int Incomplete);
+public record MedicalRecordPageDto(IReadOnlyList<MedicalRecordDto> Items, int Total, int Page, int PageSize, int All, int Incomplete);
 
 public record AgendaRangeDto(DateTimeOffset Start, DateTimeOffset End);
 public record AgendaTypeDto(Guid Id, string Name, int DurationMinutes, string? Code, string? Equipment, IReadOnlyList<PracticeSupplyDto> Supplies);

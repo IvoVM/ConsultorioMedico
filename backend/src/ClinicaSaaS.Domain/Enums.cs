@@ -138,3 +138,42 @@ public enum SupplyMovementKind
     Consumption,
     Adjustment
 }
+
+// What a signed page of the clinical record holds. A visit is a closed consultation; an amendment corrects an
+// earlier page without touching it; background is a fact that outlives visits (allergies, history); a consent
+// records the written informed consent the patient signed for a procedure (Ley 26.529, art. 7).
+public enum ClinicalEntryKind
+{
+    Visit,
+    Amendment,
+    Background,
+    Consent
+}
+
+// The background facts every professional sees, whatever their specialty.
+public enum BackgroundKind
+{
+    BloodType,
+    Allergies,
+    Medication,
+    PersonalHistory,
+    FamilyHistory,
+    Habits,
+    Notes
+}
+
+public enum ConsentDecision
+{
+    Accepted,
+    Revoked
+}
+
+// Each time someone opens, copies or writes a patient's record (Ley 27.706, art. 6: trazabilidad).
+public enum ClinicalAccessAction
+{
+    View,
+    Copy,
+    Sign,
+    Amend,
+    Attachment
+}

@@ -10,6 +10,8 @@ public class Encounter
     public Guid ProfessionalId { get; set; }
     public Guid? SpecialtyId { get; set; }
     public string? Note { get; set; }
+    // What was indicated: treatment, medication, studies (Ley 26.529, art. 15 f).
+    public string? Plan { get; set; }
     public string? BloodPressure { get; set; }
     public int? HeartRate { get; set; }
     public decimal? Temperature { get; set; }

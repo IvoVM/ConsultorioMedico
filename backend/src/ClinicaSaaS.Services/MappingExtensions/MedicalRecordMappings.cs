@@ -23,22 +23,16 @@ public static class MedicalRecordMappings
     public static IQueryable<MedicalRecordDto> ToMedicalRecordDtos(this IQueryable<Client> query) =>
         query.Select(c => new MedicalRecordDto(
             c.Id,
+            c.HistoryNumber,
             c.FirstName,
             c.LastName,
             c.User != null ? c.User.Email ?? "" : "",
             c.DocumentNumber,
             c.BirthDate,
             c.Phone,
-            c.Record != null ? c.Record.BloodType : null,
-            c.Record != null ? c.Record.Allergies : null,
-            c.Record != null ? c.Record.PersonalHistory : null,
-            c.Record != null ? c.Record.FamilyHistory : null,
-            c.Record != null ? c.Record.CurrentMedication : null,
-            c.Record != null ? c.Record.Habits : null,
             c.Record != null ? c.Record.HealthInsurance : null,
             c.Record != null ? c.Record.MemberNumber : null,
             c.Record != null ? c.Record.EmergencyContact : null,
             c.Record != null ? c.Record.EmergencyPhone : null,
-            c.Record != null ? c.Record.Notes : null,
             c.Record != null ? (DateTimeOffset?)c.Record.UpdatedAt : null));
 }

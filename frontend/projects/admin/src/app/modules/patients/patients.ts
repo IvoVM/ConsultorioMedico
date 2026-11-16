@@ -6,7 +6,7 @@ import { MediaWatcherService, UiButton, UiEmpty, UiField, UiModal, UiSkeleton, U
 import { TablePager, listParams, queueSearch } from '../../table-pager';
 import { SortCol, SortState, nextSort } from '../../table-sort';
 import { firstValueFrom } from 'rxjs';
-import { age } from '../medical-records/models/medical-record-form';
+import { age } from './models/patient-form';
 
 @Component({
   imports: [FormsModule, RouterLink, UiHelp, SortCol, TablePager, UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable],

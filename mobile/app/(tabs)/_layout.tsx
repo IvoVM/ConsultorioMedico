@@ -33,14 +33,12 @@ export default function TabsLayout() {
       <Tabs.Screen name="turnos" options={{ href: null, title: 'Mis turnos' }} />
       <Tabs.Screen name="historia" options={{ href: null, title: 'Historia' }} />
       <Tabs.Screen name="perfil" options={{ href: null, title: 'Perfil' }} />
-      <Tabs.Screen name="recetas" options={{ href: null, title: 'Recetas' }} />
       <Tabs.Screen name="secretaria" options={{ href: null, title: 'Mostrador' }} />
       <Tabs.Screen name="medico" options={{ href: null, title: 'Atención' }} />
       <Tabs.Screen name="organizacion" options={{ href: null, title: 'Organización' }} />
       <Tabs.Screen name="pacientes" options={{ href: null, title: 'Pacientes' }} />
       <Tabs.Screen name="empleados" options={{ href: null, title: 'Empleados' }} />
       <Tabs.Screen name="agendas" options={{ href: null, title: 'Agendas' }} />
-      <Tabs.Screen name="historias" options={{ href: null, title: 'Historias' }} />
       <Tabs.Screen name="aranceles" options={{ href: null, title: 'Aranceles' }} />
       <Tabs.Screen name="comprobantes" options={{ href: null, title: 'Comprobantes' }} />
       <Tabs.Screen name="auditoria" options={{ href: null, title: 'Auditoría' }} />

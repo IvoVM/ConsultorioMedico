@@ -40,7 +40,6 @@ export class ShellPage {
         icon: 'favorite',
         children: [
           { label: 'Historia', path: AppRoute.Historia, icon: 'clinical_notes' },
-          { label: 'Recetas', path: AppRoute.Recetas, icon: 'prescriptions' },
         ],
       });
       nodes.push({ label: 'Mis comprobantes', path: AppRoute.MisComprobantes, icon: 'receipt_long' });

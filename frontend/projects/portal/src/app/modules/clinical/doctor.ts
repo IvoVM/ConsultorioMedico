@@ -1,41 +1,50 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { AppointmentDto, AppointmentsService, ClinicalService, DiagnosisDto, errorMessage } from 'sdk';
+import { RouterLink } from '@angular/router';
+import { AppointmentDto, AppointmentStatus, AppointmentsService, ClinicalService, DiagnosisDto, EncounterDto, errorMessage } from 'sdk';
 import { appointmentStatusLabels } from '../appointments/models/appointment-status-labels';
+import { AppRoute, patientParams } from '../../app.routes.enum';
 import { FechaPipe, UiButton, UiCalendar, UiEmpty, UiField, UiSkeleton, UiTable } from 'ui';
 import { firstValueFrom } from 'rxjs';
+import { SignModal } from './sign-modal';
 
+// The visit is a draft while the professional writes it and can be saved and reopened. Signing it makes it the
+// next folio of the patient's record and closes the appointment for billing; from then on it is only corrected.
 @Component({
-  imports: [FormsModule, FechaPipe, UiButton, UiCalendar, UiEmpty, UiField, UiSkeleton, UiTable],
+  imports: [FormsModule, RouterLink, FechaPipe, UiButton, UiCalendar, UiEmpty, UiField, UiSkeleton, UiTable, SignModal],
   templateUrl: './doctor.html',
 })
 export class DoctorPage {
   private readonly appointmentsApi = inject(AppointmentsService);
   private readonly clinical = inject(ClinicalService);
   readonly statusLabels = appointmentStatusLabels;
+  readonly statuses = AppointmentStatus;
+  readonly route = AppRoute;
+  readonly patientParams = patientParams;
   readonly appointments = signal<AppointmentDto[]>([]);
-  readonly diagnoses = signal<DiagnosisDto[]>([]);
+  readonly pending = signal<EncounterDto[]>([]);
+  readonly matches = signal<DiagnosisDto[]>([]);
+  readonly chosen = signal<DiagnosisDto[]>([]);
   readonly error = signal('');
   readonly loading = signal(true);
   readonly refreshing = signal(false);
   readonly saving = signal(false);
-  readonly closing = signal(false);
+  readonly opening = signal(false);
+  readonly signing = signal(false);
+  readonly signError = signal('');
+  readonly asking = signal(false);
   readonly notice = signal('');
-  readonly visit = signal<AppointmentDto | null>(null);
+  readonly visit = signal<{ appointmentId: string; patientId: string; patient: string; start: string; type?: string } | null>(null);
   date = new Date().toISOString().slice(0, 10);
-  appointmentId = '';
   encounterId = '';
   note = '';
+  plan = '';
   bloodPressure = '';
   heartRate: number | null = null;
   temperature: number | null = null;
   weightKg: number | null = null;
-  diagnosisIds: string[] = [];
-  medication = '';
-  dose = '';
-  frequency = '';
-  duration = '';
-  instructions = '';
+  search = '';
+  private searchTimer?: ReturnType<typeof setTimeout>;
 
   constructor() {
     void this.load();
@@ -44,12 +53,12 @@ export class DoctorPage {
   async load(quiet = false) {
     if (!quiet && !this.loading()) this.refreshing.set(true);
     try {
-      const [appointments, diagnoses] = await Promise.all([
+      const [appointments, pending] = await Promise.all([
         firstValueFrom(this.appointmentsApi.appointmentsForDay({ date: this.date })),
-        firstValueFrom(this.clinical.diagnoses()),
+        firstValueFrom(this.clinical.pendingEncounters()),
       ]);
       this.appointments.set(appointments);
-      this.diagnoses.set(diagnoses);
+      this.pending.set(pending);
     } catch (error) {
       this.error.set(errorMessage(error));
     } finally {
@@ -58,80 +67,129 @@ export class DoctorPage {
     }
   }
 
+  canAttend(appointment: AppointmentDto) {
+    return ![AppointmentStatus.Cancelled, AppointmentStatus.NoShow, AppointmentStatus.Completed].includes(appointment.status);
+  }
+
   pick(appointment: AppointmentDto) {
-    this.visit.set(appointment);
-    this.appointmentId = appointment.id;
-    this.encounterId = '';
+    void this.open({
+      appointmentId: appointment.id,
+      patientId: appointment.patientId,
+      patient: appointment.patient,
+      start: appointment.start,
+      type: appointment.appointmentType,
+    });
+  }
+
+  resume(encounter: EncounterDto) {
+    void this.open({ appointmentId: encounter.appointmentId, patientId: encounter.patientId, patient: encounter.patient, start: encounter.appointmentStart });
+  }
+
+  // Reopening a visit brings back the draft that was saved, so nothing written is lost or overwritten blank.
+  private async open(visit: { appointmentId: string; patientId: string; patient: string; start: string; type?: string }) {
+    this.visit.set(visit);
     this.notice.set('');
     this.error.set('');
-    this.note = '';
-    this.bloodPressure = '';
-    this.heartRate = null;
-    this.temperature = null;
-    this.weightKg = null;
-    this.diagnosisIds = [];
-    this.medication = '';
-    this.dose = '';
-    this.frequency = '';
-    this.duration = '';
-    this.instructions = '';
-  }
-
-  async save() {
-    if (await this.persist()) this.notice.set('Consulta guardada.');
-  }
-
-  async close() {
-    this.closing.set(true);
+    this.opening.set(true);
     try {
-      if (!(await this.persist())) return;
-      await firstValueFrom(this.clinical.closeEncounter(this.encounterId));
-      this.notice.set('Consulta cerrada. El cobro quedó para secretaría.');
-      await this.load(true);
+      this.fill(await firstValueFrom(this.clinical.encounterForAppointment(visit.appointmentId)));
     } catch (error) {
       this.error.set(errorMessage(error));
     } finally {
-      this.closing.set(false);
+      this.opening.set(false);
+    }
+  }
+
+  private fill(encounter: EncounterDto | null) {
+    this.encounterId = encounter?.id ?? '';
+    this.note = encounter?.note ?? '';
+    this.plan = encounter?.plan ?? '';
+    this.bloodPressure = encounter?.bloodPressure ?? '';
+    this.heartRate = encounter?.heartRate ?? null;
+    this.temperature = encounter?.temperature ?? null;
+    this.weightKg = encounter?.weightKg ?? null;
+    this.chosen.set(encounter?.diagnoses ?? []);
+    this.search = '';
+    this.matches.set([]);
+  }
+
+  // CIE-10 by code or name; the catalog is too long to list whole.
+  findDiagnoses() {
+    clearTimeout(this.searchTimer);
+    const text = this.search.trim();
+    if (text.length < 2) {
+      this.matches.set([]);
+      return;
+    }
+    this.searchTimer = setTimeout(async () => {
+      try {
+        const found = await firstValueFrom(this.clinical.diagnoses({ q: text }));
+        this.matches.set(found.filter((d) => !this.chosen().some((c) => c.id === d.id)));
+      } catch (error) {
+        this.error.set(errorMessage(error));
+      }
+    }, 250);
+  }
+
+  addDiagnosis(diagnosis: DiagnosisDto) {
+    this.chosen.update((list) => [...list, diagnosis]);
+    this.matches.update((list) => list.filter((d) => d.id !== diagnosis.id));
+    this.search = '';
+  }
+
+  removeDiagnosis(id: string) {
+    this.chosen.update((list) => list.filter((d) => d.id !== id));
+  }
+
+  async save() {
+    if (await this.persist()) this.notice.set('Borrador guardado. Todavía no está en la historia: falta firmarlo.');
+  }
+
+  async askSignature() {
+    this.signError.set('');
+    if (!this.note.trim()) {
+      this.error.set('Para firmar hace falta la evolución.');
+      return;
+    }
+    if (await this.persist()) this.asking.set(true);
+  }
+
+  async sign(password: string) {
+    this.signing.set(true);
+    this.signError.set('');
+    try {
+      const entry = await firstValueFrom(this.clinical.signEncounter(this.encounterId, { password }));
+      this.asking.set(false);
+      this.visit.set(null);
+      this.notice.set(`Consulta firmada como folio ${entry.folio}. El cobro quedó para secretaría.`);
+      await this.load(true);
+    } catch (error) {
+      this.signError.set(errorMessage(error));
+    } finally {
+      this.signing.set(false);
     }
   }
 
   private async persist() {
-    if (!this.appointmentId) return false;
-    const medication = this.medication.trim();
-    if (medication && (!this.dose.trim() || !this.frequency.trim() || !this.duration.trim())) {
-      this.error.set('La receta necesita dosis, frecuencia y duración.');
-      return false;
-    }
+    const visit = this.visit();
+    if (!visit) return false;
     this.error.set('');
     this.notice.set('');
     this.saving.set(true);
     try {
       const encounter = await firstValueFrom(
         this.clinical.saveEncounter({
-          appointmentId: this.appointmentId,
+          appointmentId: visit.appointmentId,
           note: this.note,
+          plan: this.plan,
           bloodPressure: this.bloodPressure || null,
           heartRate: this.heartRate,
           temperature: this.temperature,
           weightKg: this.weightKg,
-          diagnosisIds: this.diagnosisIds,
+          diagnosisIds: this.chosen().map((d) => d.id),
         }),
       );
       this.encounterId = encounter.id;
-      if (medication) {
-        await firstValueFrom(
-          this.clinical.createPrescription({
-            encounterId: encounter.id,
-            instructions: this.instructions,
-            items: [{ medication, dose: this.dose.trim(), frequency: this.frequency.trim(), duration: this.duration.trim() }],
-          }),
-        );
-        this.medication = '';
-        this.dose = '';
-        this.frequency = '';
-        this.duration = '';
-        this.instructions = '';
-      }
       await this.load(true);
       return true;
     } catch (error) {

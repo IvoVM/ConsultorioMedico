@@ -144,8 +144,8 @@ public class BillingAndEncounterRulesTests
     [Fact]
     public void Closing_an_encounter_requires_a_note()
     {
-        Assert.False(EncounterRules.CanClose("  "));
-        Assert.True(EncounterRules.CanClose("Control de presión."));
+        Assert.False(EncounterRules.CanSign("  "));
+        Assert.True(EncounterRules.CanSign("Control de presión."));
     }
 
     [Fact]

@@ -1,34 +1,63 @@
 import { useEffect, useState } from 'react';
 import { Text } from 'react-native';
 import { api, hora, todayIso, type Appointment, type Diagnosis } from '../../src/api';
+import { AppointmentStatus } from '../../src/status';
 import { colors, type } from '../../src/theme';
 import { Button, Card, Choice, Empty, ErrorText, Field, Screen } from '../../src/ui';
 
+const closedStatuses: string[] = [AppointmentStatus.Cancelled, AppointmentStatus.NoShow, AppointmentStatus.Completed];
+
+// The visit is a draft until it is signed with the professional's password; then it is a folio of the
+// patient's record and can only be corrected. Prescriptions are not issued from the system for now.
 export default function Medico() {
   const [items, setItems] = useState<Appointment[]>([]);
-  const [diagnoses, setDiagnoses] = useState<Diagnosis[]>([]);
   const [picked, setPicked] = useState<Appointment | null>(null);
   const [encounterId, setEncounterId] = useState('');
   const [note, setNote] = useState('');
+  const [plan, setPlan] = useState('');
   const [pressure, setPressure] = useState('');
-  const [selected, setSelected] = useState<string[]>([]);
-  const [medication, setMedication] = useState('');
-  const [dose, setDose] = useState('');
-  const [frequency, setFrequency] = useState('');
-  const [duration, setDuration] = useState('');
+  const [search, setSearch] = useState('');
+  const [matches, setMatches] = useState<Diagnosis[]>([]);
+  const [chosen, setChosen] = useState<Diagnosis[]>([]);
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
 
   useEffect(() => {
-    Promise.all([api.day(todayIso()), api.diagnoses()])
-      .then(([day, list]) => {
-        setItems(day);
-        setDiagnoses(list);
-      })
+    api.day(todayIso())
+      .then(setItems)
       .catch((reason: unknown) => setError(reason instanceof Error ? reason.message : 'No se pudo abrir la agenda.'));
   }, []);
 
-  function toggle(id: string) {
-    setSelected((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
+  async function open(item: Appointment) {
+    setPicked(item);
+    setError('');
+    setNotice('');
+    setPassword('');
+    try {
+      const draft = await api.encounterFor(item.id);
+      setEncounterId(draft?.id ?? '');
+      setNote(draft?.note ?? '');
+      setPlan(draft?.plan ?? '');
+      setPressure(draft?.bloodPressure ?? '');
+      setChosen(draft?.diagnoses ?? []);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'No se pudo abrir la consulta.');
+    }
+  }
+
+  async function find(text: string) {
+    setSearch(text);
+    if (text.trim().length < 2) {
+      setMatches([]);
+      return;
+    }
+    try {
+      const found = await api.diagnoses(text.trim());
+      setMatches(found.filter((item) => !chosen.some((c) => c.id === item.id)));
+    } catch {
+      setMatches([]);
+    }
   }
 
   async function save() {
@@ -38,78 +67,78 @@ export default function Medico() {
       const encounter = await api.saveEncounter({
         appointmentId: picked.id,
         note,
+        plan,
         bloodPressure: pressure || null,
-        diagnosisIds: selected,
+        diagnosisIds: chosen.map((item) => item.id),
       });
       setEncounterId(encounter.id);
+      setNotice('Borrador guardado. Falta firmarlo.');
       return encounter.id;
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'No se pudo guardar el encuentro.');
+      setError(reason instanceof Error ? reason.message : 'No se pudo guardar la consulta.');
       return '';
     }
   }
 
-  async function close() {
-    const id = encounterId || (await save());
+  async function sign() {
+    if (!password) {
+      setError('Ingresá tu contraseña para firmar.');
+      return;
+    }
+    const id = await save();
     if (!id) return;
     try {
-      await api.closeEncounter(id);
+      const entry = await api.signEncounter(id, password);
       setPicked(null);
       setEncounterId('');
+      setPassword('');
+      setNotice(`Consulta firmada como folio ${entry.folio}.`);
+      setItems(await api.day(todayIso()));
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'No se pudo cerrar.');
-    }
-  }
-
-  async function prescribe() {
-    if (!encounterId) return;
-    try {
-      await api.prescribe({
-        encounterId,
-        items: [{ medication, dose, frequency, duration }],
-      });
-      setMedication('');
-      setDose('');
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'No se pudo emitir la receta.');
+      setError(reason instanceof Error ? reason.message : 'No se pudo firmar.');
     }
   }
 
   return (
-    <Screen title="Atención" subtitle="Elegí el turno, cargá la nota y cerrá el encuentro.">
+    <Screen title="Atención" subtitle="Elegí el turno, escribí la consulta y firmala.">
       <ErrorText text={error} />
+      {notice ? <Text style={{ fontFamily: type.sans, color: colors.ink }}>{notice}</Text> : null}
       {items.length === 0 ? <Empty text="No tenés turnos hoy." /> : null}
-      {items.map((item) => (
-        <Card key={item.id} onPress={() => setPicked(item)}>
-          <Text style={{ fontFamily: type.sansBold, color: colors.deep }}>{hora(item.start)} {item.patient}</Text>
-          <Text style={{ fontFamily: type.sans, color: colors.ink }}>{item.appointmentType}</Text>
-        </Card>
-      ))}
+      {items
+        .filter((item) => !closedStatuses.includes(item.status))
+        .map((item) => (
+          <Card key={item.id} onPress={() => void open(item)}>
+            <Text style={{ fontFamily: type.sansBold, color: colors.deep }}>{hora(item.start)} {item.patient}</Text>
+            <Text style={{ fontFamily: type.sans, color: colors.ink }}>{item.appointmentType}</Text>
+          </Card>
+        ))}
       {picked ? (
         <>
           <Text style={{ fontFamily: type.serif, fontSize: 24, color: colors.deep }}>{picked.patient}</Text>
-          <Field label="Nota clínica" multiline value={note} onChangeText={setNote} />
-          <Field label="Tensión" value={pressure} onChangeText={setPressure} />
-          <ViewChoices diagnoses={diagnoses} selected={selected} toggle={toggle} />
-          <Button label="Guardar encuentro" onPress={() => void save()} />
-          <Button label="Cerrar encuentro" tone="ghost" onPress={() => void close()} />
-          <Field label="Medicación" value={medication} onChangeText={setMedication} />
-          <Field label="Dosis" value={dose} onChangeText={setDose} />
-          <Field label="Frecuencia" value={frequency} onChangeText={setFrequency} />
-          <Field label="Duración" value={duration} onChangeText={setDuration} />
-          <Button label="Emitir receta" disabled={!encounterId} onPress={() => void prescribe()} />
+          <Field label="Evolución" multiline value={note} onChangeText={setNote} />
+          <Field label="Indicaciones y tratamiento" multiline value={plan} onChangeText={setPlan} />
+          <Field label="Tensión arterial" value={pressure} onChangeText={setPressure} />
+          <Field label="Diagnóstico (CIE-10)" placeholder="Código o nombre" value={search} onChangeText={(text) => void find(text)} />
+          {matches.map((item) => (
+            <Choice
+              key={item.id}
+              label={`${item.code} ${item.name}`}
+              selected={false}
+              onPress={() => {
+                setChosen((list) => [...list, item]);
+                setMatches((list) => list.filter((m) => m.id !== item.id));
+              }}
+            />
+          ))}
+          {chosen.map((item) => (
+            <Choice key={item.id} label={`${item.code} ${item.name}`} selected onPress={() => setChosen((list) => list.filter((c) => c.id !== item.id))} />
+          ))}
+          <Button label="Guardar borrador" tone="ghost" onPress={() => void save()} />
+          <Field label="Tu contraseña para firmar" secureTextEntry value={password} onChangeText={setPassword} />
+          <Text style={{ fontFamily: type.sans, color: colors.ink }}>Al firmar pasa a la historia clínica y ya no se puede editar: los errores se corrigen con una corrección firmada.</Text>
+          <Button label="Firmar y cerrar" onPress={() => void sign()} />
         </>
       ) : null}
     </Screen>
-  );
-}
-
-function ViewChoices({ diagnoses, selected, toggle }: { diagnoses: Diagnosis[]; selected: string[]; toggle: (id: string) => void }) {
-  return (
-    <>
-      {diagnoses.map((item) => (
-        <Choice key={item.id} label={`${item.code} ${item.name}`} selected={selected.includes(item.id)} onPress={() => toggle(item.id)} />
-      ))}
-    </>
   );
 }

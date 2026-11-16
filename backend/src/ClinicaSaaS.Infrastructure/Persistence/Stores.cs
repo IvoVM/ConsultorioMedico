@@ -455,16 +455,61 @@ public class ClinicalStore(TenantDbContext db) : IClinicalStore
 
     public IQueryable<Encounter> Encounters => db.Encounters.AsNoTracking();
 
-    public async Task<Prescription> AddPrescriptionAsync(Prescription prescription, CancellationToken ct)
+    public IQueryable<ClinicalEntry> Entries => db.ClinicalEntries.AsNoTracking();
+
+    public IQueryable<ClinicalAccess> Accesses => db.ClinicalAccesses.AsNoTracking();
+
+    public Task<ClinicalAttachment?> GetAttachmentAsync(Guid id, CancellationToken ct) =>
+        db.ClinicalAttachments.AsNoTracking().FirstOrDefaultAsync(a => a.Id == id, ct);
+
+    // Writes the next page of the patient's record, together with any pending change (the visit it closes).
+    // A per-patient lock keeps two signatures from taking the same folio or the same previous hash.
+    public async Task AppendAsync(ClinicalEntry entry, ClinicalAttachment? attachment, CancellationToken ct)
     {
-        foreach (var item in prescription.Items)
-            item.PrescriptionId = prescription.Id;
-        db.Prescriptions.Add(prescription);
+        var own = db.Database.CurrentTransaction is null;
+        await using var tx = own ? await db.Database.BeginTransactionAsync(ct) : null;
+        var key = entry.ClientId.ToString();
+        await db.Database.ExecuteSqlInterpolatedAsync($"SELECT pg_advisory_xact_lock(hashtextextended({key}, 0))", ct);
+        var previous = await db.ClinicalEntries.AsNoTracking()
+            .Where(e => e.ClientId == entry.ClientId && e.Hash != null)
+            .OrderByDescending(e => e.Folio)
+            .FirstOrDefaultAsync(ct);
+        if (attachment is not null)
+            db.ClinicalAttachments.Add(attachment);
+        ClinicalLedger.Seal(entry, previous);
+        db.ClinicalEntries.Add(entry);
         await db.SaveChangesAsync(ct);
-        return prescription;
+        if (tx is not null)
+            await tx.CommitAsync(ct);
     }
 
-    public IQueryable<Prescription> Prescriptions => db.Prescriptions.AsNoTracking();
+    public async Task RecordAccessAsync(ClinicalAccess access, CancellationToken ct)
+    {
+        db.ClinicalAccesses.Add(access);
+        await db.SaveChangesAsync(ct);
+    }
+
+    // Loads an official catalog: new codes are added and known ones renamed. Codes are never removed, since
+    // signed visits may cite them.
+    public async Task<int> ImportDiagnosesAsync(IReadOnlyList<(string Code, string Name)> rows, CancellationToken ct)
+    {
+        var known = await db.Diagnoses.ToDictionaryAsync(d => d.Code, ct);
+        var added = 0;
+        foreach (var (code, name) in rows)
+        {
+            if (known.TryGetValue(code, out var diagnosis))
+            {
+                diagnosis.Name = name;
+                continue;
+            }
+            diagnosis = new Diagnosis { Id = Guid.NewGuid(), Code = code, Name = name };
+            db.Diagnoses.Add(diagnosis);
+            known[code] = diagnosis;
+            added++;
+        }
+        await db.SaveChangesAsync(ct);
+        return added;
+    }
 
     public Task SaveAsync(CancellationToken ct) => db.SaveChangesAsync(ct);
 }

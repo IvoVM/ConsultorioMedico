@@ -1,0 +1,14 @@
+<ui-modal [open]="true" [title]="title()" (closed)="closed.emit()">
+  <form id="sign-form" class="grid gap-4" (ngSubmit)="submit()">
+    <ng-content />
+    <ui-field label="Tu contraseña">
+      <ui-password><input name="password" type="password" autocomplete="current-password" required [(ngModel)]="password" /></ui-password>
+    </ui-field>
+    <p class="text-sm text-ink/70">Firmás con tu usuario y tu matrícula. Después no se puede editar ni borrar: si hay un error, se agrega una corrección firmada.</p>
+    @if (error()) { <p class="text-sm text-pulse" role="alert">{{ error() }}</p> }
+  </form>
+  <div uiModalFooter class="flex justify-end gap-2">
+    <ui-button variant="ghost" type="button" (click)="closed.emit()">Cancelar</ui-button>
+    <ui-button type="submit" form="sign-form" [loading]="busy()" [disabled]="!password">{{ action() }}</ui-button>
+  </div>
+</ui-modal>

@@ -22,6 +22,8 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.HasSequence<int>("HistoryNumbers");
+
             modelBuilder.Entity("ClinicaSaaS.Domain.Appointment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -545,6 +547,11 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                         .HasMaxLength(80)
                         .HasColumnType("character varying(80)");
 
+                    b.Property<int>("HistoryNumber")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValueSql("nextval('\"HistoryNumbers\"')");
+
                     b.Property<string>("LastName")
                         .IsRequired()
                         .HasMaxLength(80)
@@ -561,6 +568,9 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                     b.HasKey("Id");
 
                     b.HasIndex("DocumentNumber")
+                        .IsUnique();
+
+                    b.HasIndex("HistoryNumber")
                         .IsUnique();
 
                     b.HasIndex("UserId")
@@ -611,6 +621,199 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                     b.ToTable("ClinicSettings");
                 });
 
+            modelBuilder.Entity("ClinicaSaaS.Domain.ClinicalAccess", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTimeOffset>("At")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ClientId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Detail")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Role")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("UserName")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClientId", "At");
+
+                    b.ToTable("ClinicalAccesses");
+                });
+
+            modelBuilder.Entity("ClinicaSaaS.Domain.ClinicalAttachment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ClientId")
+                        .HasColumnType("uuid");
+
+                    b.Property<byte[]>("Content")
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Sha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset>("UploadedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClientId");
+
+                    b.ToTable("ClinicalAttachments");
+                });
+
+            modelBuilder.Entity("ClinicaSaaS.Domain.ClinicalEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("AmendsId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("AttachmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AttachmentSha256")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<Guid?>("AuthorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AuthorLicense")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<string>("AuthorName")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)");
+
+                    b.Property<string>("BackgroundKind")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("BloodPressure")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid>("ClientId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ConsentDecision")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Diagnoses")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<Guid?>("EncounterId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int?>("Folio")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Hash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<int?>("HeartRate")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Plan")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<string>("PreviousHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset>("RecordedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("Signed")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid?>("SpecialtyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("SpecialtyName")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<decimal?>("Temperature")
+                        .HasPrecision(4, 1)
+                        .HasColumnType("numeric(4,1)");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(8000)
+                        .HasColumnType("character varying(8000)");
+
+                    b.Property<decimal?>("WeightKg")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("numeric(5,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AmendsId");
+
+                    b.HasIndex("AttachmentId");
+
+                    b.HasIndex("EncounterId")
+                        .IsUnique();
+
+                    b.HasIndex("ClientId", "Folio")
+                        .IsUnique();
+
+                    b.ToTable("ClinicalEntries");
+                });
+
             modelBuilder.Entity("ClinicaSaaS.Domain.Diagnosis", b =>
                 {
                     b.Property<Guid>("Id")
@@ -624,8 +827,8 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(160)
-                        .HasColumnType("character varying(160)");
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
 
                     b.HasKey("Id");
 
@@ -697,6 +900,10 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                         .HasColumnType("boolean");
 
                     b.Property<string>("Note")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<string>("Plan")
                         .HasMaxLength(4000)
                         .HasColumnType("character varying(4000)");
 
@@ -1019,20 +1226,8 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Allergies")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<string>("BloodType")
-                        .HasMaxLength(3)
-                        .HasColumnType("character varying(3)");
-
                     b.Property<Guid>("ClientId")
                         .HasColumnType("uuid");
-
-                    b.Property<string>("CurrentMedication")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
 
                     b.Property<string>("EmergencyContact")
                         .HasMaxLength(120)
@@ -1042,14 +1237,6 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
 
-                    b.Property<string>("FamilyHistory")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
-
-                    b.Property<string>("Habits")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
                     b.Property<string>("HealthInsurance")
                         .HasMaxLength(120)
                         .HasColumnType("character varying(120)");
@@ -1057,14 +1244,6 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                     b.Property<string>("MemberNumber")
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
-
-                    b.Property<string>("PersonalHistory")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -2034,6 +2213,54 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("ClinicaSaaS.Domain.ClinicalAccess", b =>
+                {
+                    b.HasOne("ClinicaSaaS.Domain.Client", null)
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("ClinicaSaaS.Domain.ClinicalAttachment", b =>
+                {
+                    b.HasOne("ClinicaSaaS.Domain.Client", null)
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("ClinicaSaaS.Domain.ClinicalEntry", b =>
+                {
+                    b.HasOne("ClinicaSaaS.Domain.ClinicalEntry", "Amends")
+                        .WithMany()
+                        .HasForeignKey("AmendsId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("ClinicaSaaS.Domain.ClinicalAttachment", "Attachment")
+                        .WithMany()
+                        .HasForeignKey("AttachmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("ClinicaSaaS.Domain.Client", "Client")
+                        .WithMany("ClinicalEntries")
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ClinicaSaaS.Domain.Encounter", null)
+                        .WithMany()
+                        .HasForeignKey("EncounterId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Amends");
+
+                    b.Navigation("Attachment");
+
+                    b.Navigation("Client");
+                });
+
             modelBuilder.Entity("ClinicaSaaS.Domain.Employee", b =>
                 {
                     b.HasOne("ClinicaSaaS.Domain.Specialty", "Specialty")
@@ -2507,6 +2734,8 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
             modelBuilder.Entity("ClinicaSaaS.Domain.Client", b =>
                 {
                     b.Navigation("Appointments");
+
+                    b.Navigation("ClinicalEntries");
 
                     b.Navigation("Encounters");
 

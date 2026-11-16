@@ -2,6 +2,7 @@
 export interface SaveEncounterCommand {
   appointmentId: string;
   note?: string | null;
+  plan?: string | null;
   bloodPressure?: string | null;
   heartRate?: number | null;
   temperature?: number | null;

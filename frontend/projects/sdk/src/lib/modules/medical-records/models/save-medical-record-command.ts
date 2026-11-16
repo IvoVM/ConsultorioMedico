@@ -5,15 +5,8 @@ export interface SaveMedicalRecordCommand {
   documentNumber: string;
   birthDate: string;
   phone: string;
-  bloodType?: string | null;
-  allergies?: string | null;
-  personalHistory?: string | null;
-  familyHistory?: string | null;
-  currentMedication?: string | null;
-  habits?: string | null;
   healthInsurance?: string | null;
   memberNumber?: string | null;
   emergencyContact?: string | null;
   emergencyPhone?: string | null;
-  notes?: string | null;
 }

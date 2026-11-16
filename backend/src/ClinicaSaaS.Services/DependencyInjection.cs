@@ -48,7 +48,9 @@ public static class DependencyInjection
         services.AddScoped<IValidator<RegisterPatientCommand>, RegisterPatientValidator>();
         services.AddScoped<IValidator<BookAppointmentCommand>, BookAppointmentValidator>();
         services.AddScoped<IValidator<SaveEncounterCommand>, SaveEncounterValidator>();
-        services.AddScoped<IValidator<CreatePrescriptionCommand>, CreatePrescriptionValidator>();
+        services.AddScoped<IValidator<AmendEntryCommand>, AmendEntryValidator>();
+        services.AddScoped<IValidator<AddBackgroundCommand>, AddBackgroundValidator>();
+        services.AddScoped<IValidator<AddConsentCommand>, AddConsentValidator>();
         services.AddScoped<IValidator<SaveMedicalRecordCommand>, SaveMedicalRecordValidator>();
         services.AddScoped<IValidator<CreatePatientCommand>, CreatePatientValidator>();
         services.AddScoped<IValidator<SaveClinicSettingsCommand>, SaveClinicSettingsValidator>();

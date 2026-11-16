@@ -31,22 +31,6 @@ public class BookAppointmentValidator : AbstractValidator<BookAppointmentCommand
     }
 }
 
-public class CreatePrescriptionValidator : AbstractValidator<CreatePrescriptionCommand>
-{
-    public CreatePrescriptionValidator()
-    {
-        RuleFor(x => x.EncounterId).NotEmpty();
-        RuleFor(x => x.Items).NotEmpty();
-        RuleForEach(x => x.Items).ChildRules(item =>
-        {
-            item.RuleFor(i => i.Medication).NotEmpty().MaximumLength(120);
-            item.RuleFor(i => i.Dose).NotEmpty().MaximumLength(60);
-            item.RuleFor(i => i.Frequency).NotEmpty().MaximumLength(60);
-            item.RuleFor(i => i.Duration).NotEmpty().MaximumLength(60);
-        });
-    }
-}
-
 public class CreatePatientValidator : AbstractValidator<CreatePatientCommand>
 {
     public CreatePatientValidator(TimeProvider clock)
@@ -71,8 +55,6 @@ public class CreatePatientValidator : AbstractValidator<CreatePatientCommand>
 
 public class SaveMedicalRecordValidator : AbstractValidator<SaveMedicalRecordCommand>
 {
-    public static readonly string[] BloodTypes = ["A+", "A-", "B+", "B-", "AB+", "AB-", "0+", "0-"];
-
     public SaveMedicalRecordValidator(TimeProvider clock)
     {
         RuleFor(x => x.FirstName).NotEmpty().MaximumLength(80);
@@ -84,21 +66,12 @@ public class SaveMedicalRecordValidator : AbstractValidator<SaveMedicalRecordCom
         RuleFor(x => x.BirthDate)
             .Must(d => d <= DateOnly.FromDateTime(clock.GetUtcNow().DateTime))
             .WithMessage("La fecha de nacimiento no puede ser futura.");
-        RuleFor(x => x.BloodType)
-            .Must(b => string.IsNullOrWhiteSpace(b) || BloodTypes.Contains(b.Trim()))
-            .WithMessage("Grupo sanguíneo inválido.");
-        RuleFor(x => x.Allergies).MaximumLength(1000);
-        RuleFor(x => x.PersonalHistory).MaximumLength(2000);
-        RuleFor(x => x.FamilyHistory).MaximumLength(2000);
-        RuleFor(x => x.CurrentMedication).MaximumLength(1000);
-        RuleFor(x => x.Habits).MaximumLength(1000);
         RuleFor(x => x.HealthInsurance).MaximumLength(120);
         RuleFor(x => x.MemberNumber).MaximumLength(40);
         RuleFor(x => x.EmergencyContact).MaximumLength(120);
         RuleFor(x => x.EmergencyPhone)
             .Must(phone => string.IsNullOrWhiteSpace(phone) || PhoneRules.TryFormat(phone, out _))
             .WithMessage("El teléfono no es válido.");
-        RuleFor(x => x.Notes).MaximumLength(2000);
     }
 }
 
@@ -108,6 +81,53 @@ public class SaveEncounterValidator : AbstractValidator<SaveEncounterCommand>
     {
         RuleFor(x => x.AppointmentId).NotEmpty();
         RuleFor(x => x.Note).MaximumLength(4000);
+        RuleFor(x => x.Plan).MaximumLength(4000);
+        RuleFor(x => x.BloodPressure).MaximumLength(20);
+        RuleFor(x => x.HeartRate).InclusiveBetween(20, 300).When(x => x.HeartRate is not null);
+        RuleFor(x => x.Temperature).InclusiveBetween(30m, 45m).When(x => x.Temperature is not null);
+        RuleFor(x => x.WeightKg).InclusiveBetween(0.3m, 400m).When(x => x.WeightKg is not null);
+    }
+}
+
+public class AmendEntryValidator : AbstractValidator<AmendEntryCommand>
+{
+    public AmendEntryValidator()
+    {
+        RuleFor(x => x.Text).NotEmpty().WithMessage("Escribí la corrección.").MaximumLength(4000);
+        RuleFor(x => x.Password).NotEmpty().WithMessage("Ingresá tu contraseña para firmar.");
+    }
+}
+
+public class AddBackgroundValidator : AbstractValidator<AddBackgroundCommand>
+{
+    public static readonly string[] BloodTypes = ["A+", "A-", "B+", "B-", "AB+", "AB-", "0+", "0-"];
+
+    public AddBackgroundValidator()
+    {
+        RuleFor(x => x.PatientId).NotEmpty();
+        RuleFor(x => x.Kind).IsInEnum();
+        RuleFor(x => x.Text).NotEmpty().WithMessage("Escribí el antecedente.").MaximumLength(2000);
+        RuleFor(x => x.Text)
+            .Must(text => BloodTypes.Contains(text.Trim().ToUpperInvariant()))
+            .When(x => x.Kind == BackgroundKind.BloodType && !string.IsNullOrWhiteSpace(x.Text))
+            .WithMessage("Grupo sanguíneo inválido.");
+        RuleFor(x => x.Password).NotEmpty().WithMessage("Ingresá tu contraseña para firmar.");
+    }
+}
+
+public class AddConsentValidator : AbstractValidator<AddConsentCommand>
+{
+    public AddConsentValidator()
+    {
+        RuleFor(x => x.PatientId).NotEmpty();
+        RuleFor(x => x.Procedure).NotEmpty().WithMessage("Indicá el procedimiento.").MaximumLength(2000);
+        RuleFor(x => x.Decision).IsInEnum();
+        RuleFor(x => x.FileName).NotEmpty().WithMessage("Adjuntá el consentimiento firmado por el paciente.").MaximumLength(200);
+        RuleFor(x => x.ContentType)
+            .Must(type => ClinicalLedger.AttachmentTypes.Contains(type))
+            .WithMessage("El consentimiento tiene que ser PDF, JPG o PNG.");
+        RuleFor(x => x.ContentBase64).NotEmpty().WithMessage("Adjuntá el consentimiento firmado por el paciente.");
+        RuleFor(x => x.Password).NotEmpty().WithMessage("Ingresá tu contraseña para firmar.");
     }
 }
 

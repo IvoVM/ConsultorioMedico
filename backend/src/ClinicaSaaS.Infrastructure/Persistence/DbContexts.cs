@@ -34,6 +34,9 @@ public class TenantDbContext(DbContextOptions<TenantDbContext> options)
     public DbSet<EncounterDiagnosis> EncounterDiagnoses => Set<EncounterDiagnosis>();
     public DbSet<Prescription> Prescriptions => Set<Prescription>();
     public DbSet<PrescriptionItem> PrescriptionItems => Set<PrescriptionItem>();
+    public DbSet<ClinicalEntry> ClinicalEntries => Set<ClinicalEntry>();
+    public DbSet<ClinicalAttachment> ClinicalAttachments => Set<ClinicalAttachment>();
+    public DbSet<ClinicalAccess> ClinicalAccesses => Set<ClinicalAccess>();
     public DbSet<Fee> Fees => Set<Fee>();
     public DbSet<Invoice> Invoices => Set<Invoice>();
     public DbSet<InvoiceItem> InvoiceItems => Set<InvoiceItem>();
@@ -172,20 +175,15 @@ public class TenantDbContext(DbContextOptions<TenantDbContext> options)
             e.Property(c => c.Phone).HasMaxLength(30);
             e.HasIndex(c => c.UserId).IsUnique();
             e.HasIndex(c => c.DocumentNumber).IsUnique();
+            e.Property(c => c.HistoryNumber).HasDefaultValueSql("nextval('\"HistoryNumbers\"')").ValueGeneratedOnAdd();
+            e.HasIndex(c => c.HistoryNumber).IsUnique();
         });
         builder.Entity<MedicalRecord>(e =>
         {
-            e.Property(r => r.BloodType).HasMaxLength(3);
-            e.Property(r => r.Allergies).HasMaxLength(1000);
-            e.Property(r => r.PersonalHistory).HasMaxLength(2000);
-            e.Property(r => r.FamilyHistory).HasMaxLength(2000);
-            e.Property(r => r.CurrentMedication).HasMaxLength(1000);
-            e.Property(r => r.Habits).HasMaxLength(1000);
             e.Property(r => r.HealthInsurance).HasMaxLength(120);
             e.Property(r => r.MemberNumber).HasMaxLength(40);
             e.Property(r => r.EmergencyContact).HasMaxLength(120);
             e.Property(r => r.EmergencyPhone).HasMaxLength(30);
-            e.Property(r => r.Notes).HasMaxLength(2000);
             e.HasIndex(r => r.ClientId).IsUnique();
             e.HasOne(r => r.Client).WithOne(c => c.Record).HasForeignKey<MedicalRecord>(r => r.ClientId).OnDelete(DeleteBehavior.Cascade);
         });
@@ -242,12 +240,13 @@ public class TenantDbContext(DbContextOptions<TenantDbContext> options)
         builder.Entity<Diagnosis>(e =>
         {
             e.Property(d => d.Code).HasMaxLength(10);
-            e.Property(d => d.Name).HasMaxLength(160);
+            e.Property(d => d.Name).HasMaxLength(300);
             e.HasIndex(d => d.Code).IsUnique();
         });
         builder.Entity<Encounter>(e =>
         {
             e.Property(x => x.Note).HasMaxLength(4000);
+            e.Property(x => x.Plan).HasMaxLength(4000);
             e.Property(x => x.BloodPressure).HasMaxLength(20);
             e.Property(x => x.Temperature).HasPrecision(4, 1);
             e.Property(x => x.WeightKg).HasPrecision(5, 2);
@@ -377,6 +376,49 @@ public class TenantDbContext(DbContextOptions<TenantDbContext> options)
             e.Property(l => l.Fee).HasPrecision(12, 2);
             e.Property(l => l.Net).HasPrecision(12, 2);
             e.HasOne(l => l.Settlement).WithMany(s => s.Lines).HasForeignKey(l => l.SettlementId).OnDelete(DeleteBehavior.Cascade);
+        });
+        builder.HasSequence<int>("HistoryNumbers");
+        builder.Entity<ClinicalEntry>(e =>
+        {
+            e.Property(x => x.Kind).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.BackgroundKind).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.ConsentDecision).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.SpecialtyName).HasMaxLength(120);
+            e.Property(x => x.AuthorName).HasMaxLength(160);
+            e.Property(x => x.AuthorLicense).HasMaxLength(40);
+            e.Property(x => x.Text).HasMaxLength(8000);
+            e.Property(x => x.Plan).HasMaxLength(4000);
+            e.Property(x => x.BloodPressure).HasMaxLength(20);
+            e.Property(x => x.Temperature).HasPrecision(4, 1);
+            e.Property(x => x.WeightKg).HasPrecision(5, 2);
+            e.Property(x => x.Diagnoses).HasMaxLength(4000);
+            e.Property(x => x.AttachmentSha256).HasMaxLength(64);
+            e.Property(x => x.PreviousHash).HasMaxLength(64);
+            e.Property(x => x.Hash).HasMaxLength(64);
+            // One folio per page of a patient's record; two writers racing for the same number cannot both win.
+            e.HasIndex(x => new { x.ClientId, x.Folio }).IsUnique();
+            e.HasIndex(x => x.EncounterId).IsUnique();
+            e.HasIndex(x => x.AmendsId);
+            e.HasOne(x => x.Client).WithMany(c => c.ClinicalEntries).HasForeignKey(x => x.ClientId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Amends).WithMany().HasForeignKey(x => x.AmendsId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Attachment).WithMany().HasForeignKey(x => x.AttachmentId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<Encounter>().WithMany().HasForeignKey(x => x.EncounterId).OnDelete(DeleteBehavior.Restrict);
+        });
+        builder.Entity<ClinicalAttachment>(e =>
+        {
+            e.Property(x => x.Name).HasMaxLength(200);
+            e.Property(x => x.ContentType).HasMaxLength(60);
+            e.Property(x => x.Sha256).HasMaxLength(64);
+            e.HasOne<Client>().WithMany().HasForeignKey(x => x.ClientId).OnDelete(DeleteBehavior.Restrict);
+        });
+        builder.Entity<ClinicalAccess>(e =>
+        {
+            e.Property(x => x.UserName).HasMaxLength(160);
+            e.Property(x => x.Role).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Action).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Detail).HasMaxLength(200);
+            e.HasIndex(x => new { x.ClientId, x.At });
+            e.HasOne<Client>().WithMany().HasForeignKey(x => x.ClientId).OnDelete(DeleteBehavior.Restrict);
         });
         builder.Entity<AuditEntry>(e =>
         {

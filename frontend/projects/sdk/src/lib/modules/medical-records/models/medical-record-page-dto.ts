@@ -6,6 +6,5 @@ export interface MedicalRecordPageDto {
   page: number;
   pageSize: number;
   all: number;
-  allergies: number;
   incomplete: number;
 }

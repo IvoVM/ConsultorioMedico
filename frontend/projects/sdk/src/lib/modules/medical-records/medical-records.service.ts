@@ -14,7 +14,9 @@ export class MedicalRecordsService extends ApiClient {
   }
 
   medicalRecordsPage(query: ListParams) {
-    return this.http.get<MedicalRecordPageDto>(`${this.base}/api/historias-medicas${queryString(query)}`);
+    return this.http.get<MedicalRecordPageDto>(
+      `${this.base}/api/historias-medicas${queryString(query)}`,
+    );
   }
 
   medicalRecord(patientId: string) {

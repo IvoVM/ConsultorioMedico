@@ -39,7 +39,6 @@ export class ShellPage {
         icon: 'group',
         children: [
           { label: 'Pacientes', path: '/pacientes', icon: 'person_search' },
-          { label: 'Historias médicas', path: '/historias', icon: 'clinical_notes' },
         ],
       },
       {
@@ -50,6 +49,7 @@ export class ShellPage {
           { label: 'Servicios', path: '/organizacion/servicios', icon: 'vaccines' },
           { label: 'Consultorios y equipos', path: '/organizacion/consultorios', icon: 'meeting_room' },
           { label: 'Insumos', path: '/insumos', icon: 'inventory_2' },
+          { label: 'Diagnósticos CIE-10', path: '/diagnosticos', icon: 'clinical_notes' },
         ],
       },
       {

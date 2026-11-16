@@ -11,6 +11,8 @@ public class Client
     public string DocumentNumber { get; set; } = "";
     public DateOnly BirthDate { get; set; }
     public string Phone { get; set; } = "";
+    // The single clinical record number the patient is told (Ley 26.529, art. 17). The database hands it out.
+    public int HistoryNumber { get; set; }
 
 
     public virtual TenantUser? User { get; set; }
@@ -20,4 +22,5 @@ public class Client
     public virtual ICollection<Encounter> Encounters { get; set; } = [];
     public virtual ICollection<Prescription> Prescriptions { get; set; } = [];
     public virtual ICollection<Invoice> Invoices { get; set; } = [];
+    public virtual ICollection<ClinicalEntry> ClinicalEntries { get; set; } = [];
 }
