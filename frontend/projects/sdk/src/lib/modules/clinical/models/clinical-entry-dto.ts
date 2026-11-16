@@ -26,4 +26,5 @@ export interface ClinicalEntryDto {
   amendsFolio?: number | null;
   hash: string;
   canAmend: boolean;
+  hasSignatureImage: boolean;
 }

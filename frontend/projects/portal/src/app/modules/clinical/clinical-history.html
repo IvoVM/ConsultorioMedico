@@ -67,7 +67,7 @@
       </div>
       <p class="mt-1 text-sm text-ink/70">
         @if (entry.signed) {
-          Firmó {{ entry.authorName }}@if (entry.authorLicense) {, matrícula {{ entry.authorLicense }}} · {{ entry.specialtyName }}
+          {{ entry.specialtyName }} · firmó {{ entry.authorName }}
         } @else {
           <ui-badge tone="warn">Sin firma</ui-badge> Cargado por {{ entry.authorName || 'el consultorio' }} antes de la firma electrónica
         }
@@ -83,6 +83,11 @@
       }
       @for (fix of amendmentsOf(entry); track fix.id) {
         <p class="mt-2 text-sm text-ochre">Corregido en el folio {{ fix.folio }}.</p>
+      }
+      @if (entry.signed) {
+        <div class="mt-3 flex justify-end">
+          <app-stamp [name]="entry.authorName" [specialty]="entry.specialtyName" [license]="entry.authorLicense" [image]="signatures()[entry.id]" />
+        </div>
       }
       <div class="mt-2 flex flex-wrap items-center gap-3">
         <span class="font-mono text-xs text-ink/45" [title]="entry.hash">Sello {{ entry.hash.slice(0, 16) }}…</span>

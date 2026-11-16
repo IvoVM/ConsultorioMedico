@@ -67,6 +67,7 @@ export class ShellPage {
           { label: 'Atención', path: AppRoute.Medico, icon: 'stethoscope' },
           { label: 'Historia', path: AppRoute.Historia, icon: 'clinical_notes' },
           { label: 'Turnos', path: AppRoute.HistorialTurnos, icon: 'history' },
+          { label: 'Firma y sello', path: AppRoute.FirmaSello, icon: 'signature' },
         ],
       });
     }

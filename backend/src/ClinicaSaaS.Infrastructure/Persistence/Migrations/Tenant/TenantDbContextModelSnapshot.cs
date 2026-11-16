@@ -775,6 +775,13 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                     b.Property<DateTimeOffset>("RecordedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("SignatureId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("SignatureSha256")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
                     b.Property<bool>("Signed")
                         .HasColumnType("boolean");
 
@@ -807,6 +814,8 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
 
                     b.HasIndex("EncounterId")
                         .IsUnique();
+
+                    b.HasIndex("SignatureId");
 
                     b.HasIndex("ClientId", "Folio")
                         .IsUnique();
@@ -855,6 +864,9 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)");
 
+                    b.Property<Guid?>("SignatureId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid?>("SpecialtyId")
                         .HasColumnType("uuid");
 
@@ -865,6 +877,8 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
 
                     b.HasIndex("DocumentNumber")
                         .IsUnique();
+
+                    b.HasIndex("SignatureId");
 
                     b.HasIndex("SpecialtyId");
 
@@ -1403,6 +1417,43 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                     b.HasIndex("PrescriptionId");
 
                     b.ToTable("PrescriptionItems");
+                });
+
+            modelBuilder.Entity("ClinicaSaaS.Domain.ProfessionalSignature", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Components")
+                        .HasColumnType("integer");
+
+                    b.Property<byte[]>("Content")
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
+                    b.Property<int>("Height")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Sha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset>("UploadedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Width")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ProfessionalSignatures");
                 });
 
             modelBuilder.Entity("ClinicaSaaS.Domain.Receipt", b =>
@@ -2254,6 +2305,11 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                         .HasForeignKey("EncounterId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("ClinicaSaaS.Domain.ProfessionalSignature", null)
+                        .WithMany()
+                        .HasForeignKey("SignatureId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Amends");
 
                     b.Navigation("Attachment");
@@ -2263,6 +2319,11 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
 
             modelBuilder.Entity("ClinicaSaaS.Domain.Employee", b =>
                 {
+                    b.HasOne("ClinicaSaaS.Domain.ProfessionalSignature", null)
+                        .WithMany()
+                        .HasForeignKey("SignatureId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("ClinicaSaaS.Domain.Specialty", "Specialty")
                         .WithMany("Employees")
                         .HasForeignKey("SpecialtyId")
@@ -2482,6 +2543,15 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                         .IsRequired();
 
                     b.Navigation("Prescription");
+                });
+
+            modelBuilder.Entity("ClinicaSaaS.Domain.ProfessionalSignature", b =>
+                {
+                    b.HasOne("ClinicaSaaS.Infrastructure.Identity.TenantUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("ClinicaSaaS.Domain.Receipt", b =>

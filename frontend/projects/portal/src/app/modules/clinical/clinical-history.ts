@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import {
@@ -31,6 +31,7 @@ import {
   vitals,
 } from './models/clinical-labels';
 import { SignModal } from './sign-modal';
+import { Stamp } from './stamp';
 
 // What the professional is about to sign from this screen.
 enum Signing {
@@ -43,7 +44,7 @@ enum Signing {
 // specialty, newest first. The professional adds background, consents and corrections, each signed; the patient
 // reads all of it, downloads the copy the law entitles them to and sees who opened it.
 @Component({
-  imports: [FormsModule, FechaPipe, UiBadge, UiButton, UiEmpty, UiField, UiSkeleton, UiTabs, SignModal],
+  imports: [FormsModule, FechaPipe, UiBadge, UiButton, UiEmpty, UiField, UiSkeleton, UiTabs, SignModal, Stamp],
   templateUrl: './clinical-history.html',
 })
 export class ClinicalHistoryPage {
@@ -73,6 +74,8 @@ export class ClinicalHistoryPage {
   readonly amending = signal<ClinicalEntryDto | null>(null);
   readonly busy = signal(false);
   readonly signError = signal('');
+  // The handwritten signature of each signed page, by page. A page never changes, so neither does its picture.
+  readonly signatures = signal<Record<string, string>>({});
   readonly tabs = computed((): TabItem[] =>
     (this.history()?.specialties ?? []).map((item) => ({ key: item.id, label: item.name, count: item.encounters })),
   );
@@ -87,6 +90,11 @@ export class ClinicalHistoryPage {
   amendText = '';
 
   constructor() {
+    effect(() => {
+      const history = this.history();
+      untracked(() => void this.loadSignatures(history));
+    });
+    inject(DestroyRef).onDestroy(() => Object.values(this.signatures()).forEach((url) => URL.revokeObjectURL(url)));
     const paciente = this.route.snapshot.queryParamMap.get(RouteParam.Paciente);
     if (paciente) this.patientId = paciente;
     if (clinicaSession.role() === TenantRole.Patient || paciente) void this.load();
@@ -108,6 +116,20 @@ export class ClinicalHistoryPage {
 
   pick(specialtyId: string) {
     if (specialtyId !== this.history()?.specialty?.id) void this.load(specialtyId);
+  }
+
+  private async loadSignatures(history: ClinicalHistoryDto | null) {
+    const missing = (history?.entries ?? []).filter((entry) => entry.hasSignatureImage && !this.signatures()[entry.id]);
+    await Promise.all(
+      missing.map(async (entry) => {
+        try {
+          const blob = await firstValueFrom(this.clinical.entrySignature(entry.id));
+          this.signatures.update((all) => ({ ...all, [entry.id]: URL.createObjectURL(blob) }));
+        } catch {
+          // Without the picture the stamp still shows who signed.
+        }
+      }),
+    );
   }
 
   amendmentsOf(entry: ClinicalEntryDto) {

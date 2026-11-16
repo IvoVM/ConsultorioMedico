@@ -176,6 +176,10 @@ public interface IClinicalStore
     IQueryable<ClinicalAccess> Accesses { get; }
     Task<ClinicalAttachment?> GetAttachmentAsync(Guid id, CancellationToken ct);
     Task AppendAsync(ClinicalEntry entry, ClinicalAttachment? attachment, CancellationToken ct);
+    Task<ProfessionalSignature?> GetSignatureAsync(Guid id, CancellationToken ct);
+    // Stores a new handwritten signature (never overwriting an old one, which signed pages may cite) and makes it
+    // the professional's current one; null just stops using one.
+    Task SetSignatureAsync(Guid userId, ProfessionalSignature? signature, CancellationToken ct);
     Task RecordAccessAsync(ClinicalAccess access, CancellationToken ct);
     Task<int> ImportDiagnosesAsync(IReadOnlyList<(string Code, string Name)> rows, CancellationToken ct);
     Task SaveAsync(CancellationToken ct);

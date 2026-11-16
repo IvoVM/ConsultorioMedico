@@ -13,7 +13,9 @@ import type { EncounterDto } from './models/encounter-dto';
 import type { ImportDiagnosesCommand } from './models/import-diagnoses-command';
 import type { ImportedDiagnosesDto } from './models/imported-diagnoses-dto';
 import type { SaveEncounterCommand } from './models/save-encounter-command';
+import type { SaveSignatureCommand } from './models/save-signature-command';
 import type { SignCommand } from './models/sign-command';
+import type { SignatureStampDto } from './models/signature-stamp-dto';
 
 @Injectable({ providedIn: 'root' })
 export class ClinicalService extends ApiClient {
@@ -74,5 +76,25 @@ export class ClinicalService extends ApiClient {
     return this.http.get(`${this.base}/api/historia/folios/${id}/adjunto`, {
       responseType: 'blob',
     });
+  }
+
+  entrySignature(id: string) {
+    return this.http.get(`${this.base}/api/historia/folios/${id}/firma`, { responseType: 'blob' });
+  }
+
+  mySignature() {
+    return this.http.get<SignatureStampDto>(`${this.base}/api/historia/mi-firma`);
+  }
+
+  saveSignature(body: SaveSignatureCommand) {
+    return this.http.put<SignatureStampDto>(`${this.base}/api/historia/mi-firma`, body);
+  }
+
+  removeSignature() {
+    return this.http.delete<SignatureStampDto>(`${this.base}/api/historia/mi-firma`);
+  }
+
+  mySignatureImage() {
+    return this.http.get(`${this.base}/api/historia/mi-firma/imagen`, { responseType: 'blob' });
   }
 }

@@ -1,0 +1,58 @@
+<header class="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2">
+  <h2 class="font-serif text-3xl tracking-tight">Firma y sello</h2>
+  <ui-help title="Firma y sello">
+    <p>El <strong>sello</strong> lleva tu nombre, tu especialidad y tu matrícula, como el de papel. Sale de tu ficha de profesional: si algo está mal, pedile al administrador que lo corrija. Sin matrícula no podés firmar.</p>
+    <p>La <strong>firma ológrafa</strong> es una imagen de tu firma, dibujada acá o escaneada. Aparece junto al sello en cada folio que firmes desde ahora, en pantalla y en la copia en PDF. Si la cambiás o la quitás, los folios ya firmados conservan la que tenían.</p>
+    <p>Lo que te identifica como autor de un folio es la <strong>firma electrónica</strong>: volver a escribir tu contraseña al firmar (Ley 25.506, art. 5). La imagen no la reemplaza ni la convierte en firma digital: una firma digital necesita un certificado emitido por un certificador licenciado.</p>
+  </ui-help>
+</header>
+
+@if (loading()) {
+  <ui-skeleton [framed]="false" [count]="2" height="8rem" label="Cargando firma y sello" />
+} @else if (stamp(); as current) {
+  <section class="mb-8 max-w-xl" aria-labelledby="stamp-title">
+    <h3 id="stamp-title" class="mb-3 font-semibold">Cómo aparece en tus folios</h3>
+    <div class="flex flex-wrap items-end justify-between gap-4 rounded border border-rule bg-white p-4">
+      <app-stamp [name]="current.name" [specialty]="current.specialty" [license]="current.license" [image]="image()" />
+      <div class="text-sm text-ink/70">
+        @if (current.hasImage) {
+          <p>Firma cargada el {{ current.uploadedAt | fecha }}.</p>
+          <ui-button class="mt-2" variant="ghost" [loading]="removing()" (click)="remove()">Quitar firma</ui-button>
+        } @else {
+          <p>Todavía no cargaste tu firma ológrafa.</p>
+        }
+      </div>
+    </div>
+    @if (!current.license) {
+      <p class="mt-3 text-sm text-pulse" role="alert">No tenés matrícula cargada, así que no podés firmar. Pedile al administrador que la cargue en tu ficha.</p>
+    }
+  </section>
+}
+
+<form class="grid max-w-xl gap-4" (ngSubmit)="save()">
+  <h3 class="font-semibold">{{ stamp()?.hasImage ? 'Cambiar tu firma' : 'Cargar tu firma' }}</h3>
+  <p class="text-sm text-ink/70">Firmá dentro del recuadro con el mouse, el dedo o un lápiz, o subí una foto o escaneo de tu firma sobre fondo blanco.</p>
+  <canvas
+    #pad
+    width="600"
+    height="200"
+    class="aspect-[3/1] w-full touch-none rounded border border-rule bg-white"
+    aria-label="Recuadro para dibujar la firma"
+    (pointerdown)="start($event)"
+    (pointermove)="move($event)"
+    (pointerup)="end()"
+    (pointercancel)="end()"
+  ></canvas>
+  <div class="flex flex-wrap gap-2">
+    <ui-button variant="ghost" type="button" (click)="clear()">Borrar</ui-button>
+    <label class="text-link inline-flex cursor-pointer items-center text-sm">
+      Subir imagen
+      <input class="sr-only" type="file" accept="image/png,image/jpeg" (change)="upload($event)" />
+    </label>
+  </div>
+  <ui-field label="Tu contraseña">
+    <ui-password><input name="password" type="password" autocomplete="current-password" required [(ngModel)]="password" /></ui-password>
+  </ui-field>
+  @if (error()) { <p class="text-sm text-pulse" role="alert">{{ error() }}</p> }
+  <ui-button type="submit" [loading]="saving()" [disabled]="!drawn() || !password">Guardar firma</ui-button>
+</form>

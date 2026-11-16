@@ -7,6 +7,7 @@ public record HistoryCopy(
     string Clinic,
     PatientSummaryDto Patient,
     IReadOnlyList<ClinicalEntryDto> Entries,
+    IReadOnlyDictionary<Guid, ProfessionalSignature> Signatures,
     int? BrokenFolio,
     string Scope,
     string IssuedBy,
@@ -54,6 +55,47 @@ public static class HistoryPdf
             }
         }
 
+        // The signer's stamp at the foot of the page, as on paper: their handwritten signature if they added one,
+        // then name, specialty and license, and that what binds them is the electronic signature.
+        void Stamp(ClinicalEntryDto entry)
+        {
+            const float box = 190;
+            var center = Right - box / 2;
+            copy.Signatures.TryGetValue(entry.Id, out var signature);
+            float imageHeight = 0, imageWidth = 0;
+            if (signature is not null)
+            {
+                imageHeight = 42;
+                imageWidth = imageHeight * signature.Width / signature.Height;
+                if (imageWidth > box)
+                {
+                    imageWidth = box;
+                    imageHeight = box * signature.Height / signature.Width;
+                }
+            }
+            Need(imageHeight + 50);
+            y -= 4;
+            if (signature is not null)
+            {
+                pdf.Image(signature.Sha256, signature.Content, signature.Width, signature.Height, signature.Components,
+                    center - imageWidth / 2, y - imageHeight, imageWidth, imageHeight);
+                y -= imageHeight + 2;
+            }
+            pdf.Line(Right - box, y, Right, y);
+            y -= 10;
+            void Centered(string text, float size, bool bold)
+            {
+                pdf.Text(center - PdfDocument.Measure(text, size, bold) / 2, y, size, bold, text);
+                y -= size + 3;
+            }
+            Centered(entry.AuthorName, 9, true);
+            Centered(entry.SpecialtyName, 8, false);
+            if (entry.AuthorLicense is string license)
+                Centered($"Matrícula {license}", 8, false);
+            Centered("Firmado electrónicamente (Ley 25.506, art. 5)", 6.5f, false);
+            y -= 2;
+        }
+
         pdf.Text(Left, y, 16, true, copy.Clinic);
         pdf.Text(Right, y, 14, true, "HISTORIA CLÍNICA", alignRight: true);
         y -= 18;
@@ -95,6 +137,8 @@ public static class HistoryPdf
                 Paragraph($"Diagnósticos (CIE-10): {diagnoses}", 9);
             if (entry.HasAttachment)
                 Paragraph("Consentimiento firmado por el paciente adjunto en el sistema.", 9);
+            if (entry.Signed)
+                Stamp(entry);
             Paragraph($"Sello {entry.Hash}", 7);
             y -= 6;
         }

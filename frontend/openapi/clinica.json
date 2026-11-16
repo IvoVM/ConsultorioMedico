@@ -345,6 +345,34 @@
         "responses": { "200": { "content": { "application/pdf": { "schema": { "type": "string", "format": "binary" } } } } }
       }
     },
+    "/api/historia/folios/{id}/firma": {
+      "get": {
+        "operationId": "entrySignature",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "content": { "image/jpeg": { "schema": { "type": "string", "format": "binary" } } } } }
+      }
+    },
+    "/api/historia/mi-firma": {
+      "get": {
+        "operationId": "mySignature",
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SignatureStampDto" } } } } }
+      },
+      "put": {
+        "operationId": "saveSignature",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SaveSignatureCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SignatureStampDto" } } } } }
+      },
+      "delete": {
+        "operationId": "removeSignature",
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SignatureStampDto" } } } } }
+      }
+    },
+    "/api/historia/mi-firma/imagen": {
+      "get": {
+        "operationId": "mySignatureImage",
+        "responses": { "200": { "content": { "image/jpeg": { "schema": { "type": "string", "format": "binary" } } } } }
+      }
+    },
     "/api/pacientes": {
       "get": {
         "operationId": "searchPatients",
@@ -806,7 +834,7 @@
       },
       "ClinicalEntryDto": {
         "type": "object",
-        "required": ["id", "folio", "kind", "recordedAt", "signed", "authorName", "specialtyName", "text", "hasAttachment", "hash", "canAmend"],
+        "required": ["id", "folio", "kind", "recordedAt", "signed", "authorName", "specialtyName", "text", "hasAttachment", "hash", "canAmend", "hasSignatureImage"],
         "properties": {
           "id": { "type": "string" },
           "folio": { "type": "integer" },
@@ -829,8 +857,25 @@
           "amendsId": { "type": "string", "nullable": true },
           "amendsFolio": { "type": "integer", "nullable": true },
           "hash": { "type": "string" },
-          "canAmend": { "type": "boolean" }
+          "canAmend": { "type": "boolean" },
+          "hasSignatureImage": { "type": "boolean" }
         }
+      },
+      "SignatureStampDto": {
+        "type": "object",
+        "required": ["name", "specialty", "hasImage"],
+        "properties": {
+          "name": { "type": "string" },
+          "specialty": { "type": "string" },
+          "license": { "type": "string", "nullable": true },
+          "hasImage": { "type": "boolean" },
+          "uploadedAt": { "type": "string", "format": "date-time", "nullable": true }
+        }
+      },
+      "SaveSignatureCommand": {
+        "type": "object",
+        "required": ["contentBase64", "password"],
+        "properties": { "contentBase64": { "type": "string" }, "password": { "type": "string" } }
       },
       "BackgroundItemDto": {
         "type": "object",

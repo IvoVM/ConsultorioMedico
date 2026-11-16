@@ -31,6 +31,9 @@ public class ClinicalEntry
     public ConsentDecision? ConsentDecision { get; set; }
     public Guid? AttachmentId { get; set; }
     public string? AttachmentSha256 { get; set; }
+    // The handwritten signature shown with the signer's stamp, as it was when they signed. Null when they had none.
+    public Guid? SignatureId { get; set; }
+    public string? SignatureSha256 { get; set; }
     public string? PreviousHash { get; set; }
     public string? Hash { get; set; }
 

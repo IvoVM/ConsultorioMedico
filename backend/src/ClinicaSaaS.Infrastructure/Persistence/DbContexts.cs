@@ -36,6 +36,7 @@ public class TenantDbContext(DbContextOptions<TenantDbContext> options)
     public DbSet<PrescriptionItem> PrescriptionItems => Set<PrescriptionItem>();
     public DbSet<ClinicalEntry> ClinicalEntries => Set<ClinicalEntry>();
     public DbSet<ClinicalAttachment> ClinicalAttachments => Set<ClinicalAttachment>();
+    public DbSet<ProfessionalSignature> ProfessionalSignatures => Set<ProfessionalSignature>();
     public DbSet<ClinicalAccess> ClinicalAccesses => Set<ClinicalAccess>();
     public DbSet<Fee> Fees => Set<Fee>();
     public DbSet<Invoice> Invoices => Set<Invoice>();
@@ -161,6 +162,7 @@ public class TenantDbContext(DbContextOptions<TenantDbContext> options)
             e.HasIndex(x => x.DocumentNumber).IsUnique();
             e.HasOne(x => x.Specialty).WithMany(s => s.Employees).HasForeignKey(x => x.SpecialtyId).OnDelete(DeleteBehavior.SetNull);
             e.HasMany(x => x.Insurers).WithMany().UsingEntity(join => join.ToTable("EmployeeInsurers"));
+            e.HasOne<ProfessionalSignature>().WithMany().HasForeignKey(x => x.SignatureId).OnDelete(DeleteBehavior.Restrict);
         });
         builder.Entity<Insurer>(e =>
         {
@@ -403,6 +405,14 @@ public class TenantDbContext(DbContextOptions<TenantDbContext> options)
             e.HasOne(x => x.Amends).WithMany().HasForeignKey(x => x.AmendsId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.Attachment).WithMany().HasForeignKey(x => x.AttachmentId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne<Encounter>().WithMany().HasForeignKey(x => x.EncounterId).OnDelete(DeleteBehavior.Restrict);
+            e.Property(x => x.SignatureSha256).HasMaxLength(64);
+            e.HasOne<ProfessionalSignature>().WithMany().HasForeignKey(x => x.SignatureId).OnDelete(DeleteBehavior.Restrict);
+        });
+        builder.Entity<ProfessionalSignature>(e =>
+        {
+            e.Property(x => x.Sha256).HasMaxLength(64);
+            e.HasIndex(x => x.UserId);
+            e.HasOne<TenantUser>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
         });
         builder.Entity<ClinicalAttachment>(e =>
         {

@@ -1,6 +1,19 @@
 <ui-modal [open]="true" [title]="title()" (closed)="closed.emit()">
   <form id="sign-form" class="grid gap-4" (ngSubmit)="submit()">
     <ng-content />
+    @if (stamp(); as current) {
+      @if (current.license) {
+        <div class="flex flex-wrap items-end justify-between gap-3 rounded border border-rule p-3">
+          <p class="max-w-56 text-xs text-ink/70">
+            Así va el sello en el folio.
+            @if (!current.hasImage) { Podés sumar tu firma ológrafa en <a class="text-link" [routerLink]="signatureRoute" (click)="closed.emit()">Firma y sello</a>. }
+          </p>
+          <app-stamp [name]="current.name" [specialty]="current.specialty" [license]="current.license" [image]="image()" />
+        </div>
+      } @else {
+        <p class="text-sm text-pulse" role="alert">No tenés matrícula cargada, así que no podés firmar. Pedile al administrador que la cargue en tu ficha.</p>
+      }
+    }
     <ui-field label="Tu contraseña">
       <ui-password><input name="password" type="password" autocomplete="current-password" required [(ngModel)]="password" /></ui-password>
     </ui-field>

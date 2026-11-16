@@ -351,11 +351,13 @@ public partial class ClinicalService(
             visible = all.Where(e => e.BackgroundKind is not null || (e.SpecialtyId ?? Guid.Empty) == mine.Id);
             scope = $"Antecedentes y folios de {mine.Name}";
         }
-        var entries = visible.OrderBy(e => e.Folio).Select(e => ToDto(e, e.AmendsId is Guid a ? folios[a] : null, false)).ToList();
+        var shown = visible.OrderBy(e => e.Folio).ToList();
+        var entries = shown.Select(e => ToDto(e, e.AmendsId is Guid a ? folios[a] : null, false)).ToList();
+        var signatures = await SignaturesForAsync(shown, ct);
         var clinic = await settings.GetAsync(ct);
         var issuedBy = await CurrentUserNameAsync(ct);
         var pdf = HistoryPdf.Render(
-            new HistoryCopy(clinic.Name, summary, entries, ClinicalLedger.FirstBroken(all), scope, issuedBy, clock.GetUtcNow()),
+            new HistoryCopy(clinic.Name, summary, entries, signatures, ClinicalLedger.FirstBroken(all), scope, issuedBy, clock.GetUtcNow()),
             timeZone.Zone);
         await LogAsync(clientId, ClinicalAccessAction.Copy, scope, ct);
         return new FileDto(pdf, "application/pdf", $"historia-clinica-{summary.HistoryNumber}.pdf");
@@ -375,7 +377,7 @@ public partial class ClinicalService(
 
     private bool IsDoctor => currentUser.Role == TenantRole.Doctor.ToString();
 
-    private sealed record Signer(Guid Id, string Name, string License, Guid? SpecialtyId, string SpecialtyName);
+    private sealed record Signer(Guid Id, string Name, string License, Guid? SpecialtyId, string SpecialtyName, ProfessionalSignature? Signature);
 
     // Electronic signature: the professional's own password, typed again, and their license on file.
     private async Task<Signer> SignerAsync(string? password, CancellationToken ct)
@@ -389,6 +391,7 @@ public partial class ClinicalService(
             .Select(e => new
             {
                 e.LicenseNumber,
+                e.SignatureId,
                 e.SpecialtyId,
                 Specialty = e.Specialty != null ? e.Specialty.Name : null,
                 Name = (e.User.FirstName + " " + e.User.LastName).Trim()
@@ -396,7 +399,8 @@ public partial class ClinicalService(
             .FirstOrDefaultAsync(ct);
         if (employee is null || string.IsNullOrWhiteSpace(employee.LicenseNumber))
             throw new BusinessRuleException("Para firmar hace falta tu matrícula. Pedile al administrador que la cargue en tu ficha de profesional.");
-        return new Signer(id, employee.Name, employee.LicenseNumber.Trim(), employee.SpecialtyId, employee.Specialty ?? NoSpecialty);
+        var signature = employee.SignatureId is Guid signatureId ? await clinical.GetSignatureAsync(signatureId, ct) : null;
+        return new Signer(id, employee.Name, employee.LicenseNumber.Trim(), employee.SpecialtyId, employee.Specialty ?? NoSpecialty, signature);
     }
 
     private ClinicalEntry NewEntry(ClinicalEntryKind kind, Guid clientId, Signer signer) => new()
@@ -407,6 +411,8 @@ public partial class ClinicalService(
         AuthorId = signer.Id,
         AuthorName = signer.Name,
         AuthorLicense = signer.License,
+        SignatureId = signer.Signature?.Id,
+        SignatureSha256 = signer.Signature?.Sha256,
         RecordedAt = clock.GetUtcNow(),
         Signed = true
     };
@@ -450,7 +456,8 @@ public partial class ClinicalService(
         e.AmendsId,
         amendsFolio,
         e.Hash ?? "",
-        canAmend);
+        canAmend,
+        e.SignatureId is not null);
 
     private async Task<List<ClinicalEntry>> SealedEntriesAsync(Guid clientId, CancellationToken ct) =>
         await clinical.Entries.Where(e => e.ClientId == clientId && e.Hash != null).OrderBy(e => e.Folio).ToListAsync(ct);

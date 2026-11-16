@@ -11,6 +11,7 @@ public sealed class PdfDocument
     public const float Height = 842;
 
     private readonly List<StringBuilder> pages = [new()];
+    private readonly List<(string Key, byte[] Jpeg, int Width, int Height, int Components)> images = [];
 
     private StringBuilder Current => pages[^1];
 
@@ -25,6 +26,18 @@ public sealed class PdfDocument
         Current.Append(CultureInfo.InvariantCulture, $"BT /{(bold ? "F2" : "F1")} {size} Tf {x:0.##} {y:0.##} Td (")
             .Append(Escape(text))
             .Append(") Tj ET\n");
+    }
+
+    // Draws a JPEG as it is (DCTDecode) in the box at x, y (bottom left). The same picture is stored once.
+    public void Image(string key, byte[] jpeg, int pixelWidth, int pixelHeight, int components, float x, float y, float width, float height)
+    {
+        var index = images.FindIndex(i => i.Key == key);
+        if (index < 0)
+        {
+            images.Add((key, jpeg, pixelWidth, pixelHeight, components));
+            index = images.Count - 1;
+        }
+        Current.Append(CultureInfo.InvariantCulture, $"q {width:0.##} 0 0 {height:0.##} {x:0.##} {y:0.##} cm /Im{index + 1} Do Q\n");
     }
 
     public void Line(float x1, float y1, float x2, float y2) =>
@@ -62,6 +75,16 @@ public sealed class PdfDocument
             Ascii("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>"),
             Ascii("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>")
         ];
+        var xObjects = new StringBuilder();
+        for (var i = 0; i < images.Count; i++)
+        {
+            var (_, jpeg, width, height, components) = images[i];
+            var space = components == 1 ? "/DeviceGray" : "/DeviceRGB";
+            byte[] body = [.. Ascii($"<< /Type /XObject /Subtype /Image /Width {width} /Height {height} /ColorSpace {space} /BitsPerComponent 8 /Filter /DCTDecode /Length {jpeg.Length} >>\nstream\n"), .. jpeg, .. Ascii("\nendstream")];
+            objects.Add(body);
+            xObjects.Append(CultureInfo.InvariantCulture, $"/Im{i + 1} {objects.Count} 0 R ");
+        }
+        var resources = $"/Font << /F1 3 0 R /F2 4 0 R >>{(images.Count > 0 ? $" /XObject << {xObjects}>>" : "")}";
         var kids = new List<string>();
         foreach (var content in pages)
         {
@@ -69,7 +92,7 @@ public sealed class PdfDocument
             byte[] body = [.. Ascii($"<< /Length {stream.Length} >>\nstream\n"), .. stream, .. Ascii("\nendstream")];
             objects.Add(body);
             var contentId = objects.Count;
-            objects.Add(Ascii($"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {Width} {Height}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents {contentId} 0 R >>"));
+            objects.Add(Ascii($"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {Width} {Height}] /Resources << {resources} >> /Contents {contentId} 0 R >>"));
             kids.Add($"{objects.Count} 0 R");
         }
         objects[1] = Ascii($"<< /Type /Pages /Kids [{string.Join(' ', kids)}] /Count {pages.Count} >>");

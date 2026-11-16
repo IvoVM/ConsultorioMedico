@@ -17,11 +17,14 @@ public static class ClinicalLedger
     public static DateTimeOffset Truncate(DateTimeOffset moment) =>
         new(moment.UtcTicks - moment.UtcTicks % TimeSpan.TicksPerMillisecond, TimeSpan.Zero);
 
+    // A page signed with a handwritten signature seals it too (v2). Pages without one keep the v1 layout, so the
+    // pages sealed before signatures existed still verify.
     public static string ComputeHash(ClinicalEntry entry)
     {
+        var withSignature = entry.SignatureSha256 is not null;
         object?[] fields =
         [
-            "v1",
+            withSignature ? "v2" : "v1",
             entry.PreviousHash ?? "",
             entry.Folio,
             entry.Kind.ToString(),
@@ -47,6 +50,8 @@ public static class ClinicalLedger
             entry.AttachmentId,
             entry.AttachmentSha256
         ];
+        if (withSignature)
+            fields = [.. fields, entry.SignatureId, entry.SignatureSha256];
         var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(fields)));
         return Convert.ToHexStringLower(bytes);
     }

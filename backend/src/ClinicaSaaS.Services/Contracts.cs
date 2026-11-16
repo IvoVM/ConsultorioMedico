@@ -221,6 +221,12 @@ public record AddConsentCommand(
     string ContentBase64,
     string Password);
 
+// The stamp the professional signs with: their name, specialty and license as they go on every page, and
+// whether they added a handwritten signature to show next to it.
+public record SignatureStampDto(string Name, string Specialty, string? License, bool HasImage, DateTimeOffset? UploadedAt);
+// The handwritten signature as a JPEG on white, up to 300 KB, sent as base64. Changing it asks for the password.
+public record SaveSignatureCommand(string ContentBase64, string Password);
+
 // One page of the clinical record as it was signed.
 public record ClinicalEntryDto(
     Guid Id,
@@ -244,7 +250,8 @@ public record ClinicalEntryDto(
     Guid? AmendsId,
     int? AmendsFolio,
     string Hash,
-    bool CanAmend);
+    bool CanAmend,
+    bool HasSignatureImage);
 // The latest signed value of a background fact, which every professional sees.
 public record BackgroundItemDto(BackgroundKind Kind, string Text, int Folio, DateTimeOffset RecordedAt, string AuthorName);
 

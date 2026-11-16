@@ -75,4 +75,27 @@ public class ClinicalController(ClinicalService clinical) : ApiController
     [HttpGet("historia/folios/{id:guid}/adjunto")]
     public Task<IActionResult> Attachment(Guid id, CancellationToken ct) =>
         RunFile(() => clinical.AttachmentAsync(id, ct));
+
+    [Authorize(Roles = $"{AppRoles.Doctor},{AppRoles.Patient}")]
+    [HttpGet("historia/folios/{id:guid}/firma")]
+    public Task<IActionResult> EntrySignature(Guid id, CancellationToken ct) =>
+        RunFile(() => clinical.EntrySignatureAsync(id, ct));
+
+    [Authorize(Roles = AppRoles.Doctor)]
+    [HttpGet("historia/mi-firma")]
+    public Task<IActionResult> MySignature(CancellationToken ct) => Run(() => clinical.MySignatureAsync(ct));
+
+    [Authorize(Roles = AppRoles.Doctor)]
+    [HttpGet("historia/mi-firma/imagen")]
+    public Task<IActionResult> MySignatureImage(CancellationToken ct) => RunFile(() => clinical.MySignatureImageAsync(ct));
+
+    [Authorize(Roles = AppRoles.Doctor)]
+    [HttpPut("historia/mi-firma")]
+    [RequestSizeLimit(1024 * 1024)]
+    public Task<IActionResult> SaveSignature(SaveSignatureCommand command, CancellationToken ct) =>
+        Run(() => clinical.SaveSignatureAsync(command, ct));
+
+    [Authorize(Roles = AppRoles.Doctor)]
+    [HttpDelete("historia/mi-firma")]
+    public Task<IActionResult> RemoveSignature(CancellationToken ct) => Run(() => clinical.RemoveSignatureAsync(ct));
 }

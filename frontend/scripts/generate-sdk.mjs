@@ -200,8 +200,9 @@ function emitMethod(item) {
   const pathExpr = path.replaceAll(/\{([^}]+)\}/g, '${$1}');
   const queryExpr = query.length ? '${queryString(query)}' : '';
   const url = `\`\${this.base}${pathExpr}${queryExpr}\``;
-  // A file download (a PDF) comes back as a Blob instead of JSON.
-  const download = Object.values(op.responses ?? {}).some((item) => item.content?.['application/pdf']);
+  // A file download (a PDF, an image) comes back as a Blob instead of JSON.
+  const download = Object.values(op.responses ?? {}).some((item) =>
+    Object.values(item.content ?? {}).some((content) => content.schema?.format === 'binary'));
   const call = download
     ? `this.http.${verb}(${url}, ${verb === 'get' || verb === 'delete' ? '' : `${body ? 'body' : '{}'}, `}{ responseType: 'blob' })`
     : verb === 'get' || verb === 'delete'

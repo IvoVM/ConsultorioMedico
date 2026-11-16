@@ -22,6 +22,7 @@ export enum AppRoute {
   Medico = '/medico',
   Agenda = '/agenda',
   Insumos = '/insumos',
+  FirmaSello = '/firma-y-sello',
 }
 
 export function routePath(route: AppRoute): string {

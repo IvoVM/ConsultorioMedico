@@ -106,6 +106,7 @@ export const routes: Routes = [
             loadComponent: () => import('./modules/appointments/waitlist').then((m) => m.WaitlistPage),
           },
           { path: routePath(AppRoute.Medico), canActivate: [roleGuard(TenantRole.Doctor)], loadComponent: () => import('./modules/clinical/doctor').then((m) => m.DoctorPage) },
+          { path: routePath(AppRoute.FirmaSello), canActivate: [roleGuard(TenantRole.Doctor)], loadComponent: () => import('./modules/clinical/signature').then((m) => m.SignaturePage) },
         ],
       },
     ],

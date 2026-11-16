@@ -17,5 +17,7 @@ export * from './models/clinical-access-action';
 export * from './models/add-background-command';
 export * from './models/add-consent-command';
 export * from './models/clinical-entry-dto';
+export * from './models/signature-stamp-dto';
+export * from './models/save-signature-command';
 export * from './models/background-item-dto';
 export * from './models/clinical-access-dto';

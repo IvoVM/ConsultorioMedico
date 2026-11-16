@@ -483,6 +483,19 @@ public class ClinicalStore(TenantDbContext db) : IClinicalStore
             await tx.CommitAsync(ct);
     }
 
+    public Task<ProfessionalSignature?> GetSignatureAsync(Guid id, CancellationToken ct) =>
+        db.ProfessionalSignatures.AsNoTracking().FirstOrDefaultAsync(s => s.Id == id, ct);
+
+    public async Task SetSignatureAsync(Guid userId, ProfessionalSignature? signature, CancellationToken ct)
+    {
+        var employee = await db.Employees.FirstOrDefaultAsync(e => e.UserId == userId, ct)
+            ?? throw new InvalidOperationException("The professional has no employee file.");
+        if (signature is not null)
+            db.ProfessionalSignatures.Add(signature);
+        employee.SignatureId = signature?.Id;
+        await db.SaveChangesAsync(ct);
+    }
+
     public async Task RecordAccessAsync(ClinicalAccess access, CancellationToken ct)
     {
         db.ClinicalAccesses.Add(access);
