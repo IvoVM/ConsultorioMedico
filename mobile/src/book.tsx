@@ -6,6 +6,7 @@ import { api, hora, type AppointmentType, type Insurer, type Slot, type Specialt
 import { TenantRole } from './role';
 import { AuthFrom } from './status';
 import { useSession } from './session';
+import { Consent, usePrivacyNotice } from './consent';
 import { colors, type } from './theme';
 import { Button, Empty, ErrorText, Field, Option, Screen } from './ui';
 
@@ -65,6 +66,8 @@ export function BookScreen() {
   const [seeking, setSeeking] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const notice = usePrivacyNotice();
+  const [accepted, setAccepted] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -307,8 +310,12 @@ export function BookScreen() {
 
   async function send() {
     if (!slot) return;
-    setSending(true);
     setError('');
+    if (!accepted) {
+      setError('Leé el aviso de privacidad y marcá que lo aceptás para enviar la solicitud.');
+      return;
+    }
+    setSending(true);
     try {
       await api.createRequest({
         specialtyId,
@@ -321,6 +328,7 @@ export function BookScreen() {
         documentNumber: documentNumber.trim(),
         insurerId: coverage === Coverage.Obra ? insurerId : null,
         memberNumber: coverage === Coverage.Obra ? memberNumber.trim() : null,
+        privacyVersion: notice?.version ?? null,
       });
       setStep(Step.Done);
     } catch (reason) {
@@ -456,6 +464,7 @@ export function BookScreen() {
               <Summary label="Documento" value={documentNumber} />
               <Summary label="Teléfono" value={phone} />
               <Summary label="Cobertura" value={coverage === Coverage.Obra ? `${insurerName} · ${memberNumber}` : 'Particular'} />
+              <Consent notice={notice} accepted={accepted} onChange={setAccepted} />
               <Button label={sending ? 'Enviando…' : 'Enviar solicitud'} disabled={sending} onPress={() => void send()} />
             </>
           ) : null}

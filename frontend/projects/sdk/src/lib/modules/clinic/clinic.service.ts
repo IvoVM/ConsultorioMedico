@@ -3,12 +3,17 @@ import { Injectable } from '@angular/core';
 import { ApiClient } from '../../core/api-client';
 import type { ClinicDto } from './models/clinic-dto';
 import type { ClinicSettingsDto } from './models/clinic-settings-dto';
+import type { PrivacyNoticeDto } from './models/privacy-notice-dto';
 import type { SaveClinicSettingsCommand } from './models/save-clinic-settings-command';
 
 @Injectable({ providedIn: 'root' })
 export class ClinicService extends ApiClient {
   clinicProfile() {
     return this.http.get<ClinicDto>(`${this.base}/api/clinica`);
+  }
+
+  privacyNotice() {
+    return this.http.get<PrivacyNoticeDto>(`${this.base}/api/clinica/privacidad`);
   }
 
   clinicSettings() {

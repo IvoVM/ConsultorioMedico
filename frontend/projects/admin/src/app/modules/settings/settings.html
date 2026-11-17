@@ -20,6 +20,13 @@
           </ui-field>
           <p class="mt-2 text-sm text-ink/60">Es el nombre que ven los pacientes al entrar al portal.</p>
         </section>
+        <section class="mt-4 rounded-2xl bg-white p-5 shadow-[var(--shadow-card)] sm:p-6">
+          <h3 class="font-serif text-lg tracking-tight">Privacidad</h3>
+          <ui-field class="mt-4" label="Dónde pedir los datos">
+            <input name="privacyContact" maxlength="160" placeholder="Ej.: privacidad@consultorio.com.ar o 11 4000-0000" [ngModel]="form.privacyContact ?? ''" (ngModelChange)="setPrivacyContact($event)" />
+          </ui-field>
+          <p class="mt-2 text-sm text-ink/60">Aparece en el aviso de privacidad que aceptan los pacientes: es donde piden ver, corregir o borrar sus datos. Si lo dejás vacío, el aviso dice que lo pidan en la recepción.</p>
+        </section>
       }
       @case (settingsTab.Turnos) {
         <section class="rounded-2xl bg-white px-5 py-2 shadow-[var(--shadow-card)] sm:px-6">

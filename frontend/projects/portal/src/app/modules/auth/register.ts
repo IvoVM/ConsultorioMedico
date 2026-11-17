@@ -1,15 +1,15 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { AuthService, ClinicService, clinicaSession, errorMessage } from 'sdk';
-import { UiButton, UiField, UiPassword, formatPhone, passwordIssue } from 'ui';
+import { AuthService, ClinicService, PrivacyNoticeDto, clinicaSession, errorMessage } from 'sdk';
+import { UiButton, UiConsent, UiField, UiPassword, formatPhone, passwordIssue } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { readClinicName } from './clinic-name';
 import { AppRoute } from '../../app.routes.enum';
 import { AuthFrom } from './auth-from';
 
 @Component({
-  imports: [FormsModule, RouterLink, UiButton, UiField, UiPassword],
+  imports: [FormsModule, RouterLink, UiButton, UiConsent, UiField, UiPassword],
   templateUrl: './register.html',
 })
 export class RegisterPage {
@@ -28,9 +28,12 @@ export class RegisterPage {
   confirm = '';
   readonly error = signal('');
   readonly loading = signal(false);
+  readonly notice = signal<PrivacyNoticeDto | null>(null);
+  readonly accepted = signal(false);
 
   constructor() {
     void readClinicName(this.clinic).then((name) => this.clinicName.set(name));
+    this.clinic.privacyNotice().subscribe({ next: (notice) => this.notice.set(notice) });
     const query = this.route.snapshot.queryParamMap;
     this.documentNumber = query.get('documento') ?? '';
     this.firstName = query.get('nombre') ?? '';
@@ -62,6 +65,10 @@ export class RegisterPage {
       this.error.set('Las contraseñas no coinciden.');
       return;
     }
+    if (!this.accepted()) {
+      this.error.set('Leé el aviso de privacidad y marcá que lo aceptás para crear la cuenta.');
+      return;
+    }
     const phone = formatPhone(this.phone);
     if (!phone) {
       this.error.set('El teléfono no es válido.');
@@ -77,6 +84,7 @@ export class RegisterPage {
           lastName: this.lastName,
           documentNumber: this.documentNumber,
           phone: this.phone,
+          privacyVersion: this.notice()?.version ?? null,
         }),
       );
       clinicaSession.set(token.token, token.role, token.name);

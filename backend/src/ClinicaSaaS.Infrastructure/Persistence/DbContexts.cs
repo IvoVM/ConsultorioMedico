@@ -52,6 +52,7 @@ public class TenantDbContext(DbContextOptions<TenantDbContext> options)
     public DbSet<AuditEntry> AuditEntries => Set<AuditEntry>();
     public DbSet<RefreshSession> RefreshSessions => Set<RefreshSession>();
     public DbSet<ClinicSettings> ClinicSettings => Set<ClinicSettings>();
+    public DbSet<PrivacyConsent> PrivacyConsents => Set<PrivacyConsent>();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
@@ -82,6 +83,16 @@ public class TenantDbContext(DbContextOptions<TenantDbContext> options)
             e.Property(c => c.Name).HasMaxLength(120);
             e.Property(c => c.TaxId).HasMaxLength(11);
             e.Property(c => c.TaxCondition).HasConversion<string>().HasMaxLength(30);
+            e.Property(c => c.PrivacyContact).HasMaxLength(160);
+        });
+        builder.Entity<PrivacyConsent>(e =>
+        {
+            e.Property(x => x.DocumentNumber).HasMaxLength(20);
+            e.Property(x => x.Kind).HasConversion<string>().HasMaxLength(30);
+            e.Property(x => x.Channel).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.NoticeVersion).HasMaxLength(20);
+            e.HasIndex(x => x.DocumentNumber);
+            e.HasIndex(x => x.ClientId);
         });
         builder.Entity<Location>(e =>
         {

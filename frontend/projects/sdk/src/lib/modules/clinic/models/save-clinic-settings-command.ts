@@ -11,4 +11,5 @@ export interface SaveClinicSettingsCommand {
   pointOfSale?: number | null;
   autoAuthorize?: boolean;
   maxOverbooksPerDay?: number | null;
+  privacyContact?: string | null;
 }

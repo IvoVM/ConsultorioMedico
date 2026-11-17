@@ -69,6 +69,7 @@ public static class DependencyInjection
         services.AddScoped<MedicalRecordsService>();
         services.AddScoped<ClinicSettingsService>();
         services.AddScoped<MetricsService>();
+        services.AddScoped<PrivacyService>();
         return services;
     }
 }

@@ -20,6 +20,8 @@ export type TokenDto = {
 };
 
 export type Clinic = { slug: string; name: string };
+// The privacy notice a person reads before giving their data; its version is what they agree to.
+export type PrivacyNotice = { version: string; clinic: string; sections: { title: string; body: string }[] };
 export type Location = { id: string; name: string; address: string; isActive: boolean };
 export type Specialty = { id: string; name: string };
 export type Service = { id: string; locationId: string; name: string };
@@ -248,6 +250,7 @@ export async function register(body: {
   lastName: string;
   documentNumber: string;
   phone: string;
+  privacyVersion: string | null;
 }) {
   const response = await fetch(`${apiUrl}/api/acceso/registro`, {
     method: 'POST',
@@ -274,6 +277,7 @@ const query = (params: Record<string, string | undefined>) => {
 
 export const api = {
   clinic: () => request<Clinic>('/api/clinica', {}, false),
+  privacyNotice: () => request<PrivacyNotice>('/api/clinica/privacidad', {}, false),
   locations: () => request<Location[]>('/api/sedes', {}, false),
   saveLocation: (body: { name: string; address: string }, id?: string) =>
     request<Location>(id ? `/api/sedes/${id}` : '/api/sedes', { method: id ? 'PUT' : 'POST', body: JSON.stringify(body) }),
@@ -311,6 +315,7 @@ export const api = {
     documentNumber: string;
     insurerId?: string | null;
     memberNumber?: string | null;
+    privacyVersion: string | null;
   }) => request<BookingRequest>('/api/solicitudes', { method: 'POST', body: JSON.stringify(body) }, false),
   myRequests: () => request<BookingRequest[]>('/api/solicitudes/mias'),
   book: (body: { patientId?: string | null; professionalId: string; locationId: string; appointmentTypeId: string; start: string; visitReason?: string | null }) =>
@@ -333,7 +338,7 @@ export const api = {
     request<ClinicalEntry>(`/api/encuentros/${id}/firmar`, { method: 'POST', body: JSON.stringify({ password }) }),
   history: (patientId?: string, specialtyId?: string) => request<History>(`/api/historia${query({ patientId, specialtyId })}`),
   searchPatients: (q: string) => request<PatientCard[]>(`/api/pacientes${query({ q })}`),
-  createPatient: (body: { email: string; firstName: string; lastName: string; documentNumber: string; birthDate: string; phone: string; healthInsurance?: string; memberNumber?: string; emergencyContact?: string; emergencyPhone?: string }) =>
+  createPatient: (body: { patientInformed: boolean; firstName: string; lastName: string; documentNumber: string; birthDate: string; phone: string; healthInsurance?: string; memberNumber?: string; emergencyContact?: string; emergencyPhone?: string }) =>
     request<{ patient: MedicalRecord; temporaryPassword: string }>('/api/pacientes', { method: 'POST', body: JSON.stringify(body) }),
   record: (patientId: string) => request<MedicalRecord>(`/api/historias-medicas/${patientId}`),
   saveRecord: (patientId: string, body: Omit<MedicalRecord, 'patientId' | 'email'>) =>

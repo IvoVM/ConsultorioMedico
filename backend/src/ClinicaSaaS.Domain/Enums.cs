@@ -177,3 +177,17 @@ public enum ClinicalAccessAction
     Amend,
     Attachment
 }
+
+// What a person agreed to: the clinic's privacy notice.
+public enum ConsentKind
+{
+    PrivacyNotice
+}
+
+// Where the agreement was given: the online request, signing up, or at the front desk after being told.
+public enum ConsentChannel
+{
+    OnlineRequest,
+    SignUp,
+    FrontDesk
+}

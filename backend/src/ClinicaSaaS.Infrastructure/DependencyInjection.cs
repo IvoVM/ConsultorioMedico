@@ -240,6 +240,7 @@ public static class DependencyInjection
         services.AddScoped<IClinicalStore, ClinicalStore>();
         services.AddScoped<IBillingStore, BillingStore>();
         services.AddScoped<IAuditStore, AuditStore>();
+        services.AddScoped<IConsentStore, ConsentStore>();
         services.AddScoped<IClinicSettingsStore, ClinicSettingsStore>();
         services.AddScoped<IFiscalAuthority, Fiscal.SimulatedFiscalAuthority>();
         services.AddScoped<ICardProcessor, Fiscal.SimulatedCardProcessor>();

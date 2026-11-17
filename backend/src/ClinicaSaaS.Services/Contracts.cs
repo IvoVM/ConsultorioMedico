@@ -14,7 +14,10 @@ public record TenantAccount(
 }
 
 public record ClinicDto(string Slug, string Name, bool BillingEnabled, bool FiscalEnabled);
-public record ClinicSettingsDto(string Name, bool BillingEnabled, bool AutoInvoice, bool FiscalEnabled, string? TaxId, TaxCondition? TaxCondition, int? PointOfSale, bool AutoAuthorize, int? MaxOverbooksPerDay);
+public record ClinicSettingsDto(string Name, bool BillingEnabled, bool AutoInvoice, bool FiscalEnabled, string? TaxId, TaxCondition? TaxCondition, int? PointOfSale, bool AutoAuthorize, int? MaxOverbooksPerDay, string? PrivacyContact);
+// The privacy notice a person reads before giving their data; its version is what they agree to.
+public record PrivacyNoticeDto(string Version, string Clinic, IReadOnlyList<PrivacySectionDto> Sections);
+public record PrivacySectionDto(string Title, string Body);
 public record SaveClinicSettingsCommand(
     string Name,
     bool BillingEnabled,
@@ -24,7 +27,8 @@ public record SaveClinicSettingsCommand(
     TaxCondition? TaxCondition = null,
     int? PointOfSale = null,
     bool AutoAuthorize = false,
-    int? MaxOverbooksPerDay = null);
+    int? MaxOverbooksPerDay = null,
+    string? PrivacyContact = null);
 
 public record LoginCommand(string DocumentNumber, string Password, LoginAccount? Account = null);
 public record ChangePasswordCommand(string Password);
@@ -39,7 +43,8 @@ public record RegisterPatientCommand(
     string FirstName,
     string LastName,
     string DocumentNumber,
-    string Phone);
+    string Phone,
+    string? PrivacyVersion = null);
 
 public record LocationDto(Guid Id, string Name, string Address, bool IsActive);
 public record SaveLocationCommand(string Name, string Address);
@@ -90,8 +95,9 @@ public record SlotDto(Guid ProfessionalId, string Professional, Guid LocationId,
 public record AvailabilityQuery(Guid LocationId, Guid SpecialtyId, Guid? ProfessionalId, DateOnly Date);
 
 public record BookAppointmentCommand(Guid? PatientId, Guid ProfessionalId, Guid LocationId, Guid AppointmentTypeId, DateTimeOffset Start, string? VisitReason, Guid? InsurerId = null, string? MemberNumber = null);
-public record DeskAppointmentCommand(string DocumentNumber, string FirstName, string LastName, string Phone, Guid ProfessionalId, Guid LocationId, Guid AppointmentTypeId, DateTimeOffset Start, Guid? InsurerId, string? MemberNumber);
-public record CreateBookingRequestCommand(Guid SpecialtyId, Guid ProfessionalId, Guid LocationId, Guid AppointmentTypeId, DateTimeOffset Start, string Name, string Phone, string DocumentNumber, Guid? InsurerId, string? MemberNumber);
+// PatientInformed: front desk told a new patient the privacy notice before loading their data.
+public record DeskAppointmentCommand(string DocumentNumber, string FirstName, string LastName, string Phone, Guid ProfessionalId, Guid LocationId, Guid AppointmentTypeId, DateTimeOffset Start, Guid? InsurerId, string? MemberNumber, bool PatientInformed = false);
+public record CreateBookingRequestCommand(Guid SpecialtyId, Guid ProfessionalId, Guid LocationId, Guid AppointmentTypeId, DateTimeOffset Start, string Name, string Phone, string DocumentNumber, Guid? InsurerId, string? MemberNumber, string? PrivacyVersion = null);
 public record BookingRequestDto(Guid Id, string Name, string Phone, string DocumentNumber, string Specialty, string Professional, string AppointmentType, DateTimeOffset Start, string? Insurer, string? MemberNumber, BookingRequestStatus Status, string? RejectionReason, DateTimeOffset? PreviousStart, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt, string Location);
 public record RejectBookingRequestCommand(string Reason);
 public record RescheduleBookingRequestCommand(DateTimeOffset Start);
@@ -276,7 +282,8 @@ public record CreatePatientCommand(
     string? HealthInsurance,
     string? MemberNumber,
     string? EmergencyContact,
-    string? EmergencyPhone);
+    string? EmergencyPhone,
+    bool PatientInformed = false);
 public record CreatedPatientDto(MedicalRecordDto Patient, string TemporaryPassword);
 public record PatientLookupDto(
     Guid PatientId,
@@ -496,7 +503,8 @@ public record AgendaBookCommand(
     Guid AppointmentTypeId,
     DateTimeOffset Start,
     Guid? InsurerId,
-    string? MemberNumber);
+    string? MemberNumber,
+    bool PatientInformed = false);
 public record PlaceRequestCommand(Guid ProfessionalId, DateTimeOffset Start);
 public record EditAppointmentCommand(Guid? InsurerId, string? MemberNumber);
 

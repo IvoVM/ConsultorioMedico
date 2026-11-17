@@ -1,15 +1,15 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { MedicalRecordDto, MedicalRecordsService, PatientsService, errorMessage } from 'sdk';
-import { MediaWatcherService, UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable, formatPhone, UiHelp } from 'ui';
+import { ClinicService, MedicalRecordDto, MedicalRecordsService, PatientsService, PrivacyNoticeDto, errorMessage } from 'sdk';
+import { MediaWatcherService, UiButton, UiConsent, UiEmpty, UiField, UiModal, UiSkeleton, UiTable, formatPhone, UiHelp, staffConsentLabel } from 'ui';
 import { TablePager, listParams, queueSearch } from '../../table-pager';
 import { SortCol, SortState, nextSort } from '../../table-sort';
 import { firstValueFrom } from 'rxjs';
 import { age } from './models/patient-form';
 
 @Component({
-  imports: [FormsModule, RouterLink, UiHelp, SortCol, TablePager, UiButton, UiEmpty, UiField, UiModal, UiSkeleton, UiTable],
+  imports: [FormsModule, RouterLink, UiHelp, SortCol, TablePager, UiButton, UiConsent, UiEmpty, UiField, UiModal, UiSkeleton, UiTable],
   templateUrl: './patients.html',
 })
 export class PatientsPage {
@@ -17,6 +17,10 @@ export class PatientsPage {
   private readonly patientsApi = inject(PatientsService);
   private readonly router = inject(Router);
   private readonly media = inject(MediaWatcherService);
+  private readonly clinic = inject(ClinicService);
+  readonly notice = signal<PrivacyNoticeDto | null>(null);
+  readonly informed = signal(false);
+  readonly consentLabel = staffConsentLabel;
   private readonly searchHost: { timer?: ReturnType<typeof setTimeout> } = {};
   readonly age = age;
   readonly today = new Date().toISOString().slice(0, 10);
@@ -86,6 +90,8 @@ export class PatientsPage {
 
   openAlta() {
     this.error.set('');
+    this.informed.set(false);
+    if (!this.notice()) this.clinic.privacyNotice().subscribe({ next: (notice) => this.notice.set(notice) });
     this.altaOpen.set(true);
     queueMicrotask(() => document.getElementById('alta-nombre')?.focus());
   }
@@ -108,6 +114,11 @@ export class PatientsPage {
       this.saving.set(false);
       return;
     }
+    if (!this.informed()) {
+      this.error.set('Contale al paciente el aviso de privacidad y marcá que lo hiciste.');
+      this.saving.set(false);
+      return;
+    }
     this.phone = phone;
     this.emergencyPhone = emergencyPhone ?? '';
     try {
@@ -122,6 +133,7 @@ export class PatientsPage {
           memberNumber: this.memberNumber.trim() || null,
           emergencyContact: this.emergencyContact.trim() || null,
           emergencyPhone: this.emergencyPhone.trim() || null,
+          patientInformed: true,
         }),
       );
       await this.router.navigate(['/pacientes', created.patient.patientId], {

@@ -130,6 +130,9 @@
                   <div><dt>Teléfono</dt><dd>{{ phone }}</dd></div>
                   <div><dt>Cobertura</dt><dd>{{ coverage() === Coverage.Obra ? insurerName() + ' · ' + memberNumber : 'Particular' }}</dd></div>
                 </dl>
+                @if (!forDesk()) {
+                  <ui-consent class="mt-6" [notice]="notice()" [(accepted)]="accepted" />
+                }
                 <ui-button [loading]="sending()" (click)="send()">{{ forDesk() ? 'Confirmar turno' : 'Enviar solicitud' }}</ui-button>
               }
             } @else if (step() === Step.Done) {

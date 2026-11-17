@@ -56,6 +56,7 @@ export class AppointmentsService extends ApiClient {
     start: string;
     insurerId?: string | null;
     memberNumber?: string | null;
+    patientInformed?: boolean;
   }) {
     return this.http.post<AppointmentDto>(`${this.base}/api/turnos/mostrador`, body);
   }

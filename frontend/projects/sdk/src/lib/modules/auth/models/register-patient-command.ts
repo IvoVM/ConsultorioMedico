@@ -5,4 +5,5 @@ export interface RegisterPatientCommand {
   lastName: string;
   documentNumber: string;
   phone: string;
+  privacyVersion?: string | null;
 }

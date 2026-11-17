@@ -16,4 +16,6 @@ public class ClinicSettings
     public bool AutoAuthorize { get; set; }
     // How many overbooks each professional may get per day: null means no limit, 0 means none at all.
     public int? MaxOverbooksPerDay { get; set; }
+    // Where patients ask to see, fix or delete their data (an email, a phone, the desk); the privacy notice shows it.
+    public string? PrivacyContact { get; set; }
 }

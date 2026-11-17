@@ -20,6 +20,7 @@
           <ui-field label="Apellido"><input name="lastName" required maxlength="80" [(ngModel)]="lastName" /></ui-field>
           <ui-field label="Teléfono"><input name="phone" type="tel" inputmode="tel" required maxlength="30" placeholder="+54 11 00000000" [(ngModel)]="phone" /></ui-field>
         </div>
+        <ui-consent [notice]="notice()" [label]="consentLabel" [(accepted)]="informed" />
       }
       <ui-field label="Prestación">
         <ui-select name="type" [ngModel]="typeId()" (ngModelChange)="typeId.set($event)" [options]="typeOptions()" placeholder="Elegir prestación" />

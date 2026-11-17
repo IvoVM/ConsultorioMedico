@@ -124,7 +124,7 @@ public partial class ScheduleService
         var (insurerId, memberNumber) = await CoverageAsync(command.ProfessionalId, command.InsurerId, command.MemberNumber, ct);
         return await unitOfWork.InTransactionAsync(async () =>
         {
-            var clientId = await ClientForDocumentAsync(command.DocumentNumber, command.FirstName, command.LastName, command.Phone, ct);
+            var clientId = await ClientForDocumentAsync(command.DocumentNumber, command.FirstName, command.LastName, command.Phone, command.PatientInformed, ct);
             var appointment = await appointments.BookAsync(new Appointment
             {
                 Id = Guid.NewGuid(),
@@ -358,7 +358,8 @@ public partial class ScheduleService
         return (chosen, member);
     }
 
-    private async Task<Guid> ClientForDocumentAsync(string documentNumber, string? firstName, string? lastName, string? phone, CancellationToken ct)
+    // A new patient's data is only loaded once front desk told them the privacy notice.
+    private async Task<Guid> ClientForDocumentAsync(string documentNumber, string? firstName, string? lastName, string? phone, bool patientInformed, CancellationToken ct)
     {
         var document = DocumentRules.Normalize(documentNumber);
         if (!DocumentRules.IsValid(document))
@@ -370,6 +371,7 @@ public partial class ScheduleService
         var last = lastName?.Trim() ?? "";
         if (first.Length is 0 or > 80 || last.Length is 0 or > 80)
             throw new BusinessRuleException("No hay un paciente con ese documento: cargá nombre y apellido.");
+        PrivacyService.RequireInformed(patientInformed);
         var client = await clients.AddAsync(new Client
         {
             Id = Guid.NewGuid(),
@@ -386,6 +388,7 @@ public partial class ScheduleService
             UpdatedBy = currentUser.Id
         });
         await records.SaveAsync(ct);
+        await privacy.RecordAsync(document, client.Id, ConsentChannel.FrontDesk, ct);
         return client.Id;
     }
 }

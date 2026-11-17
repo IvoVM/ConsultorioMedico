@@ -9,4 +9,5 @@ export interface CreatePatientCommand {
   memberNumber?: string | null;
   emergencyContact?: string | null;
   emergencyPhone?: string | null;
+  patientInformed?: boolean;
 }

@@ -30,4 +30,5 @@ export interface CreateBookingRequestCommand {
   documentNumber: string;
   insurerId?: string | null;
   memberNumber?: string | null;
+  privacyVersion?: string | null;
 }

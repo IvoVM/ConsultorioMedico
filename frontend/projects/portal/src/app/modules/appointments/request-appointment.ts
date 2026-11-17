@@ -3,7 +3,9 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   AppointmentsService,
+  ClinicService,
   ClinicalService,
+  PrivacyNoticeDto,
   InsurerDto,
   OrganizationService,
   PatientsService,
@@ -16,7 +18,7 @@ import {
   clinicaSession,
   errorMessage,
 } from 'sdk';
-import { UiButton, UiEmpty, UiField, UiModal, UiSkeleton, formatFecha, formatPhone } from 'ui';
+import { UiButton, UiConsent, UiEmpty, UiField, UiModal, UiSkeleton, formatFecha, formatPhone } from 'ui';
 import { firstValueFrom } from 'rxjs';
 import { Coverage, Intent, Offer, Step } from './request-appointment.enums';
 import { AppRoute, RouteParam, routePath } from '../../app.routes.enum';
@@ -25,7 +27,7 @@ import { DeskPatient } from './desk-booking';
 
 
 @Component({
-  imports: [FormsModule, RouterLink, UiButton, UiEmpty, UiField, UiModal, UiSkeleton],
+  imports: [FormsModule, RouterLink, UiButton, UiConsent, UiEmpty, UiField, UiModal, UiSkeleton],
   templateUrl: './request-appointment.html',
   styleUrl: './request-appointment.css',
 })
@@ -34,6 +36,9 @@ export class RequestAppointmentPage {
   private readonly schedule = inject(ScheduleService);
   private readonly appointments = inject(AppointmentsService);
   private readonly clinical = inject(ClinicalService);
+  private readonly clinic = inject(ClinicService);
+  readonly notice = signal<PrivacyNoticeDto | null>(null);
+  readonly accepted = signal(false);
   private readonly patients = inject(PatientsService);
   private readonly activated = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -134,6 +139,7 @@ export class RequestAppointmentPage {
   });
 
   constructor() {
+    this.clinic.privacyNotice().subscribe({ next: (notice) => this.notice.set(notice) });
     void this.start();
   }
 
@@ -426,8 +432,12 @@ export class RequestAppointmentPage {
   async send() {
     const slot = this.slot();
     if (!slot) return;
-    this.sending.set(true);
     this.error.set('');
+    if (!this.forDesk() && !this.accepted()) {
+      this.error.set('Leé el aviso de privacidad y marcá que lo aceptás para enviar la solicitud.');
+      return;
+    }
+    this.sending.set(true);
     try {
       const insurerId = this.coverage() === Coverage.Obra ? this.insurerId : null;
       const memberNumber = this.coverage() === Coverage.Obra ? this.memberNumber.trim() : null;
@@ -445,6 +455,7 @@ export class RequestAppointmentPage {
             start: slot.start,
             insurerId,
             memberNumber,
+            patientInformed: draft.patientInformed,
           }));
         } else {
           await firstValueFrom(this.appointments.bookAppointment({
@@ -470,6 +481,7 @@ export class RequestAppointmentPage {
           documentNumber: this.documentNumber.trim(),
           insurerId,
           memberNumber,
+          privacyVersion: this.notice()?.version ?? null,
         }));
       }
       this.show(Step.Done);
@@ -506,6 +518,7 @@ export class RequestAppointmentPage {
           firstName: draft.firstName,
           lastName: draft.lastName,
           phone: draft.phone,
+          patientInformed: draft.patientInformed === true,
         };
         this.firstName = draft.firstName;
         this.lastName = draft.lastName;

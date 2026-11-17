@@ -60,6 +60,7 @@ export interface AgendaBookCommand {
   start: string;
   insurerId?: string | null;
   memberNumber?: string | null;
+  patientInformed?: boolean;
 }
 
 export interface PlaceRequestCommand {

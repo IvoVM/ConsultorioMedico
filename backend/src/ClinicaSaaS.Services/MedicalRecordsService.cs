@@ -17,6 +17,7 @@ public class MedicalRecordsService(
     IAuditStore audit,
     IValidator<SaveMedicalRecordCommand> validator,
     IValidator<CreatePatientCommand> createValidator,
+    PrivacyService privacy,
     TimeProvider clock)
 {
     public async Task<CreatedPatientDto> CreateAsync(CreatePatientCommand command, CancellationToken ct)
@@ -28,6 +29,7 @@ public class MedicalRecordsService(
         var document = DocumentRules.Normalize(command.DocumentNumber);
         if (!DocumentRules.IsValid(document))
             throw new BusinessRuleException("El documento no es válido.");
+        PrivacyService.RequireInformed(command.PatientInformed);
         var email = AccountEmail.ForPatient(document);
         if (await clients.Clients.AnyAsync(c => c.DocumentNumber.ToLower() == document.ToLower(), ct))
             throw new ConflictException("Ya hay un paciente con ese documento.");
@@ -67,6 +69,7 @@ public class MedicalRecordsService(
         };
         records.Add(record);
         await records.SaveAsync(ct);
+        await privacy.RecordAsync(document, client.Id, ConsentChannel.FrontDesk, ct);
         await audit.RecordAsync(currentUser.Id, "alta", "Paciente", client.Id.ToString(), email, ct);
         return new CreatedPatientDto(await GetAsync(client.Id, ct), password);
     }

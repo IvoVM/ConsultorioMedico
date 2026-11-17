@@ -144,5 +144,6 @@ public class SaveClinicSettingsValidator : AbstractValidator<SaveClinicSettingsC
         });
         RuleFor(x => x.MaxOverbooksPerDay).InclusiveBetween(0, 20).When(x => x.MaxOverbooksPerDay is not null)
             .WithMessage("Los sobreturnos por día van de 0 a 20, o dejalo vacío para no poner tope.");
+        RuleFor(x => x.PrivacyContact).MaximumLength(160);
     }
 }

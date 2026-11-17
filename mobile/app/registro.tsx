@@ -2,6 +2,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { formatPhone, passwordIssue } from '../src/account';
 import { register } from '../src/api';
+import { Consent, usePrivacyNotice } from '../src/consent';
 import { AuthFrom } from '../src/status';
 import { Button, ErrorText, Field, Screen } from '../src/ui';
 
@@ -18,6 +19,8 @@ export default function Registro() {
   });
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const notice = usePrivacyNotice();
+  const [accepted, setAccepted] = useState(false);
   const set = (key: keyof typeof form) => (value: string) => setForm((current) => ({ ...current, [key]: value }));
 
   async function submit() {
@@ -41,6 +44,10 @@ export default function Registro() {
       setError('El documento no es válido.');
       return;
     }
+    if (!accepted) {
+      setError('Leé el aviso de privacidad y marcá que lo aceptás para crear la cuenta.');
+      return;
+    }
     setBusy(true);
     try {
       await register({
@@ -49,6 +56,7 @@ export default function Registro() {
         lastName: form.lastName.trim(),
         documentNumber,
         phone,
+        privacyVersion: notice?.version ?? null,
       });
       router.replace('/(tabs)/panel');
     } catch (reason) {
@@ -66,6 +74,7 @@ export default function Registro() {
       <Field label="Teléfono" keyboardType="phone-pad" placeholder="+54 11 00000000" autoComplete="tel" value={form.phone} onChangeText={set('phone')} onBlur={() => { const formatted = formatPhone(form.phone); if (formatted) set('phone')(formatted); }} />
       <Field label="Contraseña" secureTextEntry value={form.password} onChangeText={set('password')} />
       <Field label="Confirmar contraseña" secureTextEntry value={form.confirm} onChangeText={set('confirm')} />
+      <Consent notice={notice} accepted={accepted} onChange={setAccepted} />
       <ErrorText text={error} />
       <Button label={busy ? 'Creando…' : 'Crear cuenta'} disabled={busy} onPress={() => void submit()} />
       <Button

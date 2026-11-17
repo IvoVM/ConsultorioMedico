@@ -243,6 +243,12 @@ public interface IClinicSettingsStore
     Task SaveAsync(CancellationToken ct);
 }
 
+public interface IConsentStore
+{
+    IQueryable<PrivacyConsent> Consents { get; }
+    Task AddAsync(PrivacyConsent consent, CancellationToken ct);
+}
+
 public interface IAuditStore
 {
     Task RecordAsync(Guid? userId, string action, string entity, string? entityId, string? detail, CancellationToken ct);

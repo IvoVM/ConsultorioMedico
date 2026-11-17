@@ -608,6 +608,10 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                     b.Property<int?>("PointOfSale")
                         .HasColumnType("integer");
 
+                    b.Property<string>("PrivacyContact")
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)");
+
                     b.Property<string>("TaxCondition")
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
@@ -1417,6 +1421,50 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                     b.HasIndex("PrescriptionId");
 
                     b.ToTable("PrescriptionItems");
+                });
+
+            modelBuilder.Entity("ClinicaSaaS.Domain.PrivacyConsent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("At")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Channel")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid?>("ClientId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("DocumentNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("NoticeVersion")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid?>("RecordedBy")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClientId");
+
+                    b.HasIndex("DocumentNumber");
+
+                    b.ToTable("PrivacyConsents");
                 });
 
             modelBuilder.Entity("ClinicaSaaS.Domain.ProfessionalSignature", b =>

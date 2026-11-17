@@ -2,8 +2,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
-import { AgendaProfessionalDto, AgendaService, PatientLookupDto, PatientsService, errorMessage } from 'sdk';
-import { SelectOption, ToastService, UiButton, UiField, UiIcon, UiModal, UiSelect, formatPhone } from 'ui';
+import { AgendaProfessionalDto, AgendaService, ClinicService, PatientLookupDto, PatientsService, PrivacyNoticeDto, errorMessage } from 'sdk';
+import { SelectOption, ToastService, UiButton, UiConsent, UiField, UiIcon, UiModal, UiSelect, formatPhone, staffConsentLabel } from 'ui';
 import { clock, dayTitle, inPast, isOverbook, isoAt } from './agenda-time';
 
 enum CreateStep {
@@ -13,13 +13,17 @@ enum CreateStep {
 
 @Component({
   selector: 'agenda-create',
-  imports: [FormsModule, UiButton, UiField, UiIcon, UiModal, UiSelect],
+  imports: [FormsModule, UiButton, UiConsent, UiField, UiIcon, UiModal, UiSelect],
   templateUrl: './agenda-create.html',
 })
 export class AgendaCreate {
   private readonly agendaApi = inject(AgendaService);
   private readonly patientsApi = inject(PatientsService);
   private readonly toasts = inject(ToastService);
+  private readonly clinic = inject(ClinicService);
+  readonly notice = signal<PrivacyNoticeDto | null>(null);
+  readonly informed = signal(false);
+  readonly consentLabel = staffConsentLabel;
 
   readonly professional = input.required<AgendaProfessionalDto>();
   readonly day = input.required<string>();
@@ -77,8 +81,12 @@ export class AgendaCreate {
     try {
       this.patient.set(await firstValueFrom(this.patientsApi.patientByDocument(document)));
     } catch (error) {
-      if (error instanceof HttpErrorResponse && error.status === 404) this.unknown.set(true);
-      else this.error.set(errorMessage(error));
+      if (error instanceof HttpErrorResponse && error.status === 404) {
+        this.unknown.set(true);
+        if (!this.notice()) this.clinic.privacyNotice().subscribe({ next: (notice) => this.notice.set(notice) });
+      } else {
+        this.error.set(errorMessage(error));
+      }
     } finally {
       this.looking.set(false);
     }
@@ -93,6 +101,10 @@ export class AgendaCreate {
     }
     if (this.unknown() && (!this.firstName.trim() || !this.lastName.trim() || !this.phone.trim())) {
       this.error.set('No hay un paciente con ese documento: cargá nombre, apellido y teléfono.');
+      return;
+    }
+    if (this.unknown() && !this.informed()) {
+      this.error.set('Contale al paciente el aviso de privacidad y marcá que lo hiciste.');
       return;
     }
     if (!this.type()) {
@@ -123,6 +135,7 @@ export class AgendaCreate {
         start: isoAt(this.day(), this.start()),
         insurerId: this.insurerId || null,
         memberNumber: this.insurerId ? this.memberNumber.trim() : null,
+        patientInformed: this.unknown() && this.informed(),
       }));
       this.toasts.success(this.overbook() ? 'Sobreturno creado' : 'Turno creado', `${this.patientName()} quedó a las ${clock(this.start())} con ${this.professional().name}.`);
       this.created.emit();

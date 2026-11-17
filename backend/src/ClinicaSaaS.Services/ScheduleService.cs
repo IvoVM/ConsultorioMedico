@@ -22,6 +22,7 @@ public partial class ScheduleService(
     IAuditStore audit,
     IValidator<BookAppointmentCommand> bookingValidator,
     IUnitOfWork unitOfWork,
+    PrivacyService privacy,
     TimeProvider clock)
 {
     public async Task<IReadOnlyList<ScheduleBlockDto>> GetScheduleAsync(Guid professionalId, CancellationToken ct) =>
@@ -273,7 +274,7 @@ public partial class ScheduleService(
         PhoneRules.Require(command.Phone);
         return await unitOfWork.InTransactionAsync(async () =>
         {
-            var clientId = await ClientForDocumentAsync(command.DocumentNumber, firstName, lastName, command.Phone, ct);
+            var clientId = await ClientForDocumentAsync(command.DocumentNumber, firstName, lastName, command.Phone, command.PatientInformed, ct);
             return await BookAsync(new BookAppointmentCommand(
                 clientId,
                 command.ProfessionalId,
@@ -589,6 +590,7 @@ public partial class ScheduleService(
             throw new BusinessRuleException("El documento no es válido.");
         if (command.Start <= clock.GetUtcNow())
             throw new BusinessRuleException("Ese horario ya pasó.");
+        PrivacyService.RequireAccepted(command.PrivacyVersion);
 
         var now = clock.GetUtcNow();
         var open = await requests.Entries
@@ -626,6 +628,7 @@ public partial class ScheduleService(
             Status = BookingRequestStatus.Pending,
             CreatedAt = clock.GetUtcNow()
         }, ct);
+        await privacy.RecordAsync(document, clientId, ConsentChannel.OnlineRequest, ct);
         await audit.RecordAsync(currentUser.Id, "solicitud", "Turno", request.Id.ToString(), name, ct);
         return await LoadRequestAsync(request.Id, ct);
     }

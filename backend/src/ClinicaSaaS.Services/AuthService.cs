@@ -15,7 +15,8 @@ public class AuthService(
     IValidator<RegisterPatientCommand> registrationValidator,
     IAuditStore audit,
     IEmployeeStore employees,
-    ICurrentUser currentUser)
+    ICurrentUser currentUser,
+    PrivacyService privacy)
 {
     // One sign-in for everyone. A document can hold a staff account and a patient account (a secretary who is also
     // treated here); the password decides which one opens, and only when it opens both does the person choose.
@@ -106,6 +107,7 @@ public class AuthService(
         var document = DocumentRules.Normalize(command.DocumentNumber);
         if (!DocumentRules.IsValid(document))
             throw new BusinessRuleException("El documento no es válido.");
+        PrivacyService.RequireAccepted(command.PrivacyVersion);
         var email = AccountEmail.ForPatient(document);
         var existing = await clients.Clients
             .Where(client => client.DocumentNumber == document || client.DocumentNumber.ToLower() == document.ToLower())
@@ -172,6 +174,7 @@ public class AuthService(
         }
 
         await requests.LinkDocumentAsync(document, clientId, ct);
+        await privacy.RecordAsync(document, clientId, ConsentChannel.SignUp, ct);
         await audit.RecordAsync(user.Id, "registro", "Paciente", user.Id.ToString(), email, ct);
         return await IssueAsync(user, ct);
     }

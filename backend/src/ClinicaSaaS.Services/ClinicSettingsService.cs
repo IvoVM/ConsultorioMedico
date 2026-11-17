@@ -36,6 +36,7 @@ public class ClinicSettingsService(
         settings.PointOfSale = command.PointOfSale;
         settings.AutoAuthorize = settings.FiscalEnabled && command.AutoAuthorize;
         settings.MaxOverbooksPerDay = command.MaxOverbooksPerDay;
+        settings.PrivacyContact = string.IsNullOrWhiteSpace(command.PrivacyContact) ? null : command.PrivacyContact.Trim();
         await store.SaveAsync(ct);
         var detail = $"{settings.Name} · facturación {(settings.BillingEnabled ? "sí" : "no")} · automática {(settings.AutoInvoice ? "sí" : "no")} · electrónica {(settings.FiscalEnabled ? "sí" : "no")} · autorización automática {(settings.AutoAuthorize ? "sí" : "no")} · sobreturnos por día {settings.MaxOverbooksPerDay?.ToString() ?? "sin tope"}";
         await audit.RecordAsync(currentUser.Id, "edicion", "Configuracion", settings.Id.ToString(), detail, ct);
@@ -43,5 +44,5 @@ public class ClinicSettingsService(
     }
 
     private static ClinicSettingsDto ToDto(ClinicSettings settings) =>
-        new(settings.Name, settings.BillingEnabled, settings.AutoInvoice, settings.FiscalEnabled, settings.TaxId, settings.TaxCondition, settings.PointOfSale, settings.AutoAuthorize, settings.MaxOverbooksPerDay);
+        new(settings.Name, settings.BillingEnabled, settings.AutoInvoice, settings.FiscalEnabled, settings.TaxId, settings.TaxCondition, settings.PointOfSale, settings.AutoAuthorize, settings.MaxOverbooksPerDay, settings.PrivacyContact);
 }

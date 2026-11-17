@@ -643,6 +643,17 @@ public class ClinicSettingsStore(TenantDbContext db, ICurrentTenant clinic) : IC
     public Task SaveAsync(CancellationToken ct) => db.SaveChangesAsync(ct);
 }
 
+public class ConsentStore(TenantDbContext db) : IConsentStore
+{
+    public IQueryable<PrivacyConsent> Consents => db.PrivacyConsents.AsNoTracking();
+
+    public async Task AddAsync(PrivacyConsent consent, CancellationToken ct)
+    {
+        db.PrivacyConsents.Add(consent);
+        await db.SaveChangesAsync(ct);
+    }
+}
+
 public class AuditStore(TenantDbContext db) : IAuditStore
 {
     public async Task RecordAsync(Guid? userId, string action, string entity, string? entityId, string? detail, CancellationToken ct)

@@ -3,12 +3,15 @@ import { Text } from 'react-native';
 import { formatPhone } from '../../src/account';
 import { api, type PatientCard } from '../../src/api';
 import { colors, type } from '../../src/theme';
+import { Consent, staffConsentLabel, usePrivacyNotice } from '../../src/consent';
 import { Button, Card, ErrorText, Field, Screen } from '../../src/ui';
 
 export default function Pacientes() {
   const [query, setQuery] = useState('');
   const [items, setItems] = useState<PatientCard[]>([]);
-  const [form, setForm] = useState({ email: '', firstName: '', lastName: '', documentNumber: '', birthDate: '', phone: '' });
+  const [form, setForm] = useState({ firstName: '', lastName: '', documentNumber: '', birthDate: '', phone: '' });
+  const notice = usePrivacyNotice();
+  const [informed, setInformed] = useState(false);
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const set = (key: keyof typeof form) => (value: string) => setForm((current) => ({ ...current, [key]: value }));
@@ -30,10 +33,10 @@ export default function Pacientes() {
       ))}
       <Field label="Nombre" value={form.firstName} onChangeText={set('firstName')} />
       <Field label="Apellido" value={form.lastName} onChangeText={set('lastName')} />
-      <Field label="Email" autoCapitalize="none" value={form.email} onChangeText={set('email')} />
       <Field label="Documento" value={form.documentNumber} onChangeText={set('documentNumber')} />
       <Field label="Nacimiento" placeholder="AAAA-MM-DD" value={form.birthDate} onChangeText={set('birthDate')} />
       <Field label="Teléfono" keyboardType="phone-pad" placeholder="+54 11 00000000" value={form.phone} onChangeText={set('phone')} onBlur={() => { const formatted = formatPhone(form.phone); if (formatted) set('phone')(formatted); }} />
+      <Consent notice={notice} accepted={informed} onChange={setInformed} label={staffConsentLabel} />
       <ErrorText text={error} />
       {password ? <Text style={{ fontFamily: type.sansBold, color: colors.deep }}>Clave temporal: {password}</Text> : null}
       <Button
@@ -45,7 +48,11 @@ export default function Pacientes() {
             setError('El teléfono no es válido.');
             return;
           }
-          api.createPatient({ ...form, phone })
+          if (!informed) {
+            setError('Contale al paciente el aviso de privacidad y marcá que lo hiciste.');
+            return;
+          }
+          api.createPatient({ ...form, phone, patientInformed: true })
             .then((created) => setPassword(created.temporaryPassword))
             .catch((reason: unknown) => setError(reason instanceof Error ? reason.message : 'No se pudo crear.'));
         }}

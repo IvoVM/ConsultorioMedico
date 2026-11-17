@@ -28,6 +28,8 @@ export { UiStat } from './ui-stat.component';
 export { greeting, todayLabel } from './greeting';
 export { UiTabs } from './ui-tabs.component';
 export { UiSwitch } from './ui-switch.component';
+export { UiConsent, staffConsentLabel } from './ui-consent.component';
+export type { ConsentNotice } from './ui-consent.component';
 export type { TabItem } from './ui-tabs.component';
 export { HistoryTab, historyTabLabels, siteLabel, singleSiteLabel } from './history-tabs';
 export { RequestTab, daysOverdue, localDate, deactivationLabel, expiredRequestDays, overdueLabel, requestDeactivated, requestExpired, requestTabLabels, startOfToday } from './request-tabs';

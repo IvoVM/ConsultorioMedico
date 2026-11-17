@@ -7,11 +7,15 @@ namespace ClinicaSaaS.Api.Controllers;
 
 [ApiController]
 [Route("api")]
-public class ClinicController(ClinicSettingsService settings) : ApiController
+public class ClinicController(ClinicSettingsService settings, PrivacyService privacy) : ApiController
 {
     [AllowAnonymous]
     [HttpGet("clinica")]
     public Task<IActionResult> Get(CancellationToken ct) => Run(() => settings.ProfileAsync(ct));
+
+    [AllowAnonymous]
+    [HttpGet("clinica/privacidad")]
+    public Task<IActionResult> PrivacyNotice(CancellationToken ct) => Run(() => privacy.NoticeAsync(ct));
 
     [Authorize(Roles = AppRoles.TenantAdmin)]
     [HttpGet("configuracion")]

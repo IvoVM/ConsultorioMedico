@@ -30,7 +30,7 @@ export class SettingsPage {
   readonly dirty = computed(() => {
     const saved = this.saved();
     const draft = this.draft();
-    return !!saved && !!draft && (['name', 'billingEnabled', 'autoInvoice', 'fiscalEnabled', 'taxId', 'taxCondition', 'pointOfSale', 'autoAuthorize', 'maxOverbooksPerDay'] as const).some((key) => (draft[key] ?? null) !== (saved[key] ?? null));
+    return !!saved && !!draft && (['name', 'billingEnabled', 'autoInvoice', 'fiscalEnabled', 'taxId', 'taxCondition', 'pointOfSale', 'autoAuthorize', 'maxOverbooksPerDay', 'privacyContact'] as const).some((key) => (draft[key] ?? null) !== (saved[key] ?? null));
   });
 
   constructor() {
@@ -41,6 +41,10 @@ export class SettingsPage {
 
   setName(name: string) {
     this.draft.update((draft) => draft && { ...draft, name });
+  }
+
+  setPrivacyContact(privacyContact: string) {
+    this.draft.update((draft) => draft && { ...draft, privacyContact: privacyContact.trim() ? privacyContact : null });
   }
 
   setBilling(billingEnabled: boolean) {

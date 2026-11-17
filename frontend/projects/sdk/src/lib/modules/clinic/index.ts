@@ -4,3 +4,5 @@ export * from './models/tax-condition';
 export * from './models/clinic-dto';
 export * from './models/clinic-settings-dto';
 export * from './models/save-clinic-settings-command';
+export * from './models/privacy-notice-dto';
+export * from './models/privacy-section-dto';
