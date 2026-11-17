@@ -158,6 +158,8 @@ public interface IBookingRequestStore
     Task LinkDocumentAsync(string documentNumber, Guid clientId, CancellationToken ct);
     // Deletes the patient's requests that never became an appointment; returns how many.
     Task<int> RemoveOpenAsync(Guid clientId, string documentNumber, CancellationToken ct);
+    // Deletes requests that never became an appointment and whose time passed before the given moment.
+    Task<int> RemoveExpiredAsync(DateTimeOffset before, CancellationToken ct);
 }
 
 public interface IWaitlistStore
@@ -167,6 +169,8 @@ public interface IWaitlistStore
     Task<WaitlistEntry?> GetAsync(Guid id, CancellationToken ct);
     Task SaveAsync(CancellationToken ct);
     Task<int> RemoveForClientAsync(Guid clientId, CancellationToken ct);
+    // Deletes cancelled or accepted entries created before the given moment.
+    Task<int> RemoveClosedAsync(DateTimeOffset before, CancellationToken ct);
 }
 
 public interface IClinicalStore

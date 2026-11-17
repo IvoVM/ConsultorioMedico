@@ -435,6 +435,9 @@ public class BookingRequestStore(TenantDbContext db) : IBookingRequestStore
         db.BookingRequests
             .Where(r => (r.ClientId == clientId || r.DocumentNumber == documentNumber) && r.AppointmentId == null)
             .ExecuteDeleteAsync(ct);
+
+    public Task<int> RemoveExpiredAsync(DateTimeOffset before, CancellationToken ct) =>
+        db.BookingRequests.Where(r => r.AppointmentId == null && r.Start < before).ExecuteDeleteAsync(ct);
 }
 
 public class WaitlistStore(TenantDbContext db) : IWaitlistStore
@@ -454,6 +457,11 @@ public class WaitlistStore(TenantDbContext db) : IWaitlistStore
 
     public Task<int> RemoveForClientAsync(Guid clientId, CancellationToken ct) =>
         db.WaitlistEntries.Where(w => w.ClientId == clientId).ExecuteDeleteAsync(ct);
+
+    public Task<int> RemoveClosedAsync(DateTimeOffset before, CancellationToken ct) =>
+        db.WaitlistEntries
+            .Where(w => (w.Status == WaitlistStatus.Cancelled || w.Status == WaitlistStatus.Accepted) && w.CreatedAt < before)
+            .ExecuteDeleteAsync(ct);
 }
 
 public class ClinicalStore(TenantDbContext db) : IClinicalStore

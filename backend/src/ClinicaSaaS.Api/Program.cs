@@ -28,6 +28,7 @@ builder.Services.AddClinicaJwt(builder.Configuration);
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 builder.Services.AddHostedService<NoShowSweeper>();
+builder.Services.AddHostedService<RetentionSweeper>();
 // The public request form is open to anyone, so each address gets a few tries per window.
 builder.Services.AddRateLimiter(options =>
 {

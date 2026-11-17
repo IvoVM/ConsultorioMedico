@@ -9,11 +9,17 @@ public class PrivacyService(
     IClinicSettingsStore settings,
     IOrganizationStore organization,
     IConsentStore consents,
+    IBookingRequestStore requests,
+    IWaitlistStore waitlist,
+    IAuditStore audit,
     ICurrentUser currentUser,
     TimeProvider clock)
 {
     // Change it whenever the text below changes what a person agrees to: older agreements keep the version they read.
-    public const string NoticeVersion = "2026-11-17";
+    public const string NoticeVersion = "2026-11-17.2";
+
+    // How long a request that never became an appointment, or a closed waitlist entry, is kept before deletion.
+    public const int ClosedRequestDays = 90;
 
     public async Task<PrivacyNoticeDto> NoticeAsync(CancellationToken ct)
     {
@@ -40,6 +46,8 @@ public class PrivacyService(
                 "La especialidad que pedís y lo que se escribe en tu historia clínica son datos sensibles. Nadie está obligado a darlos, pero sin ellos no podemos atenderte. Solo los leen vos y los profesionales que te atienden, bajo secreto profesional."),
             new("Quién más los recibe",
                 "Tu obra social, si la usás, recibe lo necesario para autorizar y facturar la prestación. Una autoridad los recibe solo cuando una ley lo exige."),
+            new("Cuánto tiempo los guardamos",
+                $"La historia clínica, al menos diez años desde tu última atención (Ley 26.529, art. 18). Los comprobantes, el plazo que fija la ley fiscal. Una solicitud que no llegó a turno y un lugar en la lista de espera que ya se cerró se borran a los {ClosedRequestDays} días."),
             new("Tus derechos",
                 $"Podés pedir ver, corregir, actualizar o borrar tus datos {contact}. La historia clínica no se borra: la ley obliga a guardarla al menos diez años (Ley 26.529, art. 18)."),
             new("Ley 25.326",
@@ -48,6 +56,17 @@ public class PrivacyService(
     }
 
     // The person read this version of the notice and agreed. Throws when they did not, or read an older one.
+    // Deletes online requests that never became an appointment and closed waitlist entries older than the limit.
+    public async Task<(int Requests, int Waitlist)> PurgeExpiredAsync(CancellationToken ct)
+    {
+        var before = clock.GetUtcNow().AddDays(-ClosedRequestDays);
+        var removedRequests = await requests.RemoveExpiredAsync(before, ct);
+        var removedWaitlist = await waitlist.RemoveClosedAsync(before, ct);
+        if (removedRequests + removedWaitlist > 0)
+            await audit.RecordAsync(null, "depuracion", "Privacidad", null, $"{removedRequests} solicitudes y {removedWaitlist} esperas de antes del {before:yyyy-MM-dd}", ct);
+        return (removedRequests, removedWaitlist);
+    }
+
     public static void RequireAccepted(string? version)
     {
         if (string.IsNullOrWhiteSpace(version))
