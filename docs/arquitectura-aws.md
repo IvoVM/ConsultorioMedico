@@ -14,6 +14,6 @@ Cada consultorio es un despliegue propio del mismo código. No hay una app compa
 - Route 53 apunta el dominio de ese consultorio (panel y portal) a sus distribuciones de CloudFront. Los estáticos salen de buckets S3 de esa instalación.
 - Un Application Load Balancer entrega la API a un servicio ECS Fargate con la configuración de ese consultorio: nombre, slug, zona horaria, orígenes CORS y clave JWT.
 - RDS PostgreSQL es la base de ese consultorio. AWS Backup guarda los respaldos de esa instancia, aparte de las demás.
-- Secrets Manager guarda la connection string y la clave JWT.
+- Secrets Manager guarda la connection string, la clave JWT y `Seed:AdminPassword`. Fuera de la demo la API no arranca con la clave JWT de `appsettings.json` ni crea el primer administrador con la clave de la demo o una de menos de 12 caracteres; ese administrador tiene que cambiarla al entrar.
 - Un bucket S3 aparte queda reservado para adjuntos clínicos, todavía no implementados.
 - Los SPA hablan solo con la API de su consultorio, por HTTPS. El access token dura quince minutos y vive en memoria. El refresh token dura catorce días y viaja en una cookie `HttpOnly`, `Secure` y `SameSite=Lax`, solo hacia `/api/acceso`. No envían un consultorio elegido por el usuario: el proceso ya está atado a su base.

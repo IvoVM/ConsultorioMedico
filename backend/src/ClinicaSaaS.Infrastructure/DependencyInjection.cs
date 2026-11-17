@@ -35,6 +35,10 @@ public class ConfiguredTimeZone(IConfiguration configuration) : ITimeZoneProvide
 
 public class ClinicSeeder(TenantDbContext db, UserManager<TenantUser> users, IConfiguration configuration)
 {
+    // The demo clinic is the only one seeded with made-up people, all sharing the published password below.
+    public const string DemoSlug = "demo";
+    public const string DemoPassword = "Admin123!";
+
     public static readonly (string Code, string Name)[] SeedDiagnoses =
     [
         ("J06.9", "Infección respiratoria aguda"),
@@ -61,8 +65,13 @@ public class ClinicSeeder(TenantDbContext db, UserManager<TenantUser> users, ICo
         }
 
         var slug = configuration["Clinic:Slug"]?.Trim().ToLowerInvariant();
-        var password = configuration["Seed:AdminPassword"] ?? "Admin123!";
+        var demo = slug == DemoSlug;
         var adminEmail = configuration["Seed:AdminEmail"] ?? $"admin@{slug}.local";
+        var password = configuration["Seed:AdminPassword"] ?? (demo ? DemoPassword : "");
+        // A real clinic holds health data: its first admin never gets the published demo password, and has to
+        // choose their own on first sign-in.
+        if (!demo && await users.FindByEmailAsync(adminEmail) is null && (password.Length < 12 || password == DemoPassword))
+            throw new InvalidOperationException("Configurá Seed:AdminPassword con al menos 12 caracteres y distinta de la clave de la demo para crear el primer administrador.");
         await EnsureUserAsync(
             adminEmail,
             password,
@@ -70,7 +79,8 @@ public class ClinicSeeder(TenantDbContext db, UserManager<TenantUser> users, ICo
             configuration["Seed:AdminLastName"] ?? "Inicial",
             TenantRole.TenantAdmin,
             null,
-            ct);
+            ct,
+            mustChangePassword: !demo);
 
         if (!await db.Locations.AnyAsync(ct))
         {
@@ -85,7 +95,7 @@ public class ClinicSeeder(TenantDbContext db, UserManager<TenantUser> users, ICo
             await db.SaveChangesAsync(ct);
         }
 
-        if (slug != "demo")
+        if (!demo)
         {
             await InsurerCatalog.EnsureAsync(db, ct);
             await ClinicalLedgerSealer.SealAsync(db, false, ct);
@@ -128,7 +138,8 @@ public class ClinicSeeder(TenantDbContext db, UserManager<TenantUser> users, ICo
         string lastName,
         TenantRole role,
         string? licenseNumber,
-        CancellationToken ct)
+        CancellationToken ct,
+        bool mustChangePassword = false)
     {
         if (await users.FindByEmailAsync(email) is { } existing)
         {
@@ -145,7 +156,8 @@ public class ClinicSeeder(TenantDbContext db, UserManager<TenantUser> users, ICo
             EmailConfirmed = true,
             FirstName = firstName,
             LastName = lastName,
-            Role = role
+            Role = role,
+            MustChangePassword = mustChangePassword
         };
         var result = await users.CreateAsync(user, password);
         if (!result.Succeeded)
