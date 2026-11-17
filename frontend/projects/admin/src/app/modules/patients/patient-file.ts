@@ -4,7 +4,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { MedicalRecordDto, MedicalRecordsService, errorMessage } from 'sdk';
 import { UiButton, UiField, UiSkeleton, formatPhone, UiHelp } from 'ui';
 import { firstValueFrom } from 'rxjs';
-import { PatientForm, age, shortDate, toForm } from './models/patient-form';
+import { PatientForm, age, contactAgreementLabel, shortDate, toForm } from './models/patient-form';
 
 @Component({
   imports: [FormsModule, RouterLink, UiHelp, UiButton, UiField, UiSkeleton],
@@ -30,6 +30,18 @@ export class PatientFilePage {
   readonly saving = signal(false);
   readonly saved = signal(false);
   readonly version = signal(0);
+  readonly contactLabel = contactAgreementLabel;
+  readonly contactAgreed = signal(false);
+  // The contact changed from what is stored (or was never confirmed), so the admin has to confirm it again.
+  readonly contactNeedsAgreement = computed(() => {
+    this.version();
+    const form = this.form();
+    const record = this.record();
+    if (!form || !record) return false;
+    if (!form.emergencyContact.trim() && !form.emergencyPhone.trim()) return false;
+    const changed = form.emergencyContact.trim() !== (record.emergencyContact ?? '') || (formatPhone(form.emergencyPhone) ?? form.emergencyPhone.trim()) !== (record.emergencyPhone ?? '');
+    return changed || !record.emergencyContactAgreedAt;
+  });
 
   readonly dirty = computed(() => {
     this.version();
@@ -91,12 +103,16 @@ export class PatientFilePage {
       this.error.set('El teléfono no es válido.');
       return;
     }
+    if (this.contactNeedsAgreement() && !this.contactAgreed()) {
+      this.error.set('Confirmá con el paciente que su contacto de emergencia aceptó que lo llamemos.');
+      return;
+    }
     const next = { ...form, phone, emergencyPhone: emergencyPhone ?? '' };
     this.form.set(next);
     this.saving.set(true);
     this.error.set('');
     try {
-      this.apply(await firstValueFrom(this.recordsApi.saveMedicalRecord(this.patientId, next)));
+      this.apply(await firstValueFrom(this.recordsApi.saveMedicalRecord(this.patientId, { ...next, emergencyContactAgreed: this.contactNeedsAgreement() && this.contactAgreed() })));
       this.saved.set(true);
       setTimeout(() => this.saved.set(false), 2600);
     } catch (error) {
@@ -119,6 +135,7 @@ export class PatientFilePage {
     this.record.set(record);
     this.form.set(form);
     this.original.set(JSON.stringify(form));
+    this.contactAgreed.set(false);
     this.version.update((value) => value + 1);
   }
 }

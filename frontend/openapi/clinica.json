@@ -715,7 +715,7 @@
           "brokenFolio": { "type": "integer", "nullable": true }
         }
       },
-      "CreatePatientCommand": { "type": "object", "required": ["firstName", "lastName", "documentNumber", "birthDate", "phone"], "properties": { "firstName": { "type": "string" }, "lastName": { "type": "string" }, "documentNumber": { "type": "string" }, "birthDate": { "type": "string" }, "phone": { "type": "string" }, "healthInsurance": { "type": "string", "nullable": true }, "memberNumber": { "type": "string", "nullable": true }, "emergencyContact": { "type": "string", "nullable": true }, "emergencyPhone": { "type": "string", "nullable": true }, "patientInformed": { "type": "boolean" } } },
+      "CreatePatientCommand": { "type": "object", "required": ["firstName", "lastName", "documentNumber", "birthDate", "phone"], "properties": { "firstName": { "type": "string" }, "lastName": { "type": "string" }, "documentNumber": { "type": "string" }, "birthDate": { "type": "string" }, "phone": { "type": "string" }, "healthInsurance": { "type": "string", "nullable": true }, "memberNumber": { "type": "string", "nullable": true }, "emergencyContact": { "type": "string", "nullable": true }, "emergencyPhone": { "type": "string", "nullable": true }, "patientInformed": { "type": "boolean" }, "emergencyContactAgreed": { "type": "boolean" } } },
       "CreatedPatientDto": { "type": "object", "required": ["patient", "temporaryPassword"], "properties": { "patient": { "$ref": "#/components/schemas/MedicalRecordDto" }, "temporaryPassword": { "type": "string" } } },
       "PatientLookupDto": { "type": "object", "required": ["patientId", "firstName", "lastName", "documentNumber", "birthDate", "phone"], "properties": { "patientId": { "type": "string" }, "firstName": { "type": "string" }, "lastName": { "type": "string" }, "documentNumber": { "type": "string" }, "birthDate": { "type": "string" }, "phone": { "type": "string" }, "healthInsurance": { "type": "string", "nullable": true }, "memberNumber": { "type": "string", "nullable": true }, "emergencyContact": { "type": "string", "nullable": true }, "emergencyPhone": { "type": "string", "nullable": true } } },
       "MedicalRecordDto": {
@@ -734,7 +734,8 @@
           "memberNumber": { "type": "string", "nullable": true },
           "emergencyContact": { "type": "string", "nullable": true },
           "emergencyPhone": { "type": "string", "nullable": true },
-          "updatedAt": { "type": "string", "nullable": true }
+          "updatedAt": { "type": "string", "nullable": true },
+          "emergencyContactAgreedAt": { "type": "string", "nullable": true }
         }
       },
       "SaveMedicalRecordCommand": {
@@ -749,7 +750,8 @@
           "healthInsurance": { "type": "string", "nullable": true },
           "memberNumber": { "type": "string", "nullable": true },
           "emergencyContact": { "type": "string", "nullable": true },
-          "emergencyPhone": { "type": "string", "nullable": true }
+          "emergencyPhone": { "type": "string", "nullable": true },
+          "emergencyContactAgreed": { "type": "boolean" }
         }
       },
       "FeeDto": { "type": "object", "required": ["id", "appointmentTypeId", "appointmentType", "amount", "effectiveFrom"], "properties": { "id": { "type": "string" }, "appointmentTypeId": { "type": "string" }, "appointmentType": { "type": "string" }, "amount": { "type": "number" }, "effectiveFrom": { "type": "string" }, "copay": { "type": "number", "nullable": true } } },

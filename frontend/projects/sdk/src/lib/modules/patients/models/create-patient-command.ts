@@ -10,4 +10,5 @@ export interface CreatePatientCommand {
   emergencyContact?: string | null;
   emergencyPhone?: string | null;
   patientInformed?: boolean;
+  emergencyContactAgreed?: boolean;
 }

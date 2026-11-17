@@ -9,4 +9,5 @@ export interface SaveMedicalRecordCommand {
   memberNumber?: string | null;
   emergencyContact?: string | null;
   emergencyPhone?: string | null;
+  emergencyContactAgreed?: boolean;
 }

@@ -3,7 +3,10 @@ import { formatFecha } from 'ui';
 
 // The administrative file as the form edits it. Clinical data is not part of it: only professionals write the
 // clinical record, from the portal.
-export type PatientForm = { [K in keyof SaveMedicalRecordCommand]-?: string };
+export type PatientForm = { [K in Exclude<keyof SaveMedicalRecordCommand, 'emergencyContactAgreed'>]-?: string };
+
+// What the admin ticks when loading or changing an emergency contact: that person is someone else, and agreed.
+export const contactAgreementLabel = 'El paciente confirmó que esta persona aceptó ser su contacto de emergencia. Solo la llamamos en una urgencia.';
 
 export function toForm(record: MedicalRecordDto): PatientForm {
   return {

@@ -62,13 +62,24 @@ public class PrivacyService(
             throw new BusinessRuleException("Contale al paciente el aviso de privacidad y marcá que lo hiciste antes de cargar sus datos.");
     }
 
+    // An emergency contact is a third person's name and phone: it is kept only when the patient says that person
+    // agreed to be called (Ley 25.326, art. 5).
+    public static void RequireContactAgreed(bool agreed)
+    {
+        if (!agreed)
+            throw new BusinessRuleException("Confirmá con el paciente que su contacto de emergencia aceptó que lo llamemos.");
+    }
+
     public Task RecordAsync(string documentNumber, Guid? clientId, ConsentChannel channel, CancellationToken ct) =>
+        RecordAsync(ConsentKind.PrivacyNotice, documentNumber, clientId, channel, ct);
+
+    public Task RecordAsync(ConsentKind kind, string documentNumber, Guid? clientId, ConsentChannel channel, CancellationToken ct) =>
         consents.AddAsync(new PrivacyConsent
         {
             Id = Guid.NewGuid(),
             DocumentNumber = documentNumber,
             ClientId = clientId,
-            Kind = ConsentKind.PrivacyNotice,
+            Kind = kind,
             Channel = channel,
             NoticeVersion = NoticeVersion,
             RecordedBy = currentUser.Id,

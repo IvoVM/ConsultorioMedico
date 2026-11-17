@@ -6,7 +6,7 @@ import { MediaWatcherService, UiButton, UiConsent, UiEmpty, UiField, UiModal, Ui
 import { TablePager, listParams, queueSearch } from '../../table-pager';
 import { SortCol, SortState, nextSort } from '../../table-sort';
 import { firstValueFrom } from 'rxjs';
-import { age } from './models/patient-form';
+import { age, contactAgreementLabel } from './models/patient-form';
 
 @Component({
   imports: [FormsModule, RouterLink, UiHelp, SortCol, TablePager, UiButton, UiConsent, UiEmpty, UiField, UiModal, UiSkeleton, UiTable],
@@ -21,6 +21,8 @@ export class PatientsPage {
   readonly notice = signal<PrivacyNoticeDto | null>(null);
   readonly informed = signal(false);
   readonly consentLabel = staffConsentLabel;
+  readonly contactLabel = contactAgreementLabel;
+  readonly contactAgreed = signal(false);
   private readonly searchHost: { timer?: ReturnType<typeof setTimeout> } = {};
   readonly age = age;
   readonly today = new Date().toISOString().slice(0, 10);
@@ -91,6 +93,7 @@ export class PatientsPage {
   openAlta() {
     this.error.set('');
     this.informed.set(false);
+    this.contactAgreed.set(false);
     if (!this.notice()) this.clinic.privacyNotice().subscribe({ next: (notice) => this.notice.set(notice) });
     this.altaOpen.set(true);
     queueMicrotask(() => document.getElementById('alta-nombre')?.focus());
@@ -119,6 +122,11 @@ export class PatientsPage {
       this.saving.set(false);
       return;
     }
+    if ((this.emergencyContact.trim() || this.emergencyPhone.trim()) && !this.contactAgreed()) {
+      this.error.set('Confirmá con el paciente que su contacto de emergencia aceptó que lo llamemos.');
+      this.saving.set(false);
+      return;
+    }
     this.phone = phone;
     this.emergencyPhone = emergencyPhone ?? '';
     try {
@@ -134,6 +142,7 @@ export class PatientsPage {
           emergencyContact: this.emergencyContact.trim() || null,
           emergencyPhone: this.emergencyPhone.trim() || null,
           patientInformed: true,
+          emergencyContactAgreed: this.contactAgreed(),
         }),
       );
       await this.router.navigate(['/pacientes', created.patient.patientId], {

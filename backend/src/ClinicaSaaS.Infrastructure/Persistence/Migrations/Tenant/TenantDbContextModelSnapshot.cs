@@ -1251,6 +1251,9 @@ namespace ClinicaSaaS.Infrastructure.Persistence.Migrations.Tenant
                         .HasMaxLength(120)
                         .HasColumnType("character varying(120)");
 
+                    b.Property<DateTimeOffset?>("EmergencyContactAgreedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("EmergencyPhone")
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");

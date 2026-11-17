@@ -178,10 +178,11 @@ public enum ClinicalAccessAction
     Attachment
 }
 
-// What a person agreed to: the clinic's privacy notice.
+// What a person agreed to: the clinic's privacy notice, or (as told by the patient) being their emergency contact.
 public enum ConsentKind
 {
-    PrivacyNotice
+    PrivacyNotice,
+    EmergencyContact
 }
 
 // Where the agreement was given: the online request, signing up, or at the front desk after being told.

@@ -13,4 +13,5 @@ export interface MedicalRecordDto {
   emergencyContact?: string | null;
   emergencyPhone?: string | null;
   updatedAt?: string | null;
+  emergencyContactAgreedAt?: string | null;
 }

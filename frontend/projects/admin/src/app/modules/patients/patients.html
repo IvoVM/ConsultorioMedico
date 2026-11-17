@@ -109,6 +109,12 @@
           <ui-field label="Nombre y vínculo"><input name="emergencyContact" maxlength="120" placeholder="Ej.: Laura Gómez, hermana" [(ngModel)]="emergencyContact" /></ui-field>
           <ui-field label="Teléfono"><input name="emergencyPhone" type="tel" inputmode="tel" maxlength="30" placeholder="+54 11 00000000" [(ngModel)]="emergencyPhone" (blur)="normalizePhone('emergency')" /></ui-field>
         </div>
+        @if (emergencyContact.trim() || emergencyPhone.trim()) {
+          <label class="mt-3 flex items-start gap-2 text-sm text-ink/80">
+            <input class="mt-1" type="checkbox" name="contactAgreed" [checked]="contactAgreed()" (change)="contactAgreed.set($any($event.target).checked)" />
+            <span>{{ contactLabel }}</span>
+          </label>
+        }
       </fieldset>
       <ui-consent class="mt-4" [notice]="notice()" [label]="consentLabel" [(accepted)]="informed" />
       @if (error()) { <p class="mt-3 text-sm text-pulse" role="alert">{{ error() }}</p> }

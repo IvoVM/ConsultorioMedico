@@ -30,6 +30,9 @@ public class MedicalRecordsService(
         if (!DocumentRules.IsValid(document))
             throw new BusinessRuleException("El documento no es válido.");
         PrivacyService.RequireInformed(command.PatientInformed);
+        var hasContact = Clean(command.EmergencyContact) is not null || PhoneRules.Optional(command.EmergencyPhone) is not null;
+        if (hasContact)
+            PrivacyService.RequireContactAgreed(command.EmergencyContactAgreed);
         var email = AccountEmail.ForPatient(document);
         if (await clients.Clients.AnyAsync(c => c.DocumentNumber.ToLower() == document.ToLower(), ct))
             throw new ConflictException("Ya hay un paciente con ese documento.");
@@ -64,11 +67,14 @@ public class MedicalRecordsService(
             MemberNumber = Clean(command.MemberNumber),
             EmergencyContact = Clean(command.EmergencyContact),
             EmergencyPhone = PhoneRules.Optional(command.EmergencyPhone),
+            EmergencyContactAgreedAt = hasContact ? clock.GetUtcNow() : null,
             UpdatedAt = clock.GetUtcNow(),
             UpdatedBy = currentUser.Id
         };
         records.Add(record);
         await records.SaveAsync(ct);
+        if (hasContact)
+            await privacy.RecordAsync(ConsentKind.EmergencyContact, document, client.Id, ConsentChannel.FrontDesk, ct);
         await privacy.RecordAsync(document, client.Id, ConsentChannel.FrontDesk, ct);
         await audit.RecordAsync(currentUser.Id, "alta", "Paciente", client.Id.ToString(), email, ct);
         return new CreatedPatientDto(await GetAsync(client.Id, ct), password);
@@ -232,11 +238,25 @@ public class MedicalRecordsService(
         }
         record.HealthInsurance = Clean(command.HealthInsurance);
         record.MemberNumber = Clean(command.MemberNumber);
-        record.EmergencyContact = Clean(command.EmergencyContact);
-        record.EmergencyPhone = PhoneRules.Optional(command.EmergencyPhone);
+        var contact = Clean(command.EmergencyContact);
+        var contactPhone = PhoneRules.Optional(command.EmergencyPhone);
+        var contactChanged = contact != record.EmergencyContact || contactPhone != record.EmergencyPhone;
+        var agreedNow = false;
+        if (contact is null && contactPhone is null)
+            record.EmergencyContactAgreedAt = null;
+        else if (contactChanged || command.EmergencyContactAgreed)
+        {
+            PrivacyService.RequireContactAgreed(command.EmergencyContactAgreed);
+            record.EmergencyContactAgreedAt = clock.GetUtcNow();
+            agreedNow = true;
+        }
+        record.EmergencyContact = contact;
+        record.EmergencyPhone = contactPhone;
         record.UpdatedAt = clock.GetUtcNow();
         record.UpdatedBy = currentUser.Id;
         await records.SaveAsync(ct);
+        if (agreedNow)
+            await privacy.RecordAsync(ConsentKind.EmergencyContact, document, client.Id, ConsentChannel.FrontDesk, ct);
 
         if (client.UserId is Guid userId)
             await users.UpdateNameAsync(userId, command.FirstName.Trim(), command.LastName.Trim(), ct);

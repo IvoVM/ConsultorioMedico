@@ -283,7 +283,8 @@ public record CreatePatientCommand(
     string? MemberNumber,
     string? EmergencyContact,
     string? EmergencyPhone,
-    bool PatientInformed = false);
+    bool PatientInformed = false,
+    bool EmergencyContactAgreed = false);
 public record CreatedPatientDto(MedicalRecordDto Patient, string TemporaryPassword);
 public record PatientLookupDto(
     Guid PatientId,
@@ -311,7 +312,9 @@ public record MedicalRecordDto(
     string? MemberNumber,
     string? EmergencyContact,
     string? EmergencyPhone,
-    DateTimeOffset? UpdatedAt);
+    DateTimeOffset? UpdatedAt,
+    DateTimeOffset? EmergencyContactAgreedAt);
+// EmergencyContactAgreed: the patient confirmed the contact agreed to be called; asked whenever the contact changes.
 public record SaveMedicalRecordCommand(
     string FirstName,
     string LastName,
@@ -321,7 +324,8 @@ public record SaveMedicalRecordCommand(
     string? HealthInsurance,
     string? MemberNumber,
     string? EmergencyContact,
-    string? EmergencyPhone);
+    string? EmergencyPhone,
+    bool EmergencyContactAgreed = false);
 
 public record FeeDto(Guid Id, Guid AppointmentTypeId, string AppointmentType, decimal Amount, DateOnly EffectiveFrom, string? Payer, decimal? Copay);
 public record CreateFeeCommand(Guid AppointmentTypeId, decimal Amount, DateOnly EffectiveFrom, string? Payer = null, decimal? Copay = null);

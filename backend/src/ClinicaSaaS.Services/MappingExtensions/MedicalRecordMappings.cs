@@ -34,5 +34,6 @@ public static class MedicalRecordMappings
             c.Record != null ? c.Record.MemberNumber : null,
             c.Record != null ? c.Record.EmergencyContact : null,
             c.Record != null ? c.Record.EmergencyPhone : null,
-            c.Record != null ? (DateTimeOffset?)c.Record.UpdatedAt : null));
+            c.Record != null ? (DateTimeOffset?)c.Record.UpdatedAt : null,
+            c.Record != null ? c.Record.EmergencyContactAgreedAt : null));
 }
