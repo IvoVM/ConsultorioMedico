@@ -8,6 +8,32 @@
         "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ClinicDto" } } } } }
       }
     },
+    "/api/cuenta/privacidad": {
+      "get": {
+        "operationId": "privacyCenter",
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PrivacyCenterDto" } } } } }
+      }
+    },
+    "/api/cuenta/privacidad/aceptar": {
+      "post": {
+        "operationId": "acceptPrivacy",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AcceptPrivacyCommand" } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PrivacyCenterDto" } } } } }
+      }
+    },
+    "/api/cuenta/privacidad/datos": {
+      "get": {
+        "operationId": "myData",
+        "responses": { "200": { "content": { "application/json": { "schema": { "type": "string", "format": "binary" } } } } }
+      }
+    },
+    "/api/cuenta/privacidad/cerrar-cuenta": {
+      "post": {
+        "operationId": "closeAccount",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CloseAccountCommand" } } } },
+        "responses": { "204": {} }
+      }
+    },
     "/api/clinica/privacidad": {
       "get": {
         "operationId": "privacyNotice",
@@ -622,6 +648,12 @@
       "ClinicDto": { "type": "object", "required": ["slug", "name", "billingEnabled", "fiscalEnabled"], "properties": { "slug": { "type": "string" }, "name": { "type": "string" }, "billingEnabled": { "type": "boolean" }, "fiscalEnabled": { "type": "boolean" } } },
       "ClinicSettingsDto": { "type": "object", "required": ["name", "billingEnabled", "autoInvoice", "fiscalEnabled"], "properties": { "name": { "type": "string" }, "billingEnabled": { "type": "boolean" }, "autoInvoice": { "type": "boolean" }, "fiscalEnabled": { "type": "boolean" }, "taxId": { "type": "string", "nullable": true }, "taxCondition": { "allOf": [{ "$ref": "#/components/schemas/TaxCondition" }], "nullable": true }, "pointOfSale": { "type": "integer", "nullable": true }, "autoAuthorize": { "type": "boolean" }, "maxOverbooksPerDay": { "type": "integer", "nullable": true }, "privacyContact": { "type": "string", "nullable": true } } },
       "PrivacyNoticeDto": { "type": "object", "required": ["version", "clinic", "sections"], "properties": { "version": { "type": "string" }, "clinic": { "type": "string" }, "sections": { "type": "array", "items": { "$ref": "#/components/schemas/PrivacySectionDto" } } } },
+      "ConsentKind": { "type": "string", "enum": ["PrivacyNotice", "EmergencyContact"] },
+      "ConsentChannel": { "type": "string", "enum": ["OnlineRequest", "SignUp", "FrontDesk", "Account"] },
+      "ConsentDto": { "type": "object", "required": ["kind", "channel", "noticeVersion", "at"], "properties": { "kind": { "$ref": "#/components/schemas/ConsentKind" }, "channel": { "$ref": "#/components/schemas/ConsentChannel" }, "noticeVersion": { "type": "string" }, "at": { "type": "string" } } },
+      "PrivacyCenterDto": { "type": "object", "required": ["noticeVersion", "acceptedCurrent", "consents"], "properties": { "noticeVersion": { "type": "string" }, "acceptedCurrent": { "type": "boolean" }, "consents": { "type": "array", "items": { "$ref": "#/components/schemas/ConsentDto" } } } },
+      "AcceptPrivacyCommand": { "type": "object", "properties": { "privacyVersion": { "type": "string", "nullable": true } } },
+      "CloseAccountCommand": { "type": "object", "required": ["password"], "properties": { "password": { "type": "string" } } },
       "PrivacySectionDto": { "type": "object", "required": ["title", "body"], "properties": { "title": { "type": "string" }, "body": { "type": "string" } } },
       "SaveClinicSettingsCommand": { "type": "object", "required": ["name", "billingEnabled", "autoInvoice"], "properties": { "name": { "type": "string" }, "billingEnabled": { "type": "boolean" }, "autoInvoice": { "type": "boolean" }, "fiscalEnabled": { "type": "boolean" }, "taxId": { "type": "string", "nullable": true }, "taxCondition": { "allOf": [{ "$ref": "#/components/schemas/TaxCondition" }], "nullable": true }, "pointOfSale": { "type": "integer", "nullable": true }, "autoAuthorize": { "type": "boolean" }, "maxOverbooksPerDay": { "type": "integer", "nullable": true }, "privacyContact": { "type": "string", "nullable": true } } },
       "LoginCommand": { "type": "object", "required": ["documentNumber", "password"], "properties": { "documentNumber": { "type": "string" }, "password": { "type": "string" } } },

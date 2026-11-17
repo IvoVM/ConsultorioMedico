@@ -301,6 +301,7 @@ export const api = {
     return request<string[]>(`/api/disponibilidad/dias?${params}`, {}, false);
   },
   professionalInsurers: (professionalId: string) => request<Insurer[]>(`/api/profesionales/${professionalId}/obras-sociales`, {}, false),
+  closeAccount: (body: { password: string }) => request<void>('/api/cuenta/privacidad/cerrar-cuenta', { method: 'POST', body: JSON.stringify(body) }),
   profile: () => request<{ firstName: string; lastName: string; documentNumber: string; phone: string }>('/api/cuenta/perfil'),
   updateProfile: (body: { firstName: string; lastName: string; phone: string }) =>
     request<{ firstName: string; lastName: string; documentNumber: string; phone: string }>('/api/cuenta/perfil', { method: 'PUT', body: JSON.stringify(body) }),

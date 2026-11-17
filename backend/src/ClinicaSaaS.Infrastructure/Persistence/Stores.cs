@@ -87,6 +87,26 @@ public class TenantUserStore(UserManager<TenantUser> users) : ITenantUserStore
         await users.UpdateSecurityStampAsync(user);
     }
 
+    public async Task CloseAsync(Guid id, CancellationToken ct)
+    {
+        var user = await users.FindByIdAsync(id.ToString()) ?? throw new NotFoundException("Usuario no encontrado.");
+        var closed = $"baja.{id:N}@pacientes.local";
+        user.Email = closed;
+        user.UserName = closed;
+        user.NormalizedEmail = closed.ToUpperInvariant();
+        user.NormalizedUserName = closed.ToUpperInvariant();
+        user.FirstName = "Cuenta";
+        user.LastName = "cerrada";
+        user.PhoneNumber = null;
+        user.PasswordHash = null;
+        user.LockoutEnabled = true;
+        user.LockoutEnd = DateTimeOffset.MaxValue;
+        var update = await users.UpdateAsync(user);
+        if (!update.Succeeded)
+            throw new BusinessRuleException(string.Join(' ', update.Errors.Select(IdentityMessage)));
+        await users.UpdateSecurityStampAsync(user);
+    }
+
     public async Task SetDocumentPasswordAsync(Guid id, string password, CancellationToken ct)
     {
         var user = await users.FindByIdAsync(id.ToString()) ?? throw new NotFoundException("Usuario no encontrado.");
@@ -410,6 +430,11 @@ public class BookingRequestStore(TenantDbContext db) : IBookingRequestStore
         if (rows.Count > 0)
             await db.SaveChangesAsync(ct);
     }
+
+    public Task<int> RemoveOpenAsync(Guid clientId, string documentNumber, CancellationToken ct) =>
+        db.BookingRequests
+            .Where(r => (r.ClientId == clientId || r.DocumentNumber == documentNumber) && r.AppointmentId == null)
+            .ExecuteDeleteAsync(ct);
 }
 
 public class WaitlistStore(TenantDbContext db) : IWaitlistStore
@@ -426,6 +451,9 @@ public class WaitlistStore(TenantDbContext db) : IWaitlistStore
     public Task<WaitlistEntry?> GetAsync(Guid id, CancellationToken ct) => db.WaitlistEntries.FirstOrDefaultAsync(w => w.Id == id, ct);
 
     public Task SaveAsync(CancellationToken ct) => db.SaveChangesAsync(ct);
+
+    public Task<int> RemoveForClientAsync(Guid clientId, CancellationToken ct) =>
+        db.WaitlistEntries.Where(w => w.ClientId == clientId).ExecuteDeleteAsync(ct);
 }
 
 public class ClinicalStore(TenantDbContext db) : IClinicalStore

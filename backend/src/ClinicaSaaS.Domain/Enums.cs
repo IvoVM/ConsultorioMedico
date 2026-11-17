@@ -187,10 +187,12 @@ public enum ConsentKind
     EmergencyContact
 }
 
-// Where the agreement was given: the online request, signing up, or at the front desk after being told.
+// Where the agreement was given: the online request, signing up, at the front desk after being told, or later from
+// the patient's own account.
 public enum ConsentChannel
 {
     OnlineRequest,
     SignUp,
-    FrontDesk
+    FrontDesk,
+    Account
 }

@@ -18,6 +18,11 @@ public record ClinicSettingsDto(string Name, bool BillingEnabled, bool AutoInvoi
 // The privacy notice a person reads before giving their data; its version is what they agree to.
 public record PrivacyNoticeDto(string Version, string Clinic, IReadOnlyList<PrivacySectionDto> Sections);
 public record PrivacySectionDto(string Title, string Body);
+// What the patient agreed to, and whether that covers the notice in force today.
+public record PrivacyCenterDto(string NoticeVersion, bool AcceptedCurrent, IReadOnlyList<ConsentDto> Consents);
+public record ConsentDto(ConsentKind Kind, ConsentChannel Channel, string NoticeVersion, DateTimeOffset At);
+public record AcceptPrivacyCommand(string? PrivacyVersion);
+public record CloseAccountCommand(string Password);
 public record SaveClinicSettingsCommand(
     string Name,
     bool BillingEnabled,

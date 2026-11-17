@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Text } from 'react-native';
 import { api } from '../../src/api';
@@ -16,6 +17,29 @@ export default function Perfil() {
   const [saved, setSaved] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const router = useRouter();
+  const [closePassword, setClosePassword] = useState('');
+  const [closing, setClosing] = useState(false);
+  const [closeError, setCloseError] = useState('');
+
+  // Closing keeps the clinical record and invoices, which the law keeps; it deletes open requests and the waitlist.
+  async function closeAccount() {
+    if (!closePassword) {
+      setCloseError('Escribí tu contraseña para confirmar.');
+      return;
+    }
+    setClosing(true);
+    setCloseError('');
+    try {
+      await api.closeAccount({ password: closePassword });
+      await sessionStore.clear();
+      router.replace('/ingreso');
+    } catch (reason) {
+      setCloseError(reason instanceof Error ? reason.message : 'No se pudo cerrar la cuenta.');
+    } finally {
+      setClosing(false);
+    }
+  }
 
   useEffect(() => {
     let alive = true;
@@ -74,6 +98,13 @@ export default function Perfil() {
           <Field label="Teléfono" value={phone} onChangeText={setPhone} keyboardType="phone-pad" placeholder="+54 11 00000000" autoComplete="tel" />
           {saved ? <Text style={{ fontFamily: type.sans, color: colors.deep }}>{saved}</Text> : null}
           <Button label={saving ? 'Guardando…' : 'Guardar'} disabled={saving} onPress={() => void save()} />
+          <Text style={{ fontFamily: type.serif, fontSize: 24, color: colors.deep, marginTop: 24 }}>Cerrar la cuenta</Text>
+          <Text style={{ fontFamily: type.sans, fontSize: 15, lineHeight: 21, color: colors.ink }}>
+            Se borran tus solicitudes sin turno y tu lugar en la lista de espera. Tu historia clínica y tus comprobantes quedan guardados: la ley obliga a conservar la historia diez años. No se puede deshacer; si tenés turnos por venir, cancelalos antes. Para descargar todos tus datos, entrá al portal web en Privacidad.
+          </Text>
+          <Field label="Tu contraseña" secureTextEntry value={closePassword} onChangeText={setClosePassword} autoComplete="current-password" />
+          <ErrorText text={closeError} />
+          <Button label={closing ? 'Cerrando…' : 'Cerrar mi cuenta'} tone="pulse" disabled={closing} onPress={() => void closeAccount()} />
         </>
       )}
     </Screen>

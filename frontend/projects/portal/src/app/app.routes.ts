@@ -49,6 +49,11 @@ export const routes: Routes = [
             loadComponent: () => import('./modules/account/profile').then((m) => m.ProfilePage),
           },
           {
+            path: routePath(AppRoute.Privacidad),
+            canActivate: [roleGuard(TenantRole.Patient)],
+            loadComponent: () => import('./modules/account/privacy').then((m) => m.PrivacyPage),
+          },
+          {
             path: routePath(AppRoute.MisComprobantes),
             canActivate: [roleGuard(TenantRole.Patient)],
             loadComponent: () => import('./modules/billing/my-invoices').then((m) => m.MyInvoicesPage),

@@ -1,0 +1,66 @@
+<header class="mb-6 max-w-prose">
+  <h2 class="font-serif text-2xl tracking-tight">Privacidad</h2>
+  <p class="mt-2 text-ink/75">Lo que aceptaste, una copia de todos tus datos y el cierre de tu cuenta.</p>
+</header>
+
+@if (error() && !closing()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
+
+@if (!center()) {
+  <ui-skeleton [framed]="false" [count]="3" height="5rem" label="Cargando privacidad" />
+} @else {
+  <div class="grid max-w-2xl gap-4">
+    <section class="rounded-2xl bg-white p-5 shadow-[var(--shadow-card)] sm:p-6">
+      <h3 class="font-serif text-lg tracking-tight">Lo que aceptaste</h3>
+      @if (!center()!.acceptedCurrent) {
+        <p class="mt-2 text-sm text-ink/75">El aviso de privacidad vigente es de una versión que todavía no aceptaste.</p>
+        <ui-consent class="mt-4" [notice]="notice()" [(accepted)]="accepted" />
+        <ui-button class="mt-4" [loading]="busy()" (click)="accept()">Aceptar el aviso</ui-button>
+      }
+      @if (center()!.consents.length) {
+        <ul class="mt-4 grid gap-2 text-sm text-ink/80">
+          @for (item of center()!.consents; track item.at + item.kind) {
+            <li>{{ item.at | fecha }} · {{ kindLabels[item.kind] }} {{ channelLabels[item.channel] }}@if (item.kind === consentKind.PrivacyNotice) { (versión {{ item.noticeVersion }}) }</li>
+          }
+        </ul>
+      } @else {
+        <p class="mt-2 text-sm text-ink/60">Todavía no hay nada registrado.</p>
+      }
+    </section>
+
+    <section class="rounded-2xl bg-white p-5 shadow-[var(--shadow-card)] sm:p-6">
+      <h3 class="font-serif text-lg tracking-tight">Tus datos</h3>
+      <p class="mt-2 text-sm text-ink/75">
+        Descargá todo lo que el consultorio guarda sobre vos: ficha, cobertura, turnos, solicitudes, comprobantes, lo que aceptaste y quién abrió tu historia.
+        La historia clínica completa se descarga en PDF desde <a class="text-link" [routerLink]="route.Historia">Historia</a>.
+        Para corregir tu nombre o teléfono usá <a class="text-link" [routerLink]="route.Perfil">Mi perfil</a>; para lo demás, pedilo en la recepción.
+      </p>
+      <ui-button class="mt-4" variant="outlined" [loading]="busy() && !closing()" (click)="download()">Descargar mis datos</ui-button>
+    </section>
+
+    <section class="rounded-2xl bg-white p-5 shadow-[var(--shadow-card)] sm:p-6">
+      <h3 class="font-serif text-lg tracking-tight">Cerrar la cuenta</h3>
+      <p class="mt-2 text-sm text-ink/75">
+        Se borran tus solicitudes que no llegaron a turno y tu lugar en la lista de espera, y ya no vas a poder entrar con esta cuenta.
+        Tu historia clínica y tus comprobantes quedan guardados en el consultorio: la ley obliga a conservar la historia al menos diez años.
+        Si volvés, te registrás de nuevo con tu documento y recuperás tu historia.
+      </p>
+      <ui-button class="mt-4" variant="outlined" (click)="openClose()">Cerrar mi cuenta</ui-button>
+    </section>
+  </div>
+}
+
+@if (closing()) {
+  <ui-modal [open]="true" title="Cerrar tu cuenta" (closed)="closing.set(false)">
+    <form id="close-form" class="grid gap-4" (ngSubmit)="closeAccount()">
+      <p class="text-sm text-ink/75">No se puede deshacer. Si tenés turnos por venir, cancelalos antes.</p>
+      <ui-field label="Tu contraseña">
+        <ui-password><input name="password" type="password" autocomplete="current-password" required [(ngModel)]="password" /></ui-password>
+      </ui-field>
+      @if (error()) { <p class="text-sm text-pulse" role="alert">{{ error() }}</p> }
+    </form>
+    <div uiModalFooter class="flex flex-wrap gap-3">
+      <ui-button type="submit" form="close-form" variant="danger" [loading]="busy()">Cerrar la cuenta</ui-button>
+      <ui-button variant="outlined" [disabled]="busy()" (click)="closing.set(false)">Volver</ui-button>
+    </div>
+  </ui-modal>
+}

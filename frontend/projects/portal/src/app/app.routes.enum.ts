@@ -9,6 +9,7 @@ export enum AppRoute {
   TurnosCancelados = '/turnos-cancelados',
   Historia = '/historia',
   Perfil = '/perfil',
+  Privacidad = '/privacidad',
   MisComprobantes = '/mis-comprobantes',
   Caja = '/caja',
   Cuenta = '/cuenta',

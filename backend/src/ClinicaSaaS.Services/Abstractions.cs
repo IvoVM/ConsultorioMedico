@@ -49,6 +49,8 @@ public interface ITenantUserStore
     Task UpdateProfileAsync(Guid id, string firstName, string lastName, string email, TenantRole role, CancellationToken ct);
     Task SetPasswordAsync(Guid id, string password, CancellationToken ct);
     Task SetDocumentPasswordAsync(Guid id, string password, CancellationToken ct);
+    // Leaves the account unusable and without the person's name, so the document can sign up again from scratch.
+    Task CloseAsync(Guid id, CancellationToken ct);
 }
 
 public interface IEmployeeStore
@@ -154,6 +156,8 @@ public interface IBookingRequestStore
     Task<BookingRequest?> GetAsync(Guid id, CancellationToken ct);
     Task SaveAsync(CancellationToken ct);
     Task LinkDocumentAsync(string documentNumber, Guid clientId, CancellationToken ct);
+    // Deletes the patient's requests that never became an appointment; returns how many.
+    Task<int> RemoveOpenAsync(Guid clientId, string documentNumber, CancellationToken ct);
 }
 
 public interface IWaitlistStore
@@ -162,6 +166,7 @@ public interface IWaitlistStore
     Task<WaitlistEntry> AddAsync(WaitlistEntry entry, CancellationToken ct);
     Task<WaitlistEntry?> GetAsync(Guid id, CancellationToken ct);
     Task SaveAsync(CancellationToken ct);
+    Task<int> RemoveForClientAsync(Guid clientId, CancellationToken ct);
 }
 
 public interface IClinicalStore

@@ -45,6 +45,7 @@ export class ShellPage {
       nodes.push({ label: 'Mis comprobantes', path: AppRoute.MisComprobantes, icon: 'receipt_long' });
       // The profile holds the patient's own details, not their health, so it gets its own entry.
       nodes.push({ label: 'Mi perfil', path: AppRoute.Perfil, icon: 'person' });
+      nodes.push({ label: 'Privacidad', path: AppRoute.Privacidad, icon: 'shield_person' });
     } else if (role === TenantRole.Secretary || role === TenantRole.TenantAdmin) {
       nodes.push({
         label: 'Turnos',
