@@ -12,6 +12,7 @@ namespace ClinicaSaaS.Infrastructure.Fiscal;
 public class SimulatedCardProcessor(TenantDbContext db, ITimeZoneProvider timeZone, TimeProvider clock) : ICardProcessor
 {
     public bool Simulated => true;
+    public bool Available => true;
 
     public async Task<IReadOnlyList<SettlementLineData>> SettlementAsync(CardBrand brand, DateOnly from, DateOnly to, CancellationToken ct)
     {

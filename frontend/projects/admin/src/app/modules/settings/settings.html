@@ -66,9 +66,11 @@
           <div class="border-t border-rule"></div>
           <ui-switch
             label="Factura electrónica"
-            description="Permite autorizar cada comprobante ante ARCA para que tenga número fiscal y CAE. Por ahora se autoriza con un simulador de prueba: los CAE no tienen validez hasta conectar el certificado de la clínica."
+            [description]="form.fiscalAvailable
+              ? 'Permite autorizar cada comprobante ante ARCA para que tenga número fiscal y CAE. En la demo se autoriza con un simulador: esos CAE no tienen validez.'
+              : 'Todavía no está conectada con ARCA en este consultorio. Hasta entonces los comprobantes de acá son internos y dicen «Documento no válido como factura»; la factura se emite desde ARCA.'"
             [checked]="form.fiscalEnabled"
-            [disabled]="!form.billingEnabled"
+            [disabled]="!form.billingEnabled || !form.fiscalAvailable"
             (checkedChange)="setFiscal($event)"
           />
           <div class="border-t border-rule"></div>

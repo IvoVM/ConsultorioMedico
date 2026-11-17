@@ -6,4 +6,5 @@ export interface ReconciliationDto {
   settlements: CardSettlementDto[];
   pending: CardReceiptDto[];
   simulated: boolean;
+  available: boolean;
 }

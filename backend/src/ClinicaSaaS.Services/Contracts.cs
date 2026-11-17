@@ -14,7 +14,8 @@ public record TenantAccount(
 }
 
 public record ClinicDto(string Slug, string Name, bool BillingEnabled, bool FiscalEnabled);
-public record ClinicSettingsDto(string Name, bool BillingEnabled, bool AutoInvoice, bool FiscalEnabled, string? TaxId, TaxCondition? TaxCondition, int? PointOfSale, bool AutoAuthorize, int? MaxOverbooksPerDay, string? PrivacyContact);
+// FiscalAvailable: ARCA is connected (or simulated in the demo), so electronic invoicing can be turned on.
+public record ClinicSettingsDto(string Name, bool BillingEnabled, bool AutoInvoice, bool FiscalEnabled, string? TaxId, TaxCondition? TaxCondition, int? PointOfSale, bool AutoAuthorize, int? MaxOverbooksPerDay, string? PrivacyContact, bool FiscalAvailable);
 // The privacy notice a person reads before giving their data; its version is what they agree to.
 public record PrivacyNoticeDto(string Version, string Clinic, IReadOnlyList<PrivacySectionDto> Sections);
 public record PrivacySectionDto(string Title, string Body);
@@ -458,7 +459,7 @@ public record CloseCashCommand(decimal CountedCash, string? Notes);
 public record SettlementLineDto(Guid Id, string Batch, string Coupon, int Installments, DateOnly ChargedOn, DateOnly PaidOn, decimal Gross, decimal Fee, decimal Net, Guid? ReceiptId, string? Patient);
 public record CardSettlementDto(Guid Id, CardBrand Brand, DateOnly From, DateOnly To, DateTimeOffset ImportedAt, bool Simulated, decimal Gross, decimal Fee, decimal Net, IReadOnlyList<SettlementLineDto> Lines);
 public record CardReceiptDto(Guid Id, string Patient, CardBrand Brand, int Installments, string Batch, string Coupon, decimal Amount, DateTimeOffset PaidAt, bool Reconciled);
-public record ReconciliationDto(IReadOnlyList<CardSettlementDto> Settlements, IReadOnlyList<CardReceiptDto> Pending, bool Simulated);
+public record ReconciliationDto(IReadOnlyList<CardSettlementDto> Settlements, IReadOnlyList<CardReceiptDto> Pending, bool Simulated, bool Available);
 public record ImportSettlementCommand(CardBrand Brand, DateOnly From, DateOnly To);
 public record MatchLineCommand(Guid ReceiptId);
 public record IssueInvoiceCommand(Guid AppointmentId);

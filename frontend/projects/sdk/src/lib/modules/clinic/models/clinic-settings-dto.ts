@@ -12,4 +12,5 @@ export interface ClinicSettingsDto {
   autoAuthorize?: boolean;
   maxOverbooksPerDay?: number | null;
   privacyContact?: string | null;
+  fiscalAvailable: boolean;
 }

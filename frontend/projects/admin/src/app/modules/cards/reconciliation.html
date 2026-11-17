@@ -11,6 +11,10 @@
   <p class="mb-6 max-w-prose rounded-xl bg-ochre-wash px-4 py-3 text-sm" role="status">
     Las liquidaciones salen de un simulador: no hay conexión con ninguna procesadora de tarjetas todavía, y el arancel es de prueba.
   </p>
+} @else if (data() && !data()!.available) {
+  <p class="mb-6 max-w-prose rounded-xl bg-ochre-wash px-4 py-3 text-sm" role="status">
+    Todavía no hay una procesadora de tarjetas conectada a este consultorio, así que no hay liquidaciones para traer. Los cobros con tarjeta se siguen cargando con su lote y cupón.
+  </p>
 }
 
 @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
@@ -25,7 +29,7 @@
   <ui-field class="sm:w-44" label="Hasta">
     <input name="to" type="date" [ngModel]="to()" (ngModelChange)="to.set($event)" required />
   </ui-field>
-  <ui-button type="submit" [loading]="importing()">Traer liquidación</ui-button>
+  <ui-button type="submit" [loading]="importing()" [disabled]="data()?.available === false">Traer liquidación</ui-button>
 </form>
 
 @if (loading()) {

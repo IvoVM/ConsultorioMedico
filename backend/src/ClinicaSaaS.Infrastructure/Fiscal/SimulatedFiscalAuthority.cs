@@ -9,8 +9,11 @@ namespace ClinicaSaaS.Infrastructure.Fiscal;
 // Stands in for ARCA's WSFE service until the clinic has a certificate: it numbers each voucher type per point of sale
 // after the last one this clinic issued, as FECompUltimoAutorizado would, and returns a 14-digit CAE valid for ten days.
 // A real client implements IFiscalAuthority with WSAA login and FECAESolicitar, and nothing else changes.
+// Only the demo clinic uses it: anywhere else UnconnectedFiscalAuthority stands until the real client exists.
 public class SimulatedFiscalAuthority(TenantDbContext db) : IFiscalAuthority
 {
+    public bool Available => true;
+
     public async Task<FiscalAuthorization> AuthorizeAsync(FiscalRequest request, CancellationToken ct)
     {
         var last = request.Type is FiscalVoucherType.NotaCreditoB or FiscalVoucherType.NotaCreditoC

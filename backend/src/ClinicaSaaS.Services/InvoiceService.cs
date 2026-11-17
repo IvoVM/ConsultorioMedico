@@ -200,7 +200,7 @@ public class InvoiceService(
     private async Task AuthorizeIfAutomaticAsync(Invoice invoice, CancellationToken ct)
     {
         var clinic = await settings.GetAsync(ct);
-        if (clinic.FiscalEnabled && clinic.AutoAuthorize && BillingRules.IsValidTaxId(clinic.TaxId) && clinic.TaxCondition is not null
+        if (fiscal.Available && clinic.FiscalEnabled && clinic.AutoAuthorize && BillingRules.IsValidTaxId(clinic.TaxId) && clinic.TaxCondition is not null
             && clinic.PointOfSale is not null && BillingRules.CanAuthorize(invoice))
             await AuthorizeCoreAsync(invoice, clinic, ct);
     }

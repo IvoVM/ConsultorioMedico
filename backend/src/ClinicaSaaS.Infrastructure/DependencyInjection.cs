@@ -254,8 +254,17 @@ public static class DependencyInjection
         services.AddScoped<IAuditStore, AuditStore>();
         services.AddScoped<IConsentStore, ConsentStore>();
         services.AddScoped<IClinicSettingsStore, ClinicSettingsStore>();
-        services.AddScoped<IFiscalAuthority, Fiscal.SimulatedFiscalAuthority>();
-        services.AddScoped<ICardProcessor, Fiscal.SimulatedCardProcessor>();
+        // Made-up CAEs and settlements are for the demo only; a real clinic gets none until the real services exist.
+        if (string.Equals(configuration["Clinic:Slug"]?.Trim(), ClinicSeeder.DemoSlug, StringComparison.OrdinalIgnoreCase))
+        {
+            services.AddScoped<IFiscalAuthority, Fiscal.SimulatedFiscalAuthority>();
+            services.AddScoped<ICardProcessor, Fiscal.SimulatedCardProcessor>();
+        }
+        else
+        {
+            services.AddScoped<IFiscalAuthority, Fiscal.UnconnectedFiscalAuthority>();
+            services.AddScoped<ICardProcessor, Fiscal.UnconnectedCardProcessor>();
+        }
         services.AddSingleton<ITokenService, JwtTokenService>();
         services.AddSingleton<ITimeZoneProvider, ConfiguredTimeZone>();
         services.AddScoped<ClinicSeeder>();

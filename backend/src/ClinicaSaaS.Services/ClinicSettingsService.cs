@@ -8,14 +8,15 @@ public class ClinicSettingsService(
     ICurrentTenant clinic,
     ICurrentUser currentUser,
     IAuditStore audit,
-    IValidator<SaveClinicSettingsCommand> validator)
+    IValidator<SaveClinicSettingsCommand> validator,
+    IFiscalAuthority fiscal)
 {
     public async Task<ClinicSettingsDto> GetAsync(CancellationToken ct) => ToDto(await store.GetAsync(ct));
 
     public async Task<ClinicDto> ProfileAsync(CancellationToken ct)
     {
         var settings = await store.GetAsync(ct);
-        return new ClinicDto(clinic.Slug, settings.Name, settings.BillingEnabled, settings.BillingEnabled && settings.FiscalEnabled);
+        return new ClinicDto(clinic.Slug, settings.Name, settings.BillingEnabled, settings.BillingEnabled && settings.FiscalEnabled && fiscal.Available);
     }
 
     public async Task<ClinicSettingsDto> SaveAsync(SaveClinicSettingsCommand command, CancellationToken ct)
@@ -24,6 +25,8 @@ public class ClinicSettingsService(
         if (!result.IsValid)
             throw new ValidationException(result.Errors);
 
+        if (command.BillingEnabled && command.FiscalEnabled && !fiscal.Available)
+            throw new BusinessRuleException("La factura electrónica todavía no está conectada con ARCA en este consultorio, así que no se puede prender.");
         var settings = await store.GetAsync(ct);
         settings.Name = command.Name.Trim();
         settings.BillingEnabled = command.BillingEnabled;
@@ -43,6 +46,6 @@ public class ClinicSettingsService(
         return ToDto(settings);
     }
 
-    private static ClinicSettingsDto ToDto(ClinicSettings settings) =>
-        new(settings.Name, settings.BillingEnabled, settings.AutoInvoice, settings.FiscalEnabled, settings.TaxId, settings.TaxCondition, settings.PointOfSale, settings.AutoAuthorize, settings.MaxOverbooksPerDay, settings.PrivacyContact);
+    private ClinicSettingsDto ToDto(ClinicSettings settings) =>
+        new(settings.Name, settings.BillingEnabled, settings.AutoInvoice, settings.FiscalEnabled && fiscal.Available, settings.TaxId, settings.TaxCondition, settings.PointOfSale, settings.AutoAuthorize, settings.MaxOverbooksPerDay, settings.PrivacyContact, fiscal.Available);
 }

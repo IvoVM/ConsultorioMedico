@@ -229,6 +229,8 @@ public interface IBillingStore
 public interface ICardProcessor
 {
     bool Simulated { get; }
+    // False while the clinic has no processor connected: there is no settlement to import.
+    bool Available { get; }
     Task<IReadOnlyList<SettlementLineData>> SettlementAsync(CardBrand brand, DateOnly from, DateOnly to, CancellationToken ct);
 }
 
@@ -237,6 +239,8 @@ public record SettlementLineData(string Batch, string Coupon, int Installments, 
 // The tax authority that numbers and authorizes fiscal vouchers (AFIP/ARCA web services, or a simulation).
 public interface IFiscalAuthority
 {
+    // False while the clinic has no ARCA certificate connected: invoices cannot be authorized.
+    bool Available { get; }
     Task<FiscalAuthorization> AuthorizeAsync(FiscalRequest request, CancellationToken ct);
 }
 

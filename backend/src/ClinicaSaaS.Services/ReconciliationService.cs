@@ -68,7 +68,8 @@ public class ReconciliationService(
                     l.Id, l.Batch, l.Coupon, l.Installments, l.ChargedOn, l.PaidOn, l.Gross, l.Fee, l.Net, l.ReceiptId,
                     l.ReceiptId is Guid id && patients.TryGetValue(id, out var name) ? name : null)).ToList())).ToList(),
             pending,
-            processor.Simulated);
+            processor.Simulated,
+            processor.Available);
     }
 
     public async Task<ReconciliationDto> ImportAsync(ImportSettlementCommand command, CancellationToken ct)
