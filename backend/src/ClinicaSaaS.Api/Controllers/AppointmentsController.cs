@@ -33,20 +33,6 @@ public class AppointmentsController(ScheduleService schedule) : ApiController
     [HttpGet("{id:guid}/cambios")]
     public Task<IActionResult> Changes(Guid id, CancellationToken ct) => Run(() => schedule.ChangesAsync(id, ct));
 
-    [Authorize(Roles = AppRoles.TenantAdmin)]
-    [HttpPost("{id:guid}/cambios")]
-    public Task<IActionResult> AddChange(Guid id, SaveAppointmentChangeCommand command, CancellationToken ct) =>
-        Run(() => schedule.AddChangeAsync(id, command, ct));
-
-    [Authorize(Roles = AppRoles.TenantAdmin)]
-    [HttpPut("{id:guid}/cambios/{changeId:guid}")]
-    public Task<IActionResult> UpdateChange(Guid id, Guid changeId, SaveAppointmentChangeCommand command, CancellationToken ct) =>
-        Run(() => schedule.UpdateChangeAsync(id, changeId, command, ct));
-
-    [Authorize(Roles = AppRoles.TenantAdmin)]
-    [HttpDelete("{id:guid}/cambios/{changeId:guid}")]
-    public Task<IActionResult> DeleteChange(Guid id, Guid changeId, CancellationToken ct) =>
-        Run(() => schedule.DeleteChangeAsync(id, changeId, ct));
 
     [Authorize(Roles = AppRoles.Patient)]
     [HttpGet("mios")]
