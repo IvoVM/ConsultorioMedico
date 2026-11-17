@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -69,6 +70,10 @@ export class ClinicalHistoryPage {
   readonly error = signal('');
   readonly notice = signal('');
   readonly loading = signal(false);
+  // The professional does not treat this patient: they can still open the record in an emergency, with a reason.
+  readonly needsEmergency = signal(false);
+  readonly opening = signal(false);
+  emergencyReason = '';
   readonly downloading = signal(false);
   readonly form = signal<Signing | null>(null);
   readonly amending = signal<ClinicalEntryDto | null>(null);
@@ -102,15 +107,35 @@ export class ClinicalHistoryPage {
 
   async load(specialtyId?: string) {
     this.error.set('');
+    this.needsEmergency.set(false);
     this.loading.set(true);
     try {
       const patient = this.isDoctor() ? { patientId: this.patientId } : {};
       const query = specialtyId ? { ...patient, specialtyId } : patient;
       this.history.set(await firstValueFrom(this.clinical.clinicalHistory(query)));
     } catch (error) {
+      if (this.isDoctor() && error instanceof HttpErrorResponse && error.status === 403) this.needsEmergency.set(true);
       this.error.set(errorMessage(error));
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  async openInEmergency() {
+    const reason = this.emergencyReason.trim();
+    if (reason.length < 10) {
+      this.error.set('Contá el motivo de la urgencia en al menos 10 caracteres.');
+      return;
+    }
+    this.opening.set(true);
+    try {
+      await firstValueFrom(this.clinical.emergencyAccess({ patientId: this.patientId, reason }));
+      this.emergencyReason = '';
+      await this.load();
+    } catch (error) {
+      this.error.set(errorMessage(error));
+    } finally {
+      this.opening.set(false);
     }
   }
 

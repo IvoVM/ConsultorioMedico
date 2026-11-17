@@ -220,7 +220,7 @@ public partial class ClinicalService(
         var result = await backgroundValidator.ValidateAsync(command, ct);
         if (!result.IsValid)
             throw new ValidationException(result.Errors);
-        await EnsurePatientExistsAsync(command.PatientId, ct);
+        await EnsureTreatsAsync(command.PatientId, ct);
         var signer = await SignerAsync(command.Password, ct);
 
         var entry = NewEntry(ClinicalEntryKind.Background, command.PatientId, signer);
@@ -240,7 +240,7 @@ public partial class ClinicalService(
         var result = await consentValidator.ValidateAsync(command, ct);
         if (!result.IsValid)
             throw new ValidationException(result.Errors);
-        await EnsurePatientExistsAsync(command.PatientId, ct);
+        await EnsureTreatsAsync(command.PatientId, ct);
         byte[] content;
         try
         {
@@ -512,8 +512,39 @@ public partial class ClinicalService(
             throw new BusinessRuleException("Solo el profesional puede ver la historia clínica.");
         if (patientId is not Guid clientId)
             throw new BusinessRuleException("Indicá el paciente.");
-        await EnsurePatientExistsAsync(clientId, ct);
+        await EnsureTreatsAsync(clientId, ct);
         return clientId;
+    }
+
+    // How long an emergency opening lasts before the professional has to give a reason again.
+    public const int EmergencyAccessHours = 12;
+
+    // Professional secrecy (Ley 26.529, art. 2): a professional reads the record of a patient they treat (an
+    // appointment with them that was not cancelled, or a page they signed) or opened in an emergency a while ago.
+    private async Task EnsureTreatsAsync(Guid clientId, CancellationToken ct)
+    {
+        await EnsurePatientExistsAsync(clientId, ct);
+        var me = currentUser.Id ?? Guid.Empty;
+        if (await appointments.Appointments.AnyAsync(a => a.ClientId == clientId && a.ProfessionalId == me && a.Status != AppointmentStatus.Cancelled, ct))
+            return;
+        if (await clinical.Entries.AnyAsync(e => e.ClientId == clientId && e.AuthorId == me, ct))
+            return;
+        var since = clock.GetUtcNow().AddHours(-EmergencyAccessHours);
+        if (await clinical.Accesses.AnyAsync(a => a.ClientId == clientId && a.UserId == me && a.Action == ClinicalAccessAction.Emergency && a.At >= since, ct))
+            return;
+        throw new ForbiddenException("No atendés a este paciente. Si es una urgencia, abrí la historia indicando el motivo: el paciente lo va a ver.");
+    }
+
+    public async Task EmergencyAccessAsync(EmergencyAccessCommand command, CancellationToken ct)
+    {
+        if (!IsDoctor)
+            throw new BusinessRuleException("Solo el profesional puede ver la historia clínica.");
+        var reason = command.Reason?.Trim() ?? "";
+        if (reason.Length is < 10 or > 180)
+            throw new BusinessRuleException("Contá el motivo de la urgencia en 10 a 180 caracteres.");
+        await EnsurePatientExistsAsync(command.PatientId, ct);
+        await LogAsync(command.PatientId, ClinicalAccessAction.Emergency, reason, ct);
+        await audit.RecordAsync(currentUser.Id, "urgencia", "Historia", command.PatientId.ToString(), reason, ct);
     }
 
     private async Task<HistorySpecialtyDto> OwnSpecialtyAsync(CancellationToken ct)

@@ -27,6 +27,7 @@ export const accessLabels: Record<ClinicalAccessAction, string> = {
   [ClinicalAccessAction.Sign]: 'Firmó un folio',
   [ClinicalAccessAction.Amend]: 'Firmó una corrección',
   [ClinicalAccessAction.Attachment]: 'Abrió un adjunto',
+  [ClinicalAccessAction.Emergency]: 'La abrió por una urgencia, sin atenderte',
 };
 
 export const roleLabels: Record<TenantRole, string> = {

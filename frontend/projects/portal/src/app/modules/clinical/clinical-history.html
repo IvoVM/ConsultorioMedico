@@ -2,6 +2,16 @@
   <ui-empty message="Abrí la historia desde un turno de tu agenda." />
 }
 @if (error()) { <p class="mb-4 text-sm text-pulse" role="alert">{{ error() }}</p> }
+@if (needsEmergency()) {
+  <form class="mb-6 grid max-w-xl gap-3 rounded-2xl bg-white p-5 shadow-[var(--shadow-card)]" (ngSubmit)="openInEmergency()">
+    <h3 class="font-serif text-lg tracking-tight">Abrir por una urgencia</h3>
+    <p class="text-sm text-ink/70">La historia queda abierta para vos por 12 horas. El paciente ve en su historia quién la abrió, cuándo y este motivo.</p>
+    <ui-field label="Motivo">
+      <textarea name="emergencyReason" rows="2" maxlength="180" required [(ngModel)]="emergencyReason" placeholder="Ej.: ingresó por guardia y su médico no está"></textarea>
+    </ui-field>
+    <ui-button type="submit" [loading]="opening()">Abrir la historia</ui-button>
+  </form>
+}
 @if (notice()) { <p class="mb-4 text-sm text-ink/70" role="status">{{ notice() }}</p> }
 @if (loading() && !history()) {
   <ui-skeleton [framed]="false" [count]="3" height="6rem" label="Cargando historia" />

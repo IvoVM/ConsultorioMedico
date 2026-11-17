@@ -9,6 +9,7 @@ import type { ClinicalAccessDto } from './models/clinical-access-dto';
 import type { ClinicalEntryDto } from './models/clinical-entry-dto';
 import type { ClinicalHistoryDto } from './models/clinical-history-dto';
 import type { DiagnosisDto } from './models/diagnosis-dto';
+import type { EmergencyAccessCommand } from './models/emergency-access-command';
 import type { EncounterDto } from './models/encounter-dto';
 import type { ImportDiagnosesCommand } from './models/import-diagnoses-command';
 import type { ImportedDiagnosesDto } from './models/imported-diagnoses-dto';
@@ -51,6 +52,10 @@ export class ClinicalService extends ApiClient {
     return this.http.get(`${this.base}/api/historia/copia${queryString(query)}`, {
       responseType: 'blob',
     });
+  }
+
+  emergencyAccess(body: EmergencyAccessCommand) {
+    return this.http.post<void>(`${this.base}/api/historia/urgencia`, body);
   }
 
   myClinicalAccesses() {

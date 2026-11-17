@@ -312,6 +312,13 @@
         "responses": { "200": { "content": { "application/pdf": { "schema": { "type": "string", "format": "binary" } } } } }
       }
     },
+    "/api/historia/urgencia": {
+      "post": {
+        "operationId": "emergencyAccess",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmergencyAccessCommand" } } } },
+        "responses": { "204": {} }
+      }
+    },
     "/api/historia/accesos": {
       "get": {
         "operationId": "myClinicalAccesses",
@@ -807,6 +814,7 @@
         "properties": { "read": { "type": "integer" }, "added": { "type": "integer" }, "total": { "type": "integer" } }
       },
       "SignCommand": { "type": "object", "required": ["password"], "properties": { "password": { "type": "string" } } },
+      "EmergencyAccessCommand": { "type": "object", "required": ["patientId", "reason"], "properties": { "patientId": { "type": "string" }, "reason": { "type": "string" } } },
       "AmendEntryCommand": {
         "type": "object",
         "required": ["text", "password"],
@@ -818,7 +826,7 @@
       },
       "ClinicalEntryKind": { "type": "string", "enum": ["Visit", "Amendment", "Background", "Consent"] },
       "ConsentDecision": { "type": "string", "enum": ["Accepted", "Revoked"] },
-      "ClinicalAccessAction": { "type": "string", "enum": ["View", "Copy", "Sign", "Amend", "Attachment"] },
+      "ClinicalAccessAction": { "type": "string", "enum": ["View", "Copy", "Sign", "Amend", "Attachment", "Emergency"] },
       "AddBackgroundCommand": {
         "type": "object",
         "required": ["patientId", "kind", "text", "password"],

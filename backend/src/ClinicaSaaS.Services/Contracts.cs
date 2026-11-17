@@ -215,6 +215,8 @@ public record EncounterDto(
 
 // Electronic signature: the professional types their password again for each page they sign.
 public record SignCommand(string Password);
+// Opens the record of a patient the professional does not treat, for a while, with the reason the patient will read.
+public record EmergencyAccessCommand(Guid PatientId, string Reason);
 public record AmendEntryCommand(string Text, string Password);
 public record AddBackgroundCommand(Guid PatientId, BackgroundKind Kind, string Text, string Password);
 // The written consent the patient signed on paper, scanned (PDF, JPG or PNG, up to 5 MB) and sent as base64.

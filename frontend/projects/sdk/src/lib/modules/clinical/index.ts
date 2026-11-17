@@ -10,6 +10,7 @@ export * from './models/import-diagnoses-command';
 export * from './models/imported-diagnoses-dto';
 export * from './models/sign-command';
 export * from './models/amend-entry-command';
+export * from './models/emergency-access-command';
 export * from './models/background-kind';
 export * from './models/clinical-entry-kind';
 export * from './models/consent-decision';

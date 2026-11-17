@@ -6,8 +6,8 @@ using Microsoft.AspNetCore.Mvc;
 namespace ClinicaSaaS.Api.Controllers;
 
 // The clinical record. Access levels follow Ley 27.706, art. 7: the patient reads their own record; the
-// professional reads it, writes and signs new pages and corrects their own. Administration and front desk
-// never reach it. Prescriptions are not issued here until the platform is in the national registry.
+// professional who treats them reads it, writes and signs new pages and corrects their own, and anyone else only
+// in an emergency, with a reason. Administration and front desk never reach it. Prescriptions are not issued here until the platform is in the national registry.
 [ApiController]
 [Authorize]
 [Route("api")]
@@ -50,6 +50,11 @@ public class ClinicalController(ClinicalService clinical) : ApiController
     [HttpGet("historia/copia")]
     public Task<IActionResult> Copy([FromQuery] Guid? patientId, CancellationToken ct) =>
         RunFile(() => clinical.CopyAsync(patientId, ct));
+
+    [Authorize(Roles = AppRoles.Doctor)]
+    [HttpPost("historia/urgencia")]
+    public Task<IActionResult> EmergencyAccess(EmergencyAccessCommand command, CancellationToken ct) =>
+        Run(() => clinical.EmergencyAccessAsync(command, ct));
 
     [Authorize(Roles = AppRoles.Patient)]
     [HttpGet("historia/accesos")]

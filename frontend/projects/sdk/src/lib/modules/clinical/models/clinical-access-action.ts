@@ -5,4 +5,5 @@ export enum ClinicalAccessAction {
   Sign = 'Sign',
   Amend = 'Amend',
   Attachment = 'Attachment',
+  Emergency = 'Emergency',
 }

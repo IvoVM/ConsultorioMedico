@@ -175,7 +175,9 @@ public enum ClinicalAccessAction
     Copy,
     Sign,
     Amend,
-    Attachment
+    Attachment,
+    // A professional who does not treat the patient opened the record in an emergency, giving the reason.
+    Emergency
 }
 
 // What a person agreed to: the clinic's privacy notice, or (as told by the patient) being their emergency contact.

@@ -45,6 +45,7 @@ internal static class ErrorMap
         UnauthorizedException unauthorized => new(StatusCodes.Status401Unauthorized, unauthorized.Message),
         ValidationException validation => new(StatusCodes.Status400BadRequest, string.Join(' ', validation.Errors.Select(e => e.ErrorMessage))),
         NotFoundException notFound => new(StatusCodes.Status404NotFound, notFound.Message),
+        ForbiddenException forbidden => new(StatusCodes.Status403Forbidden, forbidden.Message),
         ConflictException conflict => new(StatusCodes.Status409Conflict, conflict.Message),
         AccountChoiceException choice => new(StatusCodes.Status409Conflict, choice.Message),
         BusinessRuleException rule => new(StatusCodes.Status400BadRequest, rule.Message),
